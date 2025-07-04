@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\DepartmentResource\Pages;
@@ -21,38 +22,49 @@ class DepartmentResource extends Resource
         return $form
             ->schema([
                 Forms\Components\TextInput::make('dept_name')
-                    ->label('Department Name')
+                    ->label('اسم القسم')
                     ->required()
                     ->maxLength(100),
 
                 Forms\Components\TextInput::make('dept_code')
-                    ->label('Department Code')
+                    ->label('كود القسم')
                     ->maxLength(20),
 
 
+                Forms\Components\Select::make('dept_type')
+                    ->label('نوع القسم')
+                    ->relationship('category', 'category_name')
+                    ->required(),
+
                 Forms\Components\Select::make('parent_dept_id')
-                    ->label('Parent Department')
+                    ->label('القسم التابع له')
+                    ->relationship('parentDepartment', 'dept_name')
+                    ->nullable(),
+
+
+                Forms\Components\Select::make('manager_id')
+                    ->label('مدير القسم')
                     ->nullable(),
 
                 Forms\Components\TextInput::make('location')
-                    ->label('Location')
+                    ->label('الموقع')
                     ->maxLength(100),
 
                 Forms\Components\TextInput::make('phone_extension')
-                    ->label('Phone Extension')
+                    ->label('تحويلة الهاتف')
                     ->maxLength(10),
 
                 Forms\Components\TextInput::make('email')
-                    ->label('Email')
+                    ->label('البريد الإلكتروني')
                     ->email()
                     ->nullable(),
 
                 Forms\Components\Toggle::make('is_active')
-                    ->label('Active')
+                    ->label('فعال')
                     ->default(true),
 
                 Forms\Components\ColorPicker::make('color_code')
-                    ->label('Color Code')
+                    ->label('اللون المميز')
                     ->default('#3498db'),
             ]);
     }
@@ -61,10 +73,19 @@ class DepartmentResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('dept_name')->label('Department Name')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('dept_code')->label('Code')->sortable(),
-                Tables\Columns\BooleanColumn::make('is_active')->label('Active'),
-                Tables\Columns\TextColumn::make('factory.name')->label('Factory')->sortable(),
+                Tables\Columns\TextColumn::make('dept_name')->label('اسم القسم')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('dept_code')->label('الكود')->sortable(),
+                Tables\Columns\TextColumn::make('category.category_name')->label('نوع القسم')->sortable()->searchable(),
+
+                Tables\Columns\TextColumn::make('parentDepartment.dept_name')->label('القسم التابع له')->sortable(),
+
+                Tables\Columns\IconColumn::make('is_active')
+                    ->label('الحالة')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-x-circle')
+                    ->trueColor('success')
+                    ->falseColor('danger'),
             ])
             ->filters([
                 //

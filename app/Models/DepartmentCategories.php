@@ -13,4 +13,9 @@ class DepartmentCategories extends Model
         'color_code',
         'icon'
     ];
+    
+    public function departments()
+    {
+        return $this->hasMany(Department::class, 'dept_type');
+    }
 }

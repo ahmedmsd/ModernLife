@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Department extends Model
 {
     protected $table = 'departments';
+    protected $primaryKey = 'dept_id';
 
     protected $fillable = [
         'dept_name',
@@ -20,8 +21,13 @@ class Department extends Model
         'color_code',
     ];
 
-    public function managers()
+    public function category()
     {
-        return $this->hasMany(DepartmentManager::class, 'dept_id');
+        return $this->belongsTo(DepartmentCategories::class, 'dept_type', 'category_id');
+    }
+
+    public function parentDepartment()
+    {
+    return $this->belongsTo(Department::class, 'parent_dept_id', 'dept_id');
     }
 }

@@ -8,13 +8,14 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Tables\Enums\FiltersLayout;
 
 class DepartmentCategoriesResource extends Resource
 {
     protected static ?string $model = DepartmentCategories::class;
     protected static ?string $navigationIcon = 'heroicon-o-tag';
 
-    
+
     public static function form(Form $form): Form
     {
         return $form
@@ -45,6 +46,10 @@ class DepartmentCategoriesResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->striped()
+            ->filtersLayout(FiltersLayout::AboveContentCollapsible)
+            ->paginated([10, 25, 50, 100])
+            ->deferLoading()
             ->columns([
                 Tables\Columns\TextColumn::make('category_name')
                     ->label('اسم التصنيف')
@@ -67,7 +72,7 @@ class DepartmentCategoriesResource extends Resource
             ->filters([
                 //
             ])
-            
+
             ->actions([
                 Tables\Actions\EditAction::make()
                     ->modalHeading('تعديل التصنيف'),
