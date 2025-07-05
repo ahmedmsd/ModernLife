@@ -4,6 +4,8 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\EmployeeResource\Pages;
 use App\Models\Employee;
+use App\Models\UserGroup;
+use App\Models\Permission;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -15,6 +17,9 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Illuminate\Support\Facades\Hash;
 use Psy\TabCompletion\AutoCompleter;
+use Filament\Forms\Components\CheckboxList;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class EmployeeResource extends Resource
 {
@@ -41,7 +46,7 @@ class EmployeeResource extends Resource
                             ->label('البريد الإلكتروني (للدخول)')
                             ->email()
                             ->required()
-                            ->default(fn($record) => $record->user?->email)
+                            ->default(fn($record) => $record?->user?->email)
                             ->statePath('user.email')
                             ->autocomplete('off')
                             ->unique(
@@ -158,6 +163,23 @@ class EmployeeResource extends Resource
                             ->label('ملاحظات'),
                     ])->columns(2),
 
+                Forms\Components\Section::make('مجموعات المستخدمين والصلاحيات')
+                    ->schema([
+                        Forms\Components\Select::make('user_group_id')
+                            ->label('User Group')
+                            ->relationship('userGroup', 'name')  // Make sure Employee model has `userGroup()` relation
+                            ->searchable()
+                            ->label('مجموعات المستخدمين')
+                            ->required(),
+                        Forms\Components\Select::make('roles')
+                            ->multiple()
+                            ->relationship('roles', 'name')
+                            ->preload()
+                            ->label('الأدوار')
+                            ->helperText('يتم توريث جميع صلاحيات الدور للموظف'),
+
+                    ])
+                    ->columns(2)
             ]);
     }
 
@@ -187,7 +209,11 @@ class EmployeeResource extends Resource
                 Tables\Columns\TextColumn::make('phone')
                     ->searchable()
                     ->label('رقم الجوال'),
-
+                Tables\Columns\TextColumn::make('roles.name')
+                    ->label('الدور')
+                    ->badge()
+                    ->color('primary')
+                    ->sortable(),
                 Tables\Columns\IconColumn::make('is_active')
                     ->boolean()
                     ->label('نشط'),
@@ -202,6 +228,10 @@ class EmployeeResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('editPermissions')
+                    ->label('Edit Permissions')
+                    ->icon('heroicon-o-lock-closed')
+                    ->action(fn($record) => redirect(route('filament.resources.employees.permissions', $record->id))),
                 Tables\Actions\ViewAction::make(),
             ])
             ->bulkActions([
@@ -218,10 +248,30 @@ class EmployeeResource extends Resource
         ];
     }
 
+    public static function afterSave($record, $data)
+    {
+        if (isset($data['roles'])) {
+            $record->syncRoles($data['roles']);
+        }
+
+        if (isset($data['user'])) {
+            $userData = $data['user'];
+            if ($record->user) {
+                $record->user->update($userData);
+            } else {
+                $user = \App\Models\User::create($userData);
+                $record->user()->associate($user)->save();
+            }
+        }
+    }
+
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->with('user');
     }
+
+
+
 
     public static function getPages(): array
     {

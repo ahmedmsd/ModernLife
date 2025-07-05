@@ -21,6 +21,7 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 use App\Filament\Resources\DepartmentCategoriesResource;
 use App\Filament\Resources\DepartmentResource;
 use App\Filament\Resources\EmployeeResource;
+use App\Filament\Resources\UserGroupResource;
 use Filament\Navigation\NavigationBuilder;
 use Filament\Navigation\NavigationGroup;
 use Filament\Navigation\NavigationItem;
@@ -83,6 +84,9 @@ class AdminPanelProvider extends PanelProvider
                                 NavigationItem::make('إدارة الموظفين ')
                                     ->icon('heroicon-o-rectangle-group')
                                     ->url(EmployeeResource::getUrl()),
+                                    NavigationItem::make('مجموعات المستخدمين  ')
+                                    ->icon('heroicon-o-rectangle-group')
+                                    ->url(UserGroupResource::getUrl()),
                             ])
                     );
             });
