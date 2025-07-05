@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\EmployeeResource\Pages;
 use App\Models\Employee;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -9,7 +10,11 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use App\Filament\Resources\EmployeeResource\Pages;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\TextInput;
+use Illuminate\Support\Facades\Hash;
+use Psy\TabCompletion\AutoCompleter;
 
 class EmployeeResource extends Resource
 {
@@ -17,143 +22,205 @@ class EmployeeResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
 
-    protected static ?string $modelLabel = 'Employee';
+    protected static ?string $navigationLabel = 'الموظفين';
 
-    protected static ?string $navigationLabel = 'Employees';
+    protected static ?string $modelLabel = 'موظف';
+
+    protected static ?string $pluralModelLabel = 'الموظفين';
+
+    protected static ?string $recordTitleAttribute = 'employee_name';
+
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Personal Information')
+                Section::make('معلومات الحساب')
                     ->schema([
+                        TextInput::make('user.email') // <-- حقل البريد الإلكتروني للمستخدم
+                            ->label('البريد الإلكتروني (للدخول)')
+                            ->email()
+                            ->required()
+                            ->default(fn($record) => $record->user?->email)
+                            ->statePath('user.email')
+                            ->autocomplete('off')
+                            ->unique(
+                                table: 'users',
+                                column: 'email',
+                                ignorable: fn($record) => $record?->user,
+                            ),
+                        TextInput::make('user.password') // <-- حقل كلمة المرور
+                            ->label('كلمة المرور (اتركه فارغًا إن لم ترغب بالتغيير)')
+                            ->password()
+                            ->statePath('user.password')
+                            ->dehydrated(fn($state) => filled($state))
+                            ->dehydrateStateUsing(fn($state) => bcrypt($state))
+                            ->default(null)
+                            ->autocomplete('new-password')
+                            ->required(fn(string $operation): bool => $operation === 'create'),
+                    ])->columns(2),
+                Forms\Components\Section::make('البيانات الأساسية للموظف')
+                    ->schema([
+
+
                         Forms\Components\TextInput::make('employee_name')
                             ->required()
-                            ->maxLength(255),
-                            
+                            ->maxLength(255)
+                            ->label('الاسم الكامل للموظف'),
+
                         Forms\Components\TextInput::make('national_id')
-                            ->label('National ID')
-                            ->maxLength(50),
-                            
+                            ->maxLength(20)
+                            ->required()
+                            ->label('الرقم الوطني / الهوية'),
+
+                        Forms\Components\DatePicker::make('birth_date')
+                            ->label('تاريخ الميلاد')
+                            ->nullable(),
+
                         Forms\Components\Select::make('gender')
                             ->options([
-                                'male' => 'Male',
-                                'female' => 'Female',
-                            ]),
-                            
-                        Forms\Components\DatePicker::make('birth_date'),
+                                'male' => 'ذكر',
+                                'female' => 'أنثى',
+                            ])
+                            ->label('الجنس'),
                     ])->columns(2),
-                    
-                Forms\Components\Section::make('Contact Information')
+
+                Forms\Components\Section::make('معلومات الاتصال')
                     ->schema([
-                        Forms\Components\TextInput::make('email')
-                            ->email()
-                            ->maxLength(100),
-                            
                         Forms\Components\TextInput::make('phone')
                             ->tel()
-                            ->maxLength(20),
-                            
+                            ->required()
+                            ->maxLength(20)
+                            ->label('رقم الجوال'),
+
+                        Forms\Components\TextInput::make('email')
+                            ->email()
+                            ->maxLength(255)
+                            ->label('البريد الإلكتروني (للتواصل)'),
+
                         Forms\Components\Textarea::make('address')
-                            ->columnSpanFull(),
+                            ->columnSpanFull()
+                            ->label('العنوان'),
                     ])->columns(2),
-                    
-                Forms\Components\Section::make('Employment Details')
+
+                Forms\Components\Section::make('معلومات الوظيفة')
                     ->schema([
                         Forms\Components\TextInput::make('position')
                             ->required()
-                            ->maxLength(100),
-                            
+                            ->maxLength(255)
+                            ->label('المنصب الوظيفي'),
+
+                        Forms\Components\Select::make('department_id')
+                            ->label('القسم التابع له')
+                            ->relationship('Department', 'dept_name'),
+
+
                         Forms\Components\DatePicker::make('hire_date')
-                            ->required(),
-                            
+                            ->label('تاريخ التعيين')
+                            ->nullable(),
+
                         Forms\Components\TextInput::make('salary')
                             ->numeric()
-                            ->prefix('$'),
-                            
+                            ->prefix('SAR')
+                            ->nullable()
+                            ->label('الراتب'),
+
                         Forms\Components\Select::make('employment_type')
                             ->options([
-                                'full_time' => 'Full Time',
-                                'part_time' => 'Part Time',
-                                'contract' => 'Contract',
-                            ]),
-                            
+                                'full_time' => 'دوام كامل',
+                                'part_time' => 'دوام جزئي',
+                                'contractor' => 'متعاقد',
+                            ])->default('full_time')
+                            ->label('نوع التوظيف'),
+
                         Forms\Components\Toggle::make('is_active')
-                            ->default(true),
+                            ->required()
+                            ->default(true)
+                            ->label('حالة الحساب (نشط)'),
                     ])->columns(2),
-                    
-                Forms\Components\Section::make('Emergency Contact')
+
+                Forms\Components\Section::make('معلومات الطوارئ والملاحظات')
                     ->schema([
                         Forms\Components\TextInput::make('emergency_contact_name')
-                            ->maxLength(100),
-                            
+                            ->maxLength(255)
+                            ->nullable()
+                            ->label('اسم جهة اتصال الطوارئ'),
+
                         Forms\Components\TextInput::make('emergency_contact_phone')
-                            ->maxLength(20),
+                            ->tel()
+                            ->maxLength(20)
+                            ->nullable()
+                            ->label('رقم هاتف الطوارئ'),
+
+                        Forms\Components\Textarea::make('notes')
+                            ->columnSpanFull()
+                            ->nullable()
+                            ->label('ملاحظات'),
                     ])->columns(2),
-                    
-                Forms\Components\Textarea::make('notes')
-                    ->columnSpanFull(),
+
             ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
+
             ->columns([
                 Tables\Columns\TextColumn::make('employee_name')
                     ->searchable()
-                    ->sortable(),
-                    
-                Tables\Columns\TextColumn::make('position')
+                    ->sortable()
+                    ->label('اسم الموظف'),
+
+                Tables\Columns\TextColumn::make('user.email')
+                    ->label('البريد الإلكتروني للحساب')
                     ->searchable(),
-                    
-                Tables\Columns\TextColumn::make('department_id')
-                    ->label('Department ID')
-                    ->numeric(),
-                    
-                Tables\Columns\TextColumn::make('hire_date')
-                    ->date()
-                    ->sortable(),
-                    
-                Tables\Columns\TextColumn::make('salary')
-                    ->money('USD')
-                    ->sortable(),
-                    
+
+                Tables\Columns\TextColumn::make('Department.dept_name')
+                    ->searchable()
+                    ->label('القسم '),
+
+
+                Tables\Columns\TextColumn::make('position')
+                    ->searchable()
+                    ->label('المنصب'),
+
+                Tables\Columns\TextColumn::make('phone')
+                    ->searchable()
+                    ->label('رقم الجوال'),
+
                 Tables\Columns\IconColumn::make('is_active')
                     ->boolean()
-                    ->label('Active'),
-                    
+                    ->label('نشط'),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('gender')
-                    ->options([
-                        'male' => 'Male',
-                        'female' => 'Female',
-                    ]),
-                    
-                Tables\Filters\SelectFilter::make('employment_type')
-                    ->options([
-                        'full_time' => 'Full Time',
-                        'part_time' => 'Part Time',
-                        'contract' => 'Contract',
-                    ]),
-                    
-                Tables\Filters\TernaryFilter::make('is_active')
-                    ->label('Active Status'),
+                Tables\Filters\TernaryFilter::make('is_active')->label('الحالة (نشط)'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ViewAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            //
+        ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->with('user');
     }
 
     public static function getPages(): array

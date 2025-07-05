@@ -1283,18 +1283,22 @@ namespace App\Models {
      * @property boolean|null $is_active
      * @property mixed $employment_type
      * @property decimal:2|null $salary
-     * @property \Illuminate\Support\Carbon $hire_date
-     * @property string $position
+     * @property \Illuminate\Support\Carbon|null $hire_date
+     * @property string|null $position
      * @property int|null $department_id
      * @property string|null $address
-     * @property string $phone
+     * @property string|null $phone
      * @property string|null $email
      * @property \Illuminate\Support\Carbon|null $birth_date
      * @property mixed $gender
      * @property string $employee_name
      * @property string|null $national_id
+     * @property int|null $user_id
      * @property int $employee_id
+     * @property-read \App\Models\User $user
+     * @property-read \App\Models\Department $department
      * @method static \Illuminate\Database\Eloquent\Builder<Employee>|Employee whereEmployeeId($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<Employee>|Employee whereUserId($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Employee>|Employee whereNationalId($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Employee>|Employee whereEmployeeName($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Employee>|Employee whereGender($value)
@@ -1620,6 +1624,7 @@ namespace App\Models {
      * @property string $email
      * @property string $name
      * @property int $id
+     * @property-read \App\Models\Employee $employee
      * @property-read \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Notifications\DatabaseNotification> $notifications
      * @property-read int|null $notifications_count
      * @method static \Illuminate\Database\Eloquent\Builder<User>|User whereId($value)

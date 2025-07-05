@@ -24,6 +24,7 @@ class Employee extends Model
      */
     protected $fillable = [
         'national_id',
+        'user_id',
         'employee_name',
         'gender',
         'birth_date',
@@ -55,6 +56,16 @@ class Employee extends Model
         'updated_at' => 'datetime'
     ];
 
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function department()
+    {
+        return $this->belongsTo(Department::class, 'department_id');
+    }
+    
     /**
      * The attributes that should be hidden for arrays.
      *
