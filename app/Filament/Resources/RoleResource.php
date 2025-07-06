@@ -11,10 +11,14 @@ use Filament\Tables\Table;
 use App\Filament\Resources\RoleResource\Pages;
 use Spatie\Permission\Models\Permission;
 use Filament\Forms\Components\Select;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Contracts\Auth\Authenticatable;
 
 class RoleResource extends Resource
 {
     protected static ?string $model = Role::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-shield-check';
     protected static ?string $navigationLabel = 'الأدوار';
     protected static ?string $navigationGroup = 'إدارة الصلاحيات';
@@ -27,14 +31,13 @@ class RoleResource extends Resource
                     ->label('اسم الدور')
                     ->required()
                     ->unique(ignoreRecord: true),
-
                 Select::make('permissions')
                     ->label('الصلاحيات')
                     ->multiple()
                     ->relationship('permissions', 'name')
                     ->preload()
                     ->searchable(),
-            ]);
+            ])->columns(1);
     }
 
     public static function table(Table $table): Table
@@ -55,6 +58,15 @@ class RoleResource extends Resource
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make()->label('حذف الكل'),
             ]);
+    }
+    public static function shouldRegisterNavigation(): bool
+    {
+        return true; // Force show in navigation
+    }
+    public static function canAccess(): bool
+    {
+        $user = Auth::user();
+        return $user && $user->can('manage-roles');
     }
 
     public static function getPages(): array

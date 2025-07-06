@@ -25,6 +25,8 @@ use App\Filament\Resources\UserGroupResource;
 use Filament\Navigation\NavigationBuilder;
 use Filament\Navigation\NavigationGroup;
 use Filament\Navigation\NavigationItem;
+use App\Filament\Resources\RoleResource;
+use App\Filament\Resources\PermissionResource;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -35,7 +37,10 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
-            
+            ->resources([
+                RoleResource::class,
+                PermissionResource::class,
+                ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
@@ -61,6 +66,9 @@ class AdminPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])
+            ->navigationGroups([
+                'إدارة النظام',
+            ])
             ->navigation(function (NavigationBuilder $builder): NavigationBuilder {
                 return $builder
                     ->group(
@@ -84,9 +92,20 @@ class AdminPanelProvider extends PanelProvider
                                 NavigationItem::make('إدارة الموظفين ')
                                     ->icon('heroicon-o-rectangle-group')
                                     ->url(EmployeeResource::getUrl()),
-                                    NavigationItem::make('مجموعات المستخدمين  ')
-                                    ->icon('heroicon-o-rectangle-group')
-                                    ->url(UserGroupResource::getUrl()),
+                            ])
+                    )
+                    ->group(
+                        NavigationGroup::make()
+                            ->label('إدارة الصلاحيات')
+                            ->collapsible()
+                            ->items([
+                                NavigationItem::make('إدارة الأدوار')
+                                    ->icon('heroicon-o-shield-check')
+                                    ->url(RoleResource::getUrl()),
+
+                                NavigationItem::make('إدارة الصلاحيات')
+                                    ->icon('heroicon-o-key')
+                                    ->url(PermissionResource::getUrl()),
                             ])
                     );
             });

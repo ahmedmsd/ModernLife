@@ -1,35 +1,23 @@
 <?php
 
-
 namespace App\Models;
 
-use Spatie\Permission\Traits\HasRoles;
-
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Foundation\Auth\User as Authenticatable; // لكي يعمل كـ User في Laravel Auth
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Spatie\Permission\Traits\HasRoles;
 
 class Employee extends Authenticatable
 {
-    /**
-     * The primary key for the model.
-     *
-     * @var string
-     */
     use HasRoles, Notifiable;
 
     protected $guard_name = 'employee';
-
     protected $table = 'employees';
-
     protected $primaryKey = 'employee_id';
+    protected $keyType = 'int'; // Explicitly define if employee_id is integer
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
     protected $fillable = [
         'national_id',
         'user_id',
@@ -50,29 +38,25 @@ class Employee extends Authenticatable
         'notes'
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array
-     */
     protected $casts = [
         'birth_date' => 'date',
         'hire_date' => 'date',
         'is_active' => 'boolean',
         'salary' => 'decimal:2',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime'
     ];
 
-    public function user()
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    // Relationships
+    public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
-    public function userGroup()
-    {
-        return $this->belongsTo(UserGroup::class);
-    }
-    public function department()
+
+    public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class, 'department_id');
     }
@@ -80,31 +64,17 @@ class Employee extends Authenticatable
     public function directPermissions(): BelongsToMany
     {
         return $this->belongsToMany(
-            config('permission.models.permission'),
+            Permission::class,
             'user_permission',
             'user_id',
             'permission_id'
         )->withTimestamps();
     }
 
-
-    public function groups()
-    {
-        return $this->belongsToMany(
-            UserGroup::class,
-            'user_group_membership',
-            'user_id',
-            'group_id'
-        )->orderBy('group_name');
-    }
-
+    // Permission methods
     public function getAllPermissions()
     {
         $permissions = $this->getDirectPermissions();
-
-        foreach ($this->groups as $group) {
-            $permissions = $permissions->merge($group->getAllPermissions());
-        }
 
         foreach ($this->getRoles() as $role) {
             $permissions = $permissions->merge($role->permissions);
@@ -113,34 +83,12 @@ class Employee extends Authenticatable
         return $permissions->unique('id');
     }
 
-    public function hasPermission($permission)
+    public function hasPermission($permission): bool
     {
         if ($this->hasDirectPermission($permission)) {
             return true;
         }
 
-        foreach ($this->groups as $group) {
-            if ($group->hasPermission($permission)) {
-                return true;
-            }
-        }
-
         return $this->hasPermissionTo($permission);
     }
-
-    /**
-     * The attributes that should be hidden for arrays.
-     *
-     * @var array
-     */
-    protected $hidden = [
-        // Add any sensitive fields here if needed
-    ];
-
-    /**
-     * Indicates if the model should be timestamped.
-     *
-     * @var bool
-     */
-    public $timestamps = true;
 }

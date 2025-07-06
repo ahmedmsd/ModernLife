@@ -2,43 +2,31 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasRoles, HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
         'password',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
+    protected $appends = ['all_permissions']; // Important for permission checks
+
     protected function casts(): array
     {
         return [
@@ -46,36 +34,48 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
-    public function employee()
+
+    public function employee(): HasOne
     {
         return $this->hasOne(Employee::class, 'user_id');
     }
 
-    public function groups(): BelongsToMany
-    {
-        return $this->belongsToMany(UserGroup::class, 'user_group_membership', 'user_id', 'group_id');
-    }
+
 
     public function directPermissions(): BelongsToMany
     {
-        return $this->belongsToMany(Permission::class, 'user_permission', 'user_id', 'permission_id');
+        return $this->belongsToMany(
+            Permission::class,
+            'model_has_permissions',
+            'model_id',
+            'permission_id'
+        )->withTimestamps();
     }
 
-    // Combine group + direct permissions
     public function getAllPermissionsAttribute()
     {
-        $groupPermissions = $this->groups()->with('permissions')->get()
-            ->pluck('permissions')->flatten();
+        $permissions = $this->getDirectPermissions();
 
-        return $groupPermissions
-            ->merge($this->directPermissions)
-            ->unique('id')
-            ->values();
+        foreach ($this->roles as $role) {
+            $permissions = $permissions->merge($role->permissions);
+        }
+
+        return $permissions->unique('id');
     }
 
-    // Check if user has a specific permission by name
+    public function roles(): BelongsToMany
+    {
+        return $this->morphToMany(
+            config('permission.models.role'),
+            'model',
+            config('permission.table_names.model_has_roles'),
+            config('permission.column_names.model_morph_key'),
+            'role_id'
+        );
+    }
+
     public function hasPermission(string $permissionName): bool
     {
-        return $this->all_permissions->contains(fn($p) => $p->name === $permissionName);
+        return $this->all_permissions->contains('name', $permissionName);
     }
 }

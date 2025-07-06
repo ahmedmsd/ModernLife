@@ -4,84 +4,64 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\EmployeeResource\Pages;
 use App\Models\Employee;
-use App\Models\UserGroup;
-use App\Models\Permission;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\TextInput;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Hash;
-use Psy\TabCompletion\AutoCompleter;
-use Filament\Forms\Components\CheckboxList;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class EmployeeResource extends Resource
 {
     protected static ?string $model = Employee::class;
-
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
-
     protected static ?string $navigationLabel = 'الموظفين';
-
     protected static ?string $modelLabel = 'موظف';
-
     protected static ?string $pluralModelLabel = 'الموظفين';
-
     protected static ?string $recordTitleAttribute = 'employee_name';
-
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Section::make('معلومات الحساب')
+                Forms\Components\Section::make('معلومات الحساب')
                     ->schema([
-                        TextInput::make('user.email') // <-- حقل البريد الإلكتروني للمستخدم
+                        Forms\Components\TextInput::make('user.email')
                             ->label('البريد الإلكتروني (للدخول)')
                             ->email()
                             ->required()
                             ->default(fn($record) => $record?->user?->email)
                             ->statePath('user.email')
-                            ->autocomplete('off')
                             ->unique(
                                 table: 'users',
                                 column: 'email',
                                 ignorable: fn($record) => $record?->user,
                             ),
-                        TextInput::make('user.password') // <-- حقل كلمة المرور
-                            ->label('كلمة المرور (اتركه فارغًا إن لم ترغب بالتغيير)')
+                        Forms\Components\TextInput::make('user.password')
+                            ->label('كلمة المرور')
                             ->password()
+                            ->required()
                             ->statePath('user.password')
                             ->dehydrated(fn($state) => filled($state))
-                            ->dehydrateStateUsing(fn($state) => bcrypt($state))
-                            ->default(null)
-                            ->autocomplete('new-password')
-                            ->required(fn(string $operation): bool => $operation === 'create'),
+                            ->dehydrateStateUsing(fn($state) => Hash::make($state))
+                            ->required(fn(string $operation): bool => $operation === 'create')
+                            ->autocomplete('new-password'),
                     ])->columns(2),
+
                 Forms\Components\Section::make('البيانات الأساسية للموظف')
                     ->schema([
-
-
                         Forms\Components\TextInput::make('employee_name')
                             ->required()
                             ->maxLength(255)
                             ->label('الاسم الكامل للموظف'),
-
                         Forms\Components\TextInput::make('national_id')
                             ->maxLength(20)
                             ->required()
                             ->label('الرقم الوطني / الهوية'),
-
                         Forms\Components\DatePicker::make('birth_date')
-                            ->label('تاريخ الميلاد')
-                            ->nullable(),
-
+                            ->label('تاريخ الميلاد'),
                         Forms\Components\Select::make('gender')
                             ->options([
                                 'male' => 'ذكر',
@@ -97,12 +77,10 @@ class EmployeeResource extends Resource
                             ->required()
                             ->maxLength(20)
                             ->label('رقم الجوال'),
-
                         Forms\Components\TextInput::make('email')
                             ->email()
                             ->maxLength(255)
                             ->label('البريد الإلكتروني (للتواصل)'),
-
                         Forms\Components\Textarea::make('address')
                             ->columnSpanFull()
                             ->label('العنوان'),
@@ -114,124 +92,83 @@ class EmployeeResource extends Resource
                             ->required()
                             ->maxLength(255)
                             ->label('المنصب الوظيفي'),
-
                         Forms\Components\Select::make('department_id')
                             ->label('القسم التابع له')
-                            ->relationship('Department', 'dept_name'),
-
-
+                            ->relationship('department', 'dept_name') // Changed to lowercase
+                            ->required(),
                         Forms\Components\DatePicker::make('hire_date')
-                            ->label('تاريخ التعيين')
-                            ->nullable(),
-
+                            ->label('تاريخ التعيين'),
                         Forms\Components\TextInput::make('salary')
                             ->numeric()
                             ->prefix('SAR')
-                            ->nullable()
                             ->label('الراتب'),
-
                         Forms\Components\Select::make('employment_type')
                             ->options([
                                 'full_time' => 'دوام كامل',
                                 'part_time' => 'دوام جزئي',
                                 'contractor' => 'متعاقد',
-                            ])->default('full_time')
+                            ])
+                            ->default('full_time')
                             ->label('نوع التوظيف'),
-
                         Forms\Components\Toggle::make('is_active')
                             ->required()
                             ->default(true)
                             ->label('حالة الحساب (نشط)'),
                     ])->columns(2),
 
-                Forms\Components\Section::make('معلومات الطوارئ والملاحظات')
-                    ->schema([
-                        Forms\Components\TextInput::make('emergency_contact_name')
-                            ->maxLength(255)
-                            ->nullable()
-                            ->label('اسم جهة اتصال الطوارئ'),
-
-                        Forms\Components\TextInput::make('emergency_contact_phone')
-                            ->tel()
-                            ->maxLength(20)
-                            ->nullable()
-                            ->label('رقم هاتف الطوارئ'),
-
-                        Forms\Components\Textarea::make('notes')
-                            ->columnSpanFull()
-                            ->nullable()
-                            ->label('ملاحظات'),
-                    ])->columns(2),
-
                 Forms\Components\Section::make('مجموعات المستخدمين والصلاحيات')
                     ->schema([
-                        Forms\Components\Select::make('user_group_id')
-                            ->label('User Group')
-                            ->relationship('userGroup', 'name')  // Make sure Employee model has `userGroup()` relation
-                            ->searchable()
-                            ->label('مجموعات المستخدمين')
-                            ->required(),
                         Forms\Components\Select::make('roles')
                             ->multiple()
                             ->relationship('roles', 'name')
                             ->preload()
+                            ->required()
+                            ->validationMessages([
+                                'required' => 'يجب اختيار دور واحد على الأقل'
+                            ])
                             ->label('الأدوار')
                             ->helperText('يتم توريث جميع صلاحيات الدور للموظف'),
-
-                    ])
-                    ->columns(2)
+                    ])->columns(1) // Changed to single column for better layout
             ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
-
             ->columns([
                 Tables\Columns\TextColumn::make('employee_name')
                     ->searchable()
                     ->sortable()
                     ->label('اسم الموظف'),
-
                 Tables\Columns\TextColumn::make('user.email')
                     ->label('البريد الإلكتروني للحساب')
                     ->searchable(),
-
-                Tables\Columns\TextColumn::make('Department.dept_name')
-                    ->searchable()
-                    ->label('القسم '),
-
-
+                Tables\Columns\TextColumn::make('department.dept_name')
+                    ->label('القسم')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('position')
-                    ->searchable()
-                    ->label('المنصب'),
-
+                    ->label('المنصب')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('phone')
-                    ->searchable()
-                    ->label('رقم الجوال'),
+                    ->label('رقم الجوال')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('roles.name')
                     ->label('الدور')
                     ->badge()
-                    ->color('primary')
-                    ->sortable(),
+                    ->color('primary'),
                 Tables\Columns\IconColumn::make('is_active')
                     ->boolean()
                     ->label('نشط'),
-
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\TernaryFilter::make('is_active')->label('الحالة (نشط)'),
+                Tables\Filters\TernaryFilter::make('is_active')
+                    ->label('الحالة (نشط)'),
+                Tables\Filters\SelectFilter::make('department')
+                    ->relationship('department', 'dept_name')
+                    ->label('القسم'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\Action::make('editPermissions')
-                    ->label('Edit Permissions')
-                    ->icon('heroicon-o-lock-closed')
-                    ->action(fn($record) => redirect(route('filament.resources.employees.permissions', $record->id))),
                 Tables\Actions\ViewAction::make(),
             ])
             ->bulkActions([
@@ -241,19 +178,13 @@ class EmployeeResource extends Resource
             ]);
     }
 
-    public static function getRelations(): array
-    {
-        return [
-            //
-        ];
-    }
-
     public static function afterSave($record, $data)
     {
         if (isset($data['roles'])) {
-            $record->syncRoles($data['roles']);
+            $record->syncRoles($data['roles']); // Sync roles via Spatie
         }
 
+        // Handle user account creation/update
         if (isset($data['user'])) {
             $userData = $data['user'];
             if ($record->user) {
@@ -264,15 +195,6 @@ class EmployeeResource extends Resource
             }
         }
     }
-
-    public static function getEloquentQuery(): Builder
-    {
-        return parent::getEloquentQuery()->with('user');
-    }
-
-
-
-
     public static function getPages(): array
     {
         return [

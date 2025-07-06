@@ -31,7 +31,6 @@ class EditEmployee extends EditRecord
                 'user' => [
                     'email' => $this->record->user?->email,
                     'password' => null,
-                    'groups' => $this->record->user?->groups->pluck('id')->toArray(),
                     'directPermissions' => $this->record->user?->directPermissions->pluck('id')->toArray(),
                 ],
             ]
@@ -50,8 +49,8 @@ class EditEmployee extends EditRecord
 
         $this->record->user->save();
 
-        if (isset($data['user']['groups'])) {
-            $this->record->user->groups()->sync($data['user']['groups']);
+        if (isset($data['user']['roles'])) {
+            $this->record->user->roles()->sync($data['user']['roles']);
         }
 
         if (isset($data['user']['directPermissions'])) {

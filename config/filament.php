@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'path' => 'admin',
 
     'locale' => 'ar',
 
