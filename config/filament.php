@@ -10,6 +10,10 @@ return [
     'panels' => [
         'default' => [
             'theme' => 'public/css/filament/filament/filament-custom.css',
+            'navigation' => [
+                'is_collapsible' => true,
+                'default_is_collapsed' => true, 
+            ]
         ],
     ],
     /*

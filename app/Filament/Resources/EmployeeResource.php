@@ -135,6 +135,7 @@ class EmployeeResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->paginated([10, 25, 50])
             ->columns([
                 Tables\Columns\TextColumn::make('employee_name')
                     ->searchable()
