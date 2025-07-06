@@ -3,47 +3,50 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Filament\View\PanelsRenderHook;
-use Filament\Events\ServingFilament;
-use Illuminate\Support\Facades\Event;
+use Filament\Panel;
+use Filament\Facades\Filament;
 
 class AppServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
-        // التسجيل عبر نظام الأحداث
-        Event::listen(ServingFilament::class, function () {
-            $this->addNavigationScript();
-        });
-    }
+       Filament::registerRenderHook(
+    'panels::body.end',
+    fn (): string => <<<'HTML'
+        <script>
+            function updateSidebarGroups() {
+                setTimeout(() => {
+                    document.querySelectorAll('.fi-sidebar-group').forEach(group => {
+                        const toggleButton = group.querySelector('button[aria-expanded]');
+                        const itemsContainer = group.querySelector('[id^="headlessui-disclosure-panel-"]');
 
-    protected function addNavigationScript(): void
-    {
-        PanelsRenderHook::register(
-            PanelsRenderHook::BODY_END,
-            fn (): string => <<<'HTML'
-                <script>
-                    document.addEventListener('DOMContentLoaded', () => {
-                        const closeInactiveGroups = () => {
-                            document.querySelectorAll('.fi-sidebar-group').forEach(group => {
-                                const isActive = group.querySelector('.fi-active');
-                                const toggleButton = group.querySelector('button[aria-expanded="true"]');
-                                
-                                if (!isActive && toggleButton) {
-                                    toggleButton.click();
-                                }
-                            });
-                        };
-                        
-                        // التنفيذ الأولي
-                        closeInactiveGroups();
-                        
-                        // متابعة التغيرات الديناميكية (اختياري)
-                        new MutationObserver(closeInactiveGroups)
-                            .observe(document.body, { subtree: true, childList: true });
+                        const isActive = group.querySelector('.fi-active');
+
+                        // إذا الزر موجود
+                        if (toggleButton && itemsContainer) {
+                            if (isActive) {
+                                // افتح القائمة
+                                toggleButton.setAttribute('aria-expanded', 'true');
+                                itemsContainer.removeAttribute('hidden');
+                            } else {
+                                // اغلق القائمة
+                                toggleButton.setAttribute('aria-expanded', 'false');
+                                itemsContainer.setAttribute('hidden', 'true');
+                            }
+                        }
                     });
-                </script>
-            HTML
-        );
+                }, 100); // تأخير بسيط بعد تحديث Livewire
+            }
+
+            // عند تحميل Livewire
+            document.addEventListener('livewire:load', updateSidebarGroups);
+
+            // بعد كل عملية DOM update من Livewire
+            window.Livewire && window.Livewire.hook && window.Livewire.hook('message.processed', updateSidebarGroups);
+        </script>
+    HTML
+);
+
+
     }
 }
