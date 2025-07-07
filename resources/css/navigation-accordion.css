@@ -1,0 +1,22 @@
+/* Add this CSS to your admin panel */
+/* This will ensure only one navigation group stays open at a time */
+
+.fi-sidebar-nav .fi-sidebar-group:not(.fi-sidebar-group-active) .fi-sidebar-group-items {
+    display: none !important;
+}
+
+.fi-sidebar-nav .fi-sidebar-group-active .fi-sidebar-group-items {
+    display: block !important;
+}
+
+/* Alternative approach using max-height for smoother transitions */
+.fi-sidebar-nav .fi-sidebar-group .fi-sidebar-group-items {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.fi-sidebar-nav .fi-sidebar-group-active .fi-sidebar-group-items {
+    max-height: 500px; /* Adjust based on your needs */
+    transition: max-height 0.3s ease;
+}

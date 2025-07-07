@@ -159,9 +159,6 @@
                     ) {
                         return
                     }
-
-                    // Alpine.js loads too slow, so attempt to hide a
-                    // collapsed sidebar group earlier.
                     group.querySelector(
                         '.fi-sidebar-group-items',
                     ).style.display = 'none'

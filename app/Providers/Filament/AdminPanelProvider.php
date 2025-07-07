@@ -2,19 +2,11 @@
 
 namespace App\Providers\Filament;
 
-use App\Helpers\NavigationHelper;
-use App\Filament\Resources\DepartmentCategoriesResource;
-use App\Filament\Resources\DepartmentResource;
-use App\Filament\Resources\EmployeeResource;
-use App\Filament\Resources\PermissionResource;
-use App\Filament\Resources\RoleResource;
+use App\Filament\Resources\ClientResource;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Navigation\NavigationBuilder;
-use Filament\Navigation\NavigationGroup;
-use Filament\Navigation\NavigationItem;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -25,6 +17,15 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+
+use App\Filament\Resources\DepartmentCategoriesResource;
+use App\Filament\Resources\DepartmentResource;
+use App\Filament\Resources\EmployeeResource;
+use Filament\Navigation\NavigationBuilder;
+use Filament\Navigation\NavigationGroup;
+use Filament\Navigation\NavigationItem;
+use App\Filament\Resources\RoleResource;
+use App\Filament\Resources\PermissionResource;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -63,47 +64,56 @@ class AdminPanelProvider extends PanelProvider
                 'إدارة النظام',
             ])
             ->navigation(function (NavigationBuilder $builder): NavigationBuilder {
-                $groups = [
-                    [
-                        'label' => 'الأقسام',
-                        'icon' => 'heroicon-o-rectangle-group',
-                        'items' => [
-                            ['label' => 'تصنيفات الأقسام', 'url' => fn() => DepartmentCategoriesResource::getUrl()],
-                            ['label' => 'الأقسام', 'url' => fn() => DepartmentResource::getUrl()],
-                        ]
-                    ],
-                    [
-                        'label' => 'الموظفين',
-                        'icon' => 'heroicon-o-user-group',
-                        'items' => [
-                            ['label' => 'إدارة الموظفين', 'url' => fn() => EmployeeResource::getUrl()],
-                        ]
-                    ],
-                    [
-                        'label' => 'إدارة الصلاحيات',
-                        'icon' => 'heroicon-o-shield-check',
-                        'items' => [
-                            ['label' => 'إدارة الأدوار', 'url' => fn() => RoleResource::getUrl()],
-                            ['label' => 'إدارة الصلاحيات', 'url' => fn() => PermissionResource::getUrl()],
-                        ]
-                    ]
-                ];
-
-                foreach ($groups as $group) {
-                    $builder->group(
+                return $builder
+                    ->group(
                         NavigationGroup::make()
-                            ->label($group['label'])
-                            ->icon($group['icon'])
+                            ->label('الأقسام')
                             ->collapsible()
-                            ->collapsed(true) // هذا السطر يضمن إغلاق المجموعات افتراضياً
-                            ->items(array_map(
-                                fn($item) => NavigationItem::make($item['label'])->url($item['url']),
-                                $group['items']
-                            ))
-                    );
-                }
+                            ->collapsed()
+                            ->icon('heroicon-o-rectangle-group')
+                            ->items([
+                                NavigationItem::make('تصنيفات الأقسام')
+                                    ->url(DepartmentCategoriesResource::getUrl()),
+                                NavigationItem::make('الأقسام')
+                                    ->url(DepartmentResource::getUrl()),
+                            ])
+                    )
+                    ->group(
+                        NavigationGroup::make()
+                            ->label('العملاء')
+                            ->collapsible()
+                            ->icon('heroicon-o-user-group')
+                            ->collapsed()
+                            ->items([
+                                NavigationItem::make('إدارة العملاء')
+                                    ->url(ClientResource::getUrl()),
+                            ])
+                    )
+                    ->group(
+                        NavigationGroup::make()
+                            ->label('الموظفين')
+                            ->collapsible()
+                            ->icon('heroicon-o-user-group')
+                            ->collapsed()
+                            ->items([
+                                NavigationItem::make('إدارة الموظفين')
+                                    ->url(EmployeeResource::getUrl()),
+                            ])
+                    )
+                    ->group(
+                        NavigationGroup::make()
+                            ->label('إدارة الصلاحيات')
+                            ->collapsible()
+                            ->icon('heroicon-o-shield-check')
+                            ->collapsed()
+                            ->items([
+                                NavigationItem::make('إدارة الأدوار')
+                                    ->url(RoleResource::getUrl()),
 
-                return $builder;
+                                NavigationItem::make('إدارة الصلاحيات')
+                                    ->url(PermissionResource::getUrl()),
+                            ])
+                    );
             });
     }
 }
