@@ -14,6 +14,7 @@ class DepartmentCategoriesResource extends Resource
 {
     protected static ?string $model = DepartmentCategories::class;
     protected static ?string $navigationIcon = 'heroicon-o-tag';
+    protected static ?string $modelLabel = 'تصنيف';
 
 
     public static function form(Form $form): Form

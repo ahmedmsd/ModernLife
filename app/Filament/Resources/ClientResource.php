@@ -17,6 +17,11 @@ class ClientResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
     protected static ?string $navigationGroup = 'إدارة العملاء';
     protected static ?string $navigationLabel = 'العملاء';
+    protected static ?string $recordTitleAttribute = 'client_name';
+    protected static ?string $label = 'إدارة العملاء';
+    protected static ?string $pluralLabel = 'إدارة العملاء';
+
+        protected static ?string $modelLabel = 'عميل';
 
     public static function form(Forms\Form $form): Forms\Form
     {
@@ -110,7 +115,6 @@ class ClientResource extends Resource
                 ->counts('contacts')
                 ->sortable()
                 ->url(fn($record) => route('filament.admin.resources.clients.edit', $record) . '#relationManagerComponent=contacts')
-                // ->openUrlInNewTab()
                 ->color('primary')
                 ->icon('heroicon-o-users'),
 

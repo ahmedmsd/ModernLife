@@ -21,7 +21,6 @@ class EmployeeResource extends Resource
     protected static ?string $modelLabel = 'موظف';
     protected static ?string $pluralModelLabel = 'الموظفين';
     protected static ?string $recordTitleAttribute = 'employee_name';
-
     public static function form(Form $form): Form
     {
         return $form

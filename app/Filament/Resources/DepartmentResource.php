@@ -14,9 +14,10 @@ use Filament\Resources\Resource;
 class DepartmentResource extends Resource
 {
     protected static ?string $model = Department::class;
-
+    protected static ?string $label = 'إدارة الأقسام';
+    protected static ?string $pluralLabel = 'إدارة الأقسام';
     protected static ?string $navigationIcon = 'heroicon-o-building-office';
-
+    protected static ?string $modelLabel = 'قسم';
     public static function form(Form $form): Form
     {
         return $form
