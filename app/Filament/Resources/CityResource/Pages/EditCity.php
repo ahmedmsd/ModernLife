@@ -1,21 +1,19 @@
 <?php
 
-namespace App\Filament\Resources\ClientResource\Pages;
+namespace App\Filament\Resources\CityResource\Pages;
 
-use App\Filament\Resources\ClientResource;
+use App\Filament\Resources\CityResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
-class EditClient extends EditRecord
+class EditCity extends EditRecord
 {
-    protected static string $resource = ClientResource::class;
-
+    protected static string $resource = CityResource::class;
     protected function getRedirectUrl(): string
     {
         // Redirect to the index page instead of the edit page
-        return ClientResource::getUrl('index');
+        return CityResource::getUrl('index');
     }
-
     protected function getHeaderActions(): array
     {
         return [

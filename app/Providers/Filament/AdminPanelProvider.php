@@ -2,7 +2,11 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\SystemSettings;
+use App\Filament\Resources\CityResource;
 use App\Filament\Resources\ClientResource;
+use App\Filament\Resources\CountryResource;
+use App\Filament\Resources\ShowroomResource;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -26,6 +30,7 @@ use Filament\Navigation\NavigationGroup;
 use Filament\Navigation\NavigationItem;
 use App\Filament\Resources\RoleResource;
 use App\Filament\Resources\PermissionResource;
+use App\Filament\Resources\SystemSettingResource;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -40,6 +45,7 @@ class AdminPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
                 Pages\Dashboard::class,
+                SystemSettings::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
@@ -102,11 +108,21 @@ class AdminPanelProvider extends PanelProvider
                     )
                     ->group(
                         NavigationGroup::make()
-                            ->label('إدارة الصلاحيات')
+                            ->label('الإعدادات ')
                             ->collapsible()
-                            ->icon('heroicon-o-shield-check')
+                            ->icon('heroicon-o-cog')
                             ->collapsed()
                             ->items([
+                                // NavigationItem::make('إدارة إعدادات النظام')
+                                //     ->url(SystemSettingResource::getUrl()),
+                                NavigationItem::make('إعدادات النظام')
+                                    ->url(SystemSettings::getUrl()),
+                                NavigationItem::make('إدارة المعارض')
+                                    ->url(ShowroomResource::getUrl()),
+                                NavigationItem::make('إدارة الدول')
+                                    ->url(CountryResource::getUrl()),
+                                NavigationItem::make('إدارة المدن')
+                                    ->url(CityResource::getUrl()),
                                 NavigationItem::make('إدارة الأدوار')
                                     ->url(RoleResource::getUrl()),
 

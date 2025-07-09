@@ -29,7 +29,12 @@ class Client extends Model
     ];
 
     public function contacts()
-{
-    return $this->hasMany(ClientContact::class, 'client_id', 'client_id');
-}
+    {
+        return $this->hasMany(ClientContact::class, 'client_id', 'client_id');
+    }
+    public function city()
+    {
+        return $this->belongsTo(\App\Models\City::class);
+    }
+
 }

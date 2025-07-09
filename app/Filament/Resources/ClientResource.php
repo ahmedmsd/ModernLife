@@ -20,8 +20,7 @@ class ClientResource extends Resource
     protected static ?string $recordTitleAttribute = 'client_name';
     protected static ?string $label = 'إدارة العملاء';
     protected static ?string $pluralLabel = 'إدارة العملاء';
-
-        protected static ?string $modelLabel = 'عميل';
+    protected static ?string $modelLabel = 'عميل';
 
     public static function form(Forms\Form $form): Forms\Form
     {
@@ -64,10 +63,12 @@ class ClientResource extends Resource
             Textarea::make('address')
                 ->label('العنوان'),
 
-            TextInput::make('city')
+            Select::make('city_id')
                 ->label('المدينة')
-                ->maxLength(50),
-
+                ->relationship('city', 'name')
+                ->searchable()
+                ->preload()
+                ->required(),
             Toggle::make('is_active')
                 ->label('نشط')
                 ->default(true),
@@ -102,7 +103,9 @@ class ClientResource extends Resource
             TextColumn::make('email')
                 ->label('البريد الإلكتروني')
                 ->sortable(),
-
+            TextColumn::make('city.name')
+                ->label('المدينة')
+                ->sortable(),
             TextColumn::make('phone')
                 ->label('رقم الجوال'),
 
@@ -121,7 +124,13 @@ class ClientResource extends Resource
             TextColumn::make('created_at')
                 ->label('تاريخ الإضافة')
                 ->dateTime(),
-        ]);
+
+        ])->actions([
+                Tables\Actions\EditAction::make()
+                    ->modalHeading('تعديل العميل'),
+
+                Tables\Actions\DeleteAction::make(),
+            ]);
     }
 
     public static function getRelations(): array
