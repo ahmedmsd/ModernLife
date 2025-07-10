@@ -48,8 +48,6 @@ class SystemSettings extends Page implements Forms\Contracts\HasForms
                         ->directory('settings')
                         ->disk('public')
                         ->preserveFilenames()
-                        ->storeFileNamesIn('setting_value')
-                        ->default(fn() => $setting->setting_value)
                         ->openable()
                         ->downloadable(),
                     default => Forms\Components\TextInput::make($setting->setting_key),
