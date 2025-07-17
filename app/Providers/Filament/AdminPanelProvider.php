@@ -30,6 +30,7 @@ use Filament\Navigation\NavigationGroup;
 use Filament\Navigation\NavigationItem;
 use App\Filament\Resources\RoleResource;
 use App\Filament\Resources\PermissionResource;
+use App\Filament\Resources\ProductionRequestResource;
 use App\Filament\Resources\SystemSettingResource;
 
 class AdminPanelProvider extends PanelProvider
@@ -71,7 +72,18 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->navigation(function (NavigationBuilder $builder): NavigationBuilder {
                 return $builder
-                    ->group(
+                ->group(
+                        NavigationGroup::make()
+                            ->label('الطلبات')
+                            ->collapsible()
+                            ->collapsed()
+                            ->icon('heroicon-o-rectangle-group')
+                            ->items([
+                                NavigationItem::make('إدارة طلبات التصنيع')
+                                    ->url(ProductionRequestResource::getUrl()),
+                            ])
+                    )    
+                ->group(
                         NavigationGroup::make()
                             ->label('الأقسام')
                             ->collapsible()
