@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3306
--- Generation Time: Jul 09, 2025 at 01:13 PM
--- Server version: 8.0.21
--- PHP Version: 8.3.23
+-- Generation Time: Jul 26, 2025 at 05:26 PM
+-- Server version: 8.3.0
+-- PHP Version: 8.3.6
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -64,7 +64,12 @@ CREATE TABLE IF NOT EXISTS `cache` (
 INSERT INTO `cache` (`key`, `value`, `expiration`, `created_at`, `updated_at`) VALUES
 ('modernlife_cache_spatie.permission.cache', 'a:3:{s:5:\"alias\";a:4:{s:1:\"a\";s:2:\"id\";s:1:\"b\";s:4:\"name\";s:1:\"c\";s:10:\"guard_name\";s:1:\"r\";s:5:\"roles\";}s:11:\"permissions\";a:20:{i:0;a:4:{s:1:\"a\";i:1;s:1:\"b\";s:10:\"view_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:1;a:4:{s:1:\"a\";i:2;s:1:\"b\";s:12:\"manage-roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:2;a:4:{s:1:\"a\";i:3;s:1:\"b\";s:12:\"create_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:3;a:4:{s:1:\"a\";i:4;s:1:\"b\";s:10:\"edit_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:4;a:4:{s:1:\"a\";i:5;s:1:\"b\";s:12:\"delete_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:5;a:4:{s:1:\"a\";i:6;s:1:\"b\";s:16:\"view_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:6;a:4:{s:1:\"a\";i:7;s:1:\"b\";s:18:\"create_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:7;a:4:{s:1:\"a\";i:8;s:1:\"b\";s:16:\"edit_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:8;a:4:{s:1:\"a\";i:9;s:1:\"b\";s:18:\"delete_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:9;a:4:{s:1:\"a\";i:10;s:1:\"b\";s:10:\"view_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:10;a:4:{s:1:\"a\";i:11;s:1:\"b\";s:12:\"create_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:11;a:4:{s:1:\"a\";i:12;s:1:\"b\";s:10:\"edit_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:12;a:4:{s:1:\"a\";i:13;s:1:\"b\";s:12:\"delete_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:13;a:4:{s:1:\"a\";i:14;s:1:\"b\";s:12:\"manage_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:14;a:4:{s:1:\"a\";i:15;s:1:\"b\";s:14:\"view_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:15;a:4:{s:1:\"a\";i:16;s:1:\"b\";s:16:\"create_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:16;a:4:{s:1:\"a\";i:17;s:1:\"b\";s:14:\"edit_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:17;a:4:{s:1:\"a\";i:18;s:1:\"b\";s:16:\"delete_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:18;a:4:{s:1:\"a\";i:19;s:1:\"b\";s:16:\"manage_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:19;a:4:{s:1:\"a\";i:20;s:1:\"b\";s:13:\"view_any_role\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}}s:5:\"roles\";a:1:{i:0;a:3:{s:1:\"a\";i:1;s:1:\"b\";s:5:\"admin\";s:1:\"c\";s:3:\"web\";}}}', 1752152430, '2025-07-09 13:00:30', '2025-07-09 13:00:30'),
 ('modernlife_cache_356a192b7913b04c54574d18c28d46e6395428ab:timer', 'i:1752066194;', 1752066194, '2025-07-09 13:02:14', '2025-07-09 13:02:14'),
-('modernlife_cache_356a192b7913b04c54574d18c28d46e6395428ab', 'i:1;', 1752066194, '2025-07-09 13:02:14', '2025-07-09 13:02:14');
+('modernlife_cache_356a192b7913b04c54574d18c28d46e6395428ab', 'i:1;', 1752066194, '2025-07-09 13:02:14', '2025-07-09 13:02:14'),
+('test_cache_livewire-rate-limiter:a17961fa74e9275d529f489537f179c05d50c2f3:timer', 'i:1752499677;', 1752499677, '2025-07-14 13:26:57', '2025-07-14 13:26:57'),
+('test_cache_livewire-rate-limiter:a17961fa74e9275d529f489537f179c05d50c2f3', 'i:1;', 1752499677, '2025-07-14 13:26:57', '2025-07-14 13:26:57'),
+('test_cache_spatie.permission.cache', 'a:3:{s:5:\"alias\";a:4:{s:1:\"a\";s:2:\"id\";s:1:\"b\";s:4:\"name\";s:1:\"c\";s:10:\"guard_name\";s:1:\"r\";s:5:\"roles\";}s:11:\"permissions\";a:20:{i:0;a:4:{s:1:\"a\";i:1;s:1:\"b\";s:10:\"view_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:1;a:4:{s:1:\"a\";i:2;s:1:\"b\";s:12:\"manage-roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:2;a:4:{s:1:\"a\";i:3;s:1:\"b\";s:12:\"create_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:3;a:4:{s:1:\"a\";i:4;s:1:\"b\";s:10:\"edit_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:4;a:4:{s:1:\"a\";i:5;s:1:\"b\";s:12:\"delete_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:5;a:4:{s:1:\"a\";i:6;s:1:\"b\";s:16:\"view_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:6;a:4:{s:1:\"a\";i:7;s:1:\"b\";s:18:\"create_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:7;a:4:{s:1:\"a\";i:8;s:1:\"b\";s:16:\"edit_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:8;a:4:{s:1:\"a\";i:9;s:1:\"b\";s:18:\"delete_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:9;a:4:{s:1:\"a\";i:10;s:1:\"b\";s:10:\"view_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:10;a:4:{s:1:\"a\";i:11;s:1:\"b\";s:12:\"create_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:11;a:4:{s:1:\"a\";i:12;s:1:\"b\";s:10:\"edit_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:12;a:4:{s:1:\"a\";i:13;s:1:\"b\";s:12:\"delete_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:13;a:4:{s:1:\"a\";i:14;s:1:\"b\";s:12:\"manage_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:14;a:4:{s:1:\"a\";i:15;s:1:\"b\";s:14:\"view_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:15;a:4:{s:1:\"a\";i:16;s:1:\"b\";s:16:\"create_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:16;a:4:{s:1:\"a\";i:17;s:1:\"b\";s:14:\"edit_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:17;a:4:{s:1:\"a\";i:18;s:1:\"b\";s:16:\"delete_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:18;a:4:{s:1:\"a\";i:19;s:1:\"b\";s:16:\"manage_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:19;a:4:{s:1:\"a\";i:20;s:1:\"b\";s:13:\"view_any_role\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}}s:5:\"roles\";a:1:{i:0;a:3:{s:1:\"a\";i:1;s:1:\"b\";s:5:\"admin\";s:1:\"c\";s:3:\"web\";}}}', 1753626479, '2025-07-26 14:27:59', '2025-07-26 14:27:59'),
+('test_cache_356a192b7913b04c54574d18c28d46e6395428ab:timer', 'i:1753548957;', 1753548957, '2025-07-26 16:54:57', '2025-07-26 16:54:57'),
+('test_cache_356a192b7913b04c54574d18c28d46e6395428ab', 'i:2;', 1753548957, '2025-07-26 16:54:57', '2025-07-26 16:55:02');
 
 -- --------------------------------------------------------
 
@@ -91,13 +96,13 @@ CREATE TABLE IF NOT EXISTS `cache_locks` (
 DROP TABLE IF EXISTS `cities`;
 CREATE TABLE IF NOT EXISTS `cities` (
   `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `country_id` bigint UNSIGNED NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `cities_country_id_foreign` (`country_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `cities`
@@ -195,12 +200,12 @@ INSERT INTO `client_contacts` (`contact_id`, `client_id`, `contact_name`, `posit
 DROP TABLE IF EXISTS `countries`;
 CREATE TABLE IF NOT EXISTS `countries` (
   `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
-  `name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `code` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `name` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `code` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `countries`
@@ -250,7 +255,7 @@ CREATE TABLE IF NOT EXISTS `departments` (
   PRIMARY KEY (`dept_id`),
   KEY `idx_dept_parent` (`parent_dept_id`),
   KEY `idx_dept_active` (`is_active`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `departments`
@@ -258,7 +263,8 @@ CREATE TABLE IF NOT EXISTS `departments` (
 
 INSERT INTO `departments` (`dept_id`, `factory_id`, `dept_name`, `dept_code`, `parent_dept_id`, `dept_type`, `location`, `phone_extension`, `email`, `is_active`, `color_code`, `created_at`, `updated_at`) VALUES
 (7, 1, 'الإدارة', 'CODE-MG', NULL, 4, NULL, NULL, 'mg@mg.com', 1, '#3498db', '2025-07-06 06:25:03', '2025-07-06 06:25:03'),
-(8, 1, 'المبيعات', 'CODE-SALES', NULL, 4, NULL, NULL, 'sales@sales.com', 1, '#ad0766', '2025-07-06 06:25:36', '2025-07-06 06:25:36');
+(8, 1, 'المبيعات', 'CODE-SALES', NULL, 4, NULL, NULL, 'sales@sales.com', 1, '#ad0766', '2025-07-06 06:25:36', '2025-07-06 06:25:36'),
+(9, 1, 'قسم الألومنيوم', 'DEPT-ALUM', NULL, 5, NULL, NULL, NULL, 1, '#3498db', '2025-07-14 11:39:55', '2025-07-14 11:39:55');
 
 -- --------------------------------------------------------
 
@@ -287,41 +293,6 @@ INSERT INTO `department_categories` (`category_id`, `category_name`, `descriptio
 (4, 'إداري', NULL, '#de001b', NULL, '2025-07-03 15:39:55', '2025-07-03 15:42:00'),
 (5, 'إنتاجي', NULL, '#089600', NULL, '2025-07-03 15:40:20', '2025-07-03 15:42:11'),
 (6, 'خدمي', NULL, '#00438a', NULL, '2025-07-03 15:40:30', '2025-07-03 15:42:23');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `department_category_mapping`
---
-
-DROP TABLE IF EXISTS `department_category_mapping`;
-CREATE TABLE IF NOT EXISTS `department_category_mapping` (
-  `dept_id` int NOT NULL,
-  `category_id` int NOT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`dept_id`,`category_id`),
-  KEY `category_id` (`category_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `department_managers`
---
-
-DROP TABLE IF EXISTS `department_managers`;
-CREATE TABLE IF NOT EXISTS `department_managers` (
-  `dept_id` int NOT NULL,
-  `employee_id` int NOT NULL,
-  `is_primary` tinyint(1) DEFAULT '0',
-  `start_date` date NOT NULL,
-  `end_date` date DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`dept_id`,`employee_id`),
-  KEY `employee_id` (`employee_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -529,7 +500,7 @@ CREATE TABLE IF NOT EXISTS `migrations` (
   `migration` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `batch` int NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `migrations`
@@ -539,7 +510,8 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 (1, '2025_07_09_063841_create_countries_table', 1),
 (2, '2025_07_09_063901_create_cities_table', 1),
 (3, '2025_07_09_063327_create_production_requests_table', 2),
-(4, '2025_07_09_081616_create_showrooms_table', 2);
+(4, '2025_07_09_081616_create_showrooms_table', 2),
+(5, '2025_07_14_134642_create_production_requests_table', 3);
 
 -- --------------------------------------------------------
 
@@ -715,10 +687,93 @@ CREATE TABLE IF NOT EXISTS `production_lines` (
 DROP TABLE IF EXISTS `production_requests`;
 CREATE TABLE IF NOT EXISTS `production_requests` (
   `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `project_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `project_description` text COLLATE utf8mb4_unicode_ci,
+  `client_id` bigint UNSIGNED NOT NULL,
+  `showroom_id` bigint UNSIGNED NOT NULL,
+  `agreement_file` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `status` enum('draft','submitted','under_review','approved','rejected','created','deleted') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'draft',
+  `created_by` bigint UNSIGNED NOT NULL,
+  `submitted_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `showroom_id` (`showroom_id`),
+  KEY `client_id` (`client_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `production_requests`
+--
+
+INSERT INTO `production_requests` (`id`, `project_name`, `project_description`, `client_id`, `showroom_id`, `agreement_file`, `status`, `created_by`, `submitted_at`, `created_at`, `updated_at`) VALUES
+(1, 'مشروع تجريبي', 'وصف تجريبي', 1, 1, 'agreements/01K09X53YA9VW2K91YHSZC0FY2.pdf', 'rejected', 1, '2025-07-16 15:20:23', '2025-07-16 12:20:23', '2025-07-26 13:08:26'),
+(4, 'مشروع تجريبي جديد', NULL, 1, 1, 'agreements/01K13THR8P1RYS53N520EJ00FB.png', 'submitted', 1, '2025-07-26 16:55:06', '2025-07-26 13:55:06', '2025-07-26 14:01:30');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `production_request_files`
+--
+
+DROP TABLE IF EXISTS `production_request_files`;
+CREATE TABLE IF NOT EXISTS `production_request_files` (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `production_request_id` bigint UNSIGNED NOT NULL,
+  `department_id` bigint UNSIGNED NOT NULL,
+  `file_path` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `production_request_files`
+--
+
+INSERT INTO `production_request_files` (`id`, `production_request_id`, `department_id`, `file_path`, `created_at`, `updated_at`) VALUES
+(2, 1, 9, 'production_files/01K09XR3JYYE7Z7HHA0JGRRS9G.pdf', '2025-07-16 12:20:23', '2025-07-16 12:30:45'),
+(3, 3, 9, 'production_files/01K13T4NNHRFZ4301YVR1HXZAS.png', '2025-07-26 13:47:58', '2025-07-26 13:47:58'),
+(4, 4, 9, 'production_files/01K13THR8V45SXVBZ0EYBKD6VW.png', '2025-07-26 13:55:06', '2025-07-26 13:55:06');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `production_request_logs`
+--
+
+DROP TABLE IF EXISTS `production_request_logs`;
+CREATE TABLE IF NOT EXISTS `production_request_logs` (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `production_request_id` bigint UNSIGNED NOT NULL,
+  `user_id` bigint UNSIGNED NOT NULL,
+  `action` enum('draft','submitted','under_review','approved','rejected','created','deleted') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `note` text COLLATE utf8mb4_unicode_ci,
+  `action_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `production_request_logs`
+--
+
+INSERT INTO `production_request_logs` (`id`, `production_request_id`, `user_id`, `action`, `note`, `action_at`, `created_at`, `updated_at`) VALUES
+(1, 1, 1, 'draft', 'تم تغيير حالة الطلب إلى: مسودة', '2025-07-26 12:38:08', '2025-07-26 12:38:08', '2025-07-26 12:38:08'),
+(2, 1, 1, 'draft', 'تم تغيير حالة الطلب إلى: مسودة', '2025-07-26 12:38:22', '2025-07-26 12:38:22', '2025-07-26 12:38:22'),
+(3, 1, 1, 'submitted', 'تم تغيير حالة الطلب إلى submitted', '2025-07-26 12:49:01', '2025-07-26 12:49:01', '2025-07-26 12:49:01'),
+(4, 1, 1, 'submitted', 'تم تغيير الحالة إلى: تم الإرسال', '2025-07-26 12:49:01', '2025-07-26 12:49:01', '2025-07-26 12:49:01'),
+(5, 1, 1, 'draft', 'تم تغيير حالة الطلب إلى draft', '2025-07-26 12:49:08', '2025-07-26 12:49:08', '2025-07-26 12:49:08'),
+(6, 1, 1, 'draft', 'تم تغيير الحالة إلى: مسودة', '2025-07-26 12:49:08', '2025-07-26 12:49:08', '2025-07-26 12:49:08'),
+(7, 1, 1, 'under_review', 'تم تغيير حالة الطلب إلى قيد المراجعة', '2025-07-26 12:53:26', '2025-07-26 12:53:26', '2025-07-26 12:53:26'),
+(8, 1, 1, 'submitted', 'تم تغيير حالة الطلب إلى تم الإرسال', '2025-07-26 12:53:52', '2025-07-26 12:53:52', '2025-07-26 12:53:52'),
+(9, 1, 1, 'under_review', 'تم تغيير حالة الطلب إلى قيد المراجعة', '2025-07-26 13:00:02', '2025-07-26 13:00:02', '2025-07-26 13:00:02'),
+(10, 1, 1, 'rejected', 'تم تغيير حالة الطلب إلى مرفوض', '2025-07-26 13:08:26', '2025-07-26 13:08:26', '2025-07-26 13:08:26'),
+(11, 1, 1, 'rejected', 'تجربة', '2025-07-26 13:08:26', '2025-07-26 13:08:26', '2025-07-26 13:08:26'),
+(12, 3, 1, 'deleted', 'تم حذف الطلب', '2025-07-26 13:54:24', '2025-07-26 13:54:24', '2025-07-26 13:54:24'),
+(13, 4, 1, 'created', 'تم إنشاء الطلب', '2025-07-26 13:55:06', '2025-07-26 13:55:06', '2025-07-26 13:55:06'),
+(14, 4, 1, 'submitted', 'تم تغيير حالة الطلب إلى تم الإرسال', '2025-07-26 14:01:30', '2025-07-26 14:01:30', '2025-07-26 14:01:30');
 
 -- --------------------------------------------------------
 
@@ -1007,7 +1062,7 @@ CREATE TABLE IF NOT EXISTS `sessions` (
 --
 
 INSERT INTO `sessions` (`id`, `user_id`, `ip_address`, `user_agent`, `payload`, `last_activity`, `created_at`, `updated_at`) VALUES
-('fD00kTxqBc07EklBYxdfH74FZBbEFObmOh452yA7', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36', 'YTo2OntzOjY6Il90b2tlbiI7czo0MDoid0pzc3dKZk9LQmdVRUNwTzNYcVJPMmdKcUp4WjhLMUhRMGNDRnJDMiI7czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319czo1MDoibG9naW5fd2ViXzU5YmEzNmFkZGMyYjJmOTQwMTU4MGYwMTRjN2Y1OGVhNGUzMDk4OWQiO2k6MTtzOjE3OiJwYXNzd29yZF9oYXNoX3dlYiI7czo2MDoiJDJ5JDEyJDE3bEVQOXloTWRqZmp6N3JnNmVkRy5uRG5LRU9vWGpsYXZWeWlFaWNCbWZUTnp3Q0NjRHZXIjtzOjk6Il9wcmV2aW91cyI7YToxOntzOjM6InVybCI7czo0MzoiaHR0cDovLzEyNy4wLjAuMTo4MDAwL2FkbWluL3N5c3RlbS1zZXR0aW5ncyI7fXM6ODoiZmlsYW1lbnQiO2E6MDp7fX0=', 1752066704, '2025-07-09 05:47:27', '2025-07-09 13:11:44');
+('jLCChaw8R9K9L62V2qxRCfZCD4aFTKgLQkBXM1Z2', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36', 'YTo2OntzOjY6Il90b2tlbiI7czo0MDoiZGxwb1MzZkpSZkFuOEhWQXRwQnZFMXMxekpKTGdkRjl0YTlySTZrNiI7czo1MDoibG9naW5fd2ViXzU5YmEzNmFkZGMyYjJmOTQwMTU4MGYwMTRjN2Y1OGVhNGUzMDk4OWQiO2k6MTtzOjE3OiJwYXNzd29yZF9oYXNoX3dlYiI7czo2MDoiJDJ5JDEyJDE3bEVQOXloTWRqZmp6N3JnNmVkRy5uRG5LRU9vWGpsYXZWeWlFaWNCbWZUTnp3Q0NjRHZXIjtzOjk6Il9wcmV2aW91cyI7YToxOntzOjM6InVybCI7czo1NDoiaHR0cDovLzEyNy4wLjAuMTo4MDAwL2FkbWluL3Byb2R1Y3Rpb24tcmVxdWVzdHMvNC9lZGl0Ijt9czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319czo4OiJmaWxhbWVudCI7YTowOnt9fQ==', 1753549307, '2025-07-26 14:28:50', '2025-07-26 17:01:47');
 
 -- --------------------------------------------------------
 
@@ -1018,18 +1073,18 @@ INSERT INTO `sessions` (`id`, `user_id`, `ip_address`, `user_agent`, `payload`, 
 DROP TABLE IF EXISTS `showrooms`;
 CREATE TABLE IF NOT EXISTS `showrooms` (
   `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `address` text COLLATE utf8mb4_unicode_ci,
+  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `address` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
   `city_id` bigint UNSIGNED DEFAULT NULL,
-  `phone` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `phone` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `manager_id` bigint UNSIGNED DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `showrooms_city_id_foreign` (`city_id`),
   KEY `showrooms_manager_id_foreign` (`manager_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `showrooms`
@@ -1112,7 +1167,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `users`

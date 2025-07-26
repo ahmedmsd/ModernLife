@@ -2,9 +2,12 @@
 
 namespace App\Filament\Resources\ProductionRequestResource\Pages;
 
+use App\Enums\ProductionRequestStatus;
 use App\Filament\Resources\ProductionRequestResource;
 use App\Models\ProductionRequest;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+
 use Filament\Resources\Pages\Page;
 use Filament\Actions\Action;
 use Illuminate\Support\Facades\Auth;
@@ -13,14 +16,19 @@ use Filament\Notifications\Notification;
 class ViewProductionTimeline extends Page
 {
     protected static string $resource = ProductionRequestResource::class;
-
     protected static string $view = 'filament.resources.production-request-resource.pages.view-production-timeline';
     protected static ?string $title = 'معلومات الطلب التفصيلية ';
+
     public ProductionRequest $record;
 
     public function mount(ProductionRequest $record): void
     {
-        $this->record = $record->load(['logs.user', 'client', 'showroom', 'files.department']);
+        $this->record = $record->load([
+            'logs.user',
+            'client',
+            'showroom',
+            'files.department',
+        ]);
     }
 
     public function getHeaderActions(): array
@@ -32,23 +40,31 @@ class ViewProductionTimeline extends Page
                 ->form([
                     Select::make('status')
                         ->label('حالة الطلب')
-                        ->options([
-                            'قيد المراجعة' => 'قيد المراجعة',
-                            'مقبول' => 'مقبول',
-                            'مرفوض' => 'مرفوض',
-                        ])
-                        ->required(),
+                        ->options(ProductionRequestStatus::options())
+                        ->default(
+                            fn() => $this->record->status instanceof \BackedEnum
+                                ? $this->record->status->value
+                                : (string) $this->record->status
+                        )
+                        ->required()
+                        ->reactive(), // للسماح بتحديث الفورم بناءً على الاختيار
+
+                    Textarea::make('note')
+                        ->label('سبب الرفض')
+                        ->required(fn(callable $get) => $get('status') === ProductionRequestStatus::Rejected->value)
+                        ->visible(fn(callable $get) => $get('status') === ProductionRequestStatus::Rejected->value),
                 ])
                 ->action(function (array $data): void {
-                    $this->record->update([
-                        'status' => $data['status'],
-                    ]);
+                    $statusEnum = ProductionRequestStatus::from($data['status']);
+                    $note = $data['note'] ?? null;
 
-                    if ($user = Auth::user()) {
+                    if (! $this->record->status instanceof ProductionRequestStatus || $this->record->status->value !== $statusEnum->value) {
+                        $this->record->update(['status' => $statusEnum->value]);
+
                         $this->record->logs()->create([
-                            'user_id' => $user->id,
-                            'action' => $data['status'],
-                            'note' => 'تم تغيير حالة الطلب إلى ' . $data['status'],
+                            'user_id' => Auth::id(),
+                            'action' => $statusEnum->value,
+                            'note' => $note ?? 'تم تغيير الحالة إلى: ' . $statusEnum->label(),
                             'action_at' => now(),
                         ]);
                     }
@@ -64,20 +80,22 @@ class ViewProductionTimeline extends Page
                 ->icon('heroicon-o-paper-airplane')
                 ->requiresConfirmation()
                 ->action(function (): void {
-                    $this->record->update(['status' => 'قيد المراجعة']);
+                    $newStatusValue = ProductionRequestStatus::Submitted->value;
 
-                    if ($user = Auth::user()) {
-                        $this->record->logs()->create([
-                            'user_id' => $user->id,
-                            'action' => 'تم إرسال الطلب إلى مدير المصنع',
-                            'note' => 'بواسطة المستخدم ' . $user->name,
-                            'action_at' => now(),
-                        ]);
-                    }
+                    $this->record->update([
+                        'status' => $newStatusValue,
+                    ]);
+
+                    // $this->record->logs()->create([
+                    //     'user_id' => Auth::id(),
+                    //     'action' => $newStatusValue,
+                    //     'note' => 'تم إرسال الطلب إلى مدير المصنع بواسطة المستخدم ' . Auth::user()?->name,
+                    //     'action_at' => now(),
+                    // ]);
 
                     Notification::make()
-                        ->success()
                         ->title('تم إرسال الطلب بنجاح')
+                        ->success()
                         ->send();
                 }),
         ];

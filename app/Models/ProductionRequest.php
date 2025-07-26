@@ -11,9 +11,10 @@ class ProductionRequest extends Model
 {
 
 
-    protected $casts = [
-        'status' => ProductionRequestStatus::class,
-    ];
+    // protected $casts = [
+    //         'status' => ProductionRequestStatus::class,
+    // ];
+
     protected $fillable = [
         'project_name',
         'project_description',
@@ -42,7 +43,7 @@ class ProductionRequest extends Model
 
     public function logs()
     {
-        return $this->hasMany(\App\Models\ProductionRequestLog::class)->latest('action_at');
+        return $this->hasMany(ProductionRequestLog::class);
     }
     public function creator()
     {

@@ -68,17 +68,25 @@ class ProductionRequestResource extends Resource
             Tables\Columns\TextColumn::make('creator.name')->label('أنشئ بواسطة'),
             TextColumn::make('status')
                 ->label('الحالة')
-                ->formatStateUsing(
-                    fn($state) =>
-                    $state instanceof ProductionRequestStatus
-                        ? $state->label()
-                        : ProductionRequestStatus::tryFrom($state)?->label() ?? 'غير معروف'
-                ),
+                ->html()
+                ->formatStateUsing(function (string $state) {
+                    $enum = \App\Enums\ProductionRequestStatus::from($state);
+
+                    $color = match ($enum) {
+                        \App\Enums\ProductionRequestStatus::Draft => 'gray',
+                        \App\Enums\ProductionRequestStatus::Submitted => 'blue',
+                        \App\Enums\ProductionRequestStatus::UnderReview => 'orange',
+                        \App\Enums\ProductionRequestStatus::Approved => 'green',
+                        \App\Enums\ProductionRequestStatus::Rejected => 'red',
+                    };
+
+                    return "<span class='px-2 py-1 rounded-full text-white text-sm bg-{$color}-600'>{$enum->label()}</span>";
+                }),
         ])->actions([
             Tables\Actions\EditAction::make(),
             Tables\Actions\Action::make('عرض الخط الزمني')
                 ->icon('heroicon-o-clock')
-                ->label('الخط الزمني')
+                ->label('تفاصيل')
                 ->url(fn($record) => ProductionRequestResource::getUrl('view', ['record' => $record]))
         ]);
     }
