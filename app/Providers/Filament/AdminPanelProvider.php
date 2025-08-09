@@ -31,7 +31,8 @@ use Filament\Navigation\NavigationItem;
 use App\Filament\Resources\RoleResource;
 use App\Filament\Resources\PermissionResource;
 use App\Filament\Resources\ProductionRequestResource;
-use App\Filament\Resources\SystemSettingResource;
+//use App\Filament\Resources\SystemSettingResource;
+use App\Filament\Resources\ProjectResource;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -48,6 +49,7 @@ class AdminPanelProvider extends PanelProvider
                 Pages\Dashboard::class,
                 SystemSettings::class,
             ])
+
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
@@ -69,10 +71,15 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->navigationGroups([
                 'إدارة النظام',
+                'الطلبات ',
+                'المشروعات ',
+                'الأقسام ',
+                'العملاء ',
+                'الموظفين ',
             ])
             ->navigation(function (NavigationBuilder $builder): NavigationBuilder {
                 return $builder
-                ->group(
+                    ->group(
                         NavigationGroup::make()
                             ->label('الطلبات')
                             ->collapsible()
@@ -82,8 +89,18 @@ class AdminPanelProvider extends PanelProvider
                                 NavigationItem::make('إدارة طلبات التصنيع')
                                     ->url(ProductionRequestResource::getUrl()),
                             ])
-                    )    
-                ->group(
+                    )
+                    ->group(
+                        NavigationGroup::make()
+                            ->label('المشروعات')
+                            ->icon('heroicon-o-briefcase')
+                            ->collapsed()
+                            ->items([
+                                NavigationItem::make('إدارة المشروعات')
+                                    ->url(ProjectResource::getUrl()),
+                            ])
+                    )
+                    ->group(
                         NavigationGroup::make()
                             ->label('الأقسام')
                             ->collapsible()
@@ -144,4 +161,5 @@ class AdminPanelProvider extends PanelProvider
                     );
             });
     }
+
 }

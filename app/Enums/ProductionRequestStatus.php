@@ -4,37 +4,37 @@ namespace App\Enums;
 
 enum ProductionRequestStatus: string
 {
-    case Created = 'created';
-    case Draft = 'draft';
-    case Submitted = 'submitted';
-    case UnderReview = 'under_review';
-    case Approved = 'approved';
-    case Rejected = 'rejected';
-    case Deleted = 'deleted';
+    case CREATED = 'created';
+    case DRAFT = 'draft';
+    case SUBMITTED = 'submitted';
+    case UNDER_REVIEW = 'under_review';
+    case APPROVED = 'approved';
+    case REJECTED = 'rejected';
+    case DELETED = 'deleted';
 
     public function label(): string
     {
         return match ($this) {
-            self::Created => 'تم الإنشاء',
-            self::Draft => 'مسودة',
-            self::Submitted => 'تم الإرسال',
-            self::UnderReview => 'قيد المراجعة',
-            self::Approved => 'مقبول',
-            self::Rejected => 'مرفوض',
-            self::Deleted => 'محذوف',
+            self::CREATED => 'تم الإنشاء',
+            self::DRAFT => 'مسودة',
+            self::SUBMITTED => 'تم الإرسال',
+            self::UNDER_REVIEW => 'قيد المراجعة',
+            self::APPROVED => 'مقبول',
+            self::REJECTED => 'مرفوض',
+            self::DELETED => 'محذوف',
         };
     }
 
     public function color(): string
     {
         return match ($this) {
-            self::Created => 'gray',
-            self::Draft => 'gray',
-            self::Submitted => 'blue',
-            self::UnderReview => 'yellow',
-            self::Approved => 'success',
-            self::Rejected => 'danger',
-            self::Deleted => 'danger',
+            self::CREATED => 'gray',
+            self::DRAFT => 'gray',
+            self::SUBMITTED => 'blue',
+            self::UNDER_REVIEW => 'yellow',
+            self::APPROVED => 'success',
+            self::REJECTED => 'danger',
+            self::DELETED => 'danger',
         };
     }
 

@@ -6,6 +6,7 @@ use App\Models\ProductionRequest;
 use App\Models\ProductionRequestLog;
 use Illuminate\Support\Facades\Auth;
 use App\Enums\ProductionRequestStatus;
+use App\Models\Project;
 
 class ProductionRequestObserver
 {
@@ -14,8 +15,6 @@ class ProductionRequestObserver
         $status = $productionRequest->status instanceof \BackedEnum
             ? $productionRequest->status->value
             : (string) $productionRequest->status;
-
-        
 
         ProductionRequestLog::create([
             'production_request_id' => $productionRequest->id,
@@ -51,6 +50,18 @@ class ProductionRequestObserver
                 'note' => 'تم تغيير حالة الطلب إلى ' . $statusEnum->label(),
                 'action_at' => now(),
             ]);
+
+            if ($statusEnum === ProductionRequestStatus::APPROVED && $productionRequest->project()->doesntExist()) {
+                Project::create([
+                    'production_request_id' => $productionRequest->id,
+                    'client_id' => $productionRequest->client_id,
+                    'project_name' => $productionRequest->project_name ?? 'مشروع بدون اسم',
+                    'description' => $productionRequest->description,
+                    'start_date' => now(),
+                    'status' => 'in_progress',
+                    'created_by' => Auth::id() ?? 0,
+                ]);
+            }
         }
     }
 

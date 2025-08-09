@@ -5,21 +5,25 @@ namespace App\Filament\Resources\ProductionRequestResource\Pages;
 use App\Enums\ProductionRequestStatus;
 use App\Filament\Resources\ProductionRequestResource;
 use App\Models\ProductionRequest;
+use Filament\Actions\Action;
+use Filament\Notifications\Notification;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
-
 use Filament\Resources\Pages\Page;
-use Filament\Actions\Action;
 use Illuminate\Support\Facades\Auth;
-use Filament\Notifications\Notification;
 
 class ViewProductionTimeline extends Page
 {
     protected static string $resource = ProductionRequestResource::class;
-    protected static string $view = 'filament.resources.production-request-resource.pages.view-production-timeline';
-    protected static ?string $title = 'معلومات الطلب التفصيلية ';
+    protected static string $view     = 'filament.resources.production-request-resource.pages.view-production-timeline';
+    protected static ?string $title   = 'معلومات الطلب التفصيلية';
 
     public ProductionRequest $record;
+
+    public static function canAccess(array $parameters = []): bool
+    {
+        return Auth::user()?->can('access_view_production_timeline') ?? false;
+    }
 
     public function mount(ProductionRequest $record): void
     {
@@ -31,6 +35,25 @@ class ViewProductionTimeline extends Page
         ]);
     }
 
+    protected function updateStatus(string $newValue, ?string $note): void
+    {
+        // نجلب الحالة الحالية كسلسلة نصية
+        $current = (string) $this->record->status;
+
+        if ($current !== $newValue) {
+            // حدّث الحقل مباشرة بالقيمة الجديدة
+            $this->record->update(['status' => $newValue]);
+            // سجّل الحدث
+            $this->record->logs()->create([
+                'user_id'   => Auth::id(),
+                'action'    => $newValue,
+                'note'      => $note
+                    ?? 'تم تغيير الحالة إلى: ' . ProductionRequestStatus::from($newValue)->label(),
+                'action_at' => now(),
+            ]);
+        }
+    }
+
     public function getHeaderActions(): array
     {
         return [
@@ -39,36 +62,23 @@ class ViewProductionTimeline extends Page
                 ->icon('heroicon-o-arrow-path')
                 ->form([
                     Select::make('status')
-                        ->label('حالة الطلب')
+                        ->label('الحالة')
+                        // الخيارات من الـ enum
                         ->options(ProductionRequestStatus::options())
-                        ->default(
-                            fn() => $this->record->status instanceof \BackedEnum
-                                ? $this->record->status->value
-                                : (string) $this->record->status
-                        )
+                        // الافتراضي: الحالة الحالية كنص
+                        ->default(fn () => (string) $this->record->status)
                         ->required()
-                        ->reactive(), // للسماح بتحديث الفورم بناءً على الاختيار
+                        ->reactive(),
 
                     Textarea::make('note')
-                        ->label('سبب الرفض')
-                        ->required(fn(callable $get) => $get('status') === ProductionRequestStatus::Rejected->value)
-                        ->visible(fn(callable $get) => $get('status') === ProductionRequestStatus::Rejected->value),
+                        ->label('ملاحظة')
+                        // شرطية الظهور والطلب فقط إذا اخترت "مرفوض"
+                        ->required(fn ($get) => $get('status') === ProductionRequestStatus::REJECTED->value)
+                        ->visible(fn  ($get) => $get('status') === ProductionRequestStatus::REJECTED->value),
                 ])
                 ->action(function (array $data): void {
-                    $statusEnum = ProductionRequestStatus::from($data['status']);
-                    $note = $data['note'] ?? null;
-
-                    if (! $this->record->status instanceof ProductionRequestStatus || $this->record->status->value !== $statusEnum->value) {
-                        $this->record->update(['status' => $statusEnum->value]);
-
-                        $this->record->logs()->create([
-                            'user_id' => Auth::id(),
-                            'action' => $statusEnum->value,
-                            'note' => $note ?? 'تم تغيير الحالة إلى: ' . $statusEnum->label(),
-                            'action_at' => now(),
-                        ]);
-                    }
-
+                    // حدّث الحالة وسجّل الإشعار
+                    $this->updateStatus($data['status'], $data['note'] ?? null);
                     Notification::make()
                         ->title('تم تحديث الحالة بنجاح')
                         ->success()
@@ -80,24 +90,14 @@ class ViewProductionTimeline extends Page
                 ->icon('heroicon-o-paper-airplane')
                 ->requiresConfirmation()
                 ->action(function (): void {
-                    $newStatusValue = ProductionRequestStatus::Submitted->value;
-
-                    $this->record->update([
-                        'status' => $newStatusValue,
-                    ]);
-
-                    // $this->record->logs()->create([
-                    //     'user_id' => Auth::id(),
-                    //     'action' => $newStatusValue,
-                    //     'note' => 'تم إرسال الطلب إلى مدير المصنع بواسطة المستخدم ' . Auth::user()?->name,
-                    //     'action_at' => now(),
-                    // ]);
-
+                    $new = ProductionRequestStatus::SUBMITTED->value;
+                    $this->record->update(['status' => $new]);
                     Notification::make()
                         ->title('تم إرسال الطلب بنجاح')
                         ->success()
                         ->send();
                 }),
+
         ];
     }
 }

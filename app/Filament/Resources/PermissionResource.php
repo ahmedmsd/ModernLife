@@ -9,6 +9,10 @@ use Filament\Resources\Resource;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
 use App\Filament\Resources\PermissionResource\Pages;
+use Filament\Tables\Actions\Action;
+use Filament\Notifications\Notification;
+use Filament\Facades\Filament;
+use Illuminate\Support\Str;
 
 class PermissionResource extends Resource
 {
@@ -44,6 +48,68 @@ class PermissionResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make()->label('حذف الكل'),
+            ])
+            ->headerActions([
+                Action::make('syncPermissions')
+                    ->label('مزامنة الصلاحيات')
+                    ->color('success')
+                    ->icon('heroicon-o-arrow-path')
+                    ->action(function () {
+                        $resources = Filament::getResources();
+                        $newPermissions = [];
+
+                        foreach ($resources as $resource) {
+                            $baseName = class_basename($resource);
+                            $baseKey = Str::snake($baseName);
+
+                            foreach (['view', 'create', 'edit', 'delete'] as $prefix) {
+                                $permissionName = "{$prefix}_{$baseKey}";
+
+                                if (!Permission::where('name', $permissionName)->exists()) {
+                                    Permission::create([
+                                        'name' => $permissionName,
+                                        'guard_name' => 'web',
+                                    ]);
+
+                                    $newPermissions[] = $permissionName;
+                                }
+                            }
+                        }
+
+                        $customPages = [
+                            'manage_project_tasks',
+                            'view_project',
+                            'review_production_request',
+                            'view_production_timeline',
+                        ];
+
+                        foreach ($customPages as $page) {
+                            $permissionName = "access_{$page}";
+
+                            if (!Permission::where('name', $permissionName)->exists()) {
+                                Permission::create([
+                                    'name' => $permissionName,
+                                    'guard_name' => 'web',
+                                ]);
+
+                                $newPermissions[] = $permissionName;
+                            }
+                        }
+
+                        if (count($newPermissions)) {
+                            Notification::make()
+                                ->title('تمت إضافة صلاحيات جديدة')
+                                ->body('تمت إضافة ' . count($newPermissions) . ' صلاحية جديدة.')
+                                ->success()
+                                ->send();
+                        } else {
+                            Notification::make()
+                                ->title('لا توجد صلاحيات جديدة')
+                                ->body('كل الصلاحيات موجودة بالفعل.')
+                                ->info()
+                                ->send();
+                        }
+                    }),
             ]);
     }
 

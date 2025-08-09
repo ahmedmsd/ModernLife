@@ -53,11 +53,9 @@ class RoleResource extends Resource
             ->filters([])
             ->actions([
                 Tables\Actions\EditAction::make()->label('تعديل'),
-                Tables\Actions\DeleteAction::make()->label('حذف'),
-            ])
-            ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make()->label('حذف الكل'),
+//                Tables\Actions\DeleteAction::make()->label('حذف'),
             ]);
+
     }
     public static function shouldRegisterNavigation(): bool
     {

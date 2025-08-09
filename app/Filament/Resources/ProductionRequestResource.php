@@ -11,6 +11,7 @@ use Filament\Resources\Resource;
 use Filament\Forms\Components\{TextInput, Textarea, FileUpload, Select, Repeater};
 use App\Enums\ProductionRequestStatus;
 use Filament\Tables\Columns\TextColumn;
+use Illuminate\Support\Facades\Auth;
 
 class ProductionRequestResource extends Resource
 {
@@ -70,24 +71,26 @@ class ProductionRequestResource extends Resource
                 ->label('الحالة')
                 ->html()
                 ->formatStateUsing(function (string $state) {
-                    $enum = \App\Enums\ProductionRequestStatus::from($state);
-
-                    $color = match ($enum) {
-                        \App\Enums\ProductionRequestStatus::Draft => 'gray',
-                        \App\Enums\ProductionRequestStatus::Submitted => 'blue',
-                        \App\Enums\ProductionRequestStatus::UnderReview => 'orange',
-                        \App\Enums\ProductionRequestStatus::Approved => 'green',
-                        \App\Enums\ProductionRequestStatus::Rejected => 'red',
-                    };
-
-                    return "<span class='px-2 py-1 rounded-full text-white text-sm bg-{$color}-600'>{$enum->label()}</span>";
+                    $enum = ProductionRequestStatus::from($state);
+                    $color = $enum->color();   
+                    return "<span class=\"px-2 py-1 rounded-full text-white text-sm bg-{$color}-600\">"
+                        .  $enum->label()
+                        .  "</span>";
                 }),
         ])->actions([
             Tables\Actions\EditAction::make(),
             Tables\Actions\Action::make('عرض الخط الزمني')
                 ->icon('heroicon-o-clock')
                 ->label('تفاصيل')
-                ->url(fn($record) => ProductionRequestResource::getUrl('view', ['record' => $record]))
+                ->url(fn($record) => ProductionRequestResource::getUrl('view', ['record' => $record])),
+            Tables\Actions\Action::make('review')
+                ->label('مراجعة الطلب')
+                ->icon('heroicon-o-check-circle')
+                ->url(fn($record) => ProductionRequestResource::getUrl('review', ['record' => $record])),
+
+                Tables\Actions\DeleteAction::make(),
+
+                // ->visible(fn() => Auth::user()?->hasRole('مدير المصنع')),
         ]);
     }
 
@@ -98,6 +101,7 @@ class ProductionRequestResource extends Resource
             'create' => Pages\CreateProductionRequest::route('/create'),
             'edit' => Pages\EditProductionRequest::route('/{record}/edit'),
             'view' => Pages\ViewProductionTimeline::route('/{record}/timeline'),
+            'review' => Pages\ReviewProductionRequest::route('/{record}/review'),
 
         ];
     }
