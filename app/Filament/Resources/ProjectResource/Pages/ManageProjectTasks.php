@@ -24,7 +24,6 @@ class ManageProjectTasks extends ManageRelatedRecords
         return \Illuminate\Support\Facades\Auth::user()?->can('access_manage_project_tasks');
     }
 
-
     public function form(Form $form): Form
     {
         return $form->schema([
@@ -34,33 +33,42 @@ class ManageProjectTasks extends ManageRelatedRecords
                 ->options(
                     \App\Models\Department::where('dept_type', '5')->pluck('dept_name', 'dept_id')
                 )
+                ->searchable()
                 ->required(),
 
             Forms\Components\FileUpload::make('file_path')
                 ->label('ملف المهمة')
-                ->directory("projects/{$this->getRelationship()->getParent()->id}/tasks")
+                ->directory(fn () => "projects/{$this->getOwnerRecord()->id}/tasks")
                 ->preserveFilenames()
-                ->required(),
+                ->helperText('يمكنك رفع ملف جديد للمهمة أو الإبقاء على الملف المنشأ تلقائيًا.')
+                ->nullable(), // نجعلها اختيارية لأن المهام التلقائية قد تحتوي مسار ملف موجود مسبقًا
 
             Forms\Components\Select::make('assigned_to_employee_id')
                 ->relationship('employee', 'employee_name')
                 ->label('الموظف المسؤول')
-                ->required(),
+                ->searchable()
+                ->preload()
+                ->nullable(),
+
             Forms\Components\TextInput::make('assigned_budget')
                 ->label('الميزانية المتوقعة')
                 ->numeric()
-                ->required(),
+                ->nullable(),
 
             Forms\Components\DatePicker::make('due_date')
                 ->label('تاريخ التسليم المتوقع')
-                ->required(),
+                ->native(false)
+                ->nullable(),
 
             Forms\Components\Textarea::make('notes')
-                ->label('ملاحظات'),
+                ->label('ملاحظات')
+                ->rows(3)
+                ->nullable(),
 
             Forms\Components\Select::make('status')
                 ->label('الحالة')
                 ->options([
+                    'draft'    => 'مسودة',
                     'assigned'    => 'موزعة',
                     'in_progress' => 'قيد التنفيذ',
                     'completed'   => 'مكتملة',
@@ -74,14 +82,24 @@ class ManageProjectTasks extends ManageRelatedRecords
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('department.dept_name')->label('القسم'),
-                Tables\Columns\TextColumn::make('employee.employee_name')->label('الموظف المسؤول'),
+                Tables\Columns\TextColumn::make('department.dept_name')->label('القسم')->sortable()->searchable(),
+                Tables\Columns\TextColumn::make('employee.employee_name')->label('الموظف المسؤول')->toggleable(),
                 Tables\Columns\TextColumn::make('assigned_budget')
                     ->label('الميزانية المتوقعة')
-                    ->money('SAR'),
-                Tables\Columns\TextColumn::make('due_date')->label('تاريخ التسليم')->date(),
-                Tables\Columns\TextColumn::make('status')->label('الحالة')->badge(),
-                Tables\Columns\TextColumn::make('notes')->label('ملاحظات')->limit(50),
+                    ->money('SAR')
+                    ->toggleable(),
+                Tables\Columns\TextColumn::make('due_date')->label('تاريخ التسليم')->date()->toggleable(),
+                Tables\Columns\TextColumn::make('status')
+                    ->label('الحالة')
+                    ->badge()
+                    ->color(fn (string $state) => match ($state) {
+                        'draft'   => 'info',
+                        'assigned'   => 'primary',
+                        'completed'   => 'success',
+                        'in_progress' => 'warning',
+                        default       => 'gray',
+                    }),
+                Tables\Columns\TextColumn::make('notes')->label('ملاحظات')->limit(50)->toggleable(isToggledHiddenByDefault: true),
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make()

@@ -5,13 +5,12 @@ namespace App\Filament\Resources\ProductionRequestResource\Pages;
 use App\Enums\ProductionRequestStatus;
 use App\Filament\Resources\ProductionRequestResource;
 use App\Models\ProductionRequest;
-use App\Models\Project;
 use Filament\Resources\Pages\Page;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
-use Illuminate\Support\Facades\Auth;
 use Filament\Notifications\Notification;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class ReviewProductionRequest extends Page
 {
@@ -23,17 +22,19 @@ class ReviewProductionRequest extends Page
 
     public static function canAccess(array $parameters = []): bool
     {
-        return \Illuminate\Support\Facades\Auth::user()?->can('access_review_production_request');
+        return Auth::user()?->can('access_review_production_request') ?? false;
     }
 
     public function mount(ProductionRequest $record): void
     {
+        // نحمل العلاقات لعرضها بالواجهة (عميل، معرض، ملفات الطلب مع القسم)
         $this->record = $record->load(['client', 'showroom', 'files.department']);
     }
 
     public function getHeaderActions(): array
     {
-        if ($this->record->status !== ProductionRequestStatus::SUBMITTED->value) {
+        // أظهر أزرار الاعتماد/الرفض فقط عندما تكون الحالة Submitted
+        if ((string) $this->record->status !== ProductionRequestStatus::SUBMITTED->value) {
             return [];
         }
 
@@ -43,39 +44,16 @@ class ReviewProductionRequest extends Page
                 ->color('success')
                 ->requiresConfirmation()
                 ->action(function () {
-                    $this->record->update([
-                        'status' => ProductionRequestStatus::APPROVED->value,
-                    ]);
-
-                    $project = $this->record->project()->create([
-                        'project_name' => $this->record->project_name,
-                        'client_id' => $this->record->client_id,
-                        'production_request_id' => $this->record->id,
-                        'description' => $this->record->description,
-                        'status' => 'in_progress',
-                        'created_by' => Auth::id(),
-                    ]);
-
-                    foreach ($this->record->files as $file) {
-                        $filePath = $file->file_path;
-                        $fileName = basename($filePath);
-                        $fileType = pathinfo($fileName, PATHINFO_EXTENSION);
-                        $fileSize = Storage::disk('public')->exists($filePath)
-                            ? Storage::disk('public')->size($filePath)
-                            : 0;
-
-                        $project->files()->create([
-                            'department_id' => $file->department_id,
-                            'file_name' => $fileName,
-                            'file_path' => $filePath,
-                            'file_type' => $fileType,
-                            'file_size' => $fileSize,
-                            'uploaded_by' => Auth::id(),
-                            'upload_date' => now(),
-                            'version' => 1,
-                            'is_current' => true,
+                    DB::transaction(function () {
+                        // 1) تغيـير الحالة إلى APPROVED
+                        $this->record->update([
+                            'status' => ProductionRequestStatus::APPROVED->value,
                         ]);
-                    }
+
+                        // 2) بعد الحفظ، الـ Observer سيتكفّل بإنشاء المشروع ونسخ الملفات
+                        // نحدّث الريكورد محليًا ليشمل المشروع الذي أنشأه الـ Observer
+                        $this->record->refresh();
+                    });
 
                     Notification::make()
                         ->success()
@@ -93,16 +71,20 @@ class ReviewProductionRequest extends Page
                         ->rows(3),
                 ])
                 ->action(function (array $data) {
-                    $this->record->update([
-                        'status' => ProductionRequestStatus::REJECTED->value,
-                    ]);
+                    DB::transaction(function () use ($data) {
+                        // تغيير الحالة إلى REJECTED
+                        $this->record->update([
+                            'status' => ProductionRequestStatus::REJECTED->value,
+                        ]);
 
-                    $this->record->logs()->create([
-                        'user_id' => Auth::id(),
-                        'action' => ProductionRequestStatus::REJECTED->value,
-                        'note' => $data['note'],
-                        'action_at' => now(),
-                    ]);
+                        // سجل سبب الرفض
+                        $this->record->logs()->create([
+                            'user_id' => Auth::id(),
+                            'action' => ProductionRequestStatus::REJECTED->value,
+                            'note' => $data['note'],
+                            'action_at' => now(),
+                        ]);
+                    });
 
                     Notification::make()
                         ->danger()

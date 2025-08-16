@@ -61,6 +61,16 @@ class Employee extends Authenticatable
         return $this->belongsTo(Department::class, 'department_id');
     }
 
+    public function routeNotificationForMail($notification): ?string
+    {
+        return $this->user->email ?? null;
+    }
+
+    public function getNameAttribute(): ?string
+    {
+        return $this->attributes['employee_name'] ?? $this->user->name ?? null;
+    }
+
     public function directPermissions(): BelongsToMany
     {
         return $this->belongsToMany(

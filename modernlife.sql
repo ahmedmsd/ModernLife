@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3306
--- Generation Time: Jul 26, 2025 at 05:26 PM
+-- Generation Time: Aug 16, 2025 at 10:56 PM
 -- Server version: 8.3.0
 -- PHP Version: 8.3.6
 
@@ -62,14 +62,7 @@ CREATE TABLE IF NOT EXISTS `cache` (
 --
 
 INSERT INTO `cache` (`key`, `value`, `expiration`, `created_at`, `updated_at`) VALUES
-('modernlife_cache_spatie.permission.cache', 'a:3:{s:5:\"alias\";a:4:{s:1:\"a\";s:2:\"id\";s:1:\"b\";s:4:\"name\";s:1:\"c\";s:10:\"guard_name\";s:1:\"r\";s:5:\"roles\";}s:11:\"permissions\";a:20:{i:0;a:4:{s:1:\"a\";i:1;s:1:\"b\";s:10:\"view_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:1;a:4:{s:1:\"a\";i:2;s:1:\"b\";s:12:\"manage-roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:2;a:4:{s:1:\"a\";i:3;s:1:\"b\";s:12:\"create_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:3;a:4:{s:1:\"a\";i:4;s:1:\"b\";s:10:\"edit_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:4;a:4:{s:1:\"a\";i:5;s:1:\"b\";s:12:\"delete_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:5;a:4:{s:1:\"a\";i:6;s:1:\"b\";s:16:\"view_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:6;a:4:{s:1:\"a\";i:7;s:1:\"b\";s:18:\"create_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:7;a:4:{s:1:\"a\";i:8;s:1:\"b\";s:16:\"edit_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:8;a:4:{s:1:\"a\";i:9;s:1:\"b\";s:18:\"delete_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:9;a:4:{s:1:\"a\";i:10;s:1:\"b\";s:10:\"view_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:10;a:4:{s:1:\"a\";i:11;s:1:\"b\";s:12:\"create_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:11;a:4:{s:1:\"a\";i:12;s:1:\"b\";s:10:\"edit_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:12;a:4:{s:1:\"a\";i:13;s:1:\"b\";s:12:\"delete_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:13;a:4:{s:1:\"a\";i:14;s:1:\"b\";s:12:\"manage_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:14;a:4:{s:1:\"a\";i:15;s:1:\"b\";s:14:\"view_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:15;a:4:{s:1:\"a\";i:16;s:1:\"b\";s:16:\"create_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:16;a:4:{s:1:\"a\";i:17;s:1:\"b\";s:14:\"edit_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:17;a:4:{s:1:\"a\";i:18;s:1:\"b\";s:16:\"delete_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:18;a:4:{s:1:\"a\";i:19;s:1:\"b\";s:16:\"manage_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:19;a:4:{s:1:\"a\";i:20;s:1:\"b\";s:13:\"view_any_role\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}}s:5:\"roles\";a:1:{i:0;a:3:{s:1:\"a\";i:1;s:1:\"b\";s:5:\"admin\";s:1:\"c\";s:3:\"web\";}}}', 1752152430, '2025-07-09 13:00:30', '2025-07-09 13:00:30'),
-('modernlife_cache_356a192b7913b04c54574d18c28d46e6395428ab:timer', 'i:1752066194;', 1752066194, '2025-07-09 13:02:14', '2025-07-09 13:02:14'),
-('modernlife_cache_356a192b7913b04c54574d18c28d46e6395428ab', 'i:1;', 1752066194, '2025-07-09 13:02:14', '2025-07-09 13:02:14'),
-('test_cache_livewire-rate-limiter:a17961fa74e9275d529f489537f179c05d50c2f3:timer', 'i:1752499677;', 1752499677, '2025-07-14 13:26:57', '2025-07-14 13:26:57'),
-('test_cache_livewire-rate-limiter:a17961fa74e9275d529f489537f179c05d50c2f3', 'i:1;', 1752499677, '2025-07-14 13:26:57', '2025-07-14 13:26:57'),
-('test_cache_spatie.permission.cache', 'a:3:{s:5:\"alias\";a:4:{s:1:\"a\";s:2:\"id\";s:1:\"b\";s:4:\"name\";s:1:\"c\";s:10:\"guard_name\";s:1:\"r\";s:5:\"roles\";}s:11:\"permissions\";a:20:{i:0;a:4:{s:1:\"a\";i:1;s:1:\"b\";s:10:\"view_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:1;a:4:{s:1:\"a\";i:2;s:1:\"b\";s:12:\"manage-roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:2;a:4:{s:1:\"a\";i:3;s:1:\"b\";s:12:\"create_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:3;a:4:{s:1:\"a\";i:4;s:1:\"b\";s:10:\"edit_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:4;a:4:{s:1:\"a\";i:5;s:1:\"b\";s:12:\"delete_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:5;a:4:{s:1:\"a\";i:6;s:1:\"b\";s:16:\"view_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:6;a:4:{s:1:\"a\";i:7;s:1:\"b\";s:18:\"create_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:7;a:4:{s:1:\"a\";i:8;s:1:\"b\";s:16:\"edit_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:8;a:4:{s:1:\"a\";i:9;s:1:\"b\";s:18:\"delete_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:9;a:4:{s:1:\"a\";i:10;s:1:\"b\";s:10:\"view_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:10;a:4:{s:1:\"a\";i:11;s:1:\"b\";s:12:\"create_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:11;a:4:{s:1:\"a\";i:12;s:1:\"b\";s:10:\"edit_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:12;a:4:{s:1:\"a\";i:13;s:1:\"b\";s:12:\"delete_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:13;a:4:{s:1:\"a\";i:14;s:1:\"b\";s:12:\"manage_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:14;a:4:{s:1:\"a\";i:15;s:1:\"b\";s:14:\"view_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:15;a:4:{s:1:\"a\";i:16;s:1:\"b\";s:16:\"create_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:16;a:4:{s:1:\"a\";i:17;s:1:\"b\";s:14:\"edit_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:17;a:4:{s:1:\"a\";i:18;s:1:\"b\";s:16:\"delete_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:18;a:4:{s:1:\"a\";i:19;s:1:\"b\";s:16:\"manage_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:19;a:4:{s:1:\"a\";i:20;s:1:\"b\";s:13:\"view_any_role\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}}s:5:\"roles\";a:1:{i:0;a:3:{s:1:\"a\";i:1;s:1:\"b\";s:5:\"admin\";s:1:\"c\";s:3:\"web\";}}}', 1753626479, '2025-07-26 14:27:59', '2025-07-26 14:27:59'),
-('test_cache_356a192b7913b04c54574d18c28d46e6395428ab:timer', 'i:1753548957;', 1753548957, '2025-07-26 16:54:57', '2025-07-26 16:54:57'),
-('test_cache_356a192b7913b04c54574d18c28d46e6395428ab', 'i:2;', 1753548957, '2025-07-26 16:54:57', '2025-07-26 16:55:02');
+('modernlife_cache_spatie.permission.cache', 'a:3:{s:5:\"alias\";a:4:{s:1:\"a\";s:2:\"id\";s:1:\"b\";s:4:\"name\";s:1:\"c\";s:10:\"guard_name\";s:1:\"r\";s:5:\"roles\";}s:11:\"permissions\";a:68:{i:0;a:4:{s:1:\"a\";i:1;s:1:\"b\";s:10:\"view_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:1;a:4:{s:1:\"a\";i:2;s:1:\"b\";s:12:\"manage-roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:2;a:4:{s:1:\"a\";i:3;s:1:\"b\";s:12:\"create_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:3;a:4:{s:1:\"a\";i:4;s:1:\"b\";s:10:\"edit_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:4;a:4:{s:1:\"a\";i:5;s:1:\"b\";s:12:\"delete_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:5;a:4:{s:1:\"a\";i:6;s:1:\"b\";s:16:\"view_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:6;a:4:{s:1:\"a\";i:7;s:1:\"b\";s:18:\"create_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:7;a:4:{s:1:\"a\";i:8;s:1:\"b\";s:16:\"edit_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:8;a:4:{s:1:\"a\";i:9;s:1:\"b\";s:18:\"delete_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:9;a:4:{s:1:\"a\";i:10;s:1:\"b\";s:10:\"view_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:10;a:4:{s:1:\"a\";i:11;s:1:\"b\";s:12:\"create_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:11;a:4:{s:1:\"a\";i:12;s:1:\"b\";s:10:\"edit_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:12;a:4:{s:1:\"a\";i:13;s:1:\"b\";s:12:\"delete_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:13;a:4:{s:1:\"a\";i:14;s:1:\"b\";s:12:\"manage_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:14;a:4:{s:1:\"a\";i:15;s:1:\"b\";s:14:\"view_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:15;a:4:{s:1:\"a\";i:16;s:1:\"b\";s:16:\"create_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:16;a:4:{s:1:\"a\";i:17;s:1:\"b\";s:14:\"edit_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:17;a:4:{s:1:\"a\";i:18;s:1:\"b\";s:16:\"delete_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:18;a:4:{s:1:\"a\";i:19;s:1:\"b\";s:16:\"manage_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:19;a:4:{s:1:\"a\";i:20;s:1:\"b\";s:13:\"view_any_role\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:20;a:4:{s:1:\"a\";i:21;s:1:\"b\";s:18:\"view_city_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:21;a:4:{s:1:\"a\";i:22;s:1:\"b\";s:20:\"create_city_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:22;a:4:{s:1:\"a\";i:23;s:1:\"b\";s:18:\"edit_city_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:23;a:4:{s:1:\"a\";i:24;s:1:\"b\";s:20:\"delete_city_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:24;a:4:{s:1:\"a\";i:25;s:1:\"b\";s:20:\"view_client_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:3;}}i:25;a:4:{s:1:\"a\";i:26;s:1:\"b\";s:22:\"create_client_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:3;}}i:26;a:4:{s:1:\"a\";i:27;s:1:\"b\";s:20:\"edit_client_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:3;}}i:27;a:4:{s:1:\"a\";i:28;s:1:\"b\";s:22:\"delete_client_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:28;a:4:{s:1:\"a\";i:29;s:1:\"b\";s:21:\"view_country_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:29;a:4:{s:1:\"a\";i:30;s:1:\"b\";s:23:\"create_country_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:30;a:4:{s:1:\"a\";i:31;s:1:\"b\";s:21:\"edit_country_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:31;a:4:{s:1:\"a\";i:32;s:1:\"b\";s:23:\"delete_country_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:32;a:4:{s:1:\"a\";i:33;s:1:\"b\";s:35:\"view_department_categories_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:33;a:4:{s:1:\"a\";i:34;s:1:\"b\";s:37:\"create_department_categories_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:34;a:4:{s:1:\"a\";i:35;s:1:\"b\";s:35:\"edit_department_categories_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:35;a:4:{s:1:\"a\";i:36;s:1:\"b\";s:37:\"delete_department_categories_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:36;a:4:{s:1:\"a\";i:37;s:1:\"b\";s:24:\"view_department_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:37;a:4:{s:1:\"a\";i:38;s:1:\"b\";s:26:\"create_department_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:38;a:4:{s:1:\"a\";i:39;s:1:\"b\";s:24:\"edit_department_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:39;a:4:{s:1:\"a\";i:40;s:1:\"b\";s:26:\"delete_department_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:40;a:4:{s:1:\"a\";i:41;s:1:\"b\";s:22:\"view_employee_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:41;a:4:{s:1:\"a\";i:42;s:1:\"b\";s:24:\"create_employee_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:42;a:4:{s:1:\"a\";i:43;s:1:\"b\";s:22:\"edit_employee_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:43;a:4:{s:1:\"a\";i:44;s:1:\"b\";s:24:\"delete_employee_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:44;a:4:{s:1:\"a\";i:45;s:1:\"b\";s:24:\"view_permission_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:45;a:4:{s:1:\"a\";i:46;s:1:\"b\";s:26:\"create_permission_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:46;a:4:{s:1:\"a\";i:47;s:1:\"b\";s:24:\"edit_permission_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:47;a:4:{s:1:\"a\";i:48;s:1:\"b\";s:26:\"delete_permission_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:48;a:4:{s:1:\"a\";i:49;s:1:\"b\";s:32:\"view_production_request_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:3;}}i:49;a:4:{s:1:\"a\";i:50;s:1:\"b\";s:34:\"create_production_request_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:3;}}i:50;a:4:{s:1:\"a\";i:51;s:1:\"b\";s:32:\"edit_production_request_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:51;a:4:{s:1:\"a\";i:52;s:1:\"b\";s:34:\"delete_production_request_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:52;a:4:{s:1:\"a\";i:53;s:1:\"b\";s:21:\"view_project_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:53;a:4:{s:1:\"a\";i:54;s:1:\"b\";s:23:\"create_project_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:54;a:4:{s:1:\"a\";i:55;s:1:\"b\";s:21:\"edit_project_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:55;a:4:{s:1:\"a\";i:56;s:1:\"b\";s:23:\"delete_project_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:56;a:4:{s:1:\"a\";i:57;s:1:\"b\";s:18:\"view_role_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:57;a:4:{s:1:\"a\";i:58;s:1:\"b\";s:20:\"create_role_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:58;a:4:{s:1:\"a\";i:59;s:1:\"b\";s:18:\"edit_role_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:59;a:4:{s:1:\"a\";i:60;s:1:\"b\";s:20:\"delete_role_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:60;a:4:{s:1:\"a\";i:61;s:1:\"b\";s:22:\"view_showroom_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:61;a:4:{s:1:\"a\";i:62;s:1:\"b\";s:24:\"create_showroom_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:62;a:4:{s:1:\"a\";i:63;s:1:\"b\";s:22:\"edit_showroom_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:63;a:4:{s:1:\"a\";i:64;s:1:\"b\";s:24:\"delete_showroom_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:64;a:4:{s:1:\"a\";i:65;s:1:\"b\";s:27:\"access_manage_project_tasks\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:65;a:4:{s:1:\"a\";i:66;s:1:\"b\";s:19:\"access_view_project\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:66;a:4:{s:1:\"a\";i:67;s:1:\"b\";s:32:\"access_review_production_request\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:67;a:4:{s:1:\"a\";i:68;s:1:\"b\";s:31:\"access_view_production_timeline\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}}s:5:\"roles\";a:3:{i:0;a:3:{s:1:\"a\";i:1;s:1:\"b\";s:27:\"الإدارة العليا\";s:1:\"c\";s:3:\"web\";}i:1;a:3:{s:1:\"a\";i:3;s:1:\"b\";s:16:\"المبيعات\";s:1:\"c\";s:3:\"web\";}i:2;a:3:{s:1:\"a\";i:2;s:1:\"b\";s:23:\"إدارة المصنع\";s:1:\"c\";s:3:\"web\";}}}', 1755455178, '2025-08-16 18:26:18', '2025-08-16 18:26:18');
 
 -- --------------------------------------------------------
 
@@ -102,7 +95,7 @@ CREATE TABLE IF NOT EXISTS `cities` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `cities_country_id_foreign` (`country_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `cities`
@@ -255,7 +248,7 @@ CREATE TABLE IF NOT EXISTS `departments` (
   PRIMARY KEY (`dept_id`),
   KEY `idx_dept_parent` (`parent_dept_id`),
   KEY `idx_dept_active` (`is_active`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `departments`
@@ -264,7 +257,12 @@ CREATE TABLE IF NOT EXISTS `departments` (
 INSERT INTO `departments` (`dept_id`, `factory_id`, `dept_name`, `dept_code`, `parent_dept_id`, `dept_type`, `location`, `phone_extension`, `email`, `is_active`, `color_code`, `created_at`, `updated_at`) VALUES
 (7, 1, 'الإدارة', 'CODE-MG', NULL, 4, NULL, NULL, 'mg@mg.com', 1, '#3498db', '2025-07-06 06:25:03', '2025-07-06 06:25:03'),
 (8, 1, 'المبيعات', 'CODE-SALES', NULL, 4, NULL, NULL, 'sales@sales.com', 1, '#ad0766', '2025-07-06 06:25:36', '2025-07-06 06:25:36'),
-(9, 1, 'قسم الألومنيوم', 'DEPT-ALUM', NULL, 5, NULL, NULL, NULL, 1, '#3498db', '2025-07-14 11:39:55', '2025-07-14 11:39:55');
+(9, 1, 'قسم الألومنيوم', 'DEPT-ALUM', 11, 5, NULL, NULL, NULL, 1, '#3498db', '2025-07-14 11:39:55', '2025-08-04 10:35:58'),
+(10, 1, 'قسم الزجاج', 'CODE-GLASS', 11, 5, 'الخبر', NULL, NULL, 1, '#3498db', '2025-08-04 10:34:57', '2025-08-04 10:35:47'),
+(11, 1, 'التصنيع', 'CODE-MANUF', NULL, 5, 'الخبر', NULL, NULL, 1, '#3498db', '2025-08-04 10:35:36', '2025-08-04 10:35:36'),
+(12, 1, 'قسم الخشب', 'CODE-WOOD', 11, 5, NULL, NULL, NULL, 1, '#3498db', '2025-08-04 10:37:36', '2025-08-04 10:37:36'),
+(13, 1, 'قسم الرخام', 'CODE-MARBLE', 11, 5, NULL, NULL, NULL, 1, '#3498db', '2025-08-04 10:38:25', '2025-08-04 10:38:25'),
+(14, 1, 'قسم الحديد', 'CODE-IRON', 11, 5, NULL, NULL, NULL, 1, '#3498db', '2025-08-04 10:41:59', '2025-08-04 10:41:59');
 
 -- --------------------------------------------------------
 
@@ -500,7 +498,7 @@ CREATE TABLE IF NOT EXISTS `migrations` (
   `migration` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `batch` int NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `migrations`
@@ -511,7 +509,10 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 (2, '2025_07_09_063901_create_cities_table', 1),
 (3, '2025_07_09_063327_create_production_requests_table', 2),
 (4, '2025_07_09_081616_create_showrooms_table', 2),
-(5, '2025_07_14_134642_create_production_requests_table', 3);
+(5, '2025_07_14_134642_create_production_requests_table', 3),
+(6, '2025_07_30_132843_create_projects_table', 4),
+(7, '2025_07_30_161309_create_production_tasks_table', 5),
+(8, '2025_08_16_161951_create_notifications_table', 6);
 
 -- --------------------------------------------------------
 
@@ -555,6 +556,26 @@ INSERT INTO `model_has_roles` (`role_id`, `model_type`, `model_id`) VALUES
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `notifications`
+--
+
+DROP TABLE IF EXISTS `notifications`;
+CREATE TABLE IF NOT EXISTS `notifications` (
+  `id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `notifiable_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `notifiable_id` bigint UNSIGNED NOT NULL,
+  `data` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `read_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `notifications_notifiable_type_notifiable_id_index` (`notifiable_type`,`notifiable_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `password_reset_tokens`
 --
 
@@ -581,7 +602,7 @@ CREATE TABLE IF NOT EXISTS `permissions` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `permissions_name_guard_name_unique` (`name`,`guard_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=69 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `permissions`
@@ -607,76 +628,55 @@ INSERT INTO `permissions` (`id`, `name`, `guard_name`, `created_at`, `updated_at
 (17, 'edit_employees', 'web', '2025-07-06 07:20:03', '2025-07-06 07:20:03'),
 (18, 'delete_employees', 'web', '2025-07-06 07:20:03', '2025-07-06 07:20:03'),
 (19, 'manage_employees', 'web', '2025-07-06 07:20:03', '2025-07-06 07:20:03'),
-(20, 'view_any_role', 'web', '2025-07-06 08:30:25', '2025-07-06 08:30:25');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `phase_dependencies`
---
-
-DROP TABLE IF EXISTS `phase_dependencies`;
-CREATE TABLE IF NOT EXISTS `phase_dependencies` (
-  `dependency_id` int NOT NULL AUTO_INCREMENT,
-  `phase_id` int NOT NULL,
-  `depends_on_phase_id` int NOT NULL,
-  `dependency_type` enum('FS','SS','FF','SF') DEFAULT 'FS',
-  `lag_days` int DEFAULT '0',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`dependency_id`),
-  KEY `phase_id` (`phase_id`),
-  KEY `depends_on_phase_id` (`depends_on_phase_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `production_issues`
---
-
-DROP TABLE IF EXISTS `production_issues`;
-CREATE TABLE IF NOT EXISTS `production_issues` (
-  `issue_id` int NOT NULL AUTO_INCREMENT,
-  `project_id` int NOT NULL,
-  `phase_id` int DEFAULT NULL,
-  `reported_by` int NOT NULL,
-  `issue_date` datetime DEFAULT CURRENT_TIMESTAMP,
-  `title` varchar(255) NOT NULL,
-  `description` text NOT NULL,
-  `severity` enum('low','medium','high','critical') NOT NULL,
-  `status` enum('open','in_progress','resolved','closed') DEFAULT 'open',
-  `resolution_description` text,
-  `resolved_by` int DEFAULT NULL,
-  `resolved_date` datetime DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`issue_id`),
-  KEY `project_id` (`project_id`),
-  KEY `phase_id` (`phase_id`),
-  KEY `reported_by` (`reported_by`),
-  KEY `resolved_by` (`resolved_by`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `production_lines`
---
-
-DROP TABLE IF EXISTS `production_lines`;
-CREATE TABLE IF NOT EXISTS `production_lines` (
-  `line_id` int NOT NULL AUTO_INCREMENT,
-  `line_name` varchar(100) NOT NULL,
-  `department_id` int NOT NULL,
-  `capacity_per_hour` decimal(10,2) DEFAULT NULL,
-  `status` enum('active','maintenance','inactive') DEFAULT 'active',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`line_id`),
-  KEY `idx_prod_lines_dept` (`department_id`),
-  KEY `idx_prod_lines_status` (`status`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+(20, 'view_any_role', 'web', '2025-07-06 08:30:25', '2025-07-06 08:30:25'),
+(21, 'view_city_resource', 'web', '2025-08-04 11:27:34', '2025-08-04 11:27:34'),
+(22, 'create_city_resource', 'web', '2025-08-04 11:27:34', '2025-08-04 11:27:34'),
+(23, 'edit_city_resource', 'web', '2025-08-04 11:27:34', '2025-08-04 11:27:34'),
+(24, 'delete_city_resource', 'web', '2025-08-04 11:27:34', '2025-08-04 11:27:34'),
+(25, 'view_client_resource', 'web', '2025-08-04 11:27:34', '2025-08-04 11:27:34'),
+(26, 'create_client_resource', 'web', '2025-08-04 11:27:34', '2025-08-04 11:27:34'),
+(27, 'edit_client_resource', 'web', '2025-08-04 11:27:34', '2025-08-04 11:27:34'),
+(28, 'delete_client_resource', 'web', '2025-08-04 11:27:34', '2025-08-04 11:27:34'),
+(29, 'view_country_resource', 'web', '2025-08-04 11:27:34', '2025-08-04 11:27:34'),
+(30, 'create_country_resource', 'web', '2025-08-04 11:27:34', '2025-08-04 11:27:34'),
+(31, 'edit_country_resource', 'web', '2025-08-04 11:27:34', '2025-08-04 11:27:34'),
+(32, 'delete_country_resource', 'web', '2025-08-04 11:27:35', '2025-08-04 11:27:35'),
+(33, 'view_department_categories_resource', 'web', '2025-08-04 11:27:35', '2025-08-04 11:27:35'),
+(34, 'create_department_categories_resource', 'web', '2025-08-04 11:27:35', '2025-08-04 11:27:35'),
+(35, 'edit_department_categories_resource', 'web', '2025-08-04 11:27:35', '2025-08-04 11:27:35'),
+(36, 'delete_department_categories_resource', 'web', '2025-08-04 11:27:35', '2025-08-04 11:27:35'),
+(37, 'view_department_resource', 'web', '2025-08-04 11:27:35', '2025-08-04 11:27:35'),
+(38, 'create_department_resource', 'web', '2025-08-04 11:27:35', '2025-08-04 11:27:35'),
+(39, 'edit_department_resource', 'web', '2025-08-04 11:27:35', '2025-08-04 11:27:35'),
+(40, 'delete_department_resource', 'web', '2025-08-04 11:27:35', '2025-08-04 11:27:35'),
+(41, 'view_employee_resource', 'web', '2025-08-04 11:27:35', '2025-08-04 11:27:35'),
+(42, 'create_employee_resource', 'web', '2025-08-04 11:27:35', '2025-08-04 11:27:35'),
+(43, 'edit_employee_resource', 'web', '2025-08-04 11:27:35', '2025-08-04 11:27:35'),
+(44, 'delete_employee_resource', 'web', '2025-08-04 11:27:35', '2025-08-04 11:27:35'),
+(45, 'view_permission_resource', 'web', '2025-08-04 11:27:35', '2025-08-04 11:27:35'),
+(46, 'create_permission_resource', 'web', '2025-08-04 11:27:35', '2025-08-04 11:27:35'),
+(47, 'edit_permission_resource', 'web', '2025-08-04 11:27:35', '2025-08-04 11:27:35'),
+(48, 'delete_permission_resource', 'web', '2025-08-04 11:27:35', '2025-08-04 11:27:35'),
+(49, 'view_production_request_resource', 'web', '2025-08-04 11:27:35', '2025-08-04 11:27:35'),
+(50, 'create_production_request_resource', 'web', '2025-08-04 11:27:35', '2025-08-04 11:27:35'),
+(51, 'edit_production_request_resource', 'web', '2025-08-04 11:27:35', '2025-08-04 11:27:35'),
+(52, 'delete_production_request_resource', 'web', '2025-08-04 11:27:35', '2025-08-04 11:27:35'),
+(53, 'view_project_resource', 'web', '2025-08-04 11:27:35', '2025-08-04 11:27:35'),
+(54, 'create_project_resource', 'web', '2025-08-04 11:27:35', '2025-08-04 11:27:35'),
+(55, 'edit_project_resource', 'web', '2025-08-04 11:27:36', '2025-08-04 11:27:36'),
+(56, 'delete_project_resource', 'web', '2025-08-04 11:27:36', '2025-08-04 11:27:36'),
+(57, 'view_role_resource', 'web', '2025-08-04 11:27:36', '2025-08-04 11:27:36'),
+(58, 'create_role_resource', 'web', '2025-08-04 11:27:36', '2025-08-04 11:27:36'),
+(59, 'edit_role_resource', 'web', '2025-08-04 11:27:36', '2025-08-04 11:27:36'),
+(60, 'delete_role_resource', 'web', '2025-08-04 11:27:36', '2025-08-04 11:27:36'),
+(61, 'view_showroom_resource', 'web', '2025-08-04 11:27:36', '2025-08-04 11:27:36'),
+(62, 'create_showroom_resource', 'web', '2025-08-04 11:27:36', '2025-08-04 11:27:36'),
+(63, 'edit_showroom_resource', 'web', '2025-08-04 11:27:36', '2025-08-04 11:27:36'),
+(64, 'delete_showroom_resource', 'web', '2025-08-04 11:27:36', '2025-08-04 11:27:36'),
+(65, 'access_manage_project_tasks', 'web', '2025-08-04 11:52:45', '2025-08-04 11:52:45'),
+(66, 'access_view_project', 'web', '2025-08-04 11:52:45', '2025-08-04 11:52:45'),
+(67, 'access_review_production_request', 'web', '2025-08-04 11:52:45', '2025-08-04 11:52:45'),
+(68, 'access_view_production_timeline', 'web', '2025-08-04 11:52:45', '2025-08-04 11:52:45');
 
 -- --------------------------------------------------------
 
@@ -700,15 +700,14 @@ CREATE TABLE IF NOT EXISTS `production_requests` (
   PRIMARY KEY (`id`),
   KEY `showroom_id` (`showroom_id`),
   KEY `client_id` (`client_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `production_requests`
 --
 
 INSERT INTO `production_requests` (`id`, `project_name`, `project_description`, `client_id`, `showroom_id`, `agreement_file`, `status`, `created_by`, `submitted_at`, `created_at`, `updated_at`) VALUES
-(1, 'مشروع تجريبي', 'وصف تجريبي', 1, 1, 'agreements/01K09X53YA9VW2K91YHSZC0FY2.pdf', 'rejected', 1, '2025-07-16 15:20:23', '2025-07-16 12:20:23', '2025-07-26 13:08:26'),
-(4, 'مشروع تجريبي جديد', NULL, 1, 1, 'agreements/01K13THR8P1RYS53N520EJ00FB.png', 'submitted', 1, '2025-07-26 16:55:06', '2025-07-26 13:55:06', '2025-07-26 14:01:30');
+(6, 'مشروع مصنع الرخام', NULL, 1, 1, 'agreements/01K2CQ47547VKVJ4XKX7DY61BS.png', 'approved', 1, '2025-08-11 14:04:09', '2025-08-11 11:04:09', '2025-08-12 17:44:22');
 
 -- --------------------------------------------------------
 
@@ -724,8 +723,10 @@ CREATE TABLE IF NOT EXISTS `production_request_files` (
   `file_path` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  PRIMARY KEY (`id`),
+  KEY `production_request_id` (`production_request_id`),
+  KEY `department_id` (`department_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `production_request_files`
@@ -734,7 +735,11 @@ CREATE TABLE IF NOT EXISTS `production_request_files` (
 INSERT INTO `production_request_files` (`id`, `production_request_id`, `department_id`, `file_path`, `created_at`, `updated_at`) VALUES
 (2, 1, 9, 'production_files/01K09XR3JYYE7Z7HHA0JGRRS9G.pdf', '2025-07-16 12:20:23', '2025-07-16 12:30:45'),
 (3, 3, 9, 'production_files/01K13T4NNHRFZ4301YVR1HXZAS.png', '2025-07-26 13:47:58', '2025-07-26 13:47:58'),
-(4, 4, 9, 'production_files/01K13THR8V45SXVBZ0EYBKD6VW.png', '2025-07-26 13:55:06', '2025-07-26 13:55:06');
+(4, 4, 9, 'production_files/01K13THR8V45SXVBZ0EYBKD6VW.png', '2025-07-26 13:55:06', '2025-07-26 13:55:06'),
+(5, 5, 13, 'production_files/01K1X11ZQQMMWXWVF2S0GH4DF6.png', '2025-08-05 08:49:51', '2025-08-05 08:49:51'),
+(6, 5, 12, 'production_files/01K1X11ZR6XYPC6AC8MEPF4GAB.png', '2025-08-05 08:49:51', '2025-08-05 08:49:51'),
+(7, 6, 13, 'production_files/01K2CQ475R3ZDRV3K8MFSV2PN1.png', '2025-08-11 11:04:09', '2025-08-11 11:04:09'),
+(8, 6, 14, 'production_files/01K2CQ47650CC16TX9TGVRC9R1.png', '2025-08-11 11:04:09', '2025-08-11 11:04:09');
 
 -- --------------------------------------------------------
 
@@ -752,28 +757,86 @@ CREATE TABLE IF NOT EXISTS `production_request_logs` (
   `action_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  PRIMARY KEY (`id`),
+  KEY `production_request_id` (`production_request_id`),
+  KEY `user_id` (`user_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=34 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `production_request_logs`
 --
 
 INSERT INTO `production_request_logs` (`id`, `production_request_id`, `user_id`, `action`, `note`, `action_at`, `created_at`, `updated_at`) VALUES
-(1, 1, 1, 'draft', 'تم تغيير حالة الطلب إلى: مسودة', '2025-07-26 12:38:08', '2025-07-26 12:38:08', '2025-07-26 12:38:08'),
-(2, 1, 1, 'draft', 'تم تغيير حالة الطلب إلى: مسودة', '2025-07-26 12:38:22', '2025-07-26 12:38:22', '2025-07-26 12:38:22'),
-(3, 1, 1, 'submitted', 'تم تغيير حالة الطلب إلى submitted', '2025-07-26 12:49:01', '2025-07-26 12:49:01', '2025-07-26 12:49:01'),
-(4, 1, 1, 'submitted', 'تم تغيير الحالة إلى: تم الإرسال', '2025-07-26 12:49:01', '2025-07-26 12:49:01', '2025-07-26 12:49:01'),
-(5, 1, 1, 'draft', 'تم تغيير حالة الطلب إلى draft', '2025-07-26 12:49:08', '2025-07-26 12:49:08', '2025-07-26 12:49:08'),
-(6, 1, 1, 'draft', 'تم تغيير الحالة إلى: مسودة', '2025-07-26 12:49:08', '2025-07-26 12:49:08', '2025-07-26 12:49:08'),
-(7, 1, 1, 'under_review', 'تم تغيير حالة الطلب إلى قيد المراجعة', '2025-07-26 12:53:26', '2025-07-26 12:53:26', '2025-07-26 12:53:26'),
-(8, 1, 1, 'submitted', 'تم تغيير حالة الطلب إلى تم الإرسال', '2025-07-26 12:53:52', '2025-07-26 12:53:52', '2025-07-26 12:53:52'),
-(9, 1, 1, 'under_review', 'تم تغيير حالة الطلب إلى قيد المراجعة', '2025-07-26 13:00:02', '2025-07-26 13:00:02', '2025-07-26 13:00:02'),
-(10, 1, 1, 'rejected', 'تم تغيير حالة الطلب إلى مرفوض', '2025-07-26 13:08:26', '2025-07-26 13:08:26', '2025-07-26 13:08:26'),
-(11, 1, 1, 'rejected', 'تجربة', '2025-07-26 13:08:26', '2025-07-26 13:08:26', '2025-07-26 13:08:26'),
-(12, 3, 1, 'deleted', 'تم حذف الطلب', '2025-07-26 13:54:24', '2025-07-26 13:54:24', '2025-07-26 13:54:24'),
-(13, 4, 1, 'created', 'تم إنشاء الطلب', '2025-07-26 13:55:06', '2025-07-26 13:55:06', '2025-07-26 13:55:06'),
-(14, 4, 1, 'submitted', 'تم تغيير حالة الطلب إلى تم الإرسال', '2025-07-26 14:01:30', '2025-07-26 14:01:30', '2025-07-26 14:01:30');
+(29, 6, 1, 'submitted', 'تم تغيير حالة الطلب إلى تم الإرسال', '2025-08-11 11:19:37', '2025-08-11 11:19:37', '2025-08-11 11:19:37'),
+(30, 6, 1, 'approved', 'تم تغيير حالة الطلب إلى مقبول', '2025-08-11 11:20:05', '2025-08-11 11:20:05', '2025-08-11 11:20:05'),
+(33, 6, 1, 'approved', 'تم تغيير حالة الطلب إلى مقبول', '2025-08-12 17:44:22', '2025-08-12 17:44:22', '2025-08-12 17:44:22');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `production_tasks`
+--
+
+DROP TABLE IF EXISTS `production_tasks`;
+CREATE TABLE IF NOT EXISTS `production_tasks` (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `project_id` bigint UNSIGNED NOT NULL,
+  `department_id` int NOT NULL,
+  `assigned_to_employee_id` int DEFAULT NULL,
+  `assigned_budget` float(9,2) DEFAULT '0.00',
+  `file_path` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `due_date` date DEFAULT NULL,
+  `assigned_at` datetime DEFAULT NULL,
+  `received_at` datetime DEFAULT NULL,
+  `status` enum('draft','assigned','in_progress','completed') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'draft',
+  `notes` text COLLATE utf8mb4_unicode_ci,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `production_tasks_project_id_foreign` (`project_id`),
+  KEY `production_tasks_department_id_foreign` (`department_id`),
+  KEY `production_tasks_assigned_to_employee_id_foreign` (`assigned_to_employee_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `production_tasks`
+--
+
+INSERT INTO `production_tasks` (`id`, `project_id`, `department_id`, `assigned_to_employee_id`, `assigned_budget`, `file_path`, `due_date`, `assigned_at`, `received_at`, `status`, `notes`, `created_at`, `updated_at`) VALUES
+(7, 14, 13, 6, 1000.00, 'production_files/01K2CQ475R3ZDRV3K8MFSV2PN1.png', NULL, NULL, NULL, 'draft', 'تم إنشاؤها تلقائيًا من ملفات الطلب.', '2025-08-12 17:44:22', '2025-08-16 12:54:48'),
+(8, 14, 14, 6, 500.00, 'production_files/01K2CQ47650CC16TX9TGVRC9R1.png', '2025-08-28', NULL, NULL, 'draft', 'تم إنشاؤها تلقائيًا من ملفات الطلب.', '2025-08-12 17:44:22', '2025-08-16 13:02:21');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `projects`
+--
+
+DROP TABLE IF EXISTS `projects`;
+CREATE TABLE IF NOT EXISTS `projects` (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `production_request_id` bigint UNSIGNED NOT NULL,
+  `client_id` int NOT NULL,
+  `project_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description` text COLLATE utf8mb4_unicode_ci,
+  `start_date` date DEFAULT NULL,
+  `end_date` date DEFAULT NULL,
+  `status` enum('in_progress','completed','on_hold') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'in_progress',
+  `created_by` bigint UNSIGNED NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `production_request_id` (`production_request_id`),
+  KEY `projects_client_id_foreign` (`client_id`),
+  KEY `projects_created_by_foreign` (`created_by`)
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `projects`
+--
+
+INSERT INTO `projects` (`id`, `production_request_id`, `client_id`, `project_name`, `description`, `start_date`, `end_date`, `status`, `created_by`, `created_at`, `updated_at`) VALUES
+(14, 6, 1, 'مشروع مصنع الرخام', NULL, '2025-08-12', NULL, 'in_progress', 1, '2025-08-12 17:44:22', '2025-08-12 17:44:22');
 
 -- --------------------------------------------------------
 
@@ -810,13 +873,12 @@ DROP TABLE IF EXISTS `project_files`;
 CREATE TABLE IF NOT EXISTS `project_files` (
   `file_id` int NOT NULL AUTO_INCREMENT,
   `project_id` int NOT NULL,
-  `phase_id` int DEFAULT NULL,
+  `department_id` int DEFAULT NULL,
   `file_name` varchar(255) NOT NULL,
   `file_path` varchar(512) NOT NULL,
-  `file_type` varchar(50) NOT NULL,
-  `file_size` int NOT NULL,
-  `category` enum('design','contract','report','approval','other') NOT NULL,
-  `uploaded_by` int NOT NULL,
+  `file_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `file_size` int DEFAULT NULL,
+  `uploaded_by` int DEFAULT NULL,
   `upload_date` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `description` text,
   `version` varchar(20) DEFAULT NULL,
@@ -826,10 +888,24 @@ CREATE TABLE IF NOT EXISTS `project_files` (
   PRIMARY KEY (`file_id`),
   KEY `uploaded_by` (`uploaded_by`),
   KEY `idx_files_project` (`project_id`),
-  KEY `idx_files_phase` (`phase_id`),
-  KEY `idx_files_category` (`category`),
+  KEY `idx_files_phase` (`department_id`),
   KEY `idx_files_type` (`file_type`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Dumping data for table `project_files`
+--
+
+INSERT INTO `project_files` (`file_id`, `project_id`, `department_id`, `file_name`, `file_path`, `file_type`, `file_size`, `uploaded_by`, `upload_date`, `description`, `version`, `is_current`, `created_at`, `updated_at`) VALUES
+(2, 6, 9, '01K09XR3JYYE7Z7HHA0JGRRS9G.pdf', 'production_files/01K09XR3JYYE7Z7HHA0JGRRS9G.pdf', 'pdf', 108027, 1, '2025-08-02 10:39:28', NULL, '1', 1, '2025-08-02 10:39:28', '2025-08-02 10:39:28'),
+(3, 8, 13, '01K1X11ZQQMMWXWVF2S0GH4DF6.png', 'production_files/01K1X11ZQQMMWXWVF2S0GH4DF6.png', 'png', 40559, 1, '2025-08-05 09:32:56', NULL, '1', 1, '2025-08-05 09:32:56', '2025-08-05 09:32:56'),
+(4, 8, 12, '01K1X11ZR6XYPC6AC8MEPF4GAB.png', 'production_files/01K1X11ZR6XYPC6AC8MEPF4GAB.png', 'png', 40559, 1, '2025-08-05 09:32:56', NULL, '1', 1, '2025-08-05 09:32:56', '2025-08-05 09:32:56'),
+(5, 10, 13, '01K2CQ475R3ZDRV3K8MFSV2PN1.png', 'production_files/01K2CQ475R3ZDRV3K8MFSV2PN1.png', 'png', 55616, 1, '2025-08-11 11:05:15', NULL, '1', 1, '2025-08-11 11:05:15', '2025-08-11 11:05:15'),
+(6, 10, 14, '01K2CQ47650CC16TX9TGVRC9R1.png', 'production_files/01K2CQ47650CC16TX9TGVRC9R1.png', 'png', 71744, 1, '2025-08-11 11:05:15', NULL, '1', 1, '2025-08-11 11:05:15', '2025-08-11 11:05:15'),
+(7, 11, 13, '01K2CQ475R3ZDRV3K8MFSV2PN1.png', 'production_files/01K2CQ475R3ZDRV3K8MFSV2PN1.png', 'png', 55616, 1, '2025-08-11 11:20:05', NULL, '1', 1, '2025-08-11 11:20:05', '2025-08-11 11:20:05'),
+(8, 11, 14, '01K2CQ47650CC16TX9TGVRC9R1.png', 'production_files/01K2CQ47650CC16TX9TGVRC9R1.png', 'png', 71744, 1, '2025-08-11 11:20:05', NULL, '1', 1, '2025-08-11 11:20:05', '2025-08-11 11:20:05'),
+(13, 14, 13, '01K2CQ475R3ZDRV3K8MFSV2PN1.png', 'production_files/01K2CQ475R3ZDRV3K8MFSV2PN1.png', 'png', 55616, 1, '2025-08-12 17:44:22', NULL, '1', 1, '2025-08-12 17:44:22', '2025-08-12 17:44:22'),
+(14, 14, 14, '01K2CQ47650CC16TX9TGVRC9R1.png', 'production_files/01K2CQ47650CC16TX9TGVRC9R1.png', 'png', 71744, 1, '2025-08-12 17:44:22', NULL, '1', 1, '2025-08-12 17:44:22', '2025-08-12 17:44:22');
 
 -- --------------------------------------------------------
 
@@ -862,89 +938,6 @@ CREATE TABLE IF NOT EXISTS `project_images` (
   KEY `idx_images_phase` (`phase_id`),
   KEY `idx_images_type` (`image_type`),
   KEY `idx_images_date` (`taken_date`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `project_material_usage`
---
-
-DROP TABLE IF EXISTS `project_material_usage`;
-CREATE TABLE IF NOT EXISTS `project_material_usage` (
-  `usage_id` int NOT NULL AUTO_INCREMENT,
-  `project_id` int NOT NULL,
-  `phase_id` int NOT NULL,
-  `material_id` int NOT NULL,
-  `planned_quantity` decimal(10,2) NOT NULL,
-  `used_quantity` decimal(10,2) NOT NULL,
-  `unit_cost` decimal(10,2) NOT NULL,
-  `wastage_quantity` decimal(10,2) DEFAULT '0.00',
-  `wastage_reason` varchar(255) DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`usage_id`),
-  KEY `phase_id` (`phase_id`),
-  KEY `idx_material_usage_project` (`project_id`),
-  KEY `idx_material_usage_material` (`material_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `project_phases`
---
-
-DROP TABLE IF EXISTS `project_phases`;
-CREATE TABLE IF NOT EXISTS `project_phases` (
-  `phase_id` int NOT NULL AUTO_INCREMENT,
-  `project_id` int NOT NULL,
-  `phase_name` varchar(100) NOT NULL,
-  `department_id` int NOT NULL,
-  `phase_type` enum('sequential','parallel') DEFAULT 'sequential',
-  `planned_start` date DEFAULT NULL,
-  `actual_start` date DEFAULT NULL,
-  `planned_end` date DEFAULT NULL,
-  `actual_end` date DEFAULT NULL,
-  `status` enum('pending','ready','in_progress','completed','blocked') DEFAULT 'pending',
-  `completion_percentage` int DEFAULT '0',
-  `notes` text,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`phase_id`),
-  KEY `department_id` (`department_id`),
-  KEY `idx_phases_project` (`project_id`),
-  KEY `idx_phases_status` (`status`),
-  KEY `idx_phases_dates` (`planned_start`,`planned_end`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `project_production_lines`
---
-
-DROP TABLE IF EXISTS `project_production_lines`;
-CREATE TABLE IF NOT EXISTS `project_production_lines` (
-  `assignment_id` int NOT NULL AUTO_INCREMENT,
-  `project_id` int NOT NULL,
-  `phase_id` int NOT NULL,
-  `production_line_id` int NOT NULL,
-  `start_time` datetime DEFAULT NULL,
-  `end_time` datetime DEFAULT NULL,
-  `actual_start` datetime DEFAULT NULL,
-  `actual_end` datetime DEFAULT NULL,
-  `status` enum('scheduled','in_progress','completed','delayed') DEFAULT NULL,
-  `output_quantity` int DEFAULT NULL,
-  `defects_count` int DEFAULT '0',
-  `operator_id` int DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`assignment_id`),
-  KEY `project_id` (`project_id`),
-  KEY `phase_id` (`phase_id`),
-  KEY `production_line_id` (`production_line_id`),
-  KEY `operator_id` (`operator_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
@@ -987,14 +980,16 @@ CREATE TABLE IF NOT EXISTS `roles` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `roles`
 --
 
 INSERT INTO `roles` (`id`, `name`, `guard_name`, `created_at`, `updated_at`) VALUES
-(1, 'admin', 'web', '2025-07-06 07:18:11', '2025-07-06 07:18:11');
+(1, 'الإدارة العليا', 'web', '2025-07-06 07:18:11', '2025-08-04 11:19:09'),
+(2, 'إدارة المصنع', 'web', '2025-08-04 11:57:05', '2025-08-04 11:57:05'),
+(3, 'المبيعات', 'web', '2025-08-04 12:03:25', '2025-08-04 12:03:25');
 
 -- --------------------------------------------------------
 
@@ -1034,7 +1029,68 @@ INSERT INTO `role_has_permissions` (`permission_id`, `role_id`) VALUES
 (17, 1),
 (18, 1),
 (19, 1),
-(20, 1);
+(20, 1),
+(21, 1),
+(22, 1),
+(23, 1),
+(24, 1),
+(25, 1),
+(26, 1),
+(27, 1),
+(28, 1),
+(29, 1),
+(30, 1),
+(31, 1),
+(32, 1),
+(33, 1),
+(34, 1),
+(35, 1),
+(36, 1),
+(37, 1),
+(38, 1),
+(39, 1),
+(40, 1),
+(41, 1),
+(42, 1),
+(43, 1),
+(44, 1),
+(45, 1),
+(46, 1),
+(47, 1),
+(48, 1),
+(49, 1),
+(50, 1),
+(51, 1),
+(52, 1),
+(53, 1),
+(54, 1),
+(55, 1),
+(56, 1),
+(57, 1),
+(58, 1),
+(59, 1),
+(60, 1),
+(61, 1),
+(62, 1),
+(63, 1),
+(64, 1),
+(65, 1),
+(66, 1),
+(67, 1),
+(68, 1),
+(51, 2),
+(54, 2),
+(55, 2),
+(65, 2),
+(66, 2),
+(67, 2),
+(68, 2),
+(25, 3),
+(26, 3),
+(27, 3),
+(49, 3),
+(50, 3),
+(51, 3);
 
 -- --------------------------------------------------------
 
@@ -1062,7 +1118,9 @@ CREATE TABLE IF NOT EXISTS `sessions` (
 --
 
 INSERT INTO `sessions` (`id`, `user_id`, `ip_address`, `user_agent`, `payload`, `last_activity`, `created_at`, `updated_at`) VALUES
-('jLCChaw8R9K9L62V2qxRCfZCD4aFTKgLQkBXM1Z2', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36', 'YTo2OntzOjY6Il90b2tlbiI7czo0MDoiZGxwb1MzZkpSZkFuOEhWQXRwQnZFMXMxekpKTGdkRjl0YTlySTZrNiI7czo1MDoibG9naW5fd2ViXzU5YmEzNmFkZGMyYjJmOTQwMTU4MGYwMTRjN2Y1OGVhNGUzMDk4OWQiO2k6MTtzOjE3OiJwYXNzd29yZF9oYXNoX3dlYiI7czo2MDoiJDJ5JDEyJDE3bEVQOXloTWRqZmp6N3JnNmVkRy5uRG5LRU9vWGpsYXZWeWlFaWNCbWZUTnp3Q0NjRHZXIjtzOjk6Il9wcmV2aW91cyI7YToxOntzOjM6InVybCI7czo1NDoiaHR0cDovLzEyNy4wLjAuMTo4MDAwL2FkbWluL3Byb2R1Y3Rpb24tcmVxdWVzdHMvNC9lZGl0Ijt9czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319czo4OiJmaWxhbWVudCI7YTowOnt9fQ==', 1753549307, '2025-07-26 14:28:50', '2025-07-26 17:01:47');
+('w4J7jYFgDK37mz91as63HwBSAJBsad3ctwMwgn2G', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36', 'YTo1OntzOjY6Il90b2tlbiI7czo0MDoiZ3Y2NERIdHRVRHRwbzRsdmJKVzEzbU1YM3FlVUJVOUlSMTg3ODZ3NyI7czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MzY6Imh0dHA6Ly9sb2NhbGhvc3Q6ODAwMC9hZG1pbi9teS10YXNrcyI7fXM6NTA6ImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjtpOjE7czoxNzoicGFzc3dvcmRfaGFzaF93ZWIiO3M6NjA6IiQyeSQxMiQxN2xFUDl5aE1kamZqejdyZzZlZEcubkRuS0VPb1hqbGF2VnlpRWljQm1mVE56d0NDY0R2VyI7fQ==', 1755369382, '2025-08-16 17:45:23', '2025-08-16 18:36:22'),
+('rykHKXZO0SSsznp2sL6X5NXWkDxOOWoVSXuCwXpX', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36', 'YToyOntzOjY6Il90b2tlbiI7czo0MDoiZEl5a1F2S2UyZ21LR3pKdUhPMDJ2dUxqM2NwblpWNnRLS3ZHR29idiI7czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319fQ==', 1755384970, '2025-08-16 22:56:10', '2025-08-16 22:56:10'),
+('Jp4R71DUjAJM4rVXgSMOGxk7sK3Z0aaqU7GGPKqX', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36', 'YTo1OntzOjY6Il90b2tlbiI7czo0MDoiRWlkREJPemx5TER3YVkzaTRUUjhIc3M1cDdua3FhVnMweThKbGZNUyI7czo1MDoibG9naW5fd2ViXzU5YmEzNmFkZGMyYjJmOTQwMTU4MGYwMTRjN2Y1OGVhNGUzMDk4OWQiO2k6MTtzOjE3OiJwYXNzd29yZF9oYXNoX3dlYiI7czo2MDoiJDJ5JDEyJDE3bEVQOXloTWRqZmp6N3JnNmVkRy5uRG5LRU9vWGpsYXZWeWlFaWNCbWZUTnp3Q0NjRHZXIjtzOjk6Il9wcmV2aW91cyI7YToxOntzOjM6InVybCI7czozNjoiaHR0cDovL2xvY2FsaG9zdDo4MDAwL2FkbWluL215LXRhc2tzIjt9czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319fQ==', 1755384985, '2025-08-16 22:56:15', '2025-08-16 22:56:25');
 
 -- --------------------------------------------------------
 
@@ -1174,8 +1232,8 @@ CREATE TABLE IF NOT EXISTS `users` (
 --
 
 INSERT INTO `users` (`id`, `name`, `email`, `email_verified_at`, `password`, `remember_token`, `created_at`, `updated_at`) VALUES
-(1, 'Admin', 'info@a-elsayed.com', NULL, '$2y$12$17lEP9yhMdjfjz7rg6edG.nDnKEOoXjlavVyiEicBmfTNzwCCcDvW', 'Rcfle7PdN7KIdsj0QzXyZ0JWj8QzLAY4QeYNVoOhlWgOQXkuB4aqpGrZv8DZ', '2025-07-03 14:55:58', '2025-07-03 14:55:58'),
-(9, 'Ahmed', 'ahmed@ahmed.com', NULL, '$2y$12$aiSMdB4n8WXQC5nfLjwBceoi35opjjY1.9U86/7dQPo7B6SNlEjz6', NULL, '2025-07-06 06:51:31', '2025-07-06 06:51:31');
+(1, 'Admin', 'info@a-elsayed.com', NULL, '$2y$12$17lEP9yhMdjfjz7rg6edG.nDnKEOoXjlavVyiEicBmfTNzwCCcDvW', 'ZxbnwnfVpAUewHBvDavGpmEO6Ltzi5gR0OlSkNL5HnaLOxJrikTRcDTa2Ecq', '2025-07-03 14:55:58', '2025-07-03 14:55:58'),
+(9, 'Ahmed', 'designer_4ever@hotmail.com', NULL, '$2y$12$aiSMdB4n8WXQC5nfLjwBceoi35opjjY1.9U86/7dQPo7B6SNlEjz6', NULL, '2025-07-06 06:51:31', '2025-08-16 12:53:42');
 
 --
 -- Constraints for dumped tables
@@ -1192,6 +1250,22 @@ ALTER TABLE `model_has_permissions`
 --
 ALTER TABLE `model_has_roles`
   ADD CONSTRAINT `model_has_roles_role_id_foreign` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `production_tasks`
+--
+ALTER TABLE `production_tasks`
+  ADD CONSTRAINT `production_tasks_assigned_to_employee_id_foreign` FOREIGN KEY (`assigned_to_employee_id`) REFERENCES `employees` (`employee_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `production_tasks_department_id_foreign` FOREIGN KEY (`department_id`) REFERENCES `departments` (`dept_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `production_tasks_project_id_foreign` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `projects`
+--
+ALTER TABLE `projects`
+  ADD CONSTRAINT `projects_client_id_foreign` FOREIGN KEY (`client_id`) REFERENCES `clients` (`client_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `projects_created_by_foreign` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `projects_production_request_id_foreign` FOREIGN KEY (`production_request_id`) REFERENCES `production_requests` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `role_has_permissions`

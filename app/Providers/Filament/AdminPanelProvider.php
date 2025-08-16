@@ -33,9 +33,14 @@ use App\Filament\Resources\PermissionResource;
 use App\Filament\Resources\ProductionRequestResource;
 //use App\Filament\Resources\SystemSettingResource;
 use App\Filament\Resources\ProjectResource;
+use App\Filament\Pages\AssignedTasks;
+use App\Filament\Pages\FactoryManagerTaskReview;
+use Illuminate\Support\Facades\Auth;
+use Spatie\Permission\Traits\HasRoles;
 
 class AdminPanelProvider extends PanelProvider
 {
+
     public function panel(Panel $panel): Panel
     {
         return $panel
@@ -49,7 +54,8 @@ class AdminPanelProvider extends PanelProvider
                 Pages\Dashboard::class,
                 SystemSettings::class,
             ])
-
+            ->databaseNotifications()               // تفعيل إشعارات قاعدة البيانات
+            ->databaseNotificationsPolling('30s')   // (اختياري) الاستطلاع كل 30 ثانية
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
@@ -71,14 +77,25 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->navigationGroups([
                 'إدارة النظام',
-                'الطلبات ',
-                'المشروعات ',
-                'الأقسام ',
-                'العملاء ',
-                'الموظفين ',
             ])
             ->navigation(function (NavigationBuilder $builder): NavigationBuilder {
+
+                $isAdmin = fn () => Auth::check() && (
+                        Auth::user()->id === 1
+                        || (method_exists(Auth::user(), 'hasAnyRole') && Auth::user()->hasAnyRole(['admin','super-admin','owner']))
+                        || Auth::user()->can('super-admin')
+                        || Auth::user()->can('admin')
+                    );
+
+                $hasEmployee = fn () => Auth::check() && Auth::user()?->employee !== null;
+
+                $canReviewTasks = fn () => Auth::check() && (
+                        Auth::user()->can('factory_manager.review_tasks')
+                        || $isAdmin()
+                    );
+
                 return $builder
+
                     ->group(
                         NavigationGroup::make()
                             ->label('الطلبات')
@@ -100,6 +117,23 @@ class AdminPanelProvider extends PanelProvider
                                     ->url(ProjectResource::getUrl()),
                             ])
                     )
+                    ->group(
+                        NavigationGroup::make()
+                            ->label('المهام')
+                            ->collapsible()
+                            ->collapsed()
+                            ->icon('heroicon-o-briefcase')
+                            ->items([
+                                NavigationItem::make('المهام المسندة إليّ')
+                                    ->url(\App\Filament\Pages\AssignedTasks::getUrl())
+                                    ->visible(fn () => $hasEmployee() || $isAdmin()),
+
+                                NavigationItem::make('مراجعة المهام')
+                                    ->url(\App\Filament\Pages\FactoryManagerTaskReview::getUrl())
+                                    ->visible(fn () => $canReviewTasks()),
+                            ])
+                    )
+
                     ->group(
                         NavigationGroup::make()
                             ->label('الأقسام')
@@ -161,5 +195,4 @@ class AdminPanelProvider extends PanelProvider
                     );
             });
     }
-
 }

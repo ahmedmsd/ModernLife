@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\ProductionTask;
+use App\Observers\ProductionTaskObserver;
 use Illuminate\Support\ServiceProvider;
 use App\Models\ProductionRequest;
 use App\Observers\ProductionRequestObserver;
@@ -15,6 +17,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         ProductionRequest::observe(ProductionRequestObserver::class);
+        ProductionTask::observe(ProductionTaskObserver::class);
+
         // Optional preload
         Permission::get();
         Role::get();

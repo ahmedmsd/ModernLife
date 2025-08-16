@@ -11,12 +11,12 @@ class AuthServiceProvider extends ServiceProvider
 {
 
     protected $policies = [
-//        Project::class => ProjectPolicy::class,
+        Project::class => ProjectPolicy::class,
     ];
 
-    public function boot()
+    public function boot(): void
     {
-//        $this->registerPolicies();
+        $this->registerPolicies();
 
     }
 }
