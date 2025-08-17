@@ -13,16 +13,17 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Filament\Notifications\Notification;
+use BackedEnum;
 
 class FactoryManagerTaskReview extends Page implements HasTable
 {
     use InteractsWithTable;
 
-    protected static ?string $navigationIcon  = 'heroicon-o-clipboard-document-list';
+    protected static string | BackedEnum | null $navigationIcon  = 'heroicon-o-clipboard-document-list';
     protected static ?string $navigationLabel = 'مراجعة المهام';
     protected static ?string $title           = 'مراجعة مهام الأقسام';
     protected static ?string $slug            = 'tasks/review';
-    protected static string  $view            = 'filament.pages.factory-manager-task-review';
+    protected string  $view            = 'filament.pages.factory-manager-task-review';
 
     public static function canAccess(): bool
     {

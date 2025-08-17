@@ -4,13 +4,13 @@ namespace App\Filament\Resources\ProjectResource\RelationManagers;
 
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Actions\CreateAction;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Actions\DeleteBulkAction;
+use Filament\Schemas\Schema;
 
 class TasksRelationManager extends RelationManager
 {
@@ -19,9 +19,9 @@ class TasksRelationManager extends RelationManager
     protected static ?string $navigationLabel = 'مهام التصنيع';
     protected static ?string $pluralModelLabel = 'مهام التصنيع';
     protected static ?string $modelLabel = 'مهمة تصنيع';
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form->schema([
+        return $schema->schema([
             Forms\Components\Select::make('department_id')
                 ->relationship('department', 'dept_name')
                 ->label('القسم')

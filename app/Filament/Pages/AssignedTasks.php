@@ -13,16 +13,17 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Filament\Notifications\Notification;
+use BackedEnum;
 
 class AssignedTasks extends Page implements HasTable
 {
     use InteractsWithTable;
 
-    protected static ?string $navigationIcon  = 'heroicon-o-clipboard-document-check';
+    protected static string | BackedEnum | null $navigationIcon  = 'heroicon-o-clipboard-document-check';
     protected static ?string $navigationLabel = 'مهامي';
     protected static ?string $title           = 'مهامي المسندة';
     protected static ?string $slug            = 'my-tasks';
-    protected static string  $view            = 'filament.pages.assigned-tasks';
+    protected string  $view            = 'filament.pages.assigned-tasks';
 
     public static function canAccess(): bool
     {

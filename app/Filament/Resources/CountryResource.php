@@ -9,21 +9,24 @@ use Filament\Tables;
 use Filament\Resources\Resource;
 use Filament\Forms\Components\Actions\Action;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Schema;
+use BackedEnum;
+use UnitEnum;
 
 class CountryResource extends Resource
 {
     protected static ?string $model = Country::class;
-    protected static ?string $navigationGroup = 'الإعدادات الجغرافية';
-    protected static ?string $navigationIcon = 'heroicon-o-globe-alt';
+    protected static UnitEnum | string | null $navigationGroup = 'الإعدادات الجغرافية';
+    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-globe-alt';
     protected static ?string $navigationLabel = 'الدول';
     protected static ?string $recordTitleAttribute = 'name';
     protected static ?string $label = 'إدارة الدول';
     protected static ?string $pluralLabel = 'الدول';
     protected static ?string $modelLabel = 'دولة';
 
-    public static function form(Forms\Form $form): Forms\Form
+    public static function form(Schema $schema): Schema
     {
-        return $form->schema([
+        return $schema->schema([
             Forms\Components\TextInput::make('name')
                 ->label('اسم الدولة')
                 ->required(),

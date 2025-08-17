@@ -6,27 +6,28 @@ use App\Filament\Resources\ProjectResource\Pages;
 use App\Filament\Resources\ProjectResource\RelationManagers\TasksRelationManager;
 use App\Models\Project;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Illuminate\Support\Facades\Auth;
 use Filament\Tables\Actions\Action;
+use BackedEnum;
+use Filament\Schemas\Schema;
 
 
 class ProjectResource extends Resource
 {
     protected static ?string $model = Project::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-briefcase';
+    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-briefcase';
     protected static ?string $navigationLabel = 'المشروعات';
     protected static ?string $pluralModelLabel = 'المشروعات';
     protected static ?string $modelLabel = 'مشروع';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form->schema([
+        return $schema->schema([
             Forms\Components\Select::make('production_request_id')
                 ->relationship('productionRequest', 'project_name')
                 ->searchable()

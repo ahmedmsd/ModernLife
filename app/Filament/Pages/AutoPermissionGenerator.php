@@ -6,16 +6,18 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\File;
 use Spatie\Permission\Models\Permission;
 use Filament\Notifications\Notification;
+use BackedEnum;
+use UnitEnum;
 
 class AutoPermissionGenerator extends Page
 {
-    protected static ?string $navigationIcon = 'heroicon-o-lock-closed';
+    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-lock-closed';
     protected static ?string $title = 'توليد صلاحيات تلقائيًا';
     protected static ?string $navigationLabel = 'توليد الصلاحيات من الصفحات';
     protected static ?string $slug = 'auto-generate-permissions';
-    protected static ?string $navigationGroup = 'إدارة الصلاحيات';
+    protected static UnitEnum | string | null $navigationGroup = 'إدارة الصلاحيات';
 
-    protected static string $view = 'filament.pages.auto-permission-generator';
+    protected string $view = 'filament.pages.auto-permission-generator';
 
     public function generate(): void
     {
