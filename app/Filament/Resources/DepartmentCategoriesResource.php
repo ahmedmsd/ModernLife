@@ -4,23 +4,22 @@ namespace App\Filament\Resources;
 
 use App\Models\DepartmentCategories;
 use Filament\Forms;
+use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Enums\FiltersLayout;
-use Filament\Schemas\Schema;
-use BackedEnum;
 
 class DepartmentCategoriesResource extends Resource
 {
     protected static ?string $model = DepartmentCategories::class;
-    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-tag';
+    protected static ?string $navigationIcon = 'heroicon-o-tag';
     protected static ?string $modelLabel = 'تصنيف';
 
 
-    public static function form(Schema $schema): Schema
+    public static function form(Form $form): Form
     {
-        return $schema
+        return $form
             ->schema([
                 Forms\Components\TextInput::make('category_name')
                     ->required()

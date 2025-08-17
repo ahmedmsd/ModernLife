@@ -5,26 +5,25 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\EmployeeResource\Pages;
 use App\Models\Employee;
 use Filament\Forms;
+use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Hash;
-use BackedEnum;
-use Filament\Schemas\Schema;
 
 class EmployeeResource extends Resource
 {
     protected static ?string $model = Employee::class;
-    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-user-group';
+    protected static ?string $navigationIcon = 'heroicon-o-user-group';
     protected static ?string $navigationLabel = 'الموظفين';
     protected static ?string $modelLabel = 'موظف';
     protected static ?string $pluralModelLabel = 'الموظفين';
     protected static ?string $recordTitleAttribute = 'employee_name';
-    public static function form(Schema $schema): Schema
+    public static function form(Form $form): Form
     {
-        return $schema
+        return $form
             ->schema([
                 Forms\Components\Section::make('معلومات الحساب')
                     ->schema([

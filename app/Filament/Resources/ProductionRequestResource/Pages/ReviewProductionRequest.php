@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 class ReviewProductionRequest extends Page
 {
     protected static string $resource = ProductionRequestResource::class;
-    protected string $view = 'filament.resources.production-request-resource.pages.review-production-request';
+    protected static string $view = 'filament.resources.production-request-resource.pages.review-production-request';
     protected static ?string $title = 'مراجعة الطلب';
 
     public ProductionRequest $record;

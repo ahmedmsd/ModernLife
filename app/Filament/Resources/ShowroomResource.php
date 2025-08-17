@@ -7,23 +7,20 @@ use App\Models\Showroom;
 use Filament\Forms;
 use Filament\Tables;
 use Filament\Resources\Resource;
-use BackedEnum;
-use UnitEnum;
-use Filament\Schemas\Schema;
 
 class ShowroomResource extends Resource
 {
     protected static ?string $model = Showroom::class;
-    protected static UnitEnum | string | null $navigationGroup = 'إدارة المعارض';
-    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-building-storefront';
+    protected static ?string $navigationGroup = 'إدارة المعارض';
+    protected static ?string $navigationIcon = 'heroicon-o-building-storefront';
     protected static ?string $navigationLabel = 'المعارض';
     protected static ?string $recordTitleAttribute = 'name';
     protected static ?string $label = 'إدارة المعارض';
     protected static ?string $pluralLabel = ' المعارض';
     protected static ?string $modelLabel = 'معرض';
-    public static function form(Schema $schema): Schema
+    public static function form(Forms\Form $form): Forms\Form
     {
-        return $schema->schema([
+        return $form->schema([
             Forms\Components\TextInput::make('name')
                 ->label('اسم المعرض')
                 ->required(),

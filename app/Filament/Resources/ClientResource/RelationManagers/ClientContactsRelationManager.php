@@ -12,7 +12,6 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Actions\DeleteAction;
-use Filament\Schemas\Schema;
 
 class ClientContactsRelationManager extends RelationManager
 {
@@ -20,9 +19,9 @@ class ClientContactsRelationManager extends RelationManager
     protected static ?string $recordTitleAttribute = 'contact_name';
 
     protected static bool $canCreate = true;
-    public function form(Schema $schema): Schema
+    public function form(Forms\Form $form): Forms\Form
     {
-        return $schema->schema([
+        return $form->schema([
             TextInput::make('contact_name')
                 ->label('اسم جهة الاتصال')
                 ->required()

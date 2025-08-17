@@ -5,11 +5,10 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\DepartmentResource\Pages;
 use App\Models\Department;
 use Filament\Forms;
+use Filament\Forms\Form;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Resources\Resource;
-use Filament\Schemas\Schema;
-use BackedEnum;
 
 
 class DepartmentResource extends Resource
@@ -17,11 +16,11 @@ class DepartmentResource extends Resource
     protected static ?string $model = Department::class;
     protected static ?string $label = 'إدارة الأقسام';
     protected static ?string $pluralLabel = 'إدارة الأقسام';
-    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-building-office';
+    protected static ?string $navigationIcon = 'heroicon-o-building-office';
     protected static ?string $modelLabel = 'قسم';
-    public static function form(Schema $schema): Schema
+    public static function form(Form $form): Form
     {
-        return $schema
+        return $form
             ->schema([
                 Forms\Components\TextInput::make('dept_name')
                     ->label('اسم القسم')

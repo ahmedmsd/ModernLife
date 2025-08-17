@@ -5,9 +5,9 @@ namespace App\Filament\Resources\ProjectResource\Pages;
 use App\Filament\Resources\ProjectResource;
 use Filament\Resources\Pages\ManageRelatedRecords;
 use Filament\Forms;
+use Filament\Forms\Form;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Schemas\Schema;
 
 class ManageProjectTasks extends ManageRelatedRecords
 {
@@ -24,9 +24,9 @@ class ManageProjectTasks extends ManageRelatedRecords
         return \Illuminate\Support\Facades\Auth::user()?->can('access_manage_project_tasks');
     }
 
-    public function form(Schema $schema): Schema
+    public function form(Form $form): Form
     {
-        return $schema->schema([
+        return $form->schema([
             Forms\Components\Select::make('department_id')
                 ->relationship('department', 'dept_name')
                 ->label('القسم')

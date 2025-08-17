@@ -10,24 +10,21 @@ use Filament\Tables;
 use Filament\Forms\Components\{TextInput, Select, Textarea, Toggle};
 use Filament\Tables\Columns\{TextColumn, IconColumn};
 use Filament\Tables\Columns\BadgeColumn;
-use BackedEnum;
-use UnitEnum;
-use Filament\Schemas\Schema;
 class ClientResource extends Resource
 {
     protected static ?string $model = Client::class;
 
-    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-user-group';
-    protected static UnitEnum | string | null $navigationGroup = 'إدارة العملاء';
+    protected static ?string $navigationIcon = 'heroicon-o-user-group';
+    protected static ?string $navigationGroup = 'إدارة العملاء';
     protected static ?string $navigationLabel = 'العملاء';
     protected static ?string $recordTitleAttribute = 'client_name';
     protected static ?string $label = 'إدارة العملاء';
     protected static ?string $pluralLabel = 'إدارة العملاء';
     protected static ?string $modelLabel = 'عميل';
 
-    public static function form(Schema $schema): Schema
+    public static function form(Forms\Form $form): Forms\Form
     {
-        return $schema->schema([
+        return $form->schema([
             TextInput::make('client_name')
                 ->label('اسم العميل')
                 ->required()
