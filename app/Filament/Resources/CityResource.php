@@ -8,20 +8,23 @@ use Filament\Forms\Components\Actions\Action;
 use Filament\Forms;
 use Filament\Tables;
 use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
+use BackedEnum;
+use UnitEnum;
 
 class CityResource extends Resource
 {
     protected static ?string $model = City::class;
-    protected static ?string $navigationGroup = 'الإعدادات الجغرافية';
-    protected static ?string $navigationIcon = 'heroicon-o-map-pin';
+    protected static UnitEnum | string | null $navigationGroup = 'الإعدادات الجغرافية';
+    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-map-pin';
     protected static ?string $navigationLabel = 'المدن';
     protected static ?string $recordTitleAttribute = 'name';
     protected static ?string $label = 'إدارة المدن';
     protected static ?string $pluralLabel = 'المدن';
     protected static ?string $modelLabel = 'مدينة';
-    public static function form(Forms\Form $form): Forms\Form
+    public static function form(Schema $schema): Schema
     {
-        return $form->schema([
+        return $schema->schema([
             Forms\Components\TextInput::make('name')
                 ->label('اسم المدينة')
                 ->required(),

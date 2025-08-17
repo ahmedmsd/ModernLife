@@ -9,5 +9,5 @@ class SystemSettings extends Page
 {
     protected static string $resource = NothingResource::class;
 
-    protected static string $view = 'filament.resources.nothing-resource.pages.system-settings';
+    protected string $view = 'filament.resources.nothing-resource.pages.system-settings';
 }

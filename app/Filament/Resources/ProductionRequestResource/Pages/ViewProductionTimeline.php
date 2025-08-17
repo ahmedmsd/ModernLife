@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Auth;
 class ViewProductionTimeline extends Page
 {
     protected static string $resource = ProductionRequestResource::class;
-    protected static string $view     = 'filament.resources.production-request-resource.pages.view-production-timeline';
+    protected string $view     = 'filament.resources.production-request-resource.pages.view-production-timeline';
     protected static ?string $title   = 'معلومات الطلب التفصيلية';
 
     public ProductionRequest $record;

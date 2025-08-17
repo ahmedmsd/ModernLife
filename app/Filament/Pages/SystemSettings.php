@@ -6,16 +6,18 @@ use Filament\Forms;
 use Filament\Pages\Page;
 use App\Models\SystemSetting;
 use Filament\Notifications\Notification;
+use BackedEnum;
+use UnitEnum;
 
 class SystemSettings extends Page implements Forms\Contracts\HasForms
 {
     use Forms\Concerns\InteractsWithForms;
 
-    protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
+    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-cog-6-tooth';
     protected static ?string $title = 'الإعدادات العامة';
     protected static ?string $navigationLabel = 'الإعدادات العامة';
-    protected static ?string $navigationGroup = 'إعدادات النظام';
-    protected static string $view = 'filament.pages.system-settings';
+    protected static UnitEnum | string | null $navigationGroup = 'إعدادات النظام';
+    protected string $view = 'filament.pages.system-settings';
 
     public $data = [];
 

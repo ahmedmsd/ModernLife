@@ -12,21 +12,24 @@ use Filament\Forms\Components\{TextInput, Textarea, FileUpload, Select, Repeater
 use App\Enums\ProductionRequestStatus;
 use Filament\Tables\Columns\TextColumn;
 use Illuminate\Support\Facades\Auth;
+use BackedEnum;
+use UnitEnum;
+use Filament\Schemas\Schema;
 
 class ProductionRequestResource extends Resource
 {
     protected static ?string $model = ProductionRequest::class;
-    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
-    protected static ?string $navigationGroup = 'طلبات التصنيع';
+    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-clipboard-document-list';
+    protected static UnitEnum | string | null $navigationGroup = 'طلبات التصنيع';
     protected static ?string $navigationLabel = 'طلبات التصنيع';
     protected static ?string $recordTitleAttribute = 'name';
     protected static ?string $label = 'إدارة الطلبات';
     protected static ?string $pluralLabel = ' الطلبات';
     protected static ?string $modelLabel = 'طلب تصنيع';
 
-    public static function form(Forms\Form $form): Forms\Form
+    public static function form(Schema $schema): Schema
     {
-        return $form->schema([
+        return $schema->schema([
             TextInput::make('project_name')->label('اسم المشروع')->required()->columnSpanFull(),
             Textarea::make('project_description')->label('وصف المشروع')->columnSpanFull(),
             Select::make('client_id')

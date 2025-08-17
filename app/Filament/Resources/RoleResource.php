@@ -6,7 +6,6 @@ use Filament\Forms;
 use Filament\Tables;
 use Spatie\Permission\Models\Role;
 use Filament\Resources\Resource;
-use Filament\Forms\Form;
 use Filament\Tables\Table;
 use App\Filament\Resources\RoleResource\Pages;
 use Spatie\Permission\Models\Permission;
@@ -14,18 +13,21 @@ use Filament\Forms\Components\Select;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Contracts\Auth\Authenticatable;
+use Filament\Schemas\Schema;
+use BackedEnum;
+use UnitEnum;
 
 class RoleResource extends Resource
 {
     protected static ?string $model = Role::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-shield-check';
+    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-shield-check';
     protected static ?string $navigationLabel = 'الأدوار';
-    protected static ?string $navigationGroup = 'إدارة الصلاحيات';
+    protected static UnitEnum | string | null $navigationGroup = 'إدارة الصلاحيات';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->schema([
                 Forms\Components\TextInput::make('name')
                     ->label('اسم الدور')
