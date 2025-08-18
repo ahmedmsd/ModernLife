@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit88970a0117c062eed55fa8728fc43833
+class ComposerStaticInit8394e4bc0fc3c7942d7928423cd01ab0
 {
     public static $files = array (
         '6e3fae29631ef280660b3cdad06f25a8' => __DIR__ . '/..' . '/symfony/deprecation-contracts/function.php',
@@ -432,8 +432,8 @@ class ComposerStaticInit88970a0117c062eed55fa8728fc43833
         ),
         'Psr\\Http\\Message\\' => 
         array (
-            0 => __DIR__ . '/..' . '/psr/http-factory/src',
-            1 => __DIR__ . '/..' . '/psr/http-message/src',
+            0 => __DIR__ . '/..' . '/psr/http-message/src',
+            1 => __DIR__ . '/..' . '/psr/http-factory/src',
         ),
         'Psr\\Http\\Client\\' => 
         array (
@@ -493,8 +493,8 @@ class ComposerStaticInit88970a0117c062eed55fa8728fc43833
         ),
         'League\\Uri\\' => 
         array (
-            0 => __DIR__ . '/..' . '/league/uri',
-            1 => __DIR__ . '/..' . '/league/uri-interfaces',
+            0 => __DIR__ . '/..' . '/league/uri-interfaces',
+            1 => __DIR__ . '/..' . '/league/uri',
         ),
         'League\\MimeTypeDetection\\' => 
         array (
@@ -502,8 +502,8 @@ class ComposerStaticInit88970a0117c062eed55fa8728fc43833
         ),
         'League\\Glide\\' => 
         array (
-            0 => __DIR__ . '/..' . '/league/glide-symfony/src',
-            1 => __DIR__ . '/..' . '/league/glide/src',
+            0 => __DIR__ . '/..' . '/league/glide/src',
+            1 => __DIR__ . '/..' . '/league/glide-symfony/src',
         ),
         'League\\Flysystem\\Local\\' => 
         array (
@@ -732,6 +732,7 @@ class ComposerStaticInit88970a0117c062eed55fa8728fc43833
         'AnourValar\\EloquentSerialize\\Package' => __DIR__ . '/..' . '/anourvalar/eloquent-serialize/src/Package.php',
         'AnourValar\\EloquentSerialize\\Service' => __DIR__ . '/..' . '/anourvalar/eloquent-serialize/src/Service.php',
         'App\\Enums\\ProductionRequestStatus' => __DIR__ . '/../..' . '/app/Enums/ProductionRequestStatus.php',
+        'App\\Enums\\TaskStatus' => __DIR__ . '/../..' . '/app/Enums/TaskStatus.php',
         'App\\Filament\\Pages\\AssignedTasks' => __DIR__ . '/../..' . '/app/Filament/Pages/AssignedTasks.php',
         'App\\Filament\\Pages\\AutoPermissionGenerator' => __DIR__ . '/../..' . '/app/Filament/Pages/AutoPermissionGenerator.php',
         'App\\Filament\\Pages\\FactoryManagerTaskReview' => __DIR__ . '/../..' . '/app/Filament/Pages/FactoryManagerTaskReview.php',
@@ -9086,9 +9087,9 @@ class ComposerStaticInit88970a0117c062eed55fa8728fc43833
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit88970a0117c062eed55fa8728fc43833::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit88970a0117c062eed55fa8728fc43833::$prefixDirsPsr4;
-            $loader->classMap = ComposerStaticInit88970a0117c062eed55fa8728fc43833::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit8394e4bc0fc3c7942d7928423cd01ab0::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit8394e4bc0fc3c7942d7928423cd01ab0::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInit8394e4bc0fc3c7942d7928423cd01ab0::$classMap;
 
         }, null, ClassLoader::class);
     }

@@ -13,6 +13,7 @@ return array(
     'AnourValar\\EloquentSerialize\\Package' => $vendorDir . '/anourvalar/eloquent-serialize/src/Package.php',
     'AnourValar\\EloquentSerialize\\Service' => $vendorDir . '/anourvalar/eloquent-serialize/src/Service.php',
     'App\\Enums\\ProductionRequestStatus' => $baseDir . '/app/Enums/ProductionRequestStatus.php',
+    'App\\Enums\\TaskStatus' => $baseDir . '/app/Enums/TaskStatus.php',
     'App\\Filament\\Pages\\AssignedTasks' => $baseDir . '/app/Filament/Pages/AssignedTasks.php',
     'App\\Filament\\Pages\\AutoPermissionGenerator' => $baseDir . '/app/Filament/Pages/AutoPermissionGenerator.php',
     'App\\Filament\\Pages\\FactoryManagerTaskReview' => $baseDir . '/app/Filament/Pages/FactoryManagerTaskReview.php',

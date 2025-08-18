@@ -9,10 +9,11 @@ use Filament\Forms\Form;
 use Filament\Tables;
 use Filament\Tables\Table;
 use App\Enums\TaskStatus;
+use App\Filament\Resources\TaskResource;
 
 class ManageProjectTasks extends ManageRelatedRecords
 {
-    protected static string $resource     = ProjectResource::class;
+    protected static string $resource = ProjectResource::class;
     protected static string $relationship = 'tasks';
     protected array $casts = ['status' => \App\Enums\TaskStatus::class];
 
@@ -40,7 +41,7 @@ class ManageProjectTasks extends ManageRelatedRecords
 
             Forms\Components\FileUpload::make('file_path')
                 ->label('ملف المهمة')
-                ->directory(fn () => "projects/{$this->getOwnerRecord()->id}/tasks")
+                ->directory(fn() => "projects/{$this->getOwnerRecord()->id}/tasks")
                 ->preserveFilenames()
                 ->helperText('يمكنك رفع ملف جديد للمهمة أو الإبقاء على الملف المنشأ تلقائيًا.')
                 ->nullable(),
@@ -104,13 +105,13 @@ class ManageProjectTasks extends ManageRelatedRecords
                 Tables\Columns\TextColumn::make('status')
                     ->label('الحالة')
                     ->badge()
-                    ->icon(fn ($record) => $record->status instanceof TaskStatus
+                    ->icon(fn($record) => $record->status instanceof TaskStatus
                         ? $record->status->icon()
                         : TaskStatus::from($record->status)->icon())
-                    ->color(fn ($record) => $record->status instanceof TaskStatus
+                    ->color(fn($record) => $record->status instanceof TaskStatus
                         ? $record->status->color()
                         : TaskStatus::from($record->status)->color())
-                    ->formatStateUsing(fn ($state) => $state instanceof TaskStatus
+                    ->formatStateUsing(fn($state) => $state instanceof TaskStatus
                         ? $state->getLabel()
                         : TaskStatus::from($state)->getLabel()),
 
@@ -133,6 +134,10 @@ class ManageProjectTasks extends ManageRelatedRecords
                     ->modalCancelActionLabel('إلغاء'),
             ])
             ->actions([
+                Tables\Actions\Action::make('viewTask')
+                    ->label('عرض')
+                    ->icon('heroicon-m-eye')
+                    ->url(fn($record) => route('filament.admin.resources.tasks.view', $record)),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])

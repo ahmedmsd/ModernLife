@@ -18,21 +18,22 @@ class FactoryManagerTaskReview extends Page implements HasTable
 {
     use InteractsWithTable;
 
-    protected static ?string $navigationIcon  = 'heroicon-o-clipboard-document-list';
+    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
     protected static ?string $navigationLabel = 'مراجعة المهام';
-    protected static ?string $title           = 'مراجعة مهام الأقسام';
-    protected static ?string $slug            = 'tasks/review';
-    protected static string  $view            = 'filament.pages.factory-manager-task-review';
+    protected static ?string $title = 'مراجعة مهام الأقسام';
+    protected static ?string $slug = 'tasks/review';
+    protected static string $view = 'filament.pages.factory-manager-task-review';
 
     public static function canAccess(): bool
     {
-        if (! auth()->check()) return false;
+        if (!auth()->check())
+            return false;
 
         $user = auth()->user();
 
         $isAdmin = (
             $user->id === 1
-            || (method_exists($user, 'hasAnyRole') && $user->hasAnyRole(['admin','super-admin','owner']))
+            || (method_exists($user, 'hasAnyRole') && $user->hasAnyRole(['admin', 'super-admin', 'owner']))
             || $user->can('super-admin')
             || $user->can('admin')
         );
@@ -49,15 +50,15 @@ class FactoryManagerTaskReview extends Page implements HasTable
     private function statusColor(string $state): string
     {
         return match ($state) {
-            'completed'    => 'success',
-            'in_progress'  => 'warning',
-            'blocked'      => 'danger',
-            'cancelled'    => 'danger',
+            'completed' => 'success',
+            'in_progress' => 'warning',
+            'blocked' => 'danger',
+            'cancelled' => 'danger',
             'under_review' => 'purple',
-            'rework'       => 'pink',
+            'rework' => 'pink',
             'acknowledged' => 'info',
-            'assigned'     => 'primary',
-            default        => 'gray',
+            'assigned' => 'primary',
+            default => 'gray',
         };
     }
 
@@ -65,10 +66,11 @@ class FactoryManagerTaskReview extends Page implements HasTable
     {
         return $table
             ->heading('المهام المطلوب مراجعتها')
-            ->query(fn (): Builder => ProductionTask::query()
-                ->with(['project', 'department', 'employee.user'])
-                ->where('status', 'under_review')
-                ->latest('updated_at')
+            ->query(
+                fn(): Builder => ProductionTask::query()
+                    ->with(['project', 'department', 'employee.user'])
+                    ->where('status', 'under_review')
+                    ->latest('updated_at')
             )
             ->columns([
                 Tables\Columns\TextColumn::make('project.project_name')
@@ -85,7 +87,7 @@ class FactoryManagerTaskReview extends Page implements HasTable
                 Tables\Columns\TextColumn::make('status')
                     ->label('الحالة')
                     ->badge()
-                    ->color(fn (string $state) => $this->statusColor($state)),
+                    ->color(fn(string $state) => $this->statusColor($state)),
 
                 Tables\Columns\TextColumn::make('due_date')
                     ->label('تاريخ التسليم المتوقع')
@@ -101,7 +103,7 @@ class FactoryManagerTaskReview extends Page implements HasTable
                     ->relationship('department', 'dept_name'),
                 Tables\Filters\Filter::make('due_soon')
                     ->label('مستحقة خلال 7 أيام')
-                    ->query(fn (Builder $q) => $q->whereDate('due_date', '<=', now()->addDays(7))),
+                    ->query(fn(Builder $q) => $q->whereDate('due_date', '<=', now()->addDays(7))),
             ])
             ->actions([
                 // اعتماد = إكمال
@@ -109,7 +111,7 @@ class FactoryManagerTaskReview extends Page implements HasTable
                     ->label('اعتماد (إكمال)')
                     ->icon('heroicon-o-check')
                     ->color('success')
-                    ->visible(fn ($record) => $record->status === 'under_review')
+                    ->visible(fn($record) => $record->status === 'under_review')
                     ->form([
                         Forms\Components\Textarea::make('note')
                             ->label('ملاحظة (اختياري)')
@@ -122,7 +124,7 @@ class FactoryManagerTaskReview extends Page implements HasTable
                     ->action(function (ProductionTask $record, array $data) {
                         $record->update([
                             'status' => 'completed',
-                            'notes'  => trim(($record->notes ? $record->notes."\n" : '').'[Manager Approved] '.($data['note'] ?? '')),
+                            'notes' => trim(($record->notes ? $record->notes . "\n" : '') . '[Manager Approved] ' . ($data['note'] ?? '')),
                             // 'completed_at' => now(), // لو لديك عمود
                         ]);
 
@@ -139,7 +141,7 @@ class FactoryManagerTaskReview extends Page implements HasTable
                     ->label('طلب إعادة عمل')
                     ->icon('heroicon-o-arrow-path')
                     ->color('warning')
-                    ->visible(fn ($record) => $record->status === 'under_review')
+                    ->visible(fn($record) => $record->status === 'under_review')
                     ->form([
                         Forms\Components\Textarea::make('reason')
                             ->label('سبب إعادة العمل')
@@ -153,15 +155,17 @@ class FactoryManagerTaskReview extends Page implements HasTable
                     ->requiresConfirmation()
                     ->action(function (ProductionTask $record, array $data) {
                         $record->update([
-                            'status'   => 'rework',
+                            'status' => 'rework',
                             'due_date' => $data['new_due_date'] ?? $record->due_date,
-                            'notes'    => trim(($record->notes ? $record->notes."\n" : '').'[Rework] '.$data['reason']),
+                            'notes' => trim(($record->notes ? $record->notes . "\n" : '') . '[Rework] ' . $data['reason']),
                             // 'reviewed_at' => now(), // لو لديك عمود زمني
                         ]);
 
                         if ($user = $record->employee?->user) {
                             $user->notify(new \App\Notifications\TaskReviewResultNotification(
-                                $record, approved: false, managerNote: $data['reason'] ?? null
+                                $record,
+                                approved: false,
+                                managerNote: $data['reason'] ?? null
                             ));
                         }
 
@@ -172,7 +176,7 @@ class FactoryManagerTaskReview extends Page implements HasTable
                 Action::make('open_project')
                     ->label('فتح المشروع')
                     ->icon('heroicon-o-arrow-top-right-on-square')
-                    ->url(fn (ProductionTask $record) => url("/admin/projects/{$record->project_id}/manage-tasks"))
+                    ->url(fn(ProductionTask $record) => url("/admin/projects/{$record->project_id}/manage-tasks"))
                     ->openUrlInNewTab(),
             ])
             ->bulkActions([
@@ -184,7 +188,8 @@ class FactoryManagerTaskReview extends Page implements HasTable
                     ->requiresConfirmation()
                     ->action(function ($records) {
                         foreach ($records as $record) {
-                            if ($record->status !== 'under_review') continue;
+                            if ($record->status !== 'under_review')
+                                continue;
                             $record->update(['status' => 'completed']);
                             if ($user = $record->employee?->user) {
                                 $user->notify(new \App\Notifications\TaskReviewResultNotification($record, approved: true));
@@ -204,10 +209,11 @@ class FactoryManagerTaskReview extends Page implements HasTable
                     ->requiresConfirmation()
                     ->action(function ($records, array $data) {
                         foreach ($records as $record) {
-                            if ($record->status !== 'under_review') continue;
+                            if ($record->status !== 'under_review')
+                                continue;
                             $record->update([
                                 'status' => 'rework',
-                                'notes'  => trim(($record->notes ? $record->notes."\n" : '').'[Rework] '.$data['reason']),
+                                'notes' => trim(($record->notes ? $record->notes . "\n" : '') . '[Rework] ' . $data['reason']),
                             ]);
                             if ($user = $record->employee?->user) {
                                 $user->notify(new \App\Notifications\TaskReviewResultNotification($record, approved: false, managerNote: $data['reason']));
