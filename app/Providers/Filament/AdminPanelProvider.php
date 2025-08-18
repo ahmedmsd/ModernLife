@@ -31,12 +31,8 @@ use Filament\Navigation\NavigationItem;
 use App\Filament\Resources\RoleResource;
 use App\Filament\Resources\PermissionResource;
 use App\Filament\Resources\ProductionRequestResource;
-//use App\Filament\Resources\SystemSettingResource;
 use App\Filament\Resources\ProjectResource;
-use App\Filament\Pages\AssignedTasks;
-use App\Filament\Pages\FactoryManagerTaskReview;
 use Illuminate\Support\Facades\Auth;
-use Spatie\Permission\Traits\HasRoles;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -47,6 +43,7 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
+            ->authGuard('web')
             ->login()
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
@@ -54,8 +51,8 @@ class AdminPanelProvider extends PanelProvider
                 Pages\Dashboard::class,
                 SystemSettings::class,
             ])
-            ->databaseNotifications()               // تفعيل إشعارات قاعدة البيانات
-            ->databaseNotificationsPolling('30s')   // (اختياري) الاستطلاع كل 30 ثانية
+            ->databaseNotifications()
+            ->databaseNotificationsPolling('30s')
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,

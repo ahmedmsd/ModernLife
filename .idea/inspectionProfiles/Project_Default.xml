@@ -35,7 +35,6 @@
     <inspection_tool class="BadExpressionStatementJS" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
     <inspection_tool class="BehatDocStepCanBeConvertedToAttributeInspection" enabled="true" level="INFORMATION" enabled_by_default="true" />
     <inspection_tool class="BladeControlDirectives" enabled="true" level="WARNING" enabled_by_default="true" />
-    <inspection_tool class="BladeUnknownComponentInspection" enabled="true" level="WARNING" enabled_by_default="true" />
     <inspection_tool class="BladeUnpairedParenthesesInStringLiteral" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="BlockStatementJS" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="BreakStatementJS" enabled="false" level="WARNING" enabled_by_default="false" />
@@ -346,13 +345,7 @@
     <inspection_tool class="KarmaConfigFile" enabled="true" level="WARNING" enabled_by_default="true" />
     <inspection_tool class="LabeledStatementJS" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="LanguageDetectionInspection" enabled="true" level="WARNING" enabled_by_default="true" />
-    <inspection_tool class="LaravelFunctionsInspection" enabled="true" level="WARNING" enabled_by_default="true" />
     <inspection_tool class="LaravelPintValidationInspection" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
-    <inspection_tool class="LaravelRoutesInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
-    <inspection_tool class="LaravelUnknownEloquentFactoryInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
-    <inspection_tool class="LaravelUnknownInertiaPageInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
-    <inspection_tool class="LaravelUnknownRouteNameInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
-    <inspection_tool class="LaravelUnknownViewInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
     <inspection_tool class="LessResolvedByNameOnly" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
     <inspection_tool class="LessUnresolvedMixin" enabled="true" level="WARNING" enabled_by_default="true" />
     <inspection_tool class="LessUnresolvedVariable" enabled="true" level="WARNING" enabled_by_default="true" />

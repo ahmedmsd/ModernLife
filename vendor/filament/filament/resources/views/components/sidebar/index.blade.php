@@ -1,28 +1,58 @@
-@php
-    use Filament\Support\Facades\FilamentView;
-    use Filament\View\PanelsRenderHook;
-    use Filament\Navigation\NavigationGroup;
+@props([
+    'navigation',
+])
 
-    $navigation = $navigation ?? [];
-    $isRtl = in_array(app()->getLocale(), ['ar', 'he', 'fa', 'ur']);
-    $openSidebarClasses = 'fi-sidebar-open w-[--sidebar-width] translate-x-0 shadow-xl ring-1 ring-gray-950/5 dark:ring-white/10 ' . ($isRtl ? '' : 'rtl:-translate-x-0');
+@php
+    $openSidebarClasses = 'fi-sidebar-open w-[--sidebar-width] translate-x-0 shadow-xl ring-1 ring-gray-950/5 dark:ring-white/10 rtl:-translate-x-0';
+    $isRtl = __('filament-panels::layout.direction') === 'rtl';
 @endphp
 
-<aside x-data="{}" x-cloak @class([
-    'fi-sidebar fixed inset-y-0 start-0 z-30 flex flex-col h-screen content-start bg-white transition-all dark:bg-gray-900 lg:z-0 lg:bg-transparent lg:shadow-none lg:ring-0 lg:transition-none dark:lg:bg-transparent',
-    'lg:translate-x-0 rtl:lg:-translate-x-0' => !(filament()->isSidebarCollapsibleOnDesktop() || filament()->isSidebarFullyCollapsibleOnDesktop() || filament()->hasTopNavigation()),
-    'lg:-translate-x-full rtl:lg:translate-x-full' => filament()->hasTopNavigation(),
-]) x-bind:class="
-        $store.sidebar.isOpen
-            ? '{{ $openSidebarClasses }} lg:sticky'
-            : '-translate-x-full rtl:translate-x-full lg:sticky lg:translate-x-0 rtl:lg:-translate-x-0'
-    ">
-    {{-- Header --}}
+{{-- format-ignore-start --}}
+<aside
+    x-data="{}"
+    @if (filament()->isSidebarCollapsibleOnDesktop() && (! filament()->hasTopNavigation()))
+        x-cloak
+        x-bind:class="
+            $store.sidebar.isOpen
+                ? @js($openSidebarClasses . ' ' . 'lg:sticky')
+                : '-translate-x-full rtl:translate-x-full lg:sticky lg:translate-x-0 rtl:lg:-translate-x-0'
+        "
+    @else
+        @if (filament()->hasTopNavigation())
+            x-cloak
+            x-bind:class="$store.sidebar.isOpen ? @js($openSidebarClasses) : '-translate-x-full rtl:translate-x-full'"
+        @elseif (filament()->isSidebarFullyCollapsibleOnDesktop())
+            x-cloak
+            x-bind:class="$store.sidebar.isOpen ? @js($openSidebarClasses . ' ' . 'lg:sticky') : '-translate-x-full rtl:translate-x-full'"
+        @else
+            x-cloak="-lg"
+            x-bind:class="
+                $store.sidebar.isOpen
+                    ? @js($openSidebarClasses . ' ' . 'lg:sticky')
+                    : 'w-[--sidebar-width] -translate-x-full rtl:translate-x-full lg:sticky'
+            "
+        @endif
+    @endif
+    {{
+        $attributes->class([
+            'fi-sidebar fixed inset-y-0 start-0 z-30 flex flex-col h-screen content-start bg-white transition-all dark:bg-gray-900 lg:z-0 lg:bg-transparent lg:shadow-none lg:ring-0 lg:transition-none dark:lg:bg-transparent',
+            'lg:translate-x-0 rtl:lg:-translate-x-0' => ! (filament()->isSidebarCollapsibleOnDesktop() || filament()->isSidebarFullyCollapsibleOnDesktop() || filament()->hasTopNavigation()),
+            'lg:-translate-x-full rtl:lg:translate-x-full' => filament()->hasTopNavigation(),
+        ])
+    }}
+>
     <div class="overflow-x-clip">
         <header
-            class="fi-sidebar-header flex h-16 items-center bg-white px-6 ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 lg:shadow-sm">
-            <div x-show="$store.sidebar.isOpen" x-transition:enter="lg:transition lg:delay-100"
-                x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+            class="fi-sidebar-header flex h-16 items-center bg-white px-6 ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 lg:shadow-sm"
+        >
+            <div
+                @if (filament()->isSidebarCollapsibleOnDesktop())
+                    x-show="$store.sidebar.isOpen"
+                    x-transition:enter="lg:transition lg:delay-100"
+                    x-transition:enter-start="opacity-0"
+                    x-transition:enter-end="opacity-100"
+                @endif
+            >
                 @if ($homeUrl = filament()->getHomeUrl())
                     <a {{ \Filament\Support\generate_href_html($homeUrl) }}>
                         <x-filament-panels::logo />
@@ -32,95 +62,118 @@
                 @endif
             </div>
 
-            {{-- Expand Sidebar --}}
             @if (filament()->isSidebarCollapsibleOnDesktop())
-                <x-filament::icon-button color="gray" :icon="$isRtl ? 'heroicon-o-chevron-left' : 'heroicon-o-chevron-right'"
+                <x-filament::icon-button
+                    color="gray"
+                    :icon="$isRtl ? 'heroicon-o-chevron-left' : 'heroicon-o-chevron-right'"
+                    {{-- @deprecated Use `panels::sidebar.expand-button.rtl` instead of `panels::sidebar.expand-button` for RTL. --}}
                     :icon-alias="$isRtl ? ['panels::sidebar.expand-button.rtl', 'panels::sidebar.expand-button'] : 'panels::sidebar.expand-button'"
-                    icon-size="lg" :label="__('filament-panels::layout.actions.sidebar.expand.label')"
-                    x-on:click="$store.sidebar.open()" x-show="! $store.sidebar.isOpen" x-cloak x-data="{}"
-                    class="mx-auto" />
+                    icon-size="lg"
+                    :label="__('filament-panels::layout.actions.sidebar.expand.label')"
+                    x-cloak
+                    x-data="{}"
+                    x-on:click="$store.sidebar.open()"
+                    x-show="! $store.sidebar.isOpen"
+                    class="mx-auto"
+                />
             @endif
 
-            {{-- Collapse Sidebar --}}
             @if (filament()->isSidebarCollapsibleOnDesktop() || filament()->isSidebarFullyCollapsibleOnDesktop())
-                <x-filament::icon-button color="gray" :icon="$isRtl ? 'heroicon-o-chevron-right' : 'heroicon-o-chevron-left'"
+                <x-filament::icon-button
+                    color="gray"
+                    :icon="$isRtl ? 'heroicon-o-chevron-right' : 'heroicon-o-chevron-left'"
+                    {{-- @deprecated Use `panels::sidebar.collapse-button.rtl` instead of `panels::sidebar.collapse-button` for RTL. --}}
                     :icon-alias="$isRtl ? ['panels::sidebar.collapse-button.rtl', 'panels::sidebar.collapse-button'] : 'panels::sidebar.collapse-button'"
-                    icon-size="lg" :label="__('filament-panels::layout.actions.sidebar.collapse.label')"
-                    x-on:click="$store.sidebar.close()" x-show="$store.sidebar.isOpen" x-cloak x-data="{}"
-                    class="ms-auto hidden lg:flex" />
+                    icon-size="lg"
+                    :label="__('filament-panels::layout.actions.sidebar.collapse.label')"
+                    x-cloak
+                    x-data="{}"
+                    x-on:click="$store.sidebar.close()"
+                    x-show="$store.sidebar.isOpen"
+                    class="ms-auto hidden lg:flex"
+                />
             @endif
         </header>
     </div>
 
-    {{-- Navigation --}}
-    <nav class="fi-sidebar-nav flex-grow flex flex-col gap-y-7 overflow-y-auto overflow-x-hidden px-6 py-8"
-        style="scrollbar-gutter: stable">
-        {{ FilamentView::renderHook(PanelsRenderHook::SIDEBAR_NAV_START) }}
+    <nav
+        class="fi-sidebar-nav flex-grow flex flex-col gap-y-7 overflow-y-auto overflow-x-hidden px-6 py-8"
+        style="scrollbar-gutter: stable"
+    >
+        {{ \Filament\Support\Facades\FilamentView::renderHook(\Filament\View\PanelsRenderHook::SIDEBAR_NAV_START) }}
 
-        {{-- Tenant Menu --}}
         @if (filament()->hasTenancy() && filament()->hasTenantMenu())
-            <div @class([
-                'fi-sidebar-nav-tenant-menu-ctn',
-                '-mx-2' => !filament()->isSidebarCollapsibleOnDesktop(),
-            ])
-                x-bind:class="$store.sidebar.isOpen ? '-mx-2' : '-mx-4'">
+            <div
+                @class([
+                    'fi-sidebar-nav-tenant-menu-ctn',
+                    '-mx-2' => ! filament()->isSidebarCollapsibleOnDesktop(),
+                ])
+                @if (filament()->isSidebarCollapsibleOnDesktop())
+                    x-bind:class="$store.sidebar.isOpen ? '-mx-2' : '-mx-4'"
+                @endif
+            >
                 <x-filament-panels::tenant-menu />
             </div>
         @endif
 
-        {{-- Navigation Groups --}}
         <ul class="fi-sidebar-nav-groups -mx-2 flex flex-col gap-y-7">
             @foreach ($navigation as $group)
-                <x-filament-panels::sidebar.group :active="$group->isActive()" :collapsible="$group->isCollapsible()"
-                    :icon="$group->getIcon()" :items="$group->getItems()" :label="$group->getLabel() ?? 'بدون اسم'"
-                    :attributes="\Filament\Support\prepare_inherited_attributes($group->getExtraSidebarAttributeBag())" />
+                <x-filament-panels::sidebar.group
+                    :active="$group->isActive()"
+                    :collapsible="$group->isCollapsible()"
+                    :icon="$group->getIcon()"
+                    :items="$group->getItems()"
+                    :label="$group->getLabel()"
+                    :attributes="\Filament\Support\prepare_inherited_attributes($group->getExtraSidebarAttributeBag())"
+                />
             @endforeach
         </ul>
 
-        {{-- حفظ حالة القوائم المفتوحة --}}
         <script>
-            document.addEventListener('alpine:init', () => {
-                let collapsedGroups = JSON.parse(localStorage.getItem('collapsedGroups')) || [];
+            var collapsedGroups = JSON.parse(
+                localStorage.getItem('collapsedGroups'),
+            )
 
-                document.querySelectorAll('.fi-sidebar-group').forEach((group) => {
-                    const label = group.dataset.groupLabel;
+            if (collapsedGroups === null || collapsedGroups === 'null') {
+                localStorage.setItem(
+                    'collapsedGroups',
+                    JSON.stringify(@js(
+                        collect($navigation)
+                            ->filter(fn (\Filament\Navigation\NavigationGroup $group): bool => $group->isCollapsed())
+                            ->map(fn (\Filament\Navigation\NavigationGroup $group): string => $group->getLabel())
+                            ->values()
+                            ->all()
+                    )),
+                )
+            }
 
-                    if (!label || !collapsedGroups.includes(label)) return;
+            collapsedGroups = JSON.parse(
+                localStorage.getItem('collapsedGroups'),
+            )
 
-                    group.querySelector('.fi-sidebar-group-items')?.style.setProperty('display', 'none');
-                    group.querySelector('.fi-sidebar-group-collapse-button')?.classList.add('rotate-180');
-                });
+            document
+                .querySelectorAll('.fi-sidebar-group')
+                .forEach((group) => {
+                    if (
+                        !collapsedGroups.includes(group.dataset.groupLabel)
+                    ) {
+                        return
+                    }
 
-                // حفظ التغيير عند الضغط
-                document.querySelectorAll('.fi-sidebar-group-collapse-button').forEach((button) => {
-                    button.addEventListener('click', (e) => {
-                        const group = button.closest('.fi-sidebar-group');
-                        const label = group?.dataset?.groupLabel;
-
-                        if (!label) return;
-
-                        const items = group.querySelector('.fi-sidebar-group-items');
-                        const isCollapsed = items.style.display === 'none';
-
-                        items.style.display = isCollapsed ? '' : 'none';
-                        button.classList.toggle('rotate-180', !isCollapsed);
-
-                        let updatedGroups = JSON.parse(localStorage.getItem('collapsedGroups')) || [];
-
-                        if (!isCollapsed) {
-                            updatedGroups.push(label);
-                        } else {
-                            updatedGroups = updatedGroups.filter((item) => item !== label);
-                        }
-
-                        localStorage.setItem('collapsedGroups', JSON.stringify(updatedGroups));
-                    });
-                });
-            });
+                    // Alpine.js loads too slow, so attempt to hide a
+                    // collapsed sidebar group earlier.
+                    group.querySelector(
+                        '.fi-sidebar-group-items',
+                    ).style.display = 'none'
+                    group
+                        .querySelector('.fi-sidebar-group-collapse-button')
+                        .classList.add('rotate-180')
+                })
         </script>
 
-        {{ FilamentView::renderHook(PanelsRenderHook::SIDEBAR_NAV_END) }}
+        {{ \Filament\Support\Facades\FilamentView::renderHook(\Filament\View\PanelsRenderHook::SIDEBAR_NAV_END) }}
     </nav>
 
-    {{ FilamentView::renderHook(PanelsRenderHook::SIDEBAR_FOOTER) }}
+    {{ \Filament\Support\Facades\FilamentView::renderHook(\Filament\View\PanelsRenderHook::SIDEBAR_FOOTER) }}
 </aside>
+{{-- format-ignore-end --}}

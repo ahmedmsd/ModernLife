@@ -8,11 +8,13 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Tables;
 use Filament\Tables\Table;
+use App\Enums\TaskStatus;
 
 class ManageProjectTasks extends ManageRelatedRecords
 {
     protected static string $resource     = ProjectResource::class;
     protected static string $relationship = 'tasks';
+    protected array $casts = ['status' => \App\Enums\TaskStatus::class];
 
     public function getTitle(): string
     {
@@ -41,7 +43,7 @@ class ManageProjectTasks extends ManageRelatedRecords
                 ->directory(fn () => "projects/{$this->getOwnerRecord()->id}/tasks")
                 ->preserveFilenames()
                 ->helperText('يمكنك رفع ملف جديد للمهمة أو الإبقاء على الملف المنشأ تلقائيًا.')
-                ->nullable(), // نجعلها اختيارية لأن المهام التلقائية قد تحتوي مسار ملف موجود مسبقًا
+                ->nullable(),
 
             Forms\Components\Select::make('assigned_to_employee_id')
                 ->relationship('employee', 'employee_name')
@@ -65,16 +67,14 @@ class ManageProjectTasks extends ManageRelatedRecords
                 ->rows(3)
                 ->nullable(),
 
+            // ✅ حالات المهام الجديدة
             Forms\Components\Select::make('status')
                 ->label('الحالة')
-                ->options([
-                    'draft'    => 'مسودة',
-                    'assigned'    => 'موزعة',
-                    'in_progress' => 'قيد التنفيذ',
-                    'completed'   => 'مكتملة',
-                ])
-                ->default('assigned')
-                ->required(),
+                ->options(TaskStatus::options())
+                ->default(TaskStatus::Pending->value)
+                ->required()
+                ->native(false)
+                ->searchable(),
         ]);
     }
 
@@ -82,24 +82,48 @@ class ManageProjectTasks extends ManageRelatedRecords
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('department.dept_name')->label('القسم')->sortable()->searchable(),
-                Tables\Columns\TextColumn::make('employee.employee_name')->label('الموظف المسؤول')->toggleable(),
+                Tables\Columns\TextColumn::make('department.dept_name')
+                    ->label('القسم')
+                    ->sortable()
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('employee.employee_name')
+                    ->label('الموظف المسؤول')
+                    ->toggleable(),
+
                 Tables\Columns\TextColumn::make('assigned_budget')
                     ->label('الميزانية المتوقعة')
                     ->money('SAR')
                     ->toggleable(),
-                Tables\Columns\TextColumn::make('due_date')->label('تاريخ التسليم')->date()->toggleable(),
+
+                Tables\Columns\TextColumn::make('due_date')
+                    ->label('تاريخ التسليم')
+                    ->date()
+                    ->toggleable(),
+
                 Tables\Columns\TextColumn::make('status')
                     ->label('الحالة')
                     ->badge()
-                    ->color(fn (string $state) => match ($state) {
-                        'draft'   => 'info',
-                        'assigned'   => 'primary',
-                        'completed'   => 'success',
-                        'in_progress' => 'warning',
-                        default       => 'gray',
-                    }),
-                Tables\Columns\TextColumn::make('notes')->label('ملاحظات')->limit(50)->toggleable(isToggledHiddenByDefault: true),
+                    ->icon(fn ($record) => $record->status instanceof TaskStatus
+                        ? $record->status->icon()
+                        : TaskStatus::from($record->status)->icon())
+                    ->color(fn ($record) => $record->status instanceof TaskStatus
+                        ? $record->status->color()
+                        : TaskStatus::from($record->status)->color())
+                    ->formatStateUsing(fn ($state) => $state instanceof TaskStatus
+                        ? $state->getLabel()
+                        : TaskStatus::from($state)->getLabel()),
+
+                Tables\Columns\TextColumn::make('notes')
+                    ->label('ملاحظات')
+                    ->limit(50)
+                    ->toggleable(isToggledHiddenByDefault: true),
+            ])
+            ->filters([
+                // ✅ فلتر حسب الحالة
+                Tables\Filters\SelectFilter::make('status')
+                    ->label('الحالة')
+                    ->options(TaskStatus::options()),
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make()
