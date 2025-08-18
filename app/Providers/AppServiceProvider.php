@@ -18,6 +18,7 @@ class AppServiceProvider extends ServiceProvider
     {
         ProductionRequest::observe(ProductionRequestObserver::class);
         ProductionTask::observe(ProductionTaskObserver::class);
+        \Carbon\Carbon::setLocale('ar');
 
         // Optional preload
         Permission::get();

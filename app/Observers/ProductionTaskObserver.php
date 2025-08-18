@@ -26,7 +26,7 @@ class ProductionTaskObserver
 
         }
 
-        $task->events()->create([
+        $task->logs()->create([
             'type' => 'created',
             'data' => ['status' => $task->status, 'department_id' => $task->department_id],
             'causer_id' => auth()->id(),
@@ -61,7 +61,7 @@ class ProductionTaskObserver
             $from = $original['status'] ?? null;
             $to = $task->status;
 
-            $task->events()->create([
+            $task->logs()->create([
                 'type' => 'status_changed',
                 'data' => compact('from', 'to'),
                 'causer_id' => auth()->id(),
@@ -91,7 +91,7 @@ class ProductionTaskObserver
             $from = $original['assigned_to_employee_id'] ?? null;
             $to = $task->assigned_to_employee_id;
 
-            $task->events()->create([
+            $task->logs()->create([
                 'type' => 'assigned_changed',
                 'data' => compact('from', 'to'),
                 'causer_id' => auth()->id(),
@@ -104,7 +104,7 @@ class ProductionTaskObserver
             $from = $original['due_date'] ?? null;
             $to = $task->due_date;
 
-            $task->events()->create([
+            $task->logs()->create([
                 'type' => 'due_changed',
                 'data' => ['from' => $from, 'to' => optional($to)?->toDateString()],
                 'causer_id' => auth()->id(),

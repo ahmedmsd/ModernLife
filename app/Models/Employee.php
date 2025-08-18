@@ -58,7 +58,7 @@ class Employee extends Authenticatable
 
     public function department(): BelongsTo
     {
-        return $this->belongsTo(Department::class, 'department_id');
+        return $this->belongsTo(\App\Models\Department::class, 'department_id', 'dept_id');
     }
 
     public function routeNotificationForMail($notification): ?string

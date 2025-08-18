@@ -21,13 +21,22 @@ class Department extends Model
         'color_code',
     ];
 
-    public function category()
+    public function category(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(DepartmentCategories::class, 'dept_type', 'category_id');
     }
 
-    public function parentDepartment()
+    public function parentDepartment(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
     return $this->belongsTo(Department::class, 'parent_dept_id', 'dept_id');
+    }
+
+    public $incrementing = true;
+    protected $keyType = 'int';
+
+    public function employees(): Department|\Illuminate\Database\Eloquent\Relations\HasMany
+    {
+
+        return $this->hasMany(Employee::class, 'department_id', 'dept_id');
     }
 }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ProductionTask extends Model
 {
@@ -42,10 +43,11 @@ class ProductionTask extends Model
         return $this->belongsTo(Employee::class, 'assigned_to_employee_id');
     }
 
-    public function logs()
+    public function logs(): HasMany
     {
-        return $this->hasMany(TaskLog::class, 'task_id')
-            ->orderBy('happened_at', 'asc');
+        return $this->hasMany(TaskLog::class, 'task_id', 'id')
+            ->orderBy('happened_at')
+            ->orderBy('created_at');
     }
 
     public function times()

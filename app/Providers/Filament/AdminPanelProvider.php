@@ -55,9 +55,11 @@ class AdminPanelProvider extends PanelProvider
             ->databaseNotificationsPolling('30s')
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
-                Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
+//                Widgets\AccountWidget::class,
+//                Widgets\FilamentInfoWidget::class,
             ])
+//            ->viteTheme('resources/css/filament-custom.css')
+
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
@@ -92,8 +94,15 @@ class AdminPanelProvider extends PanelProvider
                     );
 
                 return $builder
-
+                    ->items([
+                        NavigationItem::make('الصفحة الرئيسية')
+                            ->url('/admin')
+                            ->icon('heroicon-o-home')
+                            ->sort(-1000)
+                            ->isActiveWhen(fn () => request()->is('/')),
+                    ])
                     ->group(
+
                         NavigationGroup::make()
                             ->label('الطلبات')
                             ->collapsible()

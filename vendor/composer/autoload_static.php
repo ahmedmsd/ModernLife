@@ -432,8 +432,8 @@ class ComposerStaticInit8394e4bc0fc3c7942d7928423cd01ab0
         ),
         'Psr\\Http\\Message\\' => 
         array (
-            0 => __DIR__ . '/..' . '/psr/http-message/src',
-            1 => __DIR__ . '/..' . '/psr/http-factory/src',
+            0 => __DIR__ . '/..' . '/psr/http-factory/src',
+            1 => __DIR__ . '/..' . '/psr/http-message/src',
         ),
         'Psr\\Http\\Client\\' => 
         array (
@@ -493,8 +493,8 @@ class ComposerStaticInit8394e4bc0fc3c7942d7928423cd01ab0
         ),
         'League\\Uri\\' => 
         array (
-            0 => __DIR__ . '/..' . '/league/uri-interfaces',
-            1 => __DIR__ . '/..' . '/league/uri',
+            0 => __DIR__ . '/..' . '/league/uri',
+            1 => __DIR__ . '/..' . '/league/uri-interfaces',
         ),
         'League\\MimeTypeDetection\\' => 
         array (
@@ -502,8 +502,8 @@ class ComposerStaticInit8394e4bc0fc3c7942d7928423cd01ab0
         ),
         'League\\Glide\\' => 
         array (
-            0 => __DIR__ . '/..' . '/league/glide/src',
-            1 => __DIR__ . '/..' . '/league/glide-symfony/src',
+            0 => __DIR__ . '/..' . '/league/glide-symfony/src',
+            1 => __DIR__ . '/..' . '/league/glide/src',
         ),
         'League\\Flysystem\\Local\\' => 
         array (
@@ -779,6 +779,7 @@ class ComposerStaticInit8394e4bc0fc3c7942d7928423cd01ab0
         'App\\Filament\\Resources\\ProjectResource\\Pages\\ListProjects' => __DIR__ . '/../..' . '/app/Filament/Resources/ProjectResource/Pages/ListProjects.php',
         'App\\Filament\\Resources\\ProjectResource\\Pages\\ManageProjectTasks' => __DIR__ . '/../..' . '/app/Filament/Resources/ProjectResource/Pages/ManageProjectTasks.php',
         'App\\Filament\\Resources\\ProjectResource\\Pages\\ViewProject' => __DIR__ . '/../..' . '/app/Filament/Resources/ProjectResource/Pages/ViewProject.php',
+        'App\\Filament\\Resources\\ProjectResource\\RelationManagers\\TaskLogRelationManager' => __DIR__ . '/../..' . '/app/Filament/Resources/ProjectResource/RelationManagers/TaskLogRelationManager.php',
         'App\\Filament\\Resources\\ProjectResource\\RelationManagers\\TasksRelationManager' => __DIR__ . '/../..' . '/app/Filament/Resources/ProjectResource/RelationManagers/TasksRelationManager.php',
         'App\\Filament\\Resources\\RoleResource' => __DIR__ . '/../..' . '/app/Filament/Resources/RoleResource.php',
         'App\\Filament\\Resources\\RoleResource\\Pages\\CreateRole' => __DIR__ . '/../..' . '/app/Filament/Resources/RoleResource/Pages/CreateRole.php',
@@ -789,6 +790,12 @@ class ComposerStaticInit8394e4bc0fc3c7942d7928423cd01ab0
         'App\\Filament\\Resources\\ShowroomResource\\Pages\\EditShowroom' => __DIR__ . '/../..' . '/app/Filament/Resources/ShowroomResource/Pages/EditShowroom.php',
         'App\\Filament\\Resources\\ShowroomResource\\Pages\\ListShowrooms' => __DIR__ . '/../..' . '/app/Filament/Resources/ShowroomResource/Pages/ListShowrooms.php',
         'App\\Filament\\Resources\\ShowroomResource\\Pages\\ViewShowroom' => __DIR__ . '/../..' . '/app/Filament/Resources/ShowroomResource/Pages/ViewShowroom.php',
+        'App\\Filament\\Resources\\TaskResource' => __DIR__ . '/../..' . '/app/Filament/Resources/TaskResource.php',
+        'App\\Filament\\Resources\\TaskResource\\Pages\\CreateTask' => __DIR__ . '/../..' . '/app/Filament/Resources/TaskResource/Pages/CreateTask.php',
+        'App\\Filament\\Resources\\TaskResource\\Pages\\EditTask' => __DIR__ . '/../..' . '/app/Filament/Resources/TaskResource/Pages/EditTask.php',
+        'App\\Filament\\Resources\\TaskResource\\Pages\\ListTasks' => __DIR__ . '/../..' . '/app/Filament/Resources/TaskResource/Pages/ListTasks.php',
+        'App\\Filament\\Resources\\TaskResource\\Pages\\ViewTask' => __DIR__ . '/../..' . '/app/Filament/Resources/TaskResource/Pages/ViewTask.php',
+        'App\\Filament\\Widgets\\TaskKpiWidget' => __DIR__ . '/../..' . '/app/Filament/Widgets/TaskKpiWidget.php',
         'App\\Helpers\\NavigationHelper' => __DIR__ . '/../..' . '/app/Helpers/NavigationHelper.php',
         'App\\Helpers\\ProductionRequestHelper' => __DIR__ . '/../..' . '/app/Helpers/ProductionRequestHelper.php',
         'App\\Http\\Controllers\\Controller' => __DIR__ . '/../..' . '/app/Http/Controllers/Controller.php',
@@ -811,6 +818,8 @@ class ComposerStaticInit8394e4bc0fc3c7942d7928423cd01ab0
         'App\\Models\\ProjectFile' => __DIR__ . '/../..' . '/app/Models/ProjectFile.php',
         'App\\Models\\Showroom' => __DIR__ . '/../..' . '/app/Models/Showroom.php',
         'App\\Models\\SystemSetting' => __DIR__ . '/../..' . '/app/Models/SystemSetting.php',
+        'App\\Models\\TaskLog' => __DIR__ . '/../..' . '/app/Models/TaskLog.php',
+        'App\\Models\\TaskTimeEntry' => __DIR__ . '/../..' . '/app/Models/TaskTimeEntry.php',
         'App\\Models\\User' => __DIR__ . '/../..' . '/app/Models/User.php',
         'App\\Notifications\\TaskAssignedInAppNotification' => __DIR__ . '/../..' . '/app/Notifications/TaskAssignedInAppNotification.php',
         'App\\Notifications\\TaskAssignedNotification' => __DIR__ . '/../..' . '/app/Notifications/TaskAssignedNotification.php',
@@ -821,6 +830,7 @@ class ComposerStaticInit8394e4bc0fc3c7942d7928423cd01ab0
         'App\\Providers\\AppServiceProvider' => __DIR__ . '/../..' . '/app/Providers/AppServiceProvider.php',
         'App\\Providers\\AuthServiceProvider' => __DIR__ . '/../..' . '/app/Providers/AuthServiceProvider.php',
         'App\\Providers\\Filament\\AdminPanelProvider' => __DIR__ . '/../..' . '/app/Providers/Filament/AdminPanelProvider.php',
+        'App\\Services\\TaskTimerService' => __DIR__ . '/../..' . '/app/Services/TaskTimerService.php',
         'Attribute' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
         'Awcodes\\Curator\\Actions\\MediaAction' => __DIR__ . '/..' . '/awcodes/filament-curator/src/Actions/MediaAction.php',
         'Awcodes\\Curator\\Actions\\MultiUploadAction' => __DIR__ . '/..' . '/awcodes/filament-curator/src/Actions/MultiUploadAction.php',
