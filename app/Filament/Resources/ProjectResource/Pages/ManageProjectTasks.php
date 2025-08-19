@@ -27,9 +27,22 @@ class ManageProjectTasks extends ManageRelatedRecords
         return \Illuminate\Support\Facades\Auth::user()?->can('access_manage_project_tasks');
     }
 
+    /**
+     * ملاحظة:
+     * لن نستخدم form() العام، بل سنحدّد سكيمتي الإنشاء والتعديل
+     * بشكل صريح داخل أزرار الجدول (Create / Edit).
+     */
     public function form(Form $form): Form
     {
-        return $form->schema([
+        // نُبقيه إن تطلبت الصفحة وجوده، لكنه لن يُستخدم لأننا
+        // نمرّر سكيمات مخصّصة للأكشنات بالأسفل.
+        return $form->schema($this->getCreateFormSchema());
+    }
+
+    /** نموذج الإنشاء فقط (يحتوي حقل الحالة) */
+    protected function getCreateFormSchema(): array
+    {
+        return [
             Forms\Components\Select::make('department_id')
                 ->relationship('department', 'dept_name')
                 ->label('القسم')
@@ -68,15 +81,60 @@ class ManageProjectTasks extends ManageRelatedRecords
                 ->rows(3)
                 ->nullable(),
 
-            // ✅ حالات المهام الجديدة
+            // ✅ يظهر فقط في الإنشاء
             Forms\Components\Select::make('status')
                 ->label('الحالة')
                 ->options(TaskStatus::options())
-                ->default(TaskStatus::Pending->value)
+                ->default(TaskStatus::Assigned->value)
                 ->required()
                 ->native(false)
                 ->searchable(),
-        ]);
+        ];
+    }
+
+    /** نموذج التعديل فقط (بدون حقل الحالة) */
+    protected function getEditFormSchema(): array
+    {
+        return [
+            Forms\Components\Select::make('department_id')
+                ->relationship('department', 'dept_name')
+                ->label('القسم')
+                ->options(
+                    \App\Models\Department::where('dept_type', '5')->pluck('dept_name', 'dept_id')
+                )
+                ->searchable()
+                ->required(),
+
+            Forms\Components\FileUpload::make('file_path')
+                ->label('ملف المهمة')
+                ->directory(fn() => "projects/{$this->getOwnerRecord()->id}/tasks")
+                ->preserveFilenames()
+                ->helperText('يمكنك رفع ملف جديد للمهمة أو الإبقاء على الملف المنشأ تلقائيًا.')
+                ->nullable(),
+
+            Forms\Components\Select::make('assigned_to_employee_id')
+                ->relationship('employee', 'employee_name')
+                ->label('الموظف المسؤول')
+                ->searchable()
+                ->preload()
+                ->nullable(),
+
+            Forms\Components\TextInput::make('assigned_budget')
+                ->label('الميزانية المتوقعة')
+                ->numeric()
+                ->nullable(),
+
+            Forms\Components\DatePicker::make('due_date')
+                ->label('تاريخ التسليم المتوقع')
+                ->native(false)
+                ->nullable(),
+
+            Forms\Components\Textarea::make('notes')
+                ->label('ملاحظات')
+                ->rows(3)
+                ->nullable(),
+
+        ];
     }
 
     public function table(Table $table): Table
@@ -121,7 +179,6 @@ class ManageProjectTasks extends ManageRelatedRecords
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                // ✅ فلتر حسب الحالة
                 Tables\Filters\SelectFilter::make('status')
                     ->label('الحالة')
                     ->options(TaskStatus::options()),
@@ -131,14 +188,21 @@ class ManageProjectTasks extends ManageRelatedRecords
                     ->label('إضافة مهمة جديدة')
                     ->modalHeading('إضافة مهمة تصنيع')
                     ->modalSubmitActionLabel('حفظ المهمة')
-                    ->modalCancelActionLabel('إلغاء'),
+                    ->modalCancelActionLabel('إلغاء')
+                    // 👇 نموذج الإنشاء (يحتوي الحالة)
+                    ->form($this->getCreateFormSchema()),
             ])
             ->actions([
                 Tables\Actions\Action::make('viewTask')
                     ->label('عرض')
                     ->icon('heroicon-m-eye')
                     ->url(fn($record) => route('filament.admin.resources.tasks.view', $record)),
-                Tables\Actions\EditAction::make(),
+
+                // تعديل بدون حقل الحالة
+                Tables\Actions\EditAction::make()
+                    ->modalHeading('تعديل مهمة تصنيع')
+                    ->form($this->getEditFormSchema()),
+
                 Tables\Actions\DeleteAction::make(),
             ])
             ->emptyStateHeading('لا توجد مهام تصنيع')

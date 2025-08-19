@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3306
--- Generation Time: Aug 18, 2025 at 10:35 PM
+-- Generation Time: Aug 19, 2025 at 06:09 PM
 -- Server version: 8.3.0
 -- PHP Version: 8.3.6
 
@@ -62,7 +62,9 @@ CREATE TABLE IF NOT EXISTS `cache` (
 --
 
 INSERT INTO `cache` (`key`, `value`, `expiration`, `created_at`, `updated_at`) VALUES
-('modernlife_cache_spatie.permission.cache', 'a:3:{s:5:\"alias\";a:4:{s:1:\"a\";s:2:\"id\";s:1:\"b\";s:4:\"name\";s:1:\"c\";s:10:\"guard_name\";s:1:\"r\";s:5:\"roles\";}s:11:\"permissions\";a:68:{i:0;a:4:{s:1:\"a\";i:1;s:1:\"b\";s:10:\"view_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:1;a:4:{s:1:\"a\";i:2;s:1:\"b\";s:12:\"manage-roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:2;a:4:{s:1:\"a\";i:3;s:1:\"b\";s:12:\"create_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:3;a:4:{s:1:\"a\";i:4;s:1:\"b\";s:10:\"edit_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:4;a:4:{s:1:\"a\";i:5;s:1:\"b\";s:12:\"delete_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:5;a:4:{s:1:\"a\";i:6;s:1:\"b\";s:16:\"view_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:6;a:4:{s:1:\"a\";i:7;s:1:\"b\";s:18:\"create_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:7;a:4:{s:1:\"a\";i:8;s:1:\"b\";s:16:\"edit_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:8;a:4:{s:1:\"a\";i:9;s:1:\"b\";s:18:\"delete_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:9;a:4:{s:1:\"a\";i:10;s:1:\"b\";s:10:\"view_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:10;a:4:{s:1:\"a\";i:11;s:1:\"b\";s:12:\"create_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:11;a:4:{s:1:\"a\";i:12;s:1:\"b\";s:10:\"edit_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:12;a:4:{s:1:\"a\";i:13;s:1:\"b\";s:12:\"delete_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:13;a:4:{s:1:\"a\";i:14;s:1:\"b\";s:12:\"manage_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:14;a:4:{s:1:\"a\";i:15;s:1:\"b\";s:14:\"view_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:15;a:4:{s:1:\"a\";i:16;s:1:\"b\";s:16:\"create_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:16;a:4:{s:1:\"a\";i:17;s:1:\"b\";s:14:\"edit_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:17;a:4:{s:1:\"a\";i:18;s:1:\"b\";s:16:\"delete_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:18;a:4:{s:1:\"a\";i:19;s:1:\"b\";s:16:\"manage_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:19;a:4:{s:1:\"a\";i:20;s:1:\"b\";s:13:\"view_any_role\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:20;a:4:{s:1:\"a\";i:21;s:1:\"b\";s:18:\"view_city_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:21;a:4:{s:1:\"a\";i:22;s:1:\"b\";s:20:\"create_city_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:22;a:4:{s:1:\"a\";i:23;s:1:\"b\";s:18:\"edit_city_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:23;a:4:{s:1:\"a\";i:24;s:1:\"b\";s:20:\"delete_city_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:24;a:4:{s:1:\"a\";i:25;s:1:\"b\";s:20:\"view_client_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:3;}}i:25;a:4:{s:1:\"a\";i:26;s:1:\"b\";s:22:\"create_client_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:3;}}i:26;a:4:{s:1:\"a\";i:27;s:1:\"b\";s:20:\"edit_client_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:3;}}i:27;a:4:{s:1:\"a\";i:28;s:1:\"b\";s:22:\"delete_client_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:28;a:4:{s:1:\"a\";i:29;s:1:\"b\";s:21:\"view_country_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:29;a:4:{s:1:\"a\";i:30;s:1:\"b\";s:23:\"create_country_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:30;a:4:{s:1:\"a\";i:31;s:1:\"b\";s:21:\"edit_country_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:31;a:4:{s:1:\"a\";i:32;s:1:\"b\";s:23:\"delete_country_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:32;a:4:{s:1:\"a\";i:33;s:1:\"b\";s:35:\"view_department_categories_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:33;a:4:{s:1:\"a\";i:34;s:1:\"b\";s:37:\"create_department_categories_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:34;a:4:{s:1:\"a\";i:35;s:1:\"b\";s:35:\"edit_department_categories_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:35;a:4:{s:1:\"a\";i:36;s:1:\"b\";s:37:\"delete_department_categories_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:36;a:4:{s:1:\"a\";i:37;s:1:\"b\";s:24:\"view_department_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:37;a:4:{s:1:\"a\";i:38;s:1:\"b\";s:26:\"create_department_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:38;a:4:{s:1:\"a\";i:39;s:1:\"b\";s:24:\"edit_department_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:39;a:4:{s:1:\"a\";i:40;s:1:\"b\";s:26:\"delete_department_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:40;a:4:{s:1:\"a\";i:41;s:1:\"b\";s:22:\"view_employee_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:41;a:4:{s:1:\"a\";i:42;s:1:\"b\";s:24:\"create_employee_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:42;a:4:{s:1:\"a\";i:43;s:1:\"b\";s:22:\"edit_employee_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:43;a:4:{s:1:\"a\";i:44;s:1:\"b\";s:24:\"delete_employee_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:44;a:4:{s:1:\"a\";i:45;s:1:\"b\";s:24:\"view_permission_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:45;a:4:{s:1:\"a\";i:46;s:1:\"b\";s:26:\"create_permission_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:46;a:4:{s:1:\"a\";i:47;s:1:\"b\";s:24:\"edit_permission_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:47;a:4:{s:1:\"a\";i:48;s:1:\"b\";s:26:\"delete_permission_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:48;a:4:{s:1:\"a\";i:49;s:1:\"b\";s:32:\"view_production_request_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:3;}}i:49;a:4:{s:1:\"a\";i:50;s:1:\"b\";s:34:\"create_production_request_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:3;}}i:50;a:4:{s:1:\"a\";i:51;s:1:\"b\";s:32:\"edit_production_request_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:51;a:4:{s:1:\"a\";i:52;s:1:\"b\";s:34:\"delete_production_request_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:52;a:4:{s:1:\"a\";i:53;s:1:\"b\";s:21:\"view_project_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:53;a:4:{s:1:\"a\";i:54;s:1:\"b\";s:23:\"create_project_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:54;a:4:{s:1:\"a\";i:55;s:1:\"b\";s:21:\"edit_project_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:55;a:4:{s:1:\"a\";i:56;s:1:\"b\";s:23:\"delete_project_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:56;a:4:{s:1:\"a\";i:57;s:1:\"b\";s:18:\"view_role_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:57;a:4:{s:1:\"a\";i:58;s:1:\"b\";s:20:\"create_role_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:58;a:4:{s:1:\"a\";i:59;s:1:\"b\";s:18:\"edit_role_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:59;a:4:{s:1:\"a\";i:60;s:1:\"b\";s:20:\"delete_role_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:60;a:4:{s:1:\"a\";i:61;s:1:\"b\";s:22:\"view_showroom_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:61;a:4:{s:1:\"a\";i:62;s:1:\"b\";s:24:\"create_showroom_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:62;a:4:{s:1:\"a\";i:63;s:1:\"b\";s:22:\"edit_showroom_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:63;a:4:{s:1:\"a\";i:64;s:1:\"b\";s:24:\"delete_showroom_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:64;a:4:{s:1:\"a\";i:65;s:1:\"b\";s:27:\"access_manage_project_tasks\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:65;a:4:{s:1:\"a\";i:66;s:1:\"b\";s:19:\"access_view_project\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:66;a:4:{s:1:\"a\";i:67;s:1:\"b\";s:32:\"access_review_production_request\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:67;a:4:{s:1:\"a\";i:68;s:1:\"b\";s:31:\"access_view_production_timeline\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}}s:5:\"roles\";a:3:{i:0;a:3:{s:1:\"a\";i:1;s:1:\"b\";s:27:\"الإدارة العليا\";s:1:\"c\";s:3:\"web\";}i:1;a:3:{s:1:\"a\";i:3;s:1:\"b\";s:16:\"المبيعات\";s:1:\"c\";s:3:\"web\";}i:2;a:3:{s:1:\"a\";i:2;s:1:\"b\";s:23:\"إدارة المصنع\";s:1:\"c\";s:3:\"web\";}}}', 1755642665, '2025-08-18 22:31:05', '2025-08-18 22:31:05');
+('modernlife_cache_spatie.permission.cache', 'a:3:{s:5:\"alias\";a:4:{s:1:\"a\";s:2:\"id\";s:1:\"b\";s:4:\"name\";s:1:\"c\";s:10:\"guard_name\";s:1:\"r\";s:5:\"roles\";}s:11:\"permissions\";a:73:{i:0;a:4:{s:1:\"a\";i:1;s:1:\"b\";s:10:\"view_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:1;a:4:{s:1:\"a\";i:2;s:1:\"b\";s:12:\"manage-roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:2;a:4:{s:1:\"a\";i:3;s:1:\"b\";s:12:\"create_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:3;a:4:{s:1:\"a\";i:4;s:1:\"b\";s:10:\"edit_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:4;a:4:{s:1:\"a\";i:5;s:1:\"b\";s:12:\"delete_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:5;a:4:{s:1:\"a\";i:6;s:1:\"b\";s:16:\"view_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:6;a:4:{s:1:\"a\";i:7;s:1:\"b\";s:18:\"create_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:7;a:4:{s:1:\"a\";i:8;s:1:\"b\";s:16:\"edit_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:8;a:4:{s:1:\"a\";i:9;s:1:\"b\";s:18:\"delete_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:9;a:4:{s:1:\"a\";i:10;s:1:\"b\";s:10:\"view_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:10;a:4:{s:1:\"a\";i:11;s:1:\"b\";s:12:\"create_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:11;a:4:{s:1:\"a\";i:12;s:1:\"b\";s:10:\"edit_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:12;a:4:{s:1:\"a\";i:13;s:1:\"b\";s:12:\"delete_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:13;a:4:{s:1:\"a\";i:14;s:1:\"b\";s:12:\"manage_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:14;a:4:{s:1:\"a\";i:15;s:1:\"b\";s:14:\"view_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:15;a:4:{s:1:\"a\";i:16;s:1:\"b\";s:16:\"create_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:16;a:4:{s:1:\"a\";i:17;s:1:\"b\";s:14:\"edit_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:17;a:4:{s:1:\"a\";i:18;s:1:\"b\";s:16:\"delete_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:18;a:4:{s:1:\"a\";i:19;s:1:\"b\";s:16:\"manage_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:19;a:4:{s:1:\"a\";i:20;s:1:\"b\";s:13:\"view_any_role\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:20;a:4:{s:1:\"a\";i:21;s:1:\"b\";s:18:\"view_city_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:21;a:4:{s:1:\"a\";i:22;s:1:\"b\";s:20:\"create_city_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:22;a:4:{s:1:\"a\";i:23;s:1:\"b\";s:18:\"edit_city_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:23;a:4:{s:1:\"a\";i:24;s:1:\"b\";s:20:\"delete_city_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:24;a:4:{s:1:\"a\";i:25;s:1:\"b\";s:20:\"view_client_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:3;}}i:25;a:4:{s:1:\"a\";i:26;s:1:\"b\";s:22:\"create_client_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:26;a:4:{s:1:\"a\";i:27;s:1:\"b\";s:20:\"edit_client_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:27;a:4:{s:1:\"a\";i:28;s:1:\"b\";s:22:\"delete_client_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:28;a:4:{s:1:\"a\";i:29;s:1:\"b\";s:21:\"view_country_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:29;a:4:{s:1:\"a\";i:30;s:1:\"b\";s:23:\"create_country_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:30;a:4:{s:1:\"a\";i:31;s:1:\"b\";s:21:\"edit_country_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:31;a:4:{s:1:\"a\";i:32;s:1:\"b\";s:23:\"delete_country_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:32;a:4:{s:1:\"a\";i:33;s:1:\"b\";s:35:\"view_department_categories_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:33;a:4:{s:1:\"a\";i:34;s:1:\"b\";s:37:\"create_department_categories_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:34;a:4:{s:1:\"a\";i:35;s:1:\"b\";s:35:\"edit_department_categories_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:35;a:4:{s:1:\"a\";i:36;s:1:\"b\";s:37:\"delete_department_categories_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:36;a:4:{s:1:\"a\";i:37;s:1:\"b\";s:24:\"view_department_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:37;a:4:{s:1:\"a\";i:38;s:1:\"b\";s:26:\"create_department_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:38;a:4:{s:1:\"a\";i:39;s:1:\"b\";s:24:\"edit_department_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:39;a:4:{s:1:\"a\";i:40;s:1:\"b\";s:26:\"delete_department_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:40;a:4:{s:1:\"a\";i:41;s:1:\"b\";s:22:\"view_employee_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:41;a:4:{s:1:\"a\";i:42;s:1:\"b\";s:24:\"create_employee_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:42;a:4:{s:1:\"a\";i:43;s:1:\"b\";s:22:\"edit_employee_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:43;a:4:{s:1:\"a\";i:44;s:1:\"b\";s:24:\"delete_employee_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:44;a:4:{s:1:\"a\";i:45;s:1:\"b\";s:24:\"view_permission_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:45;a:4:{s:1:\"a\";i:46;s:1:\"b\";s:26:\"create_permission_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:46;a:4:{s:1:\"a\";i:47;s:1:\"b\";s:24:\"edit_permission_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:47;a:4:{s:1:\"a\";i:48;s:1:\"b\";s:26:\"delete_permission_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:48;a:4:{s:1:\"a\";i:49;s:1:\"b\";s:32:\"view_production_request_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:3;}}i:49;a:4:{s:1:\"a\";i:50;s:1:\"b\";s:34:\"create_production_request_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:50;a:4:{s:1:\"a\";i:51;s:1:\"b\";s:32:\"edit_production_request_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:51;a:4:{s:1:\"a\";i:52;s:1:\"b\";s:34:\"delete_production_request_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:52;a:4:{s:1:\"a\";i:53;s:1:\"b\";s:21:\"view_project_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:53;a:4:{s:1:\"a\";i:54;s:1:\"b\";s:23:\"create_project_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:54;a:4:{s:1:\"a\";i:55;s:1:\"b\";s:21:\"edit_project_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:55;a:4:{s:1:\"a\";i:56;s:1:\"b\";s:23:\"delete_project_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:56;a:4:{s:1:\"a\";i:57;s:1:\"b\";s:18:\"view_role_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:57;a:4:{s:1:\"a\";i:58;s:1:\"b\";s:20:\"create_role_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:58;a:4:{s:1:\"a\";i:59;s:1:\"b\";s:18:\"edit_role_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:59;a:4:{s:1:\"a\";i:60;s:1:\"b\";s:20:\"delete_role_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:60;a:4:{s:1:\"a\";i:61;s:1:\"b\";s:22:\"view_showroom_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:61;a:4:{s:1:\"a\";i:62;s:1:\"b\";s:24:\"create_showroom_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:62;a:4:{s:1:\"a\";i:63;s:1:\"b\";s:22:\"edit_showroom_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:63;a:4:{s:1:\"a\";i:64;s:1:\"b\";s:24:\"delete_showroom_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:64;a:4:{s:1:\"a\";i:65;s:1:\"b\";s:27:\"access_manage_project_tasks\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:4:{i:0;i:1;i:1;i:2;i:2;i:4;i:3;i:5;}}i:65;a:4:{s:1:\"a\";i:66;s:1:\"b\";s:19:\"access_view_project\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:4;}}i:66;a:4:{s:1:\"a\";i:67;s:1:\"b\";s:32:\"access_review_production_request\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:4;}}i:67;a:4:{s:1:\"a\";i:68;s:1:\"b\";s:31:\"access_view_production_timeline\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:4;}}i:68;a:4:{s:1:\"a\";i:69;s:1:\"b\";s:18:\"view_task_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:4;i:1;i:5;}}i:69;a:4:{s:1:\"a\";i:70;s:1:\"b\";s:20:\"create_task_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:70;a:3:{s:1:\"a\";i:71;s:1:\"b\";s:18:\"edit_task_resource\";s:1:\"c\";s:3:\"web\";}i:71;a:4:{s:1:\"a\";i:72;s:1:\"b\";s:20:\"delete_task_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:72;a:3:{s:1:\"a\";i:73;s:1:\"b\";s:12:\"manage-tasks\";s:1:\"c\";s:3:\"web\";}}s:5:\"roles\";a:5:{i:0;a:3:{s:1:\"a\";i:1;s:1:\"b\";s:11:\"super-admin\";s:1:\"c\";s:3:\"web\";}i:1;a:3:{s:1:\"a\";i:2;s:1:\"b\";s:5:\"admin\";s:1:\"c\";s:3:\"web\";}i:2;a:3:{s:1:\"a\";i:3;s:1:\"b\";s:5:\"sales\";s:1:\"c\";s:3:\"web\";}i:3;a:3:{s:1:\"a\";i:4;s:1:\"b\";s:18:\"department_manager\";s:1:\"c\";s:3:\"web\";}i:4;a:3:{s:1:\"a\";i:5;s:1:\"b\";s:18:\"purchasing_manager\";s:1:\"c\";s:3:\"web\";}}}', 1755705733, '2025-08-19 16:02:13', '2025-08-19 16:02:13'),
+('modernlife_cache_356a192b7913b04c54574d18c28d46e6395428ab:timer', 'i:1755622667;', 1755622667, '2025-08-19 16:56:47', '2025-08-19 16:56:47'),
+('modernlife_cache_356a192b7913b04c54574d18c28d46e6395428ab', 'i:1;', 1755622667, '2025-08-19 16:56:47', '2025-08-19 16:56:47');
 
 -- --------------------------------------------------------
 
@@ -394,7 +396,7 @@ CREATE TABLE IF NOT EXISTS `jobs` (
   `created_at` int UNSIGNED NOT NULL,
   PRIMARY KEY (`id`),
   KEY `jobs_queue_index` (`queue`)
-) ENGINE=MyISAM AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `jobs`
@@ -408,7 +410,9 @@ INSERT INTO `jobs` (`id`, `queue`, `payload`, `attempts`, `reserved_at`, `availa
 (5, 'default', '{\"uuid\":\"1f67d129-2226-482e-8eac-49fe7c3bce93\",\"displayName\":\"App\\\\Notifications\\\\TaskAssignedNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:19:\\\"App\\\\Models\\\\Employee\\\";s:2:\\\"id\\\";a:1:{i:0;i:6;}s:9:\\\"relations\\\";a:1:{i:0;s:4:\\\"user\\\";}s:10:\\\"connection\\\";s:5:\\\"mysql\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:42:\\\"App\\\\Notifications\\\\TaskAssignedNotification\\\":3:{s:4:\\\"task\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:25:\\\"App\\\\Models\\\\ProductionTask\\\";s:2:\\\"id\\\";i:13;s:9:\\\"relations\\\";a:2:{i:0;s:8:\\\"employee\\\";i:1;s:13:\\\"employee.user\\\";}s:10:\\\"connection\\\";N;s:15:\\\"collectionClass\\\";N;}s:14:\\\"isReassignment\\\";b:0;s:2:\\\"id\\\";s:36:\\\"9e05c03f-1eff-40d7-84e6-215cbb93580b\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:4:\\\"mail\\\";}}\"},\"createdAt\":1755477306,\"delay\":null}', 0, NULL, 1755477306, 1755477306),
 (6, 'default', '{\"uuid\":\"d29ca60e-6a23-43fb-9889-b9c52a7214c3\",\"displayName\":\"App\\\\Notifications\\\\TaskAssignedNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:19:\\\"App\\\\Models\\\\Employee\\\";s:2:\\\"id\\\";a:1:{i:0;i:6;}s:9:\\\"relations\\\";a:1:{i:0;s:4:\\\"user\\\";}s:10:\\\"connection\\\";s:5:\\\"mysql\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:42:\\\"App\\\\Notifications\\\\TaskAssignedNotification\\\":3:{s:4:\\\"task\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:25:\\\"App\\\\Models\\\\ProductionTask\\\";s:2:\\\"id\\\";i:14;s:9:\\\"relations\\\";a:2:{i:0;s:8:\\\"employee\\\";i:1;s:13:\\\"employee.user\\\";}s:10:\\\"connection\\\";N;s:15:\\\"collectionClass\\\";N;}s:14:\\\"isReassignment\\\";b:0;s:2:\\\"id\\\";s:36:\\\"9e487379-4857-4cb3-8ba7-8ff856cea145\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:4:\\\"mail\\\";}}\"},\"createdAt\":1755477468,\"delay\":null}', 0, NULL, 1755477468, 1755477468),
 (7, 'default', '{\"uuid\":\"2123461d-05b1-49a1-b611-318e4326382b\",\"displayName\":\"App\\\\Notifications\\\\TaskAssignedNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:19:\\\"App\\\\Models\\\\Employee\\\";s:2:\\\"id\\\";a:1:{i:0;i:6;}s:9:\\\"relations\\\";a:1:{i:0;s:4:\\\"user\\\";}s:10:\\\"connection\\\";s:5:\\\"mysql\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:42:\\\"App\\\\Notifications\\\\TaskAssignedNotification\\\":3:{s:4:\\\"task\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:25:\\\"App\\\\Models\\\\ProductionTask\\\";s:2:\\\"id\\\";i:15;s:9:\\\"relations\\\";a:2:{i:0;s:8:\\\"employee\\\";i:1;s:13:\\\"employee.user\\\";}s:10:\\\"connection\\\";N;s:15:\\\"collectionClass\\\";N;}s:14:\\\"isReassignment\\\";b:0;s:2:\\\"id\\\";s:36:\\\"e71bacd9-5369-44c1-82b5-77cc261628a0\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:4:\\\"mail\\\";}}\"},\"createdAt\":1755478345,\"delay\":null}', 0, NULL, 1755478345, 1755478345),
-(8, 'default', '{\"uuid\":\"2e06a5b0-91b5-4569-9605-873ebab8c8d5\",\"displayName\":\"Filament\\\\Notifications\\\\DatabaseNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";a:1:{i:0;i:9;}s:9:\\\"relations\\\";a:0:{}s:10:\\\"connection\\\";s:5:\\\"mysql\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:43:\\\"Filament\\\\Notifications\\\\DatabaseNotification\\\":2:{s:4:\\\"data\\\";a:11:{s:7:\\\"actions\\\";a:1:{i:0;a:21:{s:4:\\\"name\\\";s:4:\\\"open\\\";s:5:\\\"color\\\";N;s:5:\\\"event\\\";N;s:9:\\\"eventData\\\";a:0:{}s:17:\\\"dispatchDirection\\\";b:0;s:19:\\\"dispatchToComponent\\\";N;s:15:\\\"extraAttributes\\\";a:0:{}s:4:\\\"icon\\\";N;s:12:\\\"iconPosition\\\";E:42:\\\"Filament\\\\Support\\\\Enums\\\\IconPosition:Before\\\";s:8:\\\"iconSize\\\";N;s:10:\\\"isOutlined\\\";b:0;s:10:\\\"isDisabled\\\";b:0;s:5:\\\"label\\\";s:19:\\\"فتح المهمة\\\";s:11:\\\"shouldClose\\\";b:0;s:16:\\\"shouldMarkAsRead\\\";b:0;s:18:\\\"shouldMarkAsUnread\\\";b:0;s:21:\\\"shouldOpenUrlInNewTab\\\";b:0;s:4:\\\"size\\\";E:39:\\\"Filament\\\\Support\\\\Enums\\\\ActionSize:Small\\\";s:7:\\\"tooltip\\\";N;s:3:\\\"url\\\";s:52:\\\"http:\\/\\/localhost:8000\\/admin\\/projects\\/14\\/manage-tasks\\\";s:4:\\\"view\\\";s:31:\\\"filament-actions::button-action\\\";}}s:4:\\\"body\\\";s:128:\\\"المشروع: مشروع مصنع الرخام — القسم: قسم الألومنيوم — التسليم: غير محدد\\\";s:5:\\\"color\\\";N;s:8:\\\"duration\\\";s:10:\\\"persistent\\\";s:4:\\\"icon\\\";s:23:\\\"heroicon-o-check-circle\\\";s:9:\\\"iconColor\\\";s:7:\\\"success\\\";s:6:\\\"status\\\";s:7:\\\"success\\\";s:5:\\\"title\\\";s:52:\\\"مهمة تصنيع جديدة أُسندت إليك\\\";s:4:\\\"view\\\";s:36:\\\"filament-notifications::notification\\\";s:8:\\\"viewData\\\";a:0:{}s:6:\\\"format\\\";s:8:\\\"filament\\\";}s:2:\\\"id\\\";s:36:\\\"932fee01-4b76-45ce-8475-c8718fae46f1\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:8:\\\"database\\\";}}\"},\"createdAt\":1755478345,\"delay\":null}', 0, NULL, 1755478345, 1755478345);
+(8, 'default', '{\"uuid\":\"2e06a5b0-91b5-4569-9605-873ebab8c8d5\",\"displayName\":\"Filament\\\\Notifications\\\\DatabaseNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";a:1:{i:0;i:9;}s:9:\\\"relations\\\";a:0:{}s:10:\\\"connection\\\";s:5:\\\"mysql\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:43:\\\"Filament\\\\Notifications\\\\DatabaseNotification\\\":2:{s:4:\\\"data\\\";a:11:{s:7:\\\"actions\\\";a:1:{i:0;a:21:{s:4:\\\"name\\\";s:4:\\\"open\\\";s:5:\\\"color\\\";N;s:5:\\\"event\\\";N;s:9:\\\"eventData\\\";a:0:{}s:17:\\\"dispatchDirection\\\";b:0;s:19:\\\"dispatchToComponent\\\";N;s:15:\\\"extraAttributes\\\";a:0:{}s:4:\\\"icon\\\";N;s:12:\\\"iconPosition\\\";E:42:\\\"Filament\\\\Support\\\\Enums\\\\IconPosition:Before\\\";s:8:\\\"iconSize\\\";N;s:10:\\\"isOutlined\\\";b:0;s:10:\\\"isDisabled\\\";b:0;s:5:\\\"label\\\";s:19:\\\"فتح المهمة\\\";s:11:\\\"shouldClose\\\";b:0;s:16:\\\"shouldMarkAsRead\\\";b:0;s:18:\\\"shouldMarkAsUnread\\\";b:0;s:21:\\\"shouldOpenUrlInNewTab\\\";b:0;s:4:\\\"size\\\";E:39:\\\"Filament\\\\Support\\\\Enums\\\\ActionSize:Small\\\";s:7:\\\"tooltip\\\";N;s:3:\\\"url\\\";s:52:\\\"http:\\/\\/localhost:8000\\/admin\\/projects\\/14\\/manage-tasks\\\";s:4:\\\"view\\\";s:31:\\\"filament-actions::button-action\\\";}}s:4:\\\"body\\\";s:128:\\\"المشروع: مشروع مصنع الرخام — القسم: قسم الألومنيوم — التسليم: غير محدد\\\";s:5:\\\"color\\\";N;s:8:\\\"duration\\\";s:10:\\\"persistent\\\";s:4:\\\"icon\\\";s:23:\\\"heroicon-o-check-circle\\\";s:9:\\\"iconColor\\\";s:7:\\\"success\\\";s:6:\\\"status\\\";s:7:\\\"success\\\";s:5:\\\"title\\\";s:52:\\\"مهمة تصنيع جديدة أُسندت إليك\\\";s:4:\\\"view\\\";s:36:\\\"filament-notifications::notification\\\";s:8:\\\"viewData\\\";a:0:{}s:6:\\\"format\\\";s:8:\\\"filament\\\";}s:2:\\\"id\\\";s:36:\\\"932fee01-4b76-45ce-8475-c8718fae46f1\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:8:\\\"database\\\";}}\"},\"createdAt\":1755478345,\"delay\":null}', 0, NULL, 1755478345, 1755478345),
+(9, 'default', '{\"uuid\":\"da3b2f51-62eb-448d-9f4b-f85caf8d2f54\",\"displayName\":\"App\\\\Notifications\\\\TaskAssignedNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:19:\\\"App\\\\Models\\\\Employee\\\";s:2:\\\"id\\\";a:1:{i:0;i:6;}s:9:\\\"relations\\\";a:1:{i:0;s:4:\\\"user\\\";}s:10:\\\"connection\\\";s:5:\\\"mysql\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:42:\\\"App\\\\Notifications\\\\TaskAssignedNotification\\\":3:{s:4:\\\"task\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:25:\\\"App\\\\Models\\\\ProductionTask\\\";s:2:\\\"id\\\";i:17;s:9:\\\"relations\\\";a:2:{i:0;s:8:\\\"employee\\\";i:1;s:13:\\\"employee.user\\\";}s:10:\\\"connection\\\";N;s:15:\\\"collectionClass\\\";N;}s:14:\\\"isReassignment\\\";b:0;s:2:\\\"id\\\";s:36:\\\"6b2ad270-c176-4da4-aab1-4d9e53635391\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:4:\\\"mail\\\";}}\"},\"createdAt\":1755622278,\"delay\":null}', 0, NULL, 1755622278, 1755622278),
+(10, 'default', '{\"uuid\":\"77fc1ede-0ac2-4c30-a5cb-3fabf30da75e\",\"displayName\":\"App\\\\Notifications\\\\TaskAssignedNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:19:\\\"App\\\\Models\\\\Employee\\\";s:2:\\\"id\\\";a:1:{i:0;i:6;}s:9:\\\"relations\\\";a:1:{i:0;s:4:\\\"user\\\";}s:10:\\\"connection\\\";s:5:\\\"mysql\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:42:\\\"App\\\\Notifications\\\\TaskAssignedNotification\\\":3:{s:4:\\\"task\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:25:\\\"App\\\\Models\\\\ProductionTask\\\";s:2:\\\"id\\\";i:18;s:9:\\\"relations\\\";a:2:{i:0;s:8:\\\"employee\\\";i:1;s:13:\\\"employee.user\\\";}s:10:\\\"connection\\\";N;s:15:\\\"collectionClass\\\";N;}s:14:\\\"isReassignment\\\";b:0;s:2:\\\"id\\\";s:36:\\\"4d0256c3-299a-4d7c-9a41-288771ba1c45\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:4:\\\"mail\\\";}}\"},\"createdAt\":1755622621,\"delay\":null}', 0, NULL, 1755622621, 1755622621);
 
 -- --------------------------------------------------------
 
@@ -512,7 +516,7 @@ CREATE TABLE IF NOT EXISTS `migrations` (
   `migration` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `batch` int NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `migrations`
@@ -528,7 +532,8 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 (7, '2025_07_30_161309_create_production_tasks_table', 5),
 (8, '2025_08_16_161951_create_notifications_table', 6),
 (9, '2025_08_18_094619_create_production_tasks_log', 7),
-(10, '2025_08_18_100430_create_production_tasks_time_entries', 8);
+(10, '2025_08_18_100430_create_production_tasks_time_entries', 8),
+(11, '2025_08_19_141411_create_production_tasks_material_requests', 9);
 
 -- --------------------------------------------------------
 
@@ -567,7 +572,9 @@ CREATE TABLE IF NOT EXISTS `model_has_roles` (
 
 INSERT INTO `model_has_roles` (`role_id`, `model_type`, `model_id`) VALUES
 (1, 'App\\Models\\User', 1),
-(1, 'App\\Models\\Employee', 6);
+(1, 'App\\Models\\Employee', 6),
+(4, 'App\\Models\\Employee', 6),
+(5, 'App\\Models\\Employee', 6);
 
 -- --------------------------------------------------------
 
@@ -594,6 +601,8 @@ CREATE TABLE IF NOT EXISTS `notifications` (
 --
 
 INSERT INTO `notifications` (`id`, `type`, `notifiable_type`, `notifiable_id`, `data`, `read_at`, `created_at`, `updated_at`) VALUES
+('0fc91c03-878b-42ad-a03d-967684a3aa8d', 'App\\Notifications\\TaskAssignedInAppNotification', 'App\\Models\\User', 9, '{\"title\":\"\\u0645\\u0647\\u0645\\u0629 \\u062a\\u0635\\u0646\\u064a\\u0639 \\u062c\\u062f\\u064a\\u062f\\u0629 \\u0623\\u064f\\u0633\\u0646\\u062f\\u062a \\u0625\\u0644\\u064a\\u0643\",\"body\":\"\\u0627\\u0644\\u0645\\u0634\\u0631\\u0648\\u0639: \\u0645\\u0634\\u0631\\u0648\\u0639 \\u0645\\u0635\\u0646\\u0639 \\u0627\\u0644\\u0631\\u062e\\u0627\\u0645 \\u2014 \\u0627\\u0644\\u0642\\u0633\\u0645: \\u0642\\u0633\\u0645 \\u0627\\u0644\\u0623\\u0644\\u0648\\u0645\\u0646\\u064a\\u0648\\u0645 \\u2014 \\u0627\\u0644\\u062a\\u0633\\u0644\\u064a\\u0645: 2025-08-30\",\"project_id\":14,\"task_id\":17,\"url\":\"http:\\/\\/localhost:8000\\/admin\\/projects\\/14\\/manage-tasks\",\"action_text\":\"\\u0641\\u062a\\u062d \\u0627\\u0644\\u0645\\u0647\\u0645\\u0629\"}', NULL, '2025-08-19 13:51:19', '2025-08-19 13:51:19'),
+('73c636b3-767d-4e29-8229-cf1f03843e5f', 'App\\Notifications\\TaskAssignedInAppNotification', 'App\\Models\\User', 9, '{\"title\":\"\\u0645\\u0647\\u0645\\u0629 \\u062a\\u0635\\u0646\\u064a\\u0639 \\u062c\\u062f\\u064a\\u062f\\u0629 \\u0623\\u064f\\u0633\\u0646\\u062f\\u062a \\u0625\\u0644\\u064a\\u0643\",\"body\":\"\\u0627\\u0644\\u0645\\u0634\\u0631\\u0648\\u0639: \\u0645\\u0634\\u0631\\u0648\\u0639 \\u0645\\u0635\\u0646\\u0639 \\u0627\\u0644\\u0631\\u062e\\u0627\\u0645 \\u2014 \\u0627\\u0644\\u0642\\u0633\\u0645: \\u0642\\u0633\\u0645 \\u0627\\u0644\\u0632\\u062c\\u0627\\u062c \\u2014 \\u0627\\u0644\\u062a\\u0633\\u0644\\u064a\\u0645: 2025-08-31\",\"project_id\":14,\"task_id\":18,\"url\":\"http:\\/\\/localhost:8000\\/admin\\/projects\\/14\\/manage-tasks\",\"action_text\":\"\\u0641\\u062a\\u062d \\u0627\\u0644\\u0645\\u0647\\u0645\\u0629\"}', NULL, '2025-08-19 13:57:01', '2025-08-19 13:57:01'),
 ('afeb90fa-2bd5-40b1-9d4b-aa378474a5cb', 'App\\Notifications\\TaskAssignedInAppNotification', 'App\\Models\\User', 9, '{\"title\":\"\\u0645\\u0647\\u0645\\u0629 \\u062a\\u0635\\u0646\\u064a\\u0639 \\u062c\\u062f\\u064a\\u062f\\u0629 \\u0623\\u064f\\u0633\\u0646\\u062f\\u062a \\u0625\\u0644\\u064a\\u0643\",\"body\":\"\\u0627\\u0644\\u0645\\u0634\\u0631\\u0648\\u0639: \\u0645\\u0634\\u0631\\u0648\\u0639 \\u0645\\u0635\\u0646\\u0639 \\u0627\\u0644\\u0631\\u062e\\u0627\\u0645 \\u2014 \\u0627\\u0644\\u0642\\u0633\\u0645: \\u0642\\u0633\\u0645 \\u0627\\u0644\\u0632\\u062c\\u0627\\u062c \\u2014 \\u0627\\u0644\\u062a\\u0633\\u0644\\u064a\\u0645: \\u063a\\u064a\\u0631 \\u0645\\u062d\\u062f\\u062f\",\"project_id\":14,\"task_id\":14,\"url\":\"http:\\/\\/localhost:8000\\/admin\\/projects\\/14\\/manage-tasks\",\"action_text\":\"\\u0641\\u062a\\u062d \\u0627\\u0644\\u0645\\u0647\\u0645\\u0629\"}', NULL, '2025-08-17 21:37:48', '2025-08-17 21:37:48');
 
 -- --------------------------------------------------------
@@ -625,7 +634,7 @@ CREATE TABLE IF NOT EXISTS `permissions` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `permissions_name_guard_name_unique` (`name`,`guard_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=69 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=74 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `permissions`
@@ -699,7 +708,12 @@ INSERT INTO `permissions` (`id`, `name`, `guard_name`, `created_at`, `updated_at
 (65, 'access_manage_project_tasks', 'web', '2025-08-04 11:52:45', '2025-08-04 11:52:45'),
 (66, 'access_view_project', 'web', '2025-08-04 11:52:45', '2025-08-04 11:52:45'),
 (67, 'access_review_production_request', 'web', '2025-08-04 11:52:45', '2025-08-04 11:52:45'),
-(68, 'access_view_production_timeline', 'web', '2025-08-04 11:52:45', '2025-08-04 11:52:45');
+(68, 'access_view_production_timeline', 'web', '2025-08-04 11:52:45', '2025-08-04 11:52:45'),
+(69, 'view_task_resource', 'web', '2025-08-19 12:22:31', '2025-08-19 12:22:31'),
+(70, 'create_task_resource', 'web', '2025-08-19 12:22:31', '2025-08-19 12:22:31'),
+(71, 'edit_task_resource', 'web', '2025-08-19 12:22:31', '2025-08-19 12:22:31'),
+(72, 'delete_task_resource', 'web', '2025-08-19 12:22:31', '2025-08-19 12:22:31'),
+(73, 'manage-tasks', 'web', '2025-08-19 12:42:36', '2025-08-19 12:42:36');
 
 -- --------------------------------------------------------
 
@@ -725,13 +739,6 @@ CREATE TABLE IF NOT EXISTS `production_requests` (
   KEY `client_id` (`client_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Dumping data for table `production_requests`
---
-
-INSERT INTO `production_requests` (`id`, `project_name`, `project_description`, `client_id`, `showroom_id`, `agreement_file`, `status`, `created_by`, `submitted_at`, `created_at`, `updated_at`) VALUES
-(6, 'مشروع مصنع الرخام', NULL, 1, 1, 'agreements/01K2CQ47547VKVJ4XKX7DY61BS.png', 'approved', 1, '2025-08-11 14:04:09', '2025-08-11 11:04:09', '2025-08-12 17:44:22');
-
 -- --------------------------------------------------------
 
 --
@@ -749,20 +756,7 @@ CREATE TABLE IF NOT EXISTS `production_request_files` (
   PRIMARY KEY (`id`),
   KEY `production_request_id` (`production_request_id`),
   KEY `department_id` (`department_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `production_request_files`
---
-
-INSERT INTO `production_request_files` (`id`, `production_request_id`, `department_id`, `file_path`, `created_at`, `updated_at`) VALUES
-(2, 1, 9, 'production_files/01K09XR3JYYE7Z7HHA0JGRRS9G.pdf', '2025-07-16 12:20:23', '2025-07-16 12:30:45'),
-(3, 3, 9, 'production_files/01K13T4NNHRFZ4301YVR1HXZAS.png', '2025-07-26 13:47:58', '2025-07-26 13:47:58'),
-(4, 4, 9, 'production_files/01K13THR8V45SXVBZ0EYBKD6VW.png', '2025-07-26 13:55:06', '2025-07-26 13:55:06'),
-(5, 5, 13, 'production_files/01K1X11ZQQMMWXWVF2S0GH4DF6.png', '2025-08-05 08:49:51', '2025-08-05 08:49:51'),
-(6, 5, 12, 'production_files/01K1X11ZR6XYPC6AC8MEPF4GAB.png', '2025-08-05 08:49:51', '2025-08-05 08:49:51'),
-(7, 6, 13, 'production_files/01K2CQ475R3ZDRV3K8MFSV2PN1.png', '2025-08-11 11:04:09', '2025-08-11 11:04:09'),
-(8, 6, 14, 'production_files/01K2CQ47650CC16TX9TGVRC9R1.png', '2025-08-11 11:04:09', '2025-08-11 11:04:09');
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -783,16 +777,7 @@ CREATE TABLE IF NOT EXISTS `production_request_logs` (
   PRIMARY KEY (`id`),
   KEY `production_request_id` (`production_request_id`),
   KEY `user_id` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=34 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `production_request_logs`
---
-
-INSERT INTO `production_request_logs` (`id`, `production_request_id`, `user_id`, `action`, `note`, `action_at`, `created_at`, `updated_at`) VALUES
-(29, 6, 1, 'submitted', 'تم تغيير حالة الطلب إلى تم الإرسال', '2025-08-11 11:19:37', '2025-08-11 11:19:37', '2025-08-11 11:19:37'),
-(30, 6, 1, 'approved', 'تم تغيير حالة الطلب إلى مقبول', '2025-08-11 11:20:05', '2025-08-11 11:20:05', '2025-08-11 11:20:05'),
-(33, 6, 1, 'approved', 'تم تغيير حالة الطلب إلى مقبول', '2025-08-12 17:44:22', '2025-08-12 17:44:22', '2025-08-12 17:44:22');
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -812,6 +797,8 @@ CREATE TABLE IF NOT EXISTS `production_tasks` (
   `assigned_at` datetime DEFAULT NULL,
   `received_at` datetime DEFAULT NULL,
   `status` enum('pending','assigned','acknowledged','in_progress','blocked','under_review','rework','completed','closed','cancelled') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending',
+  `completed_at` timestamp NULL DEFAULT NULL,
+  `closed_at` timestamp NULL DEFAULT NULL,
   `notes` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
@@ -819,14 +806,7 @@ CREATE TABLE IF NOT EXISTS `production_tasks` (
   KEY `production_tasks_project_id_foreign` (`project_id`),
   KEY `production_tasks_department_id_foreign` (`department_id`),
   KEY `production_tasks_assigned_to_employee_id_foreign` (`assigned_to_employee_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `production_tasks`
---
-
-INSERT INTO `production_tasks` (`id`, `project_id`, `department_id`, `assigned_to_employee_id`, `assigned_budget`, `file_path`, `due_date`, `assigned_at`, `received_at`, `status`, `notes`, `created_at`, `updated_at`) VALUES
-(15, 14, 9, 6, 400.00, NULL, '2025-08-27', '2025-08-18 00:52:25', NULL, 'in_progress', '', '2025-08-17 21:52:25', '2025-08-18 17:14:40');
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -847,18 +827,32 @@ CREATE TABLE IF NOT EXISTS `production_tasks_log` (
   PRIMARY KEY (`id`),
   KEY `production_tasks_log_causer_id_foreign` (`causer_id`),
   KEY `production_tasks_log_task_id_happened_at_index` (`task_id`,`happened_at`)
-) ENGINE=MyISAM AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
 
 --
--- Dumping data for table `production_tasks_log`
+-- Table structure for table `production_tasks_material_requests`
 --
 
-INSERT INTO `production_tasks_log` (`id`, `task_id`, `type`, `data`, `causer_id`, `happened_at`, `created_at`, `updated_at`) VALUES
-(1, 15, 'status_changed', '{\"to\": \"acknowledged\", \"from\": \"assigned\"}', 1, '2025-08-18 08:31:58', '2025-08-18 08:31:58', '2025-08-18 08:31:58'),
-(2, 15, 'status_changed', '{\"to\": \"blocked\", \"from\": \"in_progress\"}', 9, '2025-08-18 16:02:27', '2025-08-18 16:02:27', '2025-08-18 16:02:27'),
-(3, 15, 'status_changed', '{\"by\": \"Ahmed\", \"to\": \"blocked\", \"from\": \"in_progress\", \"note\": \"إيقاف مؤقت بواسطة المسؤول عن المهمة\"}', NULL, '2025-08-18 16:02:27', '2025-08-18 16:02:27', '2025-08-18 16:02:27'),
-(4, 15, 'status_changed', '{\"to\": \"in_progress\", \"from\": \"blocked\"}', 9, '2025-08-18 17:14:40', '2025-08-18 17:14:40', '2025-08-18 17:14:40'),
-(5, 15, 'timer_started', '{\"reason\": \"status_to_in_progress\"}', 9, '2025-08-18 17:14:40', '2025-08-18 17:14:40', '2025-08-18 17:14:40');
+DROP TABLE IF EXISTS `production_tasks_material_requests`;
+CREATE TABLE IF NOT EXISTS `production_tasks_material_requests` (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `task_id` bigint UNSIGNED NOT NULL,
+  `department_id` bigint UNSIGNED DEFAULT NULL,
+  `requested_by` bigint UNSIGNED DEFAULT NULL,
+  `requested_at` timestamp NULL DEFAULT NULL,
+  `status` enum('requested','fulfilled','cancelled') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'requested',
+  `po_number` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `note` text COLLATE utf8mb4_unicode_ci,
+  `provided_by` bigint UNSIGNED DEFAULT NULL,
+  `provided_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `production_tasks_material_requests_task_id_status_index` (`task_id`,`status`),
+  KEY `production_tasks_material_requests_requested_at_index` (`requested_at`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -880,14 +874,7 @@ CREATE TABLE IF NOT EXISTS `production_tasks_time_entries` (
   PRIMARY KEY (`id`),
   KEY `production_tasks_time_entries_started_by_foreign` (`started_by`),
   KEY `production_tasks_time_entries_task_id_started_at_index` (`task_id`,`started_at`)
-) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `production_tasks_time_entries`
---
-
-INSERT INTO `production_tasks_time_entries` (`id`, `task_id`, `started_by`, `started_at`, `ended_at`, `duration_sec`, `reason`, `created_at`, `updated_at`) VALUES
-(1, 15, 9, '2025-08-18 17:14:40', NULL, NULL, 'status_to_in_progress', '2025-08-18 17:14:40', '2025-08-18 17:14:40');
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -913,13 +900,6 @@ CREATE TABLE IF NOT EXISTS `projects` (
   KEY `projects_client_id_foreign` (`client_id`),
   KEY `projects_created_by_foreign` (`created_by`)
 ) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `projects`
---
-
-INSERT INTO `projects` (`id`, `production_request_id`, `client_id`, `project_name`, `description`, `start_date`, `end_date`, `status`, `created_by`, `created_at`, `updated_at`) VALUES
-(14, 6, 1, 'مشروع مصنع الرخام', NULL, '2025-08-12', NULL, 'in_progress', 1, '2025-08-12 17:44:22', '2025-08-12 17:44:22');
 
 -- --------------------------------------------------------
 
@@ -955,7 +935,7 @@ CREATE TABLE IF NOT EXISTS `project_delays` (
 DROP TABLE IF EXISTS `project_files`;
 CREATE TABLE IF NOT EXISTS `project_files` (
   `file_id` int NOT NULL AUTO_INCREMENT,
-  `project_id` int NOT NULL,
+  `project_id` bigint UNSIGNED NOT NULL,
   `department_id` int DEFAULT NULL,
   `file_name` varchar(255) NOT NULL,
   `file_path` varchar(512) NOT NULL,
@@ -973,22 +953,7 @@ CREATE TABLE IF NOT EXISTS `project_files` (
   KEY `idx_files_project` (`project_id`),
   KEY `idx_files_phase` (`department_id`),
   KEY `idx_files_type` (`file_type`)
-) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
---
--- Dumping data for table `project_files`
---
-
-INSERT INTO `project_files` (`file_id`, `project_id`, `department_id`, `file_name`, `file_path`, `file_type`, `file_size`, `uploaded_by`, `upload_date`, `description`, `version`, `is_current`, `created_at`, `updated_at`) VALUES
-(2, 6, 9, '01K09XR3JYYE7Z7HHA0JGRRS9G.pdf', 'production_files/01K09XR3JYYE7Z7HHA0JGRRS9G.pdf', 'pdf', 108027, 1, '2025-08-02 10:39:28', NULL, '1', 1, '2025-08-02 10:39:28', '2025-08-02 10:39:28'),
-(3, 8, 13, '01K1X11ZQQMMWXWVF2S0GH4DF6.png', 'production_files/01K1X11ZQQMMWXWVF2S0GH4DF6.png', 'png', 40559, 1, '2025-08-05 09:32:56', NULL, '1', 1, '2025-08-05 09:32:56', '2025-08-05 09:32:56'),
-(4, 8, 12, '01K1X11ZR6XYPC6AC8MEPF4GAB.png', 'production_files/01K1X11ZR6XYPC6AC8MEPF4GAB.png', 'png', 40559, 1, '2025-08-05 09:32:56', NULL, '1', 1, '2025-08-05 09:32:56', '2025-08-05 09:32:56'),
-(5, 10, 13, '01K2CQ475R3ZDRV3K8MFSV2PN1.png', 'production_files/01K2CQ475R3ZDRV3K8MFSV2PN1.png', 'png', 55616, 1, '2025-08-11 11:05:15', NULL, '1', 1, '2025-08-11 11:05:15', '2025-08-11 11:05:15'),
-(6, 10, 14, '01K2CQ47650CC16TX9TGVRC9R1.png', 'production_files/01K2CQ47650CC16TX9TGVRC9R1.png', 'png', 71744, 1, '2025-08-11 11:05:15', NULL, '1', 1, '2025-08-11 11:05:15', '2025-08-11 11:05:15'),
-(7, 11, 13, '01K2CQ475R3ZDRV3K8MFSV2PN1.png', 'production_files/01K2CQ475R3ZDRV3K8MFSV2PN1.png', 'png', 55616, 1, '2025-08-11 11:20:05', NULL, '1', 1, '2025-08-11 11:20:05', '2025-08-11 11:20:05'),
-(8, 11, 14, '01K2CQ47650CC16TX9TGVRC9R1.png', 'production_files/01K2CQ47650CC16TX9TGVRC9R1.png', 'png', 71744, 1, '2025-08-11 11:20:05', NULL, '1', 1, '2025-08-11 11:20:05', '2025-08-11 11:20:05'),
-(13, 14, 13, '01K2CQ475R3ZDRV3K8MFSV2PN1.png', 'production_files/01K2CQ475R3ZDRV3K8MFSV2PN1.png', 'png', 55616, 1, '2025-08-12 17:44:22', NULL, '1', 1, '2025-08-12 17:44:22', '2025-08-12 17:44:22'),
-(14, 14, 14, '01K2CQ47650CC16TX9TGVRC9R1.png', 'production_files/01K2CQ47650CC16TX9TGVRC9R1.png', 'png', 71744, 1, '2025-08-12 17:44:22', NULL, '1', 1, '2025-08-12 17:44:22', '2025-08-12 17:44:22');
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -1063,16 +1028,18 @@ CREATE TABLE IF NOT EXISTS `roles` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `roles`
 --
 
 INSERT INTO `roles` (`id`, `name`, `guard_name`, `created_at`, `updated_at`) VALUES
-(1, 'الإدارة العليا', 'web', '2025-07-06 07:18:11', '2025-08-04 11:19:09'),
-(2, 'إدارة المصنع', 'web', '2025-08-04 11:57:05', '2025-08-04 11:57:05'),
-(3, 'المبيعات', 'web', '2025-08-04 12:03:25', '2025-08-04 12:03:25');
+(1, 'super-admin', 'web', '2025-07-06 07:18:11', '2025-08-19 12:24:40'),
+(2, 'admin', 'web', '2025-08-04 11:57:05', '2025-08-19 12:25:27'),
+(3, 'sales', 'web', '2025-08-04 12:03:25', '2025-08-19 12:52:54'),
+(4, 'department_manager', 'web', '2025-08-19 12:21:56', '2025-08-19 12:21:56'),
+(5, 'purchasing_manager', 'web', '2025-08-19 12:26:53', '2025-08-19 12:26:53');
 
 -- --------------------------------------------------------
 
@@ -1161,19 +1128,71 @@ INSERT INTO `role_has_permissions` (`permission_id`, `role_id`) VALUES
 (66, 1),
 (67, 1),
 (68, 1),
+(70, 1),
+(72, 1),
+(3, 2),
+(4, 2),
+(5, 2),
+(7, 2),
+(8, 2),
+(9, 2),
+(11, 2),
+(13, 2),
+(16, 2),
+(17, 2),
+(18, 2),
+(22, 2),
+(23, 2),
+(24, 2),
+(26, 2),
+(27, 2),
+(28, 2),
+(30, 2),
+(31, 2),
+(32, 2),
+(34, 2),
+(35, 2),
+(36, 2),
+(38, 2),
+(39, 2),
+(40, 2),
+(42, 2),
+(43, 2),
+(44, 2),
+(46, 2),
+(47, 2),
+(48, 2),
+(50, 2),
 (51, 2),
+(52, 2),
 (54, 2),
 (55, 2),
+(56, 2),
+(58, 2),
+(59, 2),
+(60, 2),
+(62, 2),
+(63, 2),
+(64, 2),
 (65, 2),
 (66, 2),
 (67, 2),
 (68, 2),
+(70, 2),
+(72, 2),
 (25, 3),
 (26, 3),
 (27, 3),
 (49, 3),
 (50, 3),
-(51, 3);
+(51, 3),
+(65, 4),
+(66, 4),
+(67, 4),
+(68, 4),
+(69, 4),
+(65, 5),
+(69, 5);
 
 -- --------------------------------------------------------
 
@@ -1201,8 +1220,8 @@ CREATE TABLE IF NOT EXISTS `sessions` (
 --
 
 INSERT INTO `sessions` (`id`, `user_id`, `ip_address`, `user_agent`, `payload`, `last_activity`, `created_at`, `updated_at`) VALUES
-('nGTmrnJmErf7fllnUSVHUjNxKhK0g5YYEP9SQtrq', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', 'YTo2OntzOjY6Il90b2tlbiI7czo0MDoidDRzcDlMbUNuZHMxMWsxT2U0S241Z3ViZ3k4bG9hNVJ1aFZoNmZvYSI7czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319czozOiJ1cmwiO2E6MDp7fXM6OToiX3ByZXZpb3VzIjthOjE6e3M6MzoidXJsIjtzOjI3OiJodHRwOi8vbG9jYWxob3N0OjgwMDAvYWRtaW4iO31zOjUwOiJsb2dpbl93ZWJfNTliYTM2YWRkYzJiMmY5NDAxNTgwZjAxNGM3ZjU4ZWE0ZTMwOTg5ZCI7aToxO3M6MTc6InBhc3N3b3JkX2hhc2hfd2ViIjtzOjYwOiIkMnkkMTIkMTdsRVA5eWhNZGpmano3cmc2ZWRHLm5EbktFT29YamxhdlZ5aUVpY0JtZlROendDQ2NEdlciO30=', 1755556545, '2025-08-18 18:45:47', '2025-08-18 22:35:45'),
-('w90PmsodT5YLqykZwNi9f2RxK43TgERXcfvu7Av9', 9, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0', 'YTo3OntzOjY6Il90b2tlbiI7czo0MDoiZ1ZUTFhzNmR5QUhKZGJpM2xVaWZKbWI0b0RaMEl0d1lueU9zWnBpYyI7czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319czozOiJ1cmwiO2E6MDp7fXM6OToiX3ByZXZpb3VzIjthOjE6e3M6MzoidXJsIjtzOjM2OiJodHRwOi8vbG9jYWxob3N0OjgwMDAvYWRtaW4vdGFza3MvMTUiO31zOjUwOiJsb2dpbl93ZWJfNTliYTM2YWRkYzJiMmY5NDAxNTgwZjAxNGM3ZjU4ZWE0ZTMwOTg5ZCI7aTo5O3M6MTc6InBhc3N3b3JkX2hhc2hfd2ViIjtzOjYwOiIkMnkkMTIkYWlTTWRCNG44V1hRQzVuZkxqd0JjZW9pMzVvcGpqWTEuOVU4Ni83ZFFQbzdCNlNObEVqejYiO3M6ODoiZmlsYW1lbnQiO2E6MDp7fX0=', 1755556380, '2025-08-18 18:50:48', '2025-08-18 22:33:00');
+('BDnlUEXDSKdSsY7oj01mxSzcrUAgnOxUEnIEs0we', 9, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0', 'YTo2OntzOjY6Il90b2tlbiI7czo0MDoiQjNWTkVUa2FETnpRZHFXOXAyM0ZXRUNTZkZuUnBwZEJFaVJtOEJaRCI7czo1MDoibG9naW5fd2ViXzU5YmEzNmFkZGMyYjJmOTQwMTU4MGYwMTRjN2Y1OGVhNGUzMDk4OWQiO2k6OTtzOjE3OiJwYXNzd29yZF9oYXNoX3dlYiI7czo2MDoiJDJ5JDEyJGFpU01kQjRuOFdYUUM1bmZMandCY2VvaTM1b3BqalkxLjlVODYvN2RRUG83QjZTTmxFano2IjtzOjk6Il9wcmV2aW91cyI7YToxOntzOjM6InVybCI7czozNjoiaHR0cDovL2xvY2FsaG9zdDo4MDAwL2FkbWluL3Rhc2tzLzE4Ijt9czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319czo4OiJmaWxhbWVudCI7YTowOnt9fQ==', 1755624232, '2025-08-19 14:55:41', '2025-08-19 17:23:52'),
+('3NAnDsR3K5XJTmg9pLQQh3ybj0TDLcu7PTmPZCTO', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', 'YTo2OntzOjY6Il90b2tlbiI7czo0MDoicWwySTR6UUk2VkVmM2E4QTI5NkpqaVpXT0lJVjJpR3dKb3dMOTFMUSI7czo1MDoibG9naW5fd2ViXzU5YmEzNmFkZGMyYjJmOTQwMTU4MGYwMTRjN2Y1OGVhNGUzMDk4OWQiO2k6MTtzOjE3OiJwYXNzd29yZF9oYXNoX3dlYiI7czo2MDoiJDJ5JDEyJDE3bEVQOXloTWRqZmp6N3JnNmVkRy5uRG5LRU9vWGpsYXZWeWlFaWNCbWZUTnp3Q0NjRHZXIjtzOjk6Il9wcmV2aW91cyI7YToxOntzOjM6InVybCI7czo1NDoiaHR0cDovL2xvY2FsaG9zdDo4MDAwL2FkbWluL3Byb2R1Y3Rpb24tcmVxdWVzdHMvY3JlYXRlIjt9czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319czo4OiJmaWxhbWVudCI7YTowOnt9fQ==', 1755626949, '2025-08-19 13:44:33', '2025-08-19 18:09:09');
 
 -- --------------------------------------------------------
 
@@ -1334,6 +1353,18 @@ ALTER TABLE `model_has_roles`
   ADD CONSTRAINT `model_has_roles_role_id_foreign` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE;
 
 --
+-- Constraints for table `production_request_files`
+--
+ALTER TABLE `production_request_files`
+  ADD CONSTRAINT `production_req_f_foreign` FOREIGN KEY (`production_request_id`) REFERENCES `production_requests` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+--
+-- Constraints for table `production_request_logs`
+--
+ALTER TABLE `production_request_logs`
+  ADD CONSTRAINT `production_req_l_foreign` FOREIGN KEY (`production_request_id`) REFERENCES `production_requests` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+--
 -- Constraints for table `production_tasks`
 --
 ALTER TABLE `production_tasks`
@@ -1342,12 +1373,36 @@ ALTER TABLE `production_tasks`
   ADD CONSTRAINT `production_tasks_project_id_foreign` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE CASCADE;
 
 --
+-- Constraints for table `production_tasks_log`
+--
+ALTER TABLE `production_tasks_log`
+  ADD CONSTRAINT `production_tasks_foreign` FOREIGN KEY (`task_id`) REFERENCES `production_tasks` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+--
+-- Constraints for table `production_tasks_material_requests`
+--
+ALTER TABLE `production_tasks_material_requests`
+  ADD CONSTRAINT `production_tasks_material_requests_task_id_foreign` FOREIGN KEY (`task_id`) REFERENCES `production_tasks` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `production_tasks_time_entries`
+--
+ALTER TABLE `production_tasks_time_entries`
+  ADD CONSTRAINT `production_tasks_time_foreign` FOREIGN KEY (`task_id`) REFERENCES `production_tasks` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+--
 -- Constraints for table `projects`
 --
 ALTER TABLE `projects`
   ADD CONSTRAINT `projects_client_id_foreign` FOREIGN KEY (`client_id`) REFERENCES `clients` (`client_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `projects_created_by_foreign` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `projects_production_request_id_foreign` FOREIGN KEY (`production_request_id`) REFERENCES `production_requests` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `project_files`
+--
+ALTER TABLE `project_files`
+  ADD CONSTRAINT `projects_files_fk` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT;
 
 --
 -- Constraints for table `role_has_permissions`

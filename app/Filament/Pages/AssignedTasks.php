@@ -12,7 +12,6 @@ use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
-use Filament\Notifications\Notification;
 
 class AssignedTasks extends Page implements HasTable
 {
@@ -70,6 +69,9 @@ class AssignedTasks extends Page implements HasTable
                 ->when($employeeId, fn ($q) => $q->where('assigned_to_employee_id', $employeeId))
                 ->latest('assigned_at')
             )
+            // 👇 يجعل الصف قابلاً للنقر لفتح صفحة عرض المهمة
+            ->recordUrl(fn (ProductionTask $r) => route('filament.admin.resources.tasks.view', $r))
+            ->recordAction(null)
             ->columns([
                 Tables\Columns\TextColumn::make('project.project_name')->label('المشروع')->searchable()->wrap(),
                 Tables\Columns\TextColumn::make('department.dept_name')->label('القسم')->badge()->color('info')->sortable(),
@@ -77,7 +79,7 @@ class AssignedTasks extends Page implements HasTable
                     ->label('الحالة')
                     ->badge()
                     ->color(fn (string $state): string => $this->statusColor($state)),
-        Tables\Columns\TextColumn::make('assigned_at')->label('تاريخ الإسناد')->dateTime('Y-m-d H:i')->sortable()->placeholder('—'),
+                Tables\Columns\TextColumn::make('assigned_at')->label('تاريخ الإسناد')->dateTime('Y-m-d H:i')->sortable()->placeholder('—'),
                 Tables\Columns\TextColumn::make('received_at')->label('تاريخ تأكيد الاستلام')->dateTime('Y-m-d H:i')->sortable()->placeholder('—'),
                 Tables\Columns\TextColumn::make('due_date')->label('تاريخ التسليم المتوقع')->date()->placeholder('—'),
                 Tables\Columns\TextColumn::make('assigned_budget')->label('الميزانية')->money('SAR')->placeholder('—'),
@@ -100,69 +102,13 @@ class AssignedTasks extends Page implements HasTable
                     ->query(fn (Builder $q) => $q->whereDate('due_date', '<=', now()->addDays(7))),
             ])
             ->actions([
-                Action::make('confirm_receipt')->label('تأكيد الاستلام')->icon('heroicon-o-check-circle')
-                    ->visible(fn (ProductionTask $r) => in_array($r->status, ['pending','assigned'], true) && blank($r->received_at))
-                    ->requiresConfirmation()
-                    ->action(function (ProductionTask $r) {
-                        $r->update([
-                            'received_at' => now(),
-                            'status'      => 'acknowledged',
-                        ]);
-                        Notification::make()->title('تم تأكيد استلام المهمة')->success()->send();
-                    }),
-
-                Action::make('start')->label('بدء التنفيذ')->icon('heroicon-o-play')
-                    ->visible(fn (ProductionTask $r) => in_array($r->status, ['acknowledged','assigned','pending','rework'], true))
-                    ->action(function (ProductionTask $r) {
-                        $r->update([
-                            'status'      => 'in_progress',
-                            'received_at' => $r->received_at ?? now(),
-                        ]);
-                        Notification::make()->title('تم بدء تنفيذ المهمة')->success()->send();
-                    }),
-
-                Action::make('block')->label('إيقاف مؤقت')->icon('heroicon-o-pause-circle')->color('danger')
-                    ->visible(fn (ProductionTask $r) => in_array($r->status, ['acknowledged','in_progress','rework'], true))
-                    ->form([ Forms\Components\Textarea::make('reason')->label('سبب الإيقاف')->required()->rows(3) ])
-                    ->requiresConfirmation()
-                    ->action(function (ProductionTask $r, array $data) {
-                        $r->update([
-                            'status' => 'blocked',
-                            'notes'  => trim(($r->notes ? $r->notes."\n" : '').'[Blocked] '.$data['reason']),
-                        ]);
-                        Notification::make()->title('تم إيقاف المهمة مؤقتًا')->warning()->send();
-                    }),
-
-                Action::make('resume')->label('استئناف')->icon('heroicon-o-play-circle')->color('success')
-                    ->visible(fn (ProductionTask $r) => $r->status === 'blocked')
-                    ->action(function (ProductionTask $r) {
-                        $r->update(['status' => 'in_progress']);
-                        Notification::make()->title('تم استئناف التنفيذ')->success()->send();
-                    }),
-
-                Action::make('submit_review')->label('إرسال للمراجعة')->icon('heroicon-o-paper-airplane')->color('primary')
-                    ->visible(fn (ProductionTask $r) => $r->status === 'in_progress')
-                    ->requiresConfirmation()
-                    ->action(function (ProductionTask $r) {
-                        $r->update(['status' => 'under_review']);
-                        Notification::make()->title('تم إرسال المهمة للمراجعة')->success()->send();
-                    }),
-
-                Action::make('complete')->label('إكمال (سريع)')->icon('heroicon-o-check')->color('success')
-                    ->visible(fn (ProductionTask $r) => in_array($r->status, ['under_review','in_progress'], true))
-                    ->requiresConfirmation()
-                    ->form([ Forms\Components\Textarea::make('completion_note')->label('ملاحظات الإكمال')->rows(3)->nullable() ])
-                    ->action(function (ProductionTask $r, array $data) {
-                        $r->update([
-                            'status' => 'completed',
-                            'notes'  => trim(($r->notes ? $r->notes."\n" : '').($data['completion_note'] ?? '')),
-                        ]);
-                        Notification::make()->title('تم إكمال المهمة')->success()->send();
-                    }),
-Tables\Actions\Action::make('viewTask')
+                // ✅ فقط عرض المهمة
+                Tables\Actions\Action::make('viewTask')
                     ->label('عرض')
                     ->icon('heroicon-m-eye')
                     ->url(fn($record) => route('filament.admin.resources.tasks.view', $record)),
+
+                // ✅ فتح المشروع (لا يغيّر الحالة)
                 Action::make('open_project')->label('فتح المشروع')->icon('heroicon-o-arrow-top-right-on-square')
                     ->url(fn (ProductionTask $r) => url("/admin/projects/{$r->project_id}/manage-tasks"))
                     ->openUrlInNewTab(),

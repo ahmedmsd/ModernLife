@@ -139,7 +139,17 @@ class AdminPanelProvider extends PanelProvider
                                     ->visible(fn () => $canReviewTasks()),
                             ])
                     )
-
+                    ->group(
+                        \Filament\Navigation\NavigationGroup::make()
+                            ->label('المشتريات')
+                            ->icon('heroicon-o-truck')
+                            ->collapsed()
+                            ->items([
+                                \Filament\Navigation\NavigationItem::make('طلبات الخامات')
+                                    ->url(\App\Filament\Pages\Purchasing\MaterialsRequests::getUrl())
+                                    ->visible(fn () => \Illuminate\Support\Facades\Auth::user()?->hasAnyRole(['purchasing_manager','admin','super-admin'])),
+                            ])
+                    )
                     ->group(
                         NavigationGroup::make()
                             ->label('الأقسام')

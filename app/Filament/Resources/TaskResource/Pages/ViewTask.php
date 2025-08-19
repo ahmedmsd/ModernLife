@@ -10,11 +10,14 @@ use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Actions;
+use Filament\Forms;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Models\TaskLog;
+use App\Models\MaterialRequest;
+use Spatie\Permission\Models\Role;
 
 class ViewTask extends ViewRecord
 {
@@ -29,6 +32,7 @@ class ViewTask extends ViewRecord
             'department:dept_id,dept_name',
             'employee:employee_id,employee_name,user_id',
             'logs.causer:id,name',
+            'materialRequests:id,task_id,status,requested_at,provided_at', // لسرعة الفحص
         ]);
     }
 
@@ -40,9 +44,71 @@ class ViewTask extends ViewRecord
     /** هل المستخدم الحالي هو المسؤول عن المهمة؟ */
     protected function isAssignee(): bool
     {
-        // إن كان لديك عمود مباشر مثل assigned_to_user_id استخدمه: $this->record->assigned_to_user_id === Auth::id()
         $employeeUserId = $this->record->employee?->user_id;
         return $employeeUserId && $employeeUserId === Auth::id();
+    }
+
+    /** حالة كسلسلة دائمًا */
+    protected function statusVal(): string
+    {
+        $s = $this->record->status;
+        return $s instanceof \BackedEnum ? $s->value : (string) $s;
+    }
+
+
+
+
+    protected function openTimeEntryIfNeeded(string $reason = 'status_change'): void
+    {
+        if (! method_exists($this->record, 'timeEntries')) return;
+
+        $hasOpen = $this->record->timeEntries()->whereNull('ended_at')->exists();
+        if ($hasOpen) return;
+
+        $this->record->timeEntries()->create([
+            'started_at'   => Carbon::now('UTC'),
+            'ended_at'     => null,
+            'duration_sec' => 0,
+            'reason'       => $reason,
+        ]);
+    }
+
+
+    protected function closeActiveTimeEntrySafe(string $reason = 'status_change'): void
+    {
+        if (! method_exists($this->record, 'timeEntries')) {
+            return;
+        }
+
+        $entry = $this->record->timeEntries()
+            ->whereNull('ended_at')
+            ->latest('started_at')
+            ->first();
+
+        if (! $entry) {
+            return;
+        }
+
+        // نخزّن وقت الإغلاق بـ UTC دائمًا
+        $endedAtUtc = Carbon::now('UTC')->format('Y-m-d H:i:s');
+
+        // تحديث آمن من خلال SQL: يحسب الثواني ويصفّر السالب
+        DB::table('production_tasks_time_entries')
+            ->where('id', $entry->id)
+            ->update([
+                'ended_at'     => $endedAtUtc,
+                'duration_sec' => DB::raw("GREATEST(TIMESTAMPDIFF(SECOND, started_at, '{$endedAtUtc}'), 0)"),
+                'reason'       => $reason,
+                'updated_at'   => $endedAtUtc,
+            ]);
+    }
+
+
+    protected function hasOpenMaterialsRequest(): bool
+    {
+        return $this->record->materialRequests()
+            ->whereNull('provided_at')
+            ->exists();
     }
 
     private function statusAr(?string $val): ?string
@@ -83,76 +149,248 @@ class ViewTask extends ViewRecord
     /** تعريف أزرار الإجراءات في رأس صفحة العرض */
     protected function getHeaderActions(): array
     {
-        // لإخفاء الكل لو المستخدم ليس المكلّف
-        if (! $this->isAssignee()) {
-            return [];
-        }
+        $status = $this->statusVal();
+        $isAssignee = $this->isAssignee();
 
         return [
-            // إيقاف مؤقت
-            Actions\Action::make('pause')
-                ->label('إيقاف مؤقت')
-                ->icon('heroicon-m-pause')
-                ->color('warning')
-                ->requiresConfirmation()
-                ->visible(fn () => in_array($this->record->status, ['assigned', 'acknowledged', 'in_progress']))
-                ->action(function () {
-                    $this->changeStatus('blocked', note: 'إيقاف مؤقت بواسطة المسؤول عن المهمة');
-                    Notification::make()->title('تم إيقاف المهمة مؤقتًا.')->success()->send();
-                }),
 
-            // استئناف
-            Actions\Action::make('resume')
-                ->label('استئناف')
-                ->icon('heroicon-m-play')
+            // تأكيد الاستلام (للمكلّف فقط)
+            Actions\Action::make('confirmReceipt')
+                ->label('تأكيد الاستلام')
+                ->icon('heroicon-o-check-circle')
                 ->color('success')
-                ->visible(fn () => $this->record->status === 'blocked')
+                ->visible(fn () =>
+                    $this->isAssignee()
+                    && in_array($this->statusVal(), ['pending','assigned'], true)
+                    && blank($this->record->received_at)
+                )
+                ->requiresConfirmation()
                 ->action(function () {
-                    $this->changeStatus('in_progress', note: 'استئناف التنفيذ بواسطة المسؤول عن المهمة');
-                    Notification::make()->title('تم استئناف المهمة.')->success()->send();
+                    $this->record->update([
+                        'received_at' => now(),
+                        'status'      => 'acknowledged',
+                    ]);
+
+                    \Filament\Notifications\Notification::make()
+                        ->title('تم تأكيد استلام المهمة')
+                        ->success()
+                        ->send();
+
+                    // تحديث العرض مباشرة
+                    $this->record->refresh();
                 }),
 
-            // إرسال للمراجعة
+            // ============================
+            // المشتريات / طلب خامات
+            // ============================
+            Actions\Action::make('requestMaterials')
+                ->label('طلب خامات')
+                ->icon('heroicon-o-truck')
+                ->visible(fn () =>
+                    in_array($this->statusVal(), ['in_progress','acknowledged'], true)
+                    && ! $this->hasOpenMaterialsRequest()
+                    && (
+                        $this->isAssignee() // 👈 المكلّف يرى الزر
+                        || Auth::user()?->hasAnyRole(['department_manager','admin','super-admin'])
+                    )
+                )
+                ->form([
+                    Forms\Components\Textarea::make('note')->label('المطلوبات')->required()->rows(5),
+                    Forms\Components\TextInput::make('po_number')->label('رقم طلب الشراء/مرجع (اختياري)'),
+                ])
+                ->requiresConfirmation()
+                ->action(function (array $data) {
+                    $task = $this->record;
+
+                    // إنشاء طلب خامات كنص في جدول material_requests
+                    MaterialRequest::create([
+                        'task_id'       => $task->id,
+                        'department_id' => $task->department_id,
+                        'requested_by'  => Auth::id(),
+                        'requested_at'  => now(),
+                        'po_number'     => $data['po_number'] ?? null,
+                        'note'          => $data['note'] ?? null,
+                    ]);
+
+                    // إيقاف المهمة مؤقتًا
+                    $this->changeStatus('blocked', note: 'طلب خامات: ' . ($data['note'] ?? ''));
+
+                    // إشعار مدير المشتريات
+                    $this->notifyRole('purchasing_manager',
+                        'طلب خامات جديد',
+                        "المهمة #{$task->id}: تم إنشاء طلب خامات من مدير القسم.");
+
+                    Notification::make()->title('تم إرسال طلب الخامات إلى المشتريات')->success()->send();
+                }),
+
+            // تأكيد توفير الخامات (من داخل صفحة المهمة) — للمشتريات
+            Actions\Action::make('confirmMaterials')
+                ->label('تأكيد توفير الخامات')
+                ->icon('heroicon-o-check-badge')
+                ->color('success')
+                ->visible(fn () =>
+                    \Illuminate\Support\Facades\Auth::user()?->hasAnyRole(['purchasing_manager','admin','super-admin'])
+                    && $this->hasOpenMaterialsRequest()
+                )
+                ->form([
+                    Forms\Components\TextInput::make('po_number')->label('رقم الطلب/مرجع (اختياري)'),
+                    Forms\Components\Textarea::make('note')->label('ملاحظة (اختياري)')->rows(3),
+                ])
+                ->requiresConfirmation()
+                ->action(function (array $data) {
+                    $task = $this->record;
+
+                    // آخر طلب مفتوح
+                    $req = $task->materialRequests()
+                        ->whereNull('provided_at')   // آخر طلب غير مُؤكد
+                        ->latest('requested_at')
+                        ->first();
+
+                    if (! $req) {
+                        Notification::make()->title('لا يوجد طلب خامات مفتوح')->warning()->send();
+                        return;
+                    }
+
+                    $req->update([
+                        'status'      => 'fulfilled',
+                        'po_number'   => $data['po_number'] ?? $req->po_number,
+                        'provided_by' => Auth::id(),
+                        'provided_at' => now(),
+                        'note'        => trim(($req->note ? $req->note . "\n\n" : '') . ($data['note'] ?? '')),
+                    ]);
+
+                    // إن لم تبقَ طلبات مفتوحة، أعد المهمة للتنفيذ إن كانت blocked
+                    $stillOpen = $task->materialRequests()->whereNull('provided_at')->exists();
+                    if (! $stillOpen && $this->statusVal() === 'blocked') {
+                        $this->changeStatus('in_progress', note: 'تأكيد توفير الخامات من المشتريات');
+                    }
+
+                    // إشعار مدير القسم
+                    $this->notifyRole('department_manager',
+                        'تم توفير الخامات',
+                        "المهمة #{$task->id}: تم التأكيد، يمكن استئناف التنفيذ.");
+
+                    Notification::make()->title('تم تأكيد التوفير')->success()->send();
+                }),
+
+            // ============================
+            // الجودة
+            // ============================
+            // إرسال للمراجعة (مدير القسم/المكلّف)
             Actions\Action::make('send_for_review')
                 ->label('إرسال للمراجعة')
                 ->icon('heroicon-m-paper-airplane')
                 ->color('info')
                 ->requiresConfirmation()
-                ->visible(fn () => in_array($this->record->status, ['in_progress', 'rework']))
+                ->visible(fn () =>
+                    in_array($this->statusVal(), ['in_progress','rework'], true)
+                    && $isAssignee // أو مدير القسم
+                    || (Auth::user()?->hasAnyRole(['department_manager','admin','super-admin']) && in_array($this->statusVal(), ['in_progress','rework'], true))
+                )
                 ->action(function () {
-                    $this->changeStatus('under_review', note: 'تم الإرسال للمراجعة');
-                    Notification::make()->title('تم إرسال المهمة للمراجعة.')->success()->send();
+                    $this->changeStatus('under_review', note: 'إرسال المهمة لقسم الجودة');
+                    $this->notifyRole('quality_manager', 'مهمة بانتظار مراجعة الجودة', "المهمة #{$this->record->id}: بانتظار مراجعة الجودة.");
+                    Notification::make()->title('تم إرسال المهمة للمراجعة')->success()->send();
                 }),
 
-            // إكمال سريع
+            // اعتماد الجودة (قبول)
+            Actions\Action::make('qualityApprove')
+                ->label('اعتماد الجودة')
+                ->icon('heroicon-o-check-circle')
+                ->color('success')
+                ->visible(fn () =>
+                    $this->statusVal() === 'under_review'
+                    && Auth::user()?->hasAnyRole(['quality_manager','admin','super-admin'])
+                )
+                ->form([
+                    Forms\Components\Textarea::make('note')->label('ملاحظة (اختياري)')->rows(3),
+                ])
+                ->requiresConfirmation()
+                ->action(function (array $data) {
+                    // تغيّر إلى closed بدل completed
+                    $this->changeStatus('closed', note: $data['note'] ?? 'اعتماد الجودة وإغلاق المهمة');
+                    $this->notifyRole(
+                        'department_manager',
+                        'تم إغلاق المهمة بعد اعتماد الجودة',
+                        "المهمة #{$this->record->id}: تم اعتماد الجودة وإغلاق المهمة."
+                    );
+                    Notification::make()->title('تم اعتماد الجودة وإغلاق المهمة')->success()->send();
+                }),
+
+            // رفض الجودة (إعادة عمل)
+            Actions\Action::make('qualityReject')
+                ->label('رفض الجودة (إعادة عمل)')
+                ->icon('heroicon-o-x-circle')
+                ->color('danger')
+                ->visible(fn () =>
+                    $this->statusVal() === 'under_review'
+                    && Auth::user()?->hasAnyRole(['quality_manager','admin','super-admin'])
+                )
+                ->form([
+                    Forms\Components\Textarea::make('note')->label('سبب الرفض / المطلوب')->required()->rows(4),
+                ])
+                ->requiresConfirmation()
+                ->action(function (array $data) {
+                    $this->changeStatus('rework', note: 'رفض الجودة: ' . ($data['note'] ?? ''));
+                    $this->notifyRole('department_manager', 'رفض الجودة', "المهمة #{$this->record->id}: مرفوضة وتتطلب إعادة عمل.");
+                    Notification::make()->title('تم رفض الجودة وإرجاع المهمة')->success()->send();
+                }),
+
+            // ============================
+            // أزرار التنفيذ اليومية (للمكلّف فقط)
+            // ============================
+            Actions\Action::make('pause')
+                ->label('إيقاف مؤقت')
+                ->icon('heroicon-m-pause')
+                ->color('warning')
+                ->requiresConfirmation()
+                ->visible(fn () => $this->isAssignee() && in_array($this->statusVal(), ['assigned','acknowledged','in_progress'], true))
+                ->action(function () {
+                    $this->changeStatus('blocked', note: 'إيقاف مؤقت بواسطة المسؤول عن المهمة');
+                    Notification::make()->title('تم إيقاف المهمة مؤقتًا')->success()->send();
+                }),
+
+            Actions\Action::make('resume')
+                ->label('استئناف')
+                ->icon('heroicon-m-play')
+                ->color('success')
+                ->visible(fn () => $this->isAssignee() && $this->statusVal() === 'blocked' && ! $this->hasOpenMaterialsRequest())
+                ->action(function () {
+                    $this->changeStatus('in_progress', note: 'استئناف التنفيذ بواسطة المسؤول عن المهمة');
+                    Notification::make()->title('تم استئناف المهمة')->success()->send();
+                }),
+
             Actions\Action::make('quick_complete')
                 ->label('إكمال سريع')
                 ->icon('heroicon-m-check-badge')
                 ->color('success')
                 ->requiresConfirmation()
-                ->visible(fn () => in_array($this->record->status, ['under_review', 'in_progress']))
+                ->visible(fn () => $this->isAssignee() && in_array($this->statusVal(), ['under_review','in_progress'], true))
                 ->action(function () {
                     $this->changeStatus('completed', note: 'إكمال سريع بواسطة المسؤول عن المهمة');
-                    Notification::make()->title('تم إكمال المهمة.')->success()->send();
+                    Notification::make()->title('تم إكمال المهمة')->success()->send();
                 }),
         ];
     }
 
-    /**
-     * تغيير الحالة مع إنشاء سجل في الخط الزمني.
-     * يتوقع وجود علاقة logs() وعمود happened_at وtype وdata(JSON).
-     */
+
     protected function changeStatus(string $to, ?string $note = null): void
     {
         DB::transaction(function () use ($to, $note) {
-            $from = $this->record->status;
+            $from = $this->statusVal();
+            if (in_array($to, ['in_progress','rework'], true)) {
+                $this->openTimeEntryIfNeeded("status_to_{$to}");
+            }
+            // لو نغادر وضع التشغيل، أغلق السجل المفتوح بأمان
+            if (in_array($from, ['in_progress','rework'], true)
+                && in_array($to, ['blocked','under_review','completed','closed','cancelled'], true)) {
+                $this->closeActiveTimeEntrySafe("status_to_{$to}");
+            }
 
-            // تحديث الحالة
-            $this->record->update([
-                'status' => $to,
-            ]);
+            // حدِّث الحالة
+            $this->record->update(['status' => $to]);
 
-            // إنشاء سجل timeline
+            // لوج التايملاين (كما هو عندك)
             if (method_exists($this->record, 'logs')) {
                 $this->record->logs()->create([
                     'type'        => 'status_changed',
@@ -161,14 +399,30 @@ class ViewTask extends ViewRecord
                         'from'  => $from,
                         'to'    => $to,
                         'note'  => $note,
-                        'by'    => Auth::user()?->name,
+                        'by'    => auth()->user()?->name,
                     ],
                 ]);
             }
         });
 
-        // إعادة تحميل السجل لتحديث العرض الفوري
         $this->record->refresh();
+    }
+
+
+    // إشعار DB لكل مستخدمي دور معين
+    protected function notifyRole(string $roleName, string $title, string $body): void
+    {
+        try {
+            $role = Role::findByName($roleName);
+            foreach ($role->users as $user) {
+                Notification::make()
+                    ->title($title)
+                    ->body($body)
+                    ->sendToDatabase($user);
+            }
+        } catch (\Throwable $e) {
+            // تجاهل إن لم يوجد الدور
+        }
     }
 
     public function infolist(Infolist $infolist): Infolist
@@ -183,9 +437,9 @@ class ViewTask extends ViewRecord
 
                     TextEntry::make('status')
                         ->label('الحالة')
-                        ->formatStateUsing(fn ($state) => $this->statusAr($state))
+                        ->formatStateUsing(fn ($state) => $this->statusAr($state instanceof \BackedEnum ? $state->value : $state))
                         ->badge()
-                        ->color(fn ($state) => $this->statusColor($state))
+                        ->color(fn ($state) => $this->statusColor($state instanceof \BackedEnum ? $state->value : $state))
                         ->placeholder('—'),
 
                     TextEntry::make('due_date')
@@ -212,7 +466,6 @@ class ViewTask extends ViewRecord
                         ->html()
                         ->columnSpanFull()
                         ->state(function ($record) {
-                            // الأحدث أولًا
                             $logs = $record->logs()
                                 ->with('causer:id,name')
                                 ->orderByDesc('happened_at')
@@ -229,15 +482,14 @@ class ViewTask extends ViewRecord
                                 'rework'=>'إعادة عمل','completed'=>'مكتملة','closed'=>'مغلقة','cancelled'=>'ملغاة','draft'=>'مسودة',
                             ];
 
-                            // اختيار لون البطاقة حسب الحالة "to" أو حسب نوع الحدث
                             $statusColor = function (?string $to, ?string $type): string {
                                 return match ($to ?? '') {
-                                    'completed', 'closed'        => '#22c55e', // أخضر
-                                    'blocked', 'cancelled'       => '#ef4444', // أحمر
-                                    'under_review'               => '#06b6d4', // سماوي
-                                    'in_progress'                => '#f59e0b', // برتقالي
-                                    'rework'                     => '#a855f7', // بنفسجي
-                                    'acknowledged', 'assigned'   => '#3b82f6', // أزرق
+                                    'completed', 'closed'        => '#22c55e',
+                                    'blocked', 'cancelled'       => '#ef4444',
+                                    'under_review'               => '#06b6d4',
+                                    'in_progress'                => '#f59e0b',
+                                    'rework'                     => '#a855f7',
+                                    'acknowledged', 'assigned'   => '#3b82f6',
                                     default => match ($type ?? '') {
                                         'assigned_changed' => '#f59e0b',
                                         'due_changed'      => '#a855f7',
@@ -254,7 +506,6 @@ class ViewTask extends ViewRecord
                                 $tsCurr = $curr->happened_at ?: $curr->created_at;
                                 $tsNext = $next ? ($next->happened_at ?: $next->created_at) : now();
 
-                                // data → array آمنة
                                 $data = is_array($curr->data) ? $curr->data
                                     : (is_string($curr->data)
                                         ? (json_decode($curr->data, true) ?? ['raw' => $curr->data])
@@ -329,13 +580,15 @@ class ViewTask extends ViewRecord
                         ->badge()
                         ->state(function ($record) {
                             if (blank($record->due_date)) return '—';
-                            if ($record->status === 'completed') return 'مكتملة';
-                            $due = $record->due_date instanceof Carbon ? $record->due_date : Carbon::parse($record->due_date);
+                            if (in_array($record->status instanceof \BackedEnum ? $record->status->value : $record->status, ['completed','closed'], true)) {
+                                return ($record->status instanceof \BackedEnum ? $record->status->value : $record->status) === 'closed' ? 'مغلقة' : 'مكتملة';
+                            }
+                            $due = $record->due_date instanceof \Carbon\Carbon ? $record->due_date : \Carbon\Carbon::parse($record->due_date);
                             return now()->gt($due) ? 'متأخرة' : 'ضمن الوقت';
                         })
                         ->color(fn ($state) => match ($state) {
                             'متأخرة'     => 'danger',
-                            'مكتملة'     => 'gray',
+                            'مكتملة', 'مغلقة' => 'gray',
                             'ضمن الوقت'  => 'success',
                             default       => 'gray',
                         }),

@@ -19,12 +19,14 @@ class ProductionTask extends Model
         'notes',
         'assigned_at',
         'completed_at',
+        'closed_at',
     ];
 
     protected $casts = [
         'due_date'    => 'datetime',
         'assigned_at' => 'datetime',
         'completed_at'=> 'datetime',
+        'closed_at'=> 'datetime',
     ];
 
     // علاقات
@@ -55,7 +57,20 @@ class ProductionTask extends Model
         return $this->hasMany(TaskTimeEntry::class, 'task_id')->latest('started_at');
     }
 
-    // ملخص الأوقات
+    public function materialRequests(): ProductionTask|HasMany
+    {
+        return $this->hasMany(\App\Models\MaterialRequest::class, 'task_id');
+    }
+    public function getHasOpenMaterialRequestAttribute(): bool
+    {
+        return $this->materialRequests()->open()->exists();
+    }
+
+    public function timeEntries(): ProductionTask|HasMany
+    {
+        return $this->hasMany(\App\Models\TaskTimeEntry::class, 'task_id');
+    }
+
     public function getActiveSecondsAttribute(): int
     {
         return $this->times->sum(function ($t) {

@@ -1,52 +1,61 @@
 <?php
-// app/Services/TaskTimerService.php
+
 namespace App\Services;
 
 use App\Models\ProductionTask;
-use App\Models\TaskLog;
-use App\Models\TaskTimeEntry;
-use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class TaskTimerService
 {
-    public static function start(ProductionTask $task, ?string $reason = null): TaskTimeEntry
+    /** افتح سجل وقت إن لم يوجد سجل مفتوح */
+    public static function start(ProductionTask $task, string $reason = 'manual'): void
     {
-        $open = $task->times()->whereNull('ended_at')->first();
-        if ($open) return $open;
+        if (! method_exists($task, 'timeEntries')) {
+            return;
+        }
 
-        $entry = $task->times()->create([
-            'started_by' => Auth::id(),
-            'started_at' => now(),
-            'reason'     => $reason,
+        // لو في سجل مفتوح لا تفتح واحد جديد
+        $hasOpen = $task->timeEntries()->whereNull('ended_at')->exists();
+        if ($hasOpen) {
+            return;
+        }
+
+        $nowUtc = Carbon::now('UTC');
+
+        $task->timeEntries()->create([
+            'started_at'   => $nowUtc,     // دايمًا UTC
+            'ended_at'     => null,
+            'duration_sec' => 0,
+            'reason'       => $reason,
         ]);
-
-        $task->logs()->create([
-            'type'        => 'timer_started',
-            'data'        => ['reason' => $reason],
-            'causer_id'   => Auth::id(),
-            'happened_at' => now(),
-        ]);
-
-        return $entry;
     }
 
-    public static function stop(ProductionTask $task, ?string $reason = null): ?TaskTimeEntry
+    /** أغلق السجل المفتوح إن وجد — بحساب صفري كحد أدنى مهما كان */
+    public static function stop(ProductionTask $task, string $reason = 'manual'): void
     {
-        $open = $task->times()->whereNull('ended_at')->first();
-        if (! $open) return null;
+        if (! method_exists($task, 'timeEntries')) {
+            return;
+        }
 
-        $open->ended_at    = now();
-        $open->duration_sec = $open->ended_at->diffInSeconds($open->started_at);
-        $open->reason      = $reason ?? $open->reason;
-        $open->save();
+        $entry = $task->timeEntries()
+            ->whereNull('ended_at')
+            ->latest('started_at')
+            ->first();
 
-        $task->logs()->create([
-            'type'        => 'timer_stopped',
-            'data'        => ['reason' => $reason, 'duration_sec' => $open->duration_sec],
-            'causer_id'   => Auth::id(),
-            'happened_at' => now(),
-        ]);
+        if (! $entry) {
+            return;
+        }
 
-        return $open;
+        $endedAtUtc = Carbon::now('UTC')->format('Y-m-d H:i:s');
+
+        DB::table('production_tasks_time_entries')
+            ->where('id', $entry->id)
+            ->update([
+                'ended_at'     => $endedAtUtc,
+                'duration_sec' => DB::raw("GREATEST(TIMESTAMPDIFF(SECOND, started_at, '{$endedAtUtc}'), 0)"),
+                'reason'       => $reason,
+                'updated_at'   => $endedAtUtc,
+            ]);
     }
 }
