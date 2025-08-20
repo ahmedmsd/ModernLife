@@ -53,6 +53,19 @@ class MaterialsRequests extends Page implements HasTable
                 TextColumn::make('id')->label('#')->sortable(),
                 TextColumn::make('task.id')->label('المهمة')->sortable(),
                 TextColumn::make('department.dept_name')->label('القسم')->sortable()->searchable(),
+                TextColumn::make('task.project.project_name')
+                    ->label('المشروع')
+                    ->searchable(),
+
+                TextColumn::make('requester')
+                    ->label('مقدّم الطلب')
+                    ->state(fn (MaterialRequest $r) =>
+                        ($r->requestedBy?->name)
+                        ?? ($r->task?->employee?->employee_name)
+                        ?? '—'
+                    )
+                    ->searchable(),
+
                 TextColumn::make('note')->label('المطلوبات')->wrap()->limit(120),
                 TextColumn::make('requested_at')->label('تاريخ الطلب')->dateTime('Y-m-d H:i')->sortable(),
                 TextColumn::make('status')

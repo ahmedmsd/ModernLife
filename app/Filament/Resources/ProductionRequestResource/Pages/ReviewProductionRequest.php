@@ -27,7 +27,6 @@ class ReviewProductionRequest extends Page
 
     public function mount(ProductionRequest $record): void
     {
-        // نحمل العلاقات لعرضها بالواجهة (عميل، معرض، ملفات الطلب مع القسم)
         $this->record = $record->load(['client', 'showroom', 'files.department']);
     }
 

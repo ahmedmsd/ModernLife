@@ -13,7 +13,8 @@ class Employee extends Authenticatable
 {
     use HasRoles, Notifiable;
 
-    protected $guard_name = 'employee';
+    protected $guard_name = 'web';
+
     protected $table = 'employees';
     protected $primaryKey = 'employee_id';
     protected $keyType = 'int'; // Explicitly define if employee_id is integer
@@ -49,11 +50,14 @@ class Employee extends Authenticatable
         'password',
         'remember_token',
     ];
-
+    public function getDefaultGuardName(): string
+    {
+        return 'web';
+    }
     // Relationships
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(\App\Models\User::class, 'user_id', 'id');
     }
 
     public function department(): BelongsTo

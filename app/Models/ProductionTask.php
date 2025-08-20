@@ -18,18 +18,19 @@ class ProductionTask extends Model
         'status',
         'notes',
         'assigned_at',
+        'received_at',
         'completed_at',
         'closed_at',
     ];
 
     protected $casts = [
+        'received_at'  => 'datetime',
         'due_date'    => 'datetime',
         'assigned_at' => 'datetime',
         'completed_at'=> 'datetime',
         'closed_at'=> 'datetime',
     ];
 
-    // علاقات
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
@@ -87,7 +88,6 @@ class ProductionTask extends Model
         return $end->gt($this->due_date) ? $end->diffInSeconds($this->due_date) : 0;
     }
 
-    // لعرض الحالة بالعربية
     public function getStatusLabelAttribute(): string
     {
         $map = [

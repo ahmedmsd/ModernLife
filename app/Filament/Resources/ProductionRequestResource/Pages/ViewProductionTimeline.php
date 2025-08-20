@@ -11,6 +11,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Resources\Pages\Page;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Carbon;
 
 class ViewProductionTimeline extends Page
 {
@@ -19,6 +20,9 @@ class ViewProductionTimeline extends Page
     protected static ?string $title   = 'معلومات الطلب التفصيلية';
 
     public ProductionRequest $record;
+
+
+    public array $timeline = [];
 
     public static function canAccess(array $parameters = []): bool
     {
@@ -33,24 +37,55 @@ class ViewProductionTimeline extends Page
             'showroom',
             'files.department',
         ]);
+
+        $this->timeline = $this->record->logs
+            ->map(function ($log) {
+                // اختر أول وقت متاح: action_at ثم happened_at ثم created_at
+                $at = $log->action_at ?? $log->happened_at ?? $log->created_at;
+
+                // حوّل إلى Carbon عند الحاجة
+                $atCarbon = $at instanceof Carbon ? $at : ($at ? Carbon::parse($at) : null);
+
+                return [
+                    'id'          => $log->id,
+                    'user_name'   => $log->user->name ?? '—',
+                    'action'      => $log->action ?? ($log->type ?? '—'),
+                    'note'        => $log->note ?? ($log->data['note'] ?? null) ?? '—',
+                    // قيم آمنة للعرض في الـ Blade بدون رمي أخطاء:
+                    'at'          => $atCarbon?->toDateTimeString() ?? '—',
+                    'at_human'    => $atCarbon?->diffForHumans() ?? '—',
+                    // احتفظ بالأصل إن احتجته
+                    'raw_action_at' => $log->action_at,
+                    'raw_happened_at' => $log->happened_at,
+                    'raw_created_at'  => $log->created_at,
+                ];
+            })
+            // رتّب زمنيًا باستخدام أول وقت متاح
+            ->sortBy(fn ($row) => $row['at'] === '—' ? PHP_INT_MAX : strtotime($row['at']))
+            ->values()
+            ->all();
     }
 
+    /**
+     * تحديث الحالة + تسجيل لوج بوقت action_at مضمون.
+     */
     protected function updateStatus(string $newValue, ?string $note): void
     {
-        // نجلب الحالة الحالية كسلسلة نصية
         $current = (string) $this->record->status;
 
         if ($current !== $newValue) {
-            // حدّث الحقل مباشرة بالقيمة الجديدة
             $this->record->update(['status' => $newValue]);
-            // سجّل الحدث
+
             $this->record->logs()->create([
                 'user_id'   => Auth::id(),
                 'action'    => $newValue,
                 'note'      => $note
                     ?? 'تم تغيير الحالة إلى: ' . ProductionRequestStatus::from($newValue)->label(),
-                'action_at' => now(),
+                'action_at' => now(), // ⬅️ مهم لتفادي null
             ]);
+
+            // حدّث الـ timeline مباشرة بعد الإضافة
+            $this->mount($this->record->fresh('logs.user','client','showroom','files.department'));
         }
     }
 
@@ -63,22 +98,19 @@ class ViewProductionTimeline extends Page
                 ->form([
                     Select::make('status')
                         ->label('الحالة')
-                        // الخيارات من الـ enum
                         ->options(ProductionRequestStatus::options())
-                        // الافتراضي: الحالة الحالية كنص
                         ->default(fn () => (string) $this->record->status)
                         ->required()
                         ->reactive(),
 
                     Textarea::make('note')
                         ->label('ملاحظة')
-                        // شرطية الظهور والطلب فقط إذا اخترت "مرفوض"
                         ->required(fn ($get) => $get('status') === ProductionRequestStatus::REJECTED->value)
                         ->visible(fn  ($get) => $get('status') === ProductionRequestStatus::REJECTED->value),
                 ])
                 ->action(function (array $data): void {
-                    // حدّث الحالة وسجّل الإشعار
                     $this->updateStatus($data['status'], $data['note'] ?? null);
+
                     Notification::make()
                         ->title('تم تحديث الحالة بنجاح')
                         ->success()
@@ -91,13 +123,33 @@ class ViewProductionTimeline extends Page
                 ->requiresConfirmation()
                 ->action(function (): void {
                     $new = ProductionRequestStatus::SUBMITTED->value;
+
+                    if ((string) $this->record->status === $new) {
+                        Notification::make()
+                            ->title('الطلب مُرسَل بالفعل')
+                            ->warning()
+                            ->send();
+                        return;
+                    }
+
                     $this->record->update(['status' => $new]);
+
+                    // لوج مع action_at مضمون
+                    $this->record->logs()->create([
+                        'user_id'   => Auth::id(),
+                        'action'    => $new,
+                        'note'      => 'تم إرسال الطلب إلى مدير المصنع',
+                        'action_at' => now(),
+                    ]);
+
+                    // حدّث الـ timeline
+                    $this->mount($this->record->fresh('logs.user','client','showroom','files.department'));
+
                     Notification::make()
                         ->title('تم إرسال الطلب بنجاح')
                         ->success()
                         ->send();
                 }),
-
         ];
     }
 }

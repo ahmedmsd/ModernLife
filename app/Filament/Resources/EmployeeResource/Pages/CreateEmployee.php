@@ -5,6 +5,7 @@ namespace App\Filament\Resources\EmployeeResource\Pages;
 use App\Filament\Resources\EmployeeResource;
 use App\Models\User;
 use Filament\Resources\Pages\CreateRecord;
+use Illuminate\Support\Facades\Hash;
 
 class CreateEmployee extends CreateRecord
 {
@@ -12,19 +13,17 @@ class CreateEmployee extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        // إنشاء حساب المستخدم من البيانات المدخلة
-        $user = User::create([
-            'name' => $data['employee_name'],
-            'email' => $data['user']['email'],
-            'password' => $data['user']['password'], // مشفرة مسبقًا في الفورم
-        ]);
+        if (!empty($data['user'])) {
+            $userData = $data['user'];
+            $user = User::create([
+                'name'     => $data['employee_name'] ?? ($userData['email'] ?? 'User'),
+                'email'    => $userData['email'],
+                'password' => Hash::make($userData['password']),
+            ]);
+            $data['user_id'] = $user->id;
+        }
 
-        // ربط المستخدم بسجل الموظف
-        $data['user_id'] = $user->id;
-
-        // إزالة بيانات المستخدم المؤقتة
-        unset($data['user']);
-
+        unset($data['user']); // لا تحفظ مصفوفة user في جدول employees
         return $data;
     }
 

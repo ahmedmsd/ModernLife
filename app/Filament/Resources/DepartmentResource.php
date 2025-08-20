@@ -4,11 +4,13 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\DepartmentResource\Pages;
 use App\Models\Department;
+use App\Models\Employee;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Resources\Resource;
+use Illuminate\Database\Eloquent\Builder;
 
 
 class DepartmentResource extends Resource
@@ -45,7 +47,45 @@ class DepartmentResource extends Resource
 
                 Forms\Components\Select::make('manager_id')
                     ->label('مدير القسم')
-                    ->nullable(),
+                    ->searchable()
+                    ->preload() // احذفها لو عندك آلاف السجلات
+                    ->options(function () {
+                        $guard = config('auth.defaults.guard', 'web');
+
+                        return Employee::query()
+                            ->join('model_has_roles', function ($j) {
+                                $j->on('model_has_roles.model_id', '=', 'employees.employee_id')
+                                    ->where('model_has_roles.model_type', '=', \App\Models\Employee::class);
+                            })
+                            ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
+                            ->where('roles.name', 'department_manager')
+                            ->where('roles.guard_name', $guard)
+                            ->orderBy('employees.employee_name')
+                            ->pluck('employees.employee_name', 'employees.employee_id')
+                            ->all();
+                    })
+                    ->getSearchResultsUsing(function (string $term) {
+                        $guard = config('auth.defaults.guard', 'web');
+
+                        return Employee::query()
+                            ->join('model_has_roles', function ($j) {
+                                $j->on('model_has_roles.model_id', '=', 'employees.employee_id')
+                                    ->where('model_has_roles.model_type', '=', \App\Models\Employee::class);
+                            })
+                            ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
+                            ->where('roles.name', 'department_manager')
+                            ->where('roles.guard_name', $guard)
+                            ->where('employees.employee_name', 'like', "%{$term}%")
+                            ->orderBy('employees.employee_name')
+                            ->limit(50)
+                            ->pluck('employees.employee_name', 'employees.employee_id')
+                            ->all();
+                    })
+                    ->getOptionLabelUsing(fn ($value) =>
+                        Employee::query()->where('employee_id', $value)->value('employee_name') ?? '—'
+                    )
+                    ->nullable()
+                    ->hint('يظهر فقط الموظفون الحاصلون على دور department_manager'),
 
                 Forms\Components\TextInput::make('location')
                     ->label('الموقع')
@@ -79,7 +119,11 @@ class DepartmentResource extends Resource
                 Tables\Columns\TextColumn::make('category.category_name')->label('نوع القسم')->sortable()->searchable(),
 
                 Tables\Columns\TextColumn::make('parentDepartment.dept_name')->label('القسم التابع له')->sortable(),
-
+                Tables\Columns\TextColumn::make('manager.employee_name')
+                    ->label('مدير القسم')
+                    ->formatStateUsing(fn ($state) => $state ?: '—')
+                    ->sortable()
+                    ->searchable(),
                 Tables\Columns\IconColumn::make('is_active')
                     ->label('الحالة')
                     ->boolean()

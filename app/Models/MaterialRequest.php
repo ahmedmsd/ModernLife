@@ -12,11 +12,25 @@ class MaterialRequest extends Model
         'task_id','department_id','requested_by','requested_at',
         'status','po_number','note','provided_by','provided_at',
     ];
+    public function requestedBy()
+    {
+        return $this->belongsTo(User::class, 'requested_by', 'id');
+    }
 
+    public function providedBy()
+    {
+        return $this->belongsTo(User::class, 'provided_by', 'id');
+    }
     public function task(): \Illuminate\Database\Eloquent\Relations\BelongsTo
-    { return $this->belongsTo(ProductionTask::class, 'task_id'); }
+    {
+        return $this->belongsTo(ProductionTask::class, 'task_id');
+    }
     public function department(): \Illuminate\Database\Eloquent\Relations\BelongsTo
-    { return $this->belongsTo(Department::class, 'department_id','dept_id'); }
+    {
+        return $this->belongsTo(Department::class, 'department_id','dept_id');
+    }
 
-    public function scopeOpen($q){ return $q->where('status','requested'); }
+    public function scopeOpen($q){
+        return $q->where('status','requested');
+    }
 }

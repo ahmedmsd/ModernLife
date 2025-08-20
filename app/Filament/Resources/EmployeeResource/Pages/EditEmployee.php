@@ -3,8 +3,10 @@
 namespace App\Filament\Resources\EmployeeResource\Pages;
 
 use App\Filament\Resources\EmployeeResource;
+use App\Models\User;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
+use Illuminate\Support\Facades\Hash;
 
 class EditEmployee extends EditRecord
 {
@@ -39,26 +41,28 @@ class EditEmployee extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        if (isset($data['user']['email'])) {
-            $this->record->user->email = $data['user']['email'];
-        }
+        $userData = $data['user'] ?? null;
 
-        if (!empty($data['user']['password'])) {
-            $this->record->user->password = bcrypt($data['user']['password']);
-        }
+        if ($userData) {
+            $user = $this->record->user;
 
-        $this->record->user->save();
-
-        if (isset($data['user']['roles'])) {
-            $this->record->user->roles()->sync($data['user']['roles']);
-        }
-
-        if (isset($data['user']['directPermissions'])) {
-            $this->record->user->directPermissions()->sync($data['user']['directPermissions']);
+            if ($user) {
+                $payload = ['email' => $userData['email']];
+                if (!empty($userData['password'])) {
+                    $payload['password'] = Hash::make($userData['password']);
+                }
+                $user->update($payload);
+            } else {
+                $user = User::create([
+                    'name'     => $this->record->employee_name,
+                    'email'    => $userData['email'],
+                    'password' => Hash::make($userData['password']),
+                ]);
+                $this->record->user()->associate($user)->save();
+            }
         }
 
         unset($data['user']);
-
         return $data;
     }
     protected function getRedirectUrl(): string

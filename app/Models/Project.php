@@ -45,4 +45,11 @@ class Project extends Model
     {
         return $this->hasMany(ProjectFile::class, 'project_id', 'id');
     }
+
+    public function showroom(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Showroom::class, 'showroom_id', 'id');
+    }
+
+
 }

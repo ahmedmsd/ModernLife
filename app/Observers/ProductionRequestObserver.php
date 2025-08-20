@@ -118,7 +118,7 @@ class ProductionRequestObserver
                         'assigned_budget'         => null,
                         'due_date'                => null,   // عدّلها لقيمة افتراضية لو الحقل NOT NULL
                         'notes'                   => 'تم إنشاؤها تلقائيًا من ملفات الطلب.',
-                        'status'                  => 'assigned',
+                        'status'                  => 'pending',
                     ]
                 );
             }

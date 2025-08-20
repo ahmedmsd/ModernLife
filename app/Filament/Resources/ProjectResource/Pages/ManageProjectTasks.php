@@ -27,15 +27,9 @@ class ManageProjectTasks extends ManageRelatedRecords
         return \Illuminate\Support\Facades\Auth::user()?->can('access_manage_project_tasks');
     }
 
-    /**
-     * ملاحظة:
-     * لن نستخدم form() العام، بل سنحدّد سكيمتي الإنشاء والتعديل
-     * بشكل صريح داخل أزرار الجدول (Create / Edit).
-     */
+
     public function form(Form $form): Form
     {
-        // نُبقيه إن تطلبت الصفحة وجوده، لكنه لن يُستخدم لأننا
-        // نمرّر سكيمات مخصّصة للأكشنات بالأسفل.
         return $form->schema($this->getCreateFormSchema());
     }
 
@@ -81,11 +75,10 @@ class ManageProjectTasks extends ManageRelatedRecords
                 ->rows(3)
                 ->nullable(),
 
-            // ✅ يظهر فقط في الإنشاء
             Forms\Components\Select::make('status')
                 ->label('الحالة')
                 ->options(TaskStatus::options())
-                ->default(TaskStatus::Assigned->value)
+                ->default(TaskStatus::Pending->value)
                 ->required()
                 ->native(false)
                 ->searchable(),
@@ -118,7 +111,13 @@ class ManageProjectTasks extends ManageRelatedRecords
                 ->searchable()
                 ->preload()
                 ->nullable(),
-
+            Forms\Components\Select::make('status')
+                ->label('الحالة')
+                ->options(TaskStatus::options())
+                ->default(TaskStatus::Assigned->value)
+                ->required()
+                ->native(false)
+                ->searchable(),
             Forms\Components\TextInput::make('assigned_budget')
                 ->label('الميزانية المتوقعة')
                 ->numeric()
@@ -156,7 +155,7 @@ class ManageProjectTasks extends ManageRelatedRecords
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('due_date')
-                    ->label('تاريخ التسليم')
+                    ->label('تاريخ التسليم المتوقع')
                     ->date()
                     ->toggleable(),
 
@@ -189,7 +188,6 @@ class ManageProjectTasks extends ManageRelatedRecords
                     ->modalHeading('إضافة مهمة تصنيع')
                     ->modalSubmitActionLabel('حفظ المهمة')
                     ->modalCancelActionLabel('إلغاء')
-                    // 👇 نموذج الإنشاء (يحتوي الحالة)
                     ->form($this->getCreateFormSchema()),
             ])
             ->actions([
@@ -198,7 +196,6 @@ class ManageProjectTasks extends ManageRelatedRecords
                     ->icon('heroicon-m-eye')
                     ->url(fn($record) => route('filament.admin.resources.tasks.view', $record)),
 
-                // تعديل بدون حقل الحالة
                 Tables\Actions\EditAction::make()
                     ->modalHeading('تعديل مهمة تصنيع')
                     ->form($this->getEditFormSchema()),

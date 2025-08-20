@@ -1,5 +1,7 @@
 @php
     use App\Enums\ProductionRequestStatus;
+    use Illuminate\Support\Carbon;
+
     $statusEnum = ProductionRequestStatus::tryFrom($record->status);
 @endphp
 
@@ -15,12 +17,17 @@
             <div><strong>المعرض:</strong> {{ $record->showroom->name ?? '-' }}</div>
             <div>
                 <strong>الحالة الحالية:</strong>
-                <span class="px-2 py-1 rounded-full text-white text-xs" style="background-color: {{ $statusEnum->color() }};">
-                    {{ $statusEnum->label() }}
+                @php
+                    $label = $statusEnum?->label() ?? (string) $record->status;
+
+                    $bg = $statusEnum?->color() ?? '#64748b';
+                @endphp
+                <span class="px-2 py-1 rounded-full text-white text-xs" style="background-color: {{ $bg }};">
+                    {{ $label }}
                 </span>
             </div>
             <div><strong>أنشئ بواسطة:</strong> {{ $record->creator->name ?? '-' }}</div>
-            <div><strong>تاريخ الإنشاء:</strong> {{ $record->created_at->format('Y-m-d H:i') }}</div>
+            <div><strong>تاريخ الإنشاء:</strong> {{ optional($record->created_at)?->format('Y-m-d H:i') ?? '—' }}</div>
             <div class="col-span-2 md:col-span-3"><strong>الوصف:</strong> {{ $record->project_description ?? '-' }}</div>
         </dl>
     </x-filament::section>
@@ -59,10 +66,14 @@
         <x-slot name="header">
             <h2 class="text-xl font-bold">سجل الأحداث</h2>
         </x-slot>
+
         @forelse ($record->logs->sortByDesc('action_at') as $log)
             @php
                 $logEnum = ProductionRequestStatus::tryFrom($log->action);
+                $rawAt = $log->action_at ?? $log->happened_at ?? $log->created_at;
+                $at = $rawAt instanceof Carbon ? $rawAt : ($rawAt ? Carbon::parse($rawAt) : null);
             @endphp
+
             <div class="border rounded-md p-4 mb-4 bg-white dark:bg-gray-900 shadow-sm">
                 <div class="flex justify-between text-sm">
                     <div>
@@ -72,11 +83,12 @@
                             {{ $logEnum?->label() ?? $log->action }}
                         </span>
                     </div>
-                    <div class="text-gray-600">{{ $log->action_at->diffForHumans() }}</div>
+                    <div class="text-gray-600">{{ $at?->diffForHumans() ?? '—' }}</div>
                 </div>
+
                 @if ($log->note)
                     <div class="mt-3 text-sm">
-                        @if ($log->action === ProductionRequestStatus::REJECTED->value)
+                        @if ($log->action === \App\Enums\ProductionRequestStatus::REJECTED->value)
                             <div class="font-semibold text-red-700">سبب الرفض:</div>
                         @endif
                         <div>{{ $log->note }}</div>

@@ -102,13 +102,11 @@ class AssignedTasks extends Page implements HasTable
                     ->query(fn (Builder $q) => $q->whereDate('due_date', '<=', now()->addDays(7))),
             ])
             ->actions([
-                // ✅ فقط عرض المهمة
                 Tables\Actions\Action::make('viewTask')
                     ->label('عرض')
                     ->icon('heroicon-m-eye')
                     ->url(fn($record) => route('filament.admin.resources.tasks.view', $record)),
 
-                // ✅ فتح المشروع (لا يغيّر الحالة)
                 Action::make('open_project')->label('فتح المشروع')->icon('heroicon-o-arrow-top-right-on-square')
                     ->url(fn (ProductionTask $r) => url("/admin/projects/{$r->project_id}/manage-tasks"))
                     ->openUrlInNewTab(),

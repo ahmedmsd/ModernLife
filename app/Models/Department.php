@@ -12,6 +12,7 @@ class Department extends Model
     protected $fillable = [
         'dept_name',
         'dept_code',
+        'manager_id',
         'parent_dept_id',
         'dept_type',
         'location',
@@ -38,5 +39,10 @@ class Department extends Model
     {
 
         return $this->hasMany(Employee::class, 'department_id', 'dept_id');
+    }
+
+    public function manager(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Employee::class, 'manager_id', 'employee_id');
     }
 }

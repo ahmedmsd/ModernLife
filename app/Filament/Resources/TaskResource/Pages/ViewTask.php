@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\TaskResource\Pages;
 
 use App\Filament\Resources\TaskResource;
+use App\Models\ProductionTask;
 use Filament\Infolists\Components\Grid;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Infolists\Infolist;
@@ -22,7 +23,11 @@ use Spatie\Permission\Models\Role;
 class ViewTask extends ViewRecord
 {
     protected static string $resource = TaskResource::class;
-
+    protected static ?string $title = 'عرض المهمة';
+    protected static ?string $navigationLabel   = 'المهام';
+    protected static ?string $label             = 'المهام';
+    protected static ?string $pluralLabel       = 'المهام';
+    protected static ?string $modelLabel        = 'مهمة';
     public function mount($record): void
     {
         parent::mount($record);
@@ -32,23 +37,50 @@ class ViewTask extends ViewRecord
             'department:dept_id,dept_name',
             'employee:employee_id,employee_name,user_id',
             'logs.causer:id,name',
-            'materialRequests:id,task_id,status,requested_at,provided_at', // لسرعة الفحص
+            'materialRequests:id,task_id,status,requested_at,provided_at',
         ]);
     }
-
-    protected function getRedirectUrl(): string
+    protected function getParentTasksUrl(): string
     {
-        return url("/admin/projects/{$this->record->project_id}/manage-tasks");
+        $user = Auth::user();
+
+        if ($user && $user->hasAnyRole(['super-admin', 'admin', 'project_manager'])) {
+            if ($this->record?->project_id) {
+                return url("/admin/projects/{$this->record->project_id}/manage-tasks");
+            }
+            return url('/admin/tasks');
+        }
+
+        return url('/admin/my-tasks');
     }
 
-    /** هل المستخدم الحالي هو المسؤول عن المهمة؟ */
+    protected function getParentTasksLabel(): string
+    {
+        $user = Auth::user();
+
+        return ($user && $user->hasAnyRole(['super-admin', 'admin', 'project_manager']))
+            ? 'مهام المشروع'
+            : 'مهامي';
+    }
+    protected function getRedirectUrl(): string
+    {
+        return $this->getParentTasksUrl();
+    }
+    public function getBreadcrumbs(): array
+    {
+        return [
+
+            $this->getParentTasksUrl() => $this->getParentTasksLabel(),
+            $this->getBreadcrumb(),
+        ];
+    }
+
     protected function isAssignee(): bool
     {
         $employeeUserId = $this->record->employee?->user_id;
         return $employeeUserId && $employeeUserId === Auth::id();
     }
 
-    /** حالة كسلسلة دائمًا */
     protected function statusVal(): string
     {
         $s = $this->record->status;
@@ -89,10 +121,8 @@ class ViewTask extends ViewRecord
             return;
         }
 
-        // نخزّن وقت الإغلاق بـ UTC دائمًا
         $endedAtUtc = Carbon::now('UTC')->format('Y-m-d H:i:s');
 
-        // تحديث آمن من خلال SQL: يحسب الثواني ويصفّر السالب
         DB::table('production_tasks_time_entries')
             ->where('id', $entry->id)
             ->update([
@@ -154,30 +184,35 @@ class ViewTask extends ViewRecord
 
         return [
 
-            // تأكيد الاستلام (للمكلّف فقط)
-            Actions\Action::make('confirmReceipt')
+            Actions\Action::make('acknowledge')
                 ->label('تأكيد الاستلام')
-                ->icon('heroicon-o-check-circle')
+                ->icon('heroicon-o-check-badge')
                 ->color('success')
-                ->visible(fn () =>
-                    $this->isAssignee()
-                    && in_array($this->statusVal(), ['pending','assigned'], true)
-                    && blank($this->record->received_at)
-                )
                 ->requiresConfirmation()
-                ->action(function () {
-                    $this->record->update([
-                        'received_at' => now(),
+                ->visible(fn (ProductionTask $record) =>
+                    is_null($record->received_at) &&
+                    $record->status === 'assigned' &&
+                    auth()->user()?->employee?->employee_id === $record->assigned_to_employee_id
+                )
+                ->action(function (ProductionTask $record) {
+                    $from = $record->status;
+
+                    $record->forceFill([
                         'status'      => 'acknowledged',
-                    ]);
+                        'received_at' => now(),
+                    ])->save();
 
-                    \Filament\Notifications\Notification::make()
-                        ->title('تم تأكيد استلام المهمة')
-                        ->success()
-                        ->send();
+                    if (class_exists(TaskLog::class)) {
+                        TaskLog::create([
+                            'task_id'     => $record->id,
+                            'type'        => 'status_changed',
+                            'data'        => ['from' => $from, 'to' => 'acknowledged'],
+                            'happened_at' => now(),
+                            'user_id'     => auth()->id(),
+                        ]);
+                    }
 
-                    // تحديث العرض مباشرة
-                    $this->record->refresh();
+                    Notification::make()->title('تم تأكيد استلام المهمة')->success()->send();
                 }),
 
             // ============================
@@ -373,6 +408,172 @@ class ViewTask extends ViewRecord
         ];
     }
 
+    private function buildStageDurations($task): array
+    {
+        $logs = $task->logs()
+            ->orderBy('happened_at')
+            ->get(['type', 'data', 'happened_at', 'created_at']);
+
+        // وقت البداية = created_at للمهمة أو أول happened_at
+        $start = $task->created_at
+            ? Carbon::parse($task->created_at)
+            : ($logs->first()?->happened_at ? Carbon::parse($logs->first()->happened_at) : now());
+
+        // وقت النهاية = closed_at إن وُجد وإلا آخر happened_at وإلا الآن
+        $endRaw = $task->closed_at ?? $logs->last()?->happened_at ?? now();
+        $end    = $endRaw instanceof Carbon ? $endRaw : Carbon::parse($endRaw);
+
+        // الحالة الابتدائية
+        $initialFromCreated = optional($logs->firstWhere('type', 'created'))->data['status'] ?? null;
+        $firstChange        = $logs->firstWhere('type', 'status_changed');
+        $initialFromChange  = is_array($firstChange?->data ?? null) ? ($firstChange->data['from'] ?? null) : null;
+
+        $current = $initialFromCreated
+            ?? $initialFromChange
+            ?? ($task->status ?? 'pending');
+
+        $cursor  = $start->clone();
+        $seconds = []; // status => seconds
+
+        $add = function (?string $status, Carbon $from, Carbon $to) use (&$seconds) {
+            if (!$status) $status = 'unknown';
+            $delta = max(0, $from->diffInSeconds($to));
+            $seconds[$status] = ($seconds[$status] ?? 0) + $delta;
+        };
+
+        foreach ($logs as $log) {
+            $tRaw = $log->happened_at ?? $log->created_at;
+            if (!$tRaw) continue;
+            $t = $tRaw instanceof Carbon ? $tRaw : Carbon::parse($tRaw);
+            if ($t->lessThan($cursor)) continue;
+
+            // اجمع زمن المرحلة الحالية حتى هذا الحدث
+            $add($current, $cursor, $t);
+            $cursor = $t->clone();
+
+            if ($log->type === 'status_changed' && is_array($log->data ?? null)) {
+                $to = $log->data['to'] ?? null;
+                if ($to) $current = $to;
+            }
+        }
+
+        // بعد آخر لوج إلى النهاية
+        if ($end->greaterThan($cursor)) {
+            $add($current, $cursor, $end);
+        }
+
+        $total = array_sum($seconds);
+
+        // حوّل لصفوف مرتبة + حساب human/percent
+        $order = ['pending','assigned','acknowledged','in_progress','blocked','under_review','rework','completed','closed','cancelled','draft','unknown'];
+        $rows = collect($seconds)
+            ->map(fn ($sec, $status) => [
+                'status'  => $status,
+                'label'   => $this->statusAr($status) ?? $status,
+                'seconds' => $sec,
+            ])
+            ->sortBy(function ($row) use ($order) {
+                $pos = array_search($row['status'], $order, true);
+                return $pos === false ? 999 : $pos;
+            })
+            ->values()
+            ->map(function ($row) use ($total) {
+                $row['human']   = $row['seconds'] > 0
+                    ? Carbon::now()->subSeconds($row['seconds'])->diffForHumans(null, true)
+                    : '0 ث';
+                $row['percent'] = $total > 0 ? round($row['seconds'] * 100 / $total, 1) : 0.0;
+                return $row;
+            })
+            ->all();
+
+        return compact('rows','total','start','end');
+    }
+
+    /** يبني HTML جاهز لعرض التفصيل */private function statusHex(?string $status): string
+{
+    // ألوان هادئة لكل حالة (يمكن تعديلها لاحقًا)
+    return match ($status) {
+        'pending', 'draft'           => '#64748b', // slate-500
+        'assigned', 'acknowledged'   => '#f59e0b', // amber-500
+        'in_progress'                => '#0ea5e9', // sky-500
+        'blocked', 'rework'          => '#a855f7', // violet-500
+        'under_review'               => '#06b6d4', // cyan-500
+        'completed', 'closed'        => '#10b981', // emerald-500
+        'cancelled'                  => '#ef4444', // red-500
+        default                      => '#6b7280', // gray-500
+    };
+}
+
+    private function renderStageDurationsHtml($task): string
+    {
+        $stats   = $this->buildStageDurations($task);
+        $rows    = $stats['rows'];
+        $totalH  = $stats['start']->diffForHumans($stats['end'], true);
+        $start   = $stats['start']->format('Y-m-d H:i');
+        $end     = $stats['end']->format('Y-m-d H:i');
+
+        ob_start(); ?>
+
+        <div class="w-full">
+            <div class="rounded-xl border bg-white/80 dark:bg-gray-900/70 shadow-sm">
+                <!-- شريط العنوان / الإجمالي -->
+                <div class="px-4 py-3 border-b bg-gray-50/60 dark:bg-gray-800/60 rounded-t-xl">
+                    <div class="flex flex-wrap items-center gap-3 text-sm">
+                        <div class="font-semibold">الإجمالي منذ الإنشاء حتى الإغلاق/الآن:</div>
+                        <div class="px-2 py-0.5 rounded-full bg-gray-900 text-white text-xs dark:bg-white dark:text-gray-900">
+                            <?= e($totalH) ?>
+                        </div>
+                        <div class="ms-auto text-xs text-gray-500 dark:text-gray-400">
+                            من <?= e($start) ?> إلى <?= e($end) ?>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="px-4 py-6">
+                    <div class="overflow-x-auto">
+                        <table class="w-full table-auto text-sm rtl:text-right">
+                            <thead class="bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
+                            <tr>
+                                <th class="px-3 py-2 font-semibold text-gray-900 dark:text-gray-100 text-right">المرحلة</th>
+                                <th class="px-3 py-2 font-semibold text-gray-900 dark:text-gray-100 text-right">المدة</th>
+                                <th class="px-3 py-2 font-semibold text-gray-900 dark:text-gray-100 text-right">النسبة</th>
+                                <th class="px-3 py-2 font-semibold text-gray-900 dark:text-gray-100 text-right">تقدّم</th>
+                            </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                            <?php foreach ($rows as $r):
+                                $hex = $this->statusHex($r['status'] ?? null);
+                                $label = $r['label'] ?? $this->statusAr($r['status'] ?? '') ?? ($r['status'] ?? '—');
+                                $human = $r['human'] ?? '—';
+                                $percent = isset($r['percent']) ? (float)$r['percent'] : 0.0;
+                                ?>
+                                <tr class="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-900 dark:even:bg-gray-800">
+                                    <td class="px-3 py-2 whitespace-nowrap">
+                                    <span class="inline-flex items-center gap-2">
+                                        <span class="inline-block w-2.5 h-2.5 rounded-full" style="background-color: <?= e($hex) ?>;"></span>
+                                        <span class="px-2 py-0.5 rounded text-white text-xs" style="background-color: <?= e($hex) ?>;">
+                                            <?= e($label) ?>
+                                        </span>
+                                    </span>
+                                    </td>
+                                    <td class="px-3 py-2"><?= e($human) ?></td>
+                                    <td class="px-3 py-2"><?= e(number_format($percent, 1)) ?>%</td>
+                                    <td class="px-3 py-2 w-64">
+                                        <div class="w-full h-2 rounded bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                                            <div class="h-2 rounded" style="width: <?= e(max(0,min(100,$percent))) ?>%; background-color: <?= e($hex) ?>;"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <?php return (string) ob_get_clean();
+    }
 
     protected function changeStatus(string $to, ?string $note = null): void
     {
@@ -409,7 +610,6 @@ class ViewTask extends ViewRecord
     }
 
 
-    // إشعار DB لكل مستخدمي دور معين
     protected function notifyRole(string $roleName, string $title, string $body): void
     {
         try {
@@ -421,7 +621,6 @@ class ViewTask extends ViewRecord
                     ->sendToDatabase($user);
             }
         } catch (\Throwable $e) {
-            // تجاهل إن لم يوجد الدور
         }
     }
 
@@ -458,7 +657,15 @@ class ViewTask extends ViewRecord
                         ->dateTime()
                         ->placeholder('—'),
                 ])->columns(2),
-
+            Section::make('مدد المراحل')
+                ->columns(1)
+                ->schema([
+                    TextEntry::make('stage_durations_html')
+                        ->label('تفصيل مدد كل مرحلة')
+                        ->html()
+                        ->state(fn ($record) => $this->renderStageDurationsHtml($record))
+                        ->columnSpanFull(),
+                ]),
             Section::make('الخط الزمني')
                 ->schema([
                     TextEntry::make('timeline_html')
@@ -562,6 +769,8 @@ class ViewTask extends ViewRecord
                 HTML;
                         }),
                 ]),
+
+
 
             Section::make('إحصائيات')
                 ->schema([

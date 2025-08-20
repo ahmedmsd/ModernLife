@@ -21,6 +21,14 @@ class ProductionRequest extends Model
         'submitted_at',
     ];
 
+    protected $casts = [
+        'action_at'   => 'datetime',
+        'happened_at' => 'datetime',
+        'created_at'  => 'datetime',
+        'updated_at'  => 'datetime',
+        'data'        => 'array',
+    ];
+
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class, 'client_id');
