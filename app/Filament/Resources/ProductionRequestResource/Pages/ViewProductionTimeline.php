@@ -12,6 +12,8 @@ use Filament\Forms\Components\Textarea;
 use Filament\Resources\Pages\Page;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Carbon;
+use App\Services\ProductionRequestWorkflow;
+use App\Enums\{ProductionRequestPhase, PhaseStatus};
 
 class ViewProductionTimeline extends Page
 {
@@ -117,39 +119,24 @@ class ViewProductionTimeline extends Page
                         ->send();
                 }),
 
-            Action::make('send_to_manager')
+            Action::make('sendToFactory')
                 ->label('إرسال إلى مدير المصنع')
                 ->icon('heroicon-o-paper-airplane')
-                ->requiresConfirmation()
-                ->action(function (): void {
-                    $new = ProductionRequestStatus::SUBMITTED->value;
-
-                    if ((string) $this->record->status === $new) {
-                        Notification::make()
-                            ->title('الطلب مُرسَل بالفعل')
-                            ->warning()
-                            ->send();
-                        return;
-                    }
-
-                    $this->record->update(['status' => $new]);
-
-                    // لوج مع action_at مضمون
-                    $this->record->logs()->create([
-                        'user_id'   => Auth::id(),
-                        'action'    => $new,
-                        'note'      => 'تم إرسال الطلب إلى مدير المصنع',
-                        'action_at' => now(),
-                    ]);
-
-                    // حدّث الـ timeline
-                    $this->mount($this->record->fresh('logs.user','client','showroom','files.department'));
-
-                    Notification::make()
-                        ->title('تم إرسال الطلب بنجاح')
-                        ->success()
-                        ->send();
+                ->visible(fn($record)=> $record->current_phase === 'showroom_review' && $record->phase_status === 'approved')
+                ->action(function($record){
+                    app(ProductionRequestWorkflow::class)
+                        ->move($record, ProductionRequestPhase::FactoryIntake, PhaseStatus::Pending, 'factory_manager', true);
+                    \Filament\Notifications\Notification::make()->success()->title('تم الإرسال إلى المصنع')->send();
                 }),
+
+        Action::make('confirmReceipt')
+            ->label('تأكيد استلامي')
+            ->icon('heroicon-o-hand-thumb-up')
+            ->visible(fn($record)=> auth()->user()?->hasRole($record->current_owner_role))
+            ->action(function($record){
+                app(ProductionRequestWorkflow::class)->markReceived($record);
+                \Filament\Notifications\Notification::make()->success()->title('تم تأكيد الاستلام')->send();
+            }),
         ];
     }
 }

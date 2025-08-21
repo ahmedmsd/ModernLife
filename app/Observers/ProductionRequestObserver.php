@@ -2,87 +2,128 @@
 
 namespace App\Observers;
 
-use App\Enums\ProductionRequestStatus;
 use App\Models\ProductionRequest;
 use App\Models\ProductionRequestLog;
 use App\Models\Project;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use App\Services\ProductionRequestWorkflow;
 
 class ProductionRequestObserver
 {
     /**
      * عند إنشاء الطلب لأول مرة
      */
-    public function created(ProductionRequest $productionRequest): void
+    public function created(ProductionRequest $pr): void
     {
+        // Log أساسي
         ProductionRequestLog::create([
-            'production_request_id' => $productionRequest->id,
-            'user_id'   => Auth::id() ?? 0,
-            'action'    => 'created',
-            'note'      => 'تم إنشاء الطلب',
-            'action_at' => now(),
+            'production_request_id' => $pr->id,
+            'type'        => 'created',
+            'data'        => [
+                'phase'      => $pr->current_phase,
+                'status'     => $pr->phase_status,
+                'owner_role' => $pr->current_owner_role,
+                'owner_user' => $pr->current_owner_user_id,
+            ],
+            'note'        => 'تم إنشاء الطلب',
+            'causer_id'   => Auth::id(),
+            'happened_at' => now(),
         ]);
 
+        // بدء سير العمل إن لم تُهيأ الحقول
+        try {
+            if (blank($pr->current_phase) || blank($pr->phase_status)) {
+                app(ProductionRequestWorkflow::class)->start($pr);
+            }
+        } catch (\Throwable $e) {
+            logger()->warning('Workflow start failed on created', [
+                'production_request_id' => $pr->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
-    public function updated(ProductionRequest $productionRequest): void
+    /**
+     * عند تحديث الطلب
+     */
+    public function updated(ProductionRequest $pr): void
     {
-        if (! $productionRequest->wasChanged('status')) {
-            return;
-        }
+        // نسجّل انتقالًا إذا تغيّرت أي من هذه الحقول
+        $watched = [
+            'current_phase', 'phase_status',
+            'current_owner_role', 'current_owner_user_id',
+            'sent_to_owner_at', 'received_by_owner_at',
+        ];
 
-        $newStatusRaw = $productionRequest->status;
-        $oldStatusRaw = $productionRequest->getOriginal('status');
+        $hasTransition = collect($watched)->some(fn ($f) => $pr->wasChanged($f));
 
-        $newStatus = $this->toStatusEnum($newStatusRaw);
-        $oldStatus = $this->toStatusEnum($oldStatusRaw);
-
-        // سجل تغيير الحالة إن كانت صالحة
-        if ($newStatus) {
+        if ($hasTransition) {
             ProductionRequestLog::create([
-                'production_request_id' => $productionRequest->id,
-                'user_id'   => Auth::id() ?? 0,
-                'action'    => $newStatus->value,
-                'note'      => 'تم تغيير حالة الطلب إلى ' . (method_exists($newStatus, 'label') ? $newStatus->label() : $newStatus->value),
-                'action_at' => now(),
+                'production_request_id' => $pr->id,
+                'type'        => 'transition',
+                'data'        => [
+                    'from' => [
+                        'phase'      => $pr->getOriginal('current_phase'),
+                        'status'     => $pr->getOriginal('phase_status'),
+                        'owner_role' => $pr->getOriginal('current_owner_role'),
+                        'owner_user' => $pr->getOriginal('current_owner_user_id'),
+                        'sent_at'    => $pr->getOriginal('sent_to_owner_at'),
+                        'recv_at'    => $pr->getOriginal('received_by_owner_at'),
+                    ],
+                    'to' => [
+                        'phase'      => $pr->current_phase,
+                        'status'     => $pr->phase_status,
+                        'owner_role' => $pr->current_owner_role,
+                        'owner_user' => $pr->current_owner_user_id,
+                        'sent_at'    => $pr->sent_to_owner_at,
+                        'recv_at'    => $pr->received_by_owner_at,
+                    ],
+                ],
+                'note'        => sprintf(
+                    'Phase: %s → %s | Status: %s → %s | Owner: %s → %s',
+                    $pr->getOriginal('current_phase') ?? '—',
+                    $pr->current_phase ?? '—',
+                    $pr->getOriginal('phase_status') ?? '—',
+                    $pr->phase_status ?? '—',
+                    $pr->getOriginal('current_owner_role') ?? '—',
+                    $pr->current_owner_role ?? '—',
+                ),
+                'causer_id'   => Auth::id(),
+                'happened_at' => now(),
             ]);
-        } else {
-            logger()->error('حالة غير معروفة أثناء تحديث الطلب', [
-                'production_request_id' => $productionRequest->id,
-                'new_status' => $newStatusRaw,
-                'old_status' => $oldStatusRaw,
-            ]);
+        }
+
+        // عند اعتماد مدير المصنع: أنشئ مشروعًا ومهام الأقسام
+        $becameApprovedByFactory =
+            $pr->wasChanged('phase_status')
+            && ( (string) $pr->phase_status === 'approved' )
+            && ( (string) $pr->current_owner_role === 'factory_manager' );
+
+        if (! $becameApprovedByFactory) {
             return;
         }
 
-        // ننفّذ الإنشاء فقط عند الانتقال لأول مرة إلى APPROVED
-        $becameApproved = ($newStatus === ProductionRequestStatus::APPROVED)
-            && ($oldStatus !== ProductionRequestStatus::APPROVED);
-
-        if (! $becameApproved) {
-            return;
-        }
-
-        DB::transaction(function () use ($productionRequest) {
-            // 1) إنشاء المشروع (idempotent)
+        DB::transaction(function () use ($pr) {
+            // 1) مشروع مرتبط (idempotent)
             $project = Project::firstOrCreate(
-                ['production_request_id' => $productionRequest->id],
+                ['production_request_id' => $pr->id],
                 [
-                    'client_id'    => $productionRequest->client_id,
-                    'project_name' => $productionRequest->project_name ?? 'مشروع بدون اسم',
-                    'description'  => $productionRequest->description,
+                    'client_id'    => $pr->client_id,
+                    'project_name' => $pr->project_name ?? 'مشروع بدون اسم',
+                    'description'  => $pr->project_description ?? $pr->description,
                     'start_date'   => now(),
                     'status'       => 'in_progress',
                     'created_by'   => Auth::id() ?? 0,
                 ]
             );
 
-            // 2) نسخ ملفات الطلب إلى ملفات المشروع بدون تكرار
-            $productionRequest->loadMissing('files');
+            // 2) ملفات المشروع من ملفات الطلب
+            $pr->loadMissing('files');
 
-            foreach ($productionRequest->files as $reqFile) {
+            $filesCreated = 0;
+            foreach ($pr->files as $reqFile) {
                 $filePath = $reqFile->file_path;
                 $fileName = basename($filePath);
                 $fileType = pathinfo($fileName, PATHINFO_EXTENSION);
@@ -90,10 +131,10 @@ class ProductionRequestObserver
                     ? Storage::disk('public')->size($filePath)
                     : 0;
 
-                $project->files()->firstOrCreate(
+                $created = $project->files()->firstOrCreate(
                     [
                         'department_id' => $reqFile->department_id,
-                        'file_path'     => $filePath, // الاحتفاظ بنفس المسار
+                        'file_path'     => $filePath,
                     ],
                     [
                         'file_name'   => $fileName,
@@ -105,55 +146,65 @@ class ProductionRequestObserver
                         'is_current'  => true,
                     ]
                 );
+
+                if ($created->wasRecentlyCreated) {
+                    $filesCreated++;
+                }
             }
 
-            foreach ($productionRequest->files as $reqFile) {
-                $project->tasks()->firstOrCreate(
+            // 3) مهمة لكل ملف قسم
+            $tasksCreated = 0;
+            foreach ($pr->files as $reqFile) {
+                $task = $project->tasks()->firstOrCreate(
                     [
                         'department_id' => $reqFile->department_id,
                         'file_path'     => $reqFile->file_path,
                     ],
                     [
-                        'assigned_to_employee_id' => null,   // يحدَّد لاحقًا من واجهة إدارة المهام
+                        'assigned_to_employee_id' => null,
                         'assigned_budget'         => null,
-                        'due_date'                => null,   // عدّلها لقيمة افتراضية لو الحقل NOT NULL
+                        'due_date'                => null,
                         'notes'                   => 'تم إنشاؤها تلقائيًا من ملفات الطلب.',
                         'status'                  => 'pending',
+                        'current_owner_role'      => null,
+                        'current_owner_user_id'   => null,
+                        'sent_to_owner_at'        => null,
+                        'received_by_owner_at'    => null,
                     ]
                 );
+
+                if ($task->wasRecentlyCreated) {
+                    $tasksCreated++;
+                }
             }
+
+            ProductionRequestLog::create([
+                'production_request_id' => $pr->id,
+                'type'        => 'project_bootstrap',
+                'data'        => [
+                    'project_id'    => $project->id,
+                    'files_created' => $filesCreated,
+                    'tasks_created' => $tasksCreated,
+                ],
+                'note'        => 'تم إنشاء مشروع ومهام الأقسام بعد اعتماد مدير المصنع.',
+                'causer_id'   => Auth::id(),
+                'happened_at' => now(),
+            ]);
         });
     }
 
     /**
      * عند حذف الطلب
      */
-    public function deleted(ProductionRequest $productionRequest): void
+    public function deleted(ProductionRequest $pr): void
     {
         ProductionRequestLog::create([
-            'production_request_id' => $productionRequest->id,
-            'user_id'   => Auth::id() ?? 0,
-            'action'    => 'deleted',
-            'note'      => 'تم حذف الطلب',
-            'action_at' => now(),
+            'production_request_id' => $pr->id,
+            'type'        => 'deleted',
+            'data'        => null,
+            'note'        => 'تم حذف الطلب',
+            'causer_id'   => Auth::id(),
+            'happened_at' => now(),
         ]);
-    }
-
-    /**
-     * تحويل قيمة الحالة إلى Enum بشكل آمن.
-     */
-    private function toStatusEnum(mixed $value): ?ProductionRequestStatus
-    {
-        try {
-            if ($value instanceof ProductionRequestStatus) {
-                return $value;
-            }
-            if ($value instanceof \BackedEnum) {
-                return ProductionRequestStatus::from((string) $value->value);
-            }
-            return ProductionRequestStatus::from((string) $value);
-        } catch (\Throwable $e) {
-            return null;
-        }
     }
 }

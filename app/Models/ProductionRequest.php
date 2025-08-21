@@ -3,59 +3,81 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
-use App\Enums\ProductionRequestStatus;
+use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, HasOne};
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ProductionRequest extends Model
 {
+    use SoftDeletes;
     protected $fillable = [
         'project_name',
-        'project_description',
         'client_id',
         'showroom_id',
         'agreement_file',
         'status',
         'created_by',
         'submitted_at',
+        'request_type',
+        'current_phase',
+        'phase_status',
+        'current_owner_role',
+        'current_owner_user_id',
+        'sent_to_owner_at',
+        'received_by_owner_at',
     ];
 
     protected $casts = [
-        'action_at'   => 'datetime',
-        'happened_at' => 'datetime',
-        'created_at'  => 'datetime',
-        'updated_at'  => 'datetime',
-        'data'        => 'array',
+        'submitted_at'         => 'datetime',
+        'sent_to_owner_at'     => 'datetime',
+        'received_by_owner_at' => 'datetime',
+        'created_at'           => 'datetime',
+        'updated_at'           => 'datetime',
     ];
 
     public function client(): BelongsTo
     {
-        return $this->belongsTo(Client::class, 'client_id');
-    }
-
-    public function showroom(): BelongsTo
-    {
-        return $this->belongsTo(Showroom::class);
-    }
-
-    public function files(): HasMany
-    {
-        return $this->hasMany(ProductionRequestFile::class);
-    }
-
-    public function logs(): HasMany
-    {
-        return $this->hasMany(ProductionRequestLog::class);
+        return $this->belongsTo(Client::class, 'client_id', 'client_id');
     }
 
     public function creator(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return $this->belongsTo(User::class, 'created_by', 'id');
+    }
+
+    public function showroom(): BelongsTo
+    {
+        return $this->belongsTo(Showroom::class, 'showroom_id', 'id');
     }
 
     public function project(): HasOne
     {
-        return $this->hasOne(Project::class, 'production_request_id');
+        return $this->hasOne(Project::class, 'production_request_id', 'id');
+    }
+
+    public function files(): HasMany
+    {
+        return $this->hasMany(ProductionRequestFile::class, 'production_request_id', 'id');
+    }
+
+    public function productionRequestFiles(): HasMany
+    {
+        return $this->files();
+    }
+
+    public function logs(): HasMany
+    {
+        return $this->hasMany(ProductionRequestLog::class, 'production_request_id', 'id')
+            ->orderByDesc('action_at');
+    }
+
+    public function getTotalPriceAttribute(): float
+    {
+        foreach (['total_price', 'price', 'amount', 'contract_amount'] as $k) {
+            $v = $this->{$k} ?? null;
+            if (!is_null($v)) {
+                return (float) $v;
+            }
+        }
+        return 0.0;
     }
 }

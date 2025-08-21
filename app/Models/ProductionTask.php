@@ -21,14 +21,21 @@ class ProductionTask extends Model
         'received_at',
         'completed_at',
         'closed_at',
+        'planned_start_at','planned_end_at','planned_install_at','client_receipt',
+        'current_owner_role','current_owner_user_id','sent_to_owner_at','received_by_owner_at',
     ];
 
     protected $casts = [
-        'received_at'  => 'datetime',
-        'due_date'    => 'datetime',
-        'assigned_at' => 'datetime',
-        'completed_at'=> 'datetime',
-        'closed_at'=> 'datetime',
+        'due_date'            => 'datetime',
+        'assigned_at'         => 'datetime',
+        'received_at'         => 'datetime',
+        'completed_at'        => 'datetime',
+        'closed_at'           => 'datetime',
+        'planned_start_at'    => 'datetime',
+        'planned_end_at'      => 'datetime',
+        'planned_install_at'  => 'datetime',
+        'sent_to_owner_at'    => 'datetime',
+        'received_by_owner_at'=> 'datetime',
     ];
 
     public function project(): BelongsTo
@@ -105,5 +112,10 @@ class ProductionTask extends Model
         ];
 
         return $map[$this->status] ?? $this->status;
+    }
+
+    public function currentOwnerUser()
+    {
+        return $this->belongsTo(User::class, 'current_owner_user_id');
     }
 }

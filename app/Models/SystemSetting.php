@@ -21,5 +21,15 @@ class SystemSetting extends Model
     ];
 
     public $timestamps = true;
+
+    public static function get(string $key, $default = null) {
+        $row = static::query()->where('setting_key', $key)->first();
+        return $row ? $row->value : $default;
+    }
+
+    public static function put(string $key, $value): void {
+        static::updateOrCreate(['setting_key' => $key], ['setting_value' => $value]);
+    }
+
 }
 

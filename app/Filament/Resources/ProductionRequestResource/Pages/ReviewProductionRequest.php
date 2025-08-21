@@ -2,94 +2,168 @@
 
 namespace App\Filament\Resources\ProductionRequestResource\Pages;
 
-use App\Enums\ProductionRequestStatus;
+use App\Enums\{ProductionRequestPhase as Phase, PhaseStatus as S};
 use App\Filament\Resources\ProductionRequestResource;
 use App\Models\ProductionRequest;
-use Filament\Resources\Pages\Page;
+use App\Services\ProductionRequestWorkflow;
 use Filament\Actions\Action;
-use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
+use Filament\Resources\Pages\Page;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class ReviewProductionRequest extends Page
 {
     protected static string $resource = ProductionRequestResource::class;
-    protected static string $view = 'filament.resources.production-request-resource.pages.review-production-request';
-    protected static ?string $title = 'مراجعة الطلب';
+    protected static string $view = 'filament.resources.production-request-resource.pages.review-request';
+    protected static ?string $title = 'مراجعة طلب التصنيع';
 
     public ProductionRequest $record;
 
-    public static function canAccess(array $parameters = []): bool
-    {
-        return Auth::user()?->can('access_review_production_request') ?? false;
-    }
-
     public function mount(ProductionRequest $record): void
     {
-        $this->record = $record->load(['client', 'showroom', 'files.department']);
+        $this->record = $record->load(['client','project','logs','productionRequestFiles']);
     }
 
     public function getHeaderActions(): array
     {
-        // أظهر أزرار الاعتماد/الرفض فقط عندما تكون الحالة Submitted
-        if ((string) $this->record->status !== ProductionRequestStatus::SUBMITTED->value) {
-            return [];
+        $cfg = config('production_workflow');
+        $actions = [];
+
+        foreach ($cfg['actions'] as $def) {
+            if (! $this->shouldShow($def)) continue;
+
+            $actions[] = $this->makeActionFromDefinition($def);
         }
 
-        return [
-            Action::make('approve')
-                ->label('اعتماد الطلب')
-                ->color('success')
-                ->requiresConfirmation()
-                ->action(function () {
-                    DB::transaction(function () {
-                        // 1) تغيـير الحالة إلى APPROVED
-                        $this->record->update([
-                            'status' => ProductionRequestStatus::APPROVED->value,
-                        ]);
+        return $actions;
+    }
 
-                        // 2) بعد الحفظ، الـ Observer سيتكفّل بإنشاء المشروع ونسخ الملفات
-                        // نحدّث الريكورد محليًا ليشمل المشروع الذي أنشأه الـ Observer
-                        $this->record->refresh();
-                    });
+    /* ---------------- Visibility & Role checks ---------------- */
 
-                    Notification::make()
-                        ->success()
-                        ->title('تم اعتماد الطلب وإنشاء المشروع بنجاح')
-                        ->send();
-                }),
+    private function shouldShow(array $def): bool
+    {
+        // Role gate
+        if (! $this->userAllowed($def['roles'] ?? [])) return false;
 
-            Action::make('reject')
-                ->label('رفض الطلب')
-                ->color('danger')
+        // Phase/Status conditions
+        $phase = $this->record->current_phase;
+        $status = $this->record->phase_status;
+
+        foreach (($def['when'] ?? []) as $cond) {
+            if (isset($cond['phase'])      && $phase !== $cond['phase']) return false;
+            if (isset($cond['phase_in'])   && !in_array($phase, (array)$cond['phase_in'], true)) return false;
+
+            if (isset($cond['status'])     && $status !== $cond['status']) return false;
+            if (isset($cond['status_in'])  && !in_array($status, (array)$cond['status_in'], true)) return false;
+            if (isset($cond['status_not_in']) && in_array($status, (array)$cond['status_not_in'], true)) return false;
+        }
+        return true;
+    }
+
+    private function userAllowed(array $roles): bool
+    {
+        $user = Auth::user();
+        if (! $user) return false;
+
+        // admins can do everything
+        if ($user->hasAnyRole(['admin', 'super-admin'])) return true;
+
+        foreach ($roles as $r) {
+            if ($r === '*owner*') {
+                $owner = $this->record->current_owner_role;
+                if ($owner && $user->hasRole($owner)) return true;
+            } else {
+                if ($user->hasRole($r)) return true;
+            }
+        }
+        return false;
+    }
+
+    /* ---------------- Action builder ---------------- */
+
+    private function makeActionFromDefinition(array $def): Action
+    {
+        $action = Action::make($def['key'])
+            ->label($def['label'] ?? $def['key'])
+            ->icon($def['icon'] ?? 'heroicon-o-bolt')
+            ->color($def['color'] ?? 'primary')
+            ->requiresConfirmation();
+
+        $type = $def['type'] ?? 'status';
+
+        if ($type === 'receive') {
+            $action->action(function () {
+                app(ProductionRequestWorkflow::class)->markReceived($this->record);
+                Notification::make()->success()->title('تم تأكيد الاستلام')->send();
+                $this->refreshRecord();
+            });
+        }
+        elseif ($type === 'reject') {
+            $action
                 ->form([
-                    Textarea::make('note')
-                        ->label('سبب الرفض')
-                        ->required()
-                        ->rows(3),
+                    \Filament\Forms\Components\Textarea::make('reason')->label('سبب الرفض')->required()->rows(3),
                 ])
                 ->action(function (array $data) {
-                    DB::transaction(function () use ($data) {
-                        // تغيير الحالة إلى REJECTED
-                        $this->record->update([
-                            'status' => ProductionRequestStatus::REJECTED->value,
-                        ]);
+                    app(ProductionRequestWorkflow::class)->reject($this->record, $data['reason'] ?? null);
+                    Notification::make()->warning()->title('تم الرفض')->send();
+                    $this->refreshRecord();
+                });
+        }
+        elseif ($type === 'reject_and_back') {
+            $action
+                ->form([
+                    \Filament\Forms\Components\Textarea::make('reason')->label('سبب الرفض')->required()->rows(3),
+                ])
+                ->action(function (array $data) use ($def) {
+                    // 1) reject in current phase
+                    app(ProductionRequestWorkflow::class)->reject($this->record, $data['reason'] ?? null);
+                    // 2) move back to target (usually manufacturing/installation)
+                    $to = $def['to'] ?? [];
+                    app(ProductionRequestWorkflow::class)->move(
+                        $this->record,
+                        Phase::from($to['phase']),
+                        S::from($to['status']),
+                        $to['owner'] ?? null,
+                        (bool)($to['touch_sent'] ?? false)
+                    );
+                    Notification::make()->warning()->title('تم الرفض والرجوع للمرحلة السابقة')->send();
+                    $this->refreshRecord();
+                });
+        }
+        elseif ($type === 'transition') {
+            $action->action(function () use ($def) {
+                $to = $def['to'] ?? [];
+                app(ProductionRequestWorkflow::class)->move(
+                    $this->record,
+                    Phase::from($to['phase']),
+                    S::from($to['status']),
+                    $to['owner'] ?? null,
+                    (bool)($to['touch_sent'] ?? false)
+                );
+                Notification::make()->success()->title('تم الإرسال للمرحلة التالية')->send();
+                $this->refreshRecord();
+            });
+        }
+        else { // 'status'
+            $action->action(function () use ($def) {
+                $toStatus = $def['to']['status'] ?? S::UnderReview->value;
+                app(ProductionRequestWorkflow::class)->move(
+                    $this->record,
+                    Phase::from($this->record->current_phase),
+                    S::from($toStatus),
+                    $this->record->current_owner_role,
+                    false
+                );
+                Notification::make()->success()->title('تم تحديث الحالة')->send();
+                $this->refreshRecord();
+            });
+        }
 
-                        // سجل سبب الرفض
-                        $this->record->logs()->create([
-                            'user_id' => Auth::id(),
-                            'action' => ProductionRequestStatus::REJECTED->value,
-                            'note' => $data['note'],
-                            'action_at' => now(),
-                        ]);
-                    });
+        return $action;
+    }
 
-                    Notification::make()
-                        ->danger()
-                        ->title('تم رفض الطلب')
-                        ->send();
-                }),
-        ];
+    private function refreshRecord(): void
+    {
+        $this->record->refresh()->load(['client','project','logs','productionRequestFiles']);
     }
 }

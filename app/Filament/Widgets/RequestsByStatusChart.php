@@ -91,9 +91,6 @@ class RequestsByStatusChart extends ChartWidget
         return 'doughnut';
     }
 
-    /**
-     * تفتيح بسيط للّون للهوفر
-     */
     private function lighten(string $hex, int $percent): string
     {
         $hex = ltrim($hex, '#');
