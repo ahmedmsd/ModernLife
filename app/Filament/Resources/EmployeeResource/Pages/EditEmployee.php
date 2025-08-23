@@ -65,6 +65,22 @@ class EditEmployee extends EditRecord
         unset($data['user']);
         return $data;
     }
+
+    protected function afterSave(): void
+    {
+        $employee = $this->record;
+
+        if (! $employee->user && ! empty($this->data['user'])) {
+            $employee->user()->create($this->data['user']);
+            $employee->refresh();
+        }
+
+        $roleNames = (array) ($this->data['roles'] ?? []);
+        if ($employee->user) {
+            $employee->user->syncRoles($roleNames);
+        }
+    }
+
     protected function getRedirectUrl(): string
     {
         // Redirect to the index page instead of the edit page

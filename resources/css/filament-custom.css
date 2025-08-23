@@ -1,21 +1,14 @@
-@import url('https://fonts.googleapis.com/css2?family=Cairo&display=swap');
 
-body, html, .filament-main, .filament-sidebar, .filament-header {
-    font-family: 'Cairo', sans-serif !important;
-}
-/* اجعل عناصر شبكة الودجت تتمدد بنفس الارتفاع في الصف */
 .fi-widgets-grid,
-.fi-dashboard-grid {           /* نغطي التسميتين لأي إصدار */
+.fi-dashboard-grid {
     align-items: stretch !important;
 }
 
-/* كل بطاقة ويدجت تتمدد عموديًا */
 .fi-widgets-grid > * {
     display: flex;
     flex-direction: column;
 }
 
-/* داخل البطاقة: المحتوى يتمدّد لملء الارتفاع */
 .fi-section, .fi-card, .fi-widget {
     height: 100%;
 }

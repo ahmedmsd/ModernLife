@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ProductionRequest extends Model
 {
-    use SoftDeletes;
+//    use SoftDeletes;
     protected $fillable = [
         'project_name',
         'client_id',
@@ -67,7 +67,7 @@ class ProductionRequest extends Model
     public function logs(): HasMany
     {
         return $this->hasMany(ProductionRequestLog::class, 'production_request_id', 'id')
-            ->orderByDesc('action_at');
+            ->orderByDesc('happened_at');
     }
 
     public function getTotalPriceAttribute(): float

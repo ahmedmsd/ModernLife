@@ -12,6 +12,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 
 class EmployeeResource extends Resource
 {
@@ -118,15 +119,14 @@ class EmployeeResource extends Resource
                 Forms\Components\Section::make('مجموعات المستخدمين والصلاحيات')
                     ->schema([
                         Forms\Components\Select::make('roles')
-                            ->multiple()
-                            ->relationship('roles', 'name')
-                            ->preload()
-                            ->required()
-                            ->validationMessages([
-                                'required' => 'يجب اختيار دور واحد على الأقل'
-                            ])
                             ->label('الأدوار')
-                            ->helperText('يتم توريث جميع صلاحيات الدور للموظف'),
+                            ->multiple()
+                            ->preload()
+                            ->options(fn () => Role::query()->pluck('name', 'name')->all())
+                            ->default(fn ($record) => $record?->user?->roles?->pluck('name')?->all() ?? [])
+                            ->dehydrated(false)
+                            ->disabled(fn ($record) => ! $record?->user_id)
+                            ->helperText('تُسنَد الأدوار إلى حساب المستخدم المرتبط بالموظف (User).'),
                     ])->columns(1) // Changed to single column for better layout
             ]);
     }
@@ -152,7 +152,7 @@ class EmployeeResource extends Resource
                 Tables\Columns\TextColumn::make('phone')
                     ->label('رقم الجوال')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('roles.name')
+                Tables\Columns\TextColumn::make('user.roles.name')
                     ->label('الدور')
                     ->badge()
                     ->color('primary'),

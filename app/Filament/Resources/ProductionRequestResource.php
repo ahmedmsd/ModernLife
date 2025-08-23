@@ -87,13 +87,11 @@ class ProductionRequestResource extends Resource
 
 
 
-            // ====== المرفقات (منسّقة) ======
             Section::make('المرفقات')
                 ->description('أرفق ملف الاتفاقية (PDF)، ثم أضف ملفات التصنيع حسب الأقسام المعنية.')
                 ->schema([
                     Grid::make(12)->schema([
 
-                        // ملف الاتفاقية (عمود أيسر/أيمن)
                         FileUpload::make('agreement_file')
                             ->label('ملف الاتفاقية (PDF)')
                             ->helperText('صيغة PDF فقط — حتى 20MB')
@@ -137,7 +135,7 @@ class ProductionRequestResource extends Resource
                                     ->moveFiles()
                                     ->columnSpan(8),
                             ])
-                            ->columns(12) // تنسيق عناصر كل صف داخل الـRepeater
+                            ->columns(12)
                             ->columnSpan(['xl' => 8, 'lg' => 7, 'md' => 12]),
                     ]),
                 ])
@@ -156,7 +154,6 @@ class ProductionRequestResource extends Resource
                     ->formatStateUsing(fn($state) => $state ?: 'غير مرتبط'),
                 TextColumn::make('creator.name')->label('أنشئ بواسطة'),
 
-                // عرض المرحلة/الحالة كشارات بسيطة (بدل enum قديم)
                 TextColumn::make('current_phase')
                     ->label('المرحلة')
                     ->badge()
@@ -195,20 +192,11 @@ class ProductionRequestResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-
                 Action::make('review')
                     ->label('مراجعة الطلب')
                     ->icon('heroicon-o-check-circle')
                     ->url(fn($record) => ProductionRequestResource::getUrl('review', ['record' => $record])),
-
                 Tables\Actions\DeleteAction::make(),
-            ])
-            ->bulkActions([
-                BulkAction::make('bulk_delete')
-                    ->label('حذف محدد')
-                    ->icon('heroicon-o-trash')
-                    ->action(fn (Collection $records) => $records->each->delete())
-                    ->deselectRecordsAfterCompletion(),
             ]);
     }
 

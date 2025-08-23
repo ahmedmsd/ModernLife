@@ -11,7 +11,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Resources\Pages\Page;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Carbon;
+use Carbon\Carbon; // استخدم Carbon مباشرة
 use App\Services\ProductionRequestWorkflow;
 use App\Enums\{ProductionRequestPhase, PhaseStatus};
 
@@ -23,7 +23,7 @@ class ViewProductionTimeline extends Page
 
     public ProductionRequest $record;
 
-
+    /** بيانات الخط الزمني الجاهزة للعرض */
     public array $timeline = [];
 
     public static function canAccess(array $parameters = []): bool
@@ -34,7 +34,7 @@ class ViewProductionTimeline extends Page
     public function mount(ProductionRequest $record): void
     {
         $this->record = $record->load([
-            'logs.user',
+            'logs.causer',
             'client',
             'showroom',
             'files.department',
@@ -42,34 +42,30 @@ class ViewProductionTimeline extends Page
 
         $this->timeline = $this->record->logs
             ->map(function ($log) {
-                // اختر أول وقت متاح: action_at ثم happened_at ثم created_at
-                $at = $log->action_at ?? $log->happened_at ?? $log->created_at;
-
-                // حوّل إلى Carbon عند الحاجة
+                $at = $log->happened_at ?? $log->created_at;
                 $atCarbon = $at instanceof Carbon ? $at : ($at ? Carbon::parse($at) : null);
+                $note = $log->note ?? (is_array($log->data ?? null) ? ($log->data['note'] ?? null) : null);
 
                 return [
-                    'id'          => $log->id,
-                    'user_name'   => $log->user->name ?? '—',
-                    'action'      => $log->action ?? ($log->type ?? '—'),
-                    'note'        => $log->note ?? ($log->data['note'] ?? null) ?? '—',
-                    // قيم آمنة للعرض في الـ Blade بدون رمي أخطاء:
-                    'at'          => $atCarbon?->toDateTimeString() ?? '—',
-                    'at_human'    => $atCarbon?->diffForHumans() ?? '—',
-                    // احتفظ بالأصل إن احتجته
-                    'raw_action_at' => $log->action_at,
+                    'id'              => $log->id,
+                    'user_name'       => $log->causer->name ?? '—',
+                    'type'            => $log->type ?? '—',
+                    'data'            => $log->data ?? [],
+                    'note'            => $note ?? '—',
+                    'at'              => $atCarbon?->toDateTimeString() ?? '—',
+                    'at_human'        => $atCarbon?->diffForHumans() ?? '—',
                     'raw_happened_at' => $log->happened_at,
                     'raw_created_at'  => $log->created_at,
                 ];
             })
-            // رتّب زمنيًا باستخدام أول وقت متاح
+            // رتب بحسب الوقت المتاح
             ->sortBy(fn ($row) => $row['at'] === '—' ? PHP_INT_MAX : strtotime($row['at']))
             ->values()
             ->all();
     }
 
     /**
-     * تحديث الحالة + تسجيل لوج بوقت action_at مضمون.
+     * تغيير الحالة العامة (status) + تسجيل log بنمط status_changed
      */
     protected function updateStatus(string $newValue, ?string $note): void
     {
@@ -78,22 +74,29 @@ class ViewProductionTimeline extends Page
         if ($current !== $newValue) {
             $this->record->update(['status' => $newValue]);
 
+            // جدول production_request_logs: type/data/note/causer_id/happened_at
             $this->record->logs()->create([
-                'user_id'   => Auth::id(),
-                'action'    => $newValue,
-                'note'      => $note
-                    ?? 'تم تغيير الحالة إلى: ' . ProductionRequestStatus::from($newValue)->label(),
-                'action_at' => now(), // ⬅️ مهم لتفادي null
+                'type'        => 'status_changed',
+                'data'        => [
+                    'from' => $current,
+                    'to'   => $newValue,
+                    'note' => $note,
+                ],
+                'note'        => $note
+                    ?? 'تم تغيير الحالة إلى: ' . (ProductionRequestStatus::tryFrom($newValue)?->label() ?? $newValue),
+                'causer_id'   => Auth::id(),
+                'happened_at' => now(),
             ]);
 
-            // حدّث الـ timeline مباشرة بعد الإضافة
-            $this->mount($this->record->fresh('logs.user','client','showroom','files.department'));
+            // أعد التحميل لتحديث الـ timeline فوراً
+            $this->mount($this->record->fresh('logs.causer','client','showroom','files.department'));
         }
     }
 
     public function getHeaderActions(): array
     {
         return [
+            // تحديث الحالة العامة
             Action::make('update_status')
                 ->label('تحديث حالة الطلب')
                 ->icon('heroicon-o-arrow-path')
@@ -104,11 +107,10 @@ class ViewProductionTimeline extends Page
                         ->default(fn () => (string) $this->record->status)
                         ->required()
                         ->reactive(),
-
                     Textarea::make('note')
                         ->label('ملاحظة')
-                        ->required(fn ($get) => $get('status') === ProductionRequestStatus::REJECTED->value)
-                        ->visible(fn  ($get) => $get('status') === ProductionRequestStatus::REJECTED->value),
+                        ->nullable()
+                        ->helperText('اختياري، سيُحفظ في الحقلين note و data.note'),
                 ])
                 ->action(function (array $data): void {
                     $this->updateStatus($data['status'], $data['note'] ?? null);
@@ -119,24 +121,38 @@ class ViewProductionTimeline extends Page
                         ->send();
                 }),
 
+            // إرسال إلى مدير المصنع (اترك تسجيل اللوج للخدمة)
             Action::make('sendToFactory')
                 ->label('إرسال إلى مدير المصنع')
                 ->icon('heroicon-o-paper-airplane')
-                ->visible(fn($record)=> $record->current_phase === 'showroom_review' && $record->phase_status === 'approved')
-                ->action(function($record){
-                    app(ProductionRequestWorkflow::class)
-                        ->move($record, ProductionRequestPhase::FactoryIntake, PhaseStatus::Pending, 'factory_manager', true);
-                    \Filament\Notifications\Notification::make()->success()->title('تم الإرسال إلى المصنع')->send();
+                ->visible(fn () =>
+                    $this->record->current_phase === ProductionRequestPhase::ShowroomReview->value
+                    && $this->record->phase_status === PhaseStatus::Approved->value
+                )
+                ->action(function () {
+                    app(ProductionRequestWorkflow::class)->move(
+                        $this->record,
+                        ProductionRequestPhase::FactoryIntake,
+                        PhaseStatus::Pending,
+                        'factory_manager',
+                        true
+                    );
+
+                    Notification::make()->success()->title('تم الإرسال إلى المصنع')->send();
+                    $this->mount($this->record->fresh('logs.causer'));
                 }),
 
-        Action::make('confirmReceipt')
-            ->label('تأكيد استلامي')
-            ->icon('heroicon-o-hand-thumb-up')
-            ->visible(fn($record)=> auth()->user()?->hasRole($record->current_owner_role))
-            ->action(function($record){
-                app(ProductionRequestWorkflow::class)->markReceived($record);
-                \Filament\Notifications\Notification::make()->success()->title('تم تأكيد الاستلام')->send();
-            }),
+            // تأكيد استلام المالك الحالي (الخدمة تسجل اللوج وتحدّث received_by_owner_at)
+            Action::make('confirmReceipt')
+                ->label('تأكيد استلامي')
+                ->icon('heroicon-o-hand-thumb-up')
+                ->visible(fn () => Auth::user()?->hasRole($this->record->current_owner_role))
+                ->action(function () {
+                    app(ProductionRequestWorkflow::class)->markReceived($this->record);
+
+                    Notification::make()->success()->title('تم تأكيد الاستلام')->send();
+                    $this->mount($this->record->fresh('logs.causer'));
+                }),
         ];
     }
 }

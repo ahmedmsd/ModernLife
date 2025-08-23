@@ -10,10 +10,16 @@ class ListProductionRequests extends ListRecords
 {
     protected static string $resource = ProductionRequestResource::class;
 
+    public static function canAccess(array $parameters = []): bool
+    {
+        return auth()->user()?->hasAnyRole([
+            'admin','super-admin','factory_manager','sales','showroom_manager',
+        ]) ?? false;
+    }
+
     protected function getHeaderActions(): array
     {
         return [
-            // زر: طلب مباشر
             Actions\Action::make('createDirect')
                 ->label('＋ طلب مباشر')
                 ->icon('heroicon-o-bolt')
@@ -23,7 +29,6 @@ class ListProductionRequests extends ListRecords
                     'sales','factory_manager','admin','super-admin',
                 ])),
 
-            // زر: طلب غير مباشر
             Actions\Action::make('createIndirect')
                 ->label('＋ طلب غير مباشر')
                 ->icon('heroicon-o-building-storefront')
@@ -33,7 +38,6 @@ class ListProductionRequests extends ListRecords
                     'showroom_manager','admin','super-admin',
                 ])),
 
-            // (اختياري) زر الإنشاء الافتراضي لمن تريد
             Actions\CreateAction::make()
                 ->label('إنشاء طلب')
                 ->visible(fn () => auth()->user()?->hasAnyRole(['admin','super-admin'])),

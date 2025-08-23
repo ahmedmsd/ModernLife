@@ -9,16 +9,16 @@ class ProductionRequestLog extends Model
 {
     protected $fillable = [
         'production_request_id',
-        'user_id',
+        'causer_id',
         'type',           // created | transition | status_changed | received | rejected | deleted | ...
         'data',           // JSON
         'note',
-        'action_at',
+        'happened_at',
     ];
 
     protected $casts = [
         'data'      => 'array',
-        'action_at' => 'datetime',
+        'happened_at' => 'datetime',
         'created_at'=> 'datetime',
         'updated_at'=> 'datetime',
     ];
@@ -32,4 +32,10 @@ class ProductionRequestLog extends Model
     {
         return $this->belongsTo(User::class, 'user_id', 'id');
     }
+
+    public function causer()
+    {
+        return $this->belongsTo(\App\Models\User::class, 'causer_id');
+    }
+
 }

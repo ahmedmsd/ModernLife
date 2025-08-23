@@ -23,8 +23,23 @@ class CreateEmployee extends CreateRecord
             $data['user_id'] = $user->id;
         }
 
-        unset($data['user']); // لا تحفظ مصفوفة user في جدول employees
+        unset($data['user']);
         return $data;
+    }
+
+    protected function afterCreate(): void
+    {
+        $employee = $this->record;
+
+        if (! $employee->user && ! empty($this->data['user'])) {
+            $employee->user()->create($this->data['user']);
+            $employee->refresh();
+        }
+
+        $roleNames = (array) ($this->data['roles'] ?? []);
+        if ($employee->user) {
+            $employee->user->syncRoles($roleNames);
+        }
     }
 
     protected function getRedirectUrl(): string
