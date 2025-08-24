@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3306
--- Generation Time: Aug 23, 2025 at 05:14 PM
--- Server version: 8.3.0
--- PHP Version: 8.3.6
+-- Generation Time: Aug 24, 2025 at 01:30 PM
+-- Server version: 8.0.21
+-- PHP Version: 8.3.23
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -63,8 +63,10 @@ CREATE TABLE IF NOT EXISTS `cache` (
 
 INSERT INTO `cache` (`key`, `value`, `expiration`, `created_at`, `updated_at`) VALUES
 ('modernlife_cache_spatie.permission.cache', 'a:3:{s:5:\"alias\";a:4:{s:1:\"a\";s:2:\"id\";s:1:\"b\";s:4:\"name\";s:1:\"c\";s:10:\"guard_name\";s:1:\"r\";s:5:\"roles\";}s:11:\"permissions\";a:73:{i:0;a:4:{s:1:\"a\";i:1;s:1:\"b\";s:10:\"view_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:1;a:4:{s:1:\"a\";i:2;s:1:\"b\";s:12:\"manage-roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:2;a:4:{s:1:\"a\";i:3;s:1:\"b\";s:12:\"create_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:3;a:4:{s:1:\"a\";i:4;s:1:\"b\";s:10:\"edit_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:4;a:4:{s:1:\"a\";i:5;s:1:\"b\";s:12:\"delete_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:5;a:4:{s:1:\"a\";i:6;s:1:\"b\";s:16:\"view_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:6;a:4:{s:1:\"a\";i:7;s:1:\"b\";s:18:\"create_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:7;a:4:{s:1:\"a\";i:8;s:1:\"b\";s:16:\"edit_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:8;a:4:{s:1:\"a\";i:9;s:1:\"b\";s:18:\"delete_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:9;a:4:{s:1:\"a\";i:10;s:1:\"b\";s:10:\"view_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:10;a:4:{s:1:\"a\";i:11;s:1:\"b\";s:12:\"create_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:11;a:4:{s:1:\"a\";i:12;s:1:\"b\";s:10:\"edit_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:12;a:4:{s:1:\"a\";i:13;s:1:\"b\";s:12:\"delete_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:13;a:4:{s:1:\"a\";i:14;s:1:\"b\";s:12:\"manage_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:14;a:4:{s:1:\"a\";i:15;s:1:\"b\";s:14:\"view_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:15;a:4:{s:1:\"a\";i:16;s:1:\"b\";s:16:\"create_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:16;a:4:{s:1:\"a\";i:17;s:1:\"b\";s:14:\"edit_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:17;a:4:{s:1:\"a\";i:18;s:1:\"b\";s:16:\"delete_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:18;a:4:{s:1:\"a\";i:19;s:1:\"b\";s:16:\"manage_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:19;a:4:{s:1:\"a\";i:20;s:1:\"b\";s:13:\"view_any_role\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:20;a:4:{s:1:\"a\";i:21;s:1:\"b\";s:18:\"view_city_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:21;a:4:{s:1:\"a\";i:22;s:1:\"b\";s:20:\"create_city_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:22;a:4:{s:1:\"a\";i:23;s:1:\"b\";s:18:\"edit_city_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:23;a:4:{s:1:\"a\";i:24;s:1:\"b\";s:20:\"delete_city_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:24;a:4:{s:1:\"a\";i:25;s:1:\"b\";s:20:\"view_client_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:3;}}i:25;a:4:{s:1:\"a\";i:26;s:1:\"b\";s:22:\"create_client_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:26;a:4:{s:1:\"a\";i:27;s:1:\"b\";s:20:\"edit_client_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:27;a:4:{s:1:\"a\";i:28;s:1:\"b\";s:22:\"delete_client_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:28;a:4:{s:1:\"a\";i:29;s:1:\"b\";s:21:\"view_country_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:29;a:4:{s:1:\"a\";i:30;s:1:\"b\";s:23:\"create_country_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:30;a:4:{s:1:\"a\";i:31;s:1:\"b\";s:21:\"edit_country_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:31;a:4:{s:1:\"a\";i:32;s:1:\"b\";s:23:\"delete_country_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:32;a:4:{s:1:\"a\";i:33;s:1:\"b\";s:35:\"view_department_categories_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:33;a:4:{s:1:\"a\";i:34;s:1:\"b\";s:37:\"create_department_categories_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:34;a:4:{s:1:\"a\";i:35;s:1:\"b\";s:35:\"edit_department_categories_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:35;a:4:{s:1:\"a\";i:36;s:1:\"b\";s:37:\"delete_department_categories_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:36;a:4:{s:1:\"a\";i:37;s:1:\"b\";s:24:\"view_department_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:37;a:4:{s:1:\"a\";i:38;s:1:\"b\";s:26:\"create_department_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:6;}}i:38;a:4:{s:1:\"a\";i:39;s:1:\"b\";s:24:\"edit_department_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:39;a:4:{s:1:\"a\";i:40;s:1:\"b\";s:26:\"delete_department_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:40;a:4:{s:1:\"a\";i:41;s:1:\"b\";s:22:\"view_employee_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:41;a:4:{s:1:\"a\";i:42;s:1:\"b\";s:24:\"create_employee_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:42;a:4:{s:1:\"a\";i:43;s:1:\"b\";s:22:\"edit_employee_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:43;a:4:{s:1:\"a\";i:44;s:1:\"b\";s:24:\"delete_employee_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:44;a:4:{s:1:\"a\";i:45;s:1:\"b\";s:24:\"view_permission_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:45;a:4:{s:1:\"a\";i:46;s:1:\"b\";s:26:\"create_permission_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:46;a:4:{s:1:\"a\";i:47;s:1:\"b\";s:24:\"edit_permission_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:47;a:4:{s:1:\"a\";i:48;s:1:\"b\";s:26:\"delete_permission_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:48;a:4:{s:1:\"a\";i:49;s:1:\"b\";s:32:\"view_production_request_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:3;i:2;i:6;}}i:49;a:4:{s:1:\"a\";i:50;s:1:\"b\";s:34:\"create_production_request_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:4:{i:0;i:1;i:1;i:2;i:2;i:3;i:3;i:6;}}i:50;a:4:{s:1:\"a\";i:51;s:1:\"b\";s:32:\"edit_production_request_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:4:{i:0;i:1;i:1;i:2;i:2;i:3;i:3;i:6;}}i:51;a:4:{s:1:\"a\";i:52;s:1:\"b\";s:34:\"delete_production_request_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:52;a:4:{s:1:\"a\";i:53;s:1:\"b\";s:21:\"view_project_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:53;a:4:{s:1:\"a\";i:54;s:1:\"b\";s:23:\"create_project_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:6;}}i:54;a:4:{s:1:\"a\";i:55;s:1:\"b\";s:21:\"edit_project_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:55;a:4:{s:1:\"a\";i:56;s:1:\"b\";s:23:\"delete_project_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:56;a:4:{s:1:\"a\";i:57;s:1:\"b\";s:18:\"view_role_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:57;a:4:{s:1:\"a\";i:58;s:1:\"b\";s:20:\"create_role_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:58;a:4:{s:1:\"a\";i:59;s:1:\"b\";s:18:\"edit_role_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:59;a:4:{s:1:\"a\";i:60;s:1:\"b\";s:20:\"delete_role_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:60;a:4:{s:1:\"a\";i:61;s:1:\"b\";s:22:\"view_showroom_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:61;a:4:{s:1:\"a\";i:62;s:1:\"b\";s:24:\"create_showroom_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:62;a:4:{s:1:\"a\";i:63;s:1:\"b\";s:22:\"edit_showroom_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:63;a:4:{s:1:\"a\";i:64;s:1:\"b\";s:24:\"delete_showroom_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:64;a:4:{s:1:\"a\";i:65;s:1:\"b\";s:27:\"access_manage_project_tasks\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:5:{i:0;i:1;i:1;i:2;i:2;i:4;i:3;i:5;i:4;i:6;}}i:65;a:4:{s:1:\"a\";i:66;s:1:\"b\";s:19:\"access_view_project\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:4:{i:0;i:1;i:1;i:2;i:2;i:4;i:3;i:6;}}i:66;a:4:{s:1:\"a\";i:67;s:1:\"b\";s:32:\"access_review_production_request\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:4:{i:0;i:1;i:1;i:2;i:2;i:4;i:3;i:6;}}i:67;a:4:{s:1:\"a\";i:68;s:1:\"b\";s:31:\"access_view_production_timeline\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:4:{i:0;i:1;i:1;i:2;i:2;i:4;i:3;i:6;}}i:68;a:4:{s:1:\"a\";i:69;s:1:\"b\";s:18:\"view_task_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:4;i:1;i:5;}}i:69;a:4:{s:1:\"a\";i:70;s:1:\"b\";s:20:\"create_task_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:70;a:3:{s:1:\"a\";i:71;s:1:\"b\";s:18:\"edit_task_resource\";s:1:\"c\";s:3:\"web\";}i:71;a:4:{s:1:\"a\";i:72;s:1:\"b\";s:20:\"delete_task_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:72;a:3:{s:1:\"a\";i:73;s:1:\"b\";s:12:\"manage-tasks\";s:1:\"c\";s:3:\"web\";}}s:5:\"roles\";a:6:{i:0;a:3:{s:1:\"a\";i:1;s:1:\"b\";s:11:\"super-admin\";s:1:\"c\";s:3:\"web\";}i:1;a:3:{s:1:\"a\";i:2;s:1:\"b\";s:5:\"admin\";s:1:\"c\";s:3:\"web\";}i:2;a:3:{s:1:\"a\";i:3;s:1:\"b\";s:5:\"sales\";s:1:\"c\";s:3:\"web\";}i:3;a:3:{s:1:\"a\";i:6;s:1:\"b\";s:16:\"showroom_manager\";s:1:\"c\";s:3:\"web\";}i:4;a:3:{s:1:\"a\";i:4;s:1:\"b\";s:18:\"department_manager\";s:1:\"c\";s:3:\"web\";}i:5;a:3:{s:1:\"a\";i:5;s:1:\"b\";s:18:\"purchasing_manager\";s:1:\"c\";s:3:\"web\";}}}', 1756046650, '2025-08-23 14:44:10', '2025-08-23 14:44:10'),
-('modernlife_cache_356a192b7913b04c54574d18c28d46e6395428ab:timer', 'i:1755968738;', 1755968738, '2025-08-23 17:04:38', '2025-08-23 17:04:38'),
-('modernlife_cache_356a192b7913b04c54574d18c28d46e6395428ab', 'i:3;', 1755968738, '2025-08-23 17:04:38', '2025-08-23 17:05:21');
+('modernlife_cache_356a192b7913b04c54574d18c28d46e6395428ab:timer', 'i:1756016220;', 1756016220, '2025-08-24 06:16:00', '2025-08-24 06:16:00'),
+('modernlife_cache_356a192b7913b04c54574d18c28d46e6395428ab', 'i:2;', 1756016220, '2025-08-24 06:16:00', '2025-08-24 06:16:31'),
+('modernlife_cache_livewire-rate-limiter:a17961fa74e9275d529f489537f179c05d50c2f3:timer', 'i:1756023316;', 1756023316, '2025-08-24 08:14:16', '2025-08-24 08:14:16'),
+('modernlife_cache_livewire-rate-limiter:a17961fa74e9275d529f489537f179c05d50c2f3', 'i:2;', 1756023316, '2025-08-24 08:14:16', '2025-08-24 08:14:51');
 
 -- --------------------------------------------------------
 
@@ -768,14 +770,14 @@ CREATE TABLE IF NOT EXISTS `production_requests` (
   KEY `current_owner_role` (`current_owner_role`),
   KEY `sent_to_owner_at` (`sent_to_owner_at`),
   KEY `received_by_owner_at` (`received_by_owner_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `production_requests`
 --
 
 INSERT INTO `production_requests` (`id`, `request_type`, `project_name`, `project_description`, `client_id`, `showroom_id`, `agreement_file`, `status`, `current_phase`, `phase_status`, `current_owner_user_id`, `current_owner_role`, `sent_to_owner_at`, `received_by_owner_at`, `created_by`, `submitted_at`, `created_at`, `updated_at`, `deleted_at`) VALUES
-(5, 'indirect', 'مشروع مصنع الرخام', NULL, 1, 1, 'agreements/2025/08/01K3BY8T9VY1G9WP0XHXP99RY5.pdf', 'pending', 'showroom_review', 'under_review', NULL, 'showroom_manager', '2025-08-23 17:05:27', '2025-08-23 17:08:52', 1, '2025-08-23 14:05:27', '2025-08-23 14:05:27', '2025-08-23 14:09:33', '2025-08-23 17:05:27');
+(6, 'indirect', 'مشروع مصنع الرخـام', NULL, 1, 1, 'agreements/2025/08/01K3DBHFERJFBKH8WQDTJWYFH0.pdf', 'under_review', 'department_assignment', 'received', NULL, 'factory_manager', '2025-08-24 10:45:08', '2025-08-24 12:57:00', 1, '2025-08-24 03:16:37', '2025-08-24 03:16:37', '2025-08-24 09:57:00', '2025-08-24 06:16:37');
 
 -- --------------------------------------------------------
 
@@ -788,21 +790,21 @@ CREATE TABLE IF NOT EXISTS `production_request_files` (
   `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
   `production_request_id` bigint UNSIGNED NOT NULL,
   `department_id` bigint UNSIGNED NOT NULL,
+  `estimated_cost` float(9,2) NOT NULL DEFAULT '0.00',
   `file_path` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `production_request_id` (`production_request_id`),
   KEY `department_id` (`department_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `production_request_files`
 --
 
-INSERT INTO `production_request_files` (`id`, `production_request_id`, `department_id`, `file_path`, `created_at`, `updated_at`) VALUES
-(3, 5, 13, 'production_files/2025/08/01K3BY8TA730SXH5JQ9H7J1CHQ.png', '2025-08-23 14:05:27', '2025-08-23 14:05:27'),
-(4, 5, 10, 'production_files/2025/08/01K3BY8TADN280DFKP261R2ZZ3.png', '2025-08-23 14:05:27', '2025-08-23 14:05:27');
+INSERT INTO `production_request_files` (`id`, `production_request_id`, `department_id`, `estimated_cost`, `file_path`, `created_at`, `updated_at`) VALUES
+(5, 6, 13, 0.00, 'production_files/2025/08/01K3DBHFF3GEVWCX424VCMQEEN.jpg', '2025-08-24 03:16:37', '2025-08-24 03:16:37');
 
 -- --------------------------------------------------------
 
@@ -824,17 +826,40 @@ CREATE TABLE IF NOT EXISTS `production_request_logs` (
   PRIMARY KEY (`id`),
   KEY `production_tasks_log_causer_id_foreign` (`causer_id`),
   KEY `production_tasks_log_task_id_happened_at_index` (`production_request_id`,`happened_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `production_request_logs`
 --
 
 INSERT INTO `production_request_logs` (`id`, `production_request_id`, `type`, `data`, `note`, `causer_id`, `happened_at`, `created_at`, `updated_at`) VALUES
-(6, 5, 'created', '{\"phase\": null, \"status\": null, \"owner_role\": null, \"owner_user\": null}', 'تم إنشاء الطلب', 1, '2025-08-23 14:05:27', '2025-08-23 14:05:27', '2025-08-23 14:05:27'),
-(7, 5, 'transition', '{\"to\": {\"phase\": \"showroom_review\", \"status\": \"pending\"}, \"from\": {\"owner\": null, \"phase\": null, \"status\": null}, \"owner_role\": \"showroom_manager\"}', NULL, 1, '2025-08-23 14:05:27', '2025-08-23 14:05:27', '2025-08-23 14:05:27'),
-(8, 5, 'received', '{\"phase\": \"showroom_review\", \"to_status\": \"received\", \"from_status\": \"pending\", \"wait_seconds\": 206.01150399999997}', NULL, 9, '2025-08-23 14:08:53', '2025-08-23 14:08:53', '2025-08-23 14:08:53'),
-(9, 5, 'transition', '{\"to\": {\"phase\": \"showroom_review\", \"status\": \"under_review\"}, \"from\": {\"owner\": \"showroom_manager\", \"phase\": \"showroom_review\", \"status\": \"received\"}, \"owner_role\": \"showroom_manager\"}', NULL, 9, '2025-08-23 14:09:33', '2025-08-23 14:09:33', '2025-08-23 14:09:33');
+(1, 5, 'deleted', NULL, 'تم حذف الطلب', 1, '2025-08-24 03:13:36', '2025-08-24 03:13:36', '2025-08-24 03:13:36'),
+(2, 6, 'created', '{\"phase\": null, \"status\": null, \"owner_role\": null, \"owner_user\": null}', 'تم إنشاء الطلب', 1, '2025-08-24 03:16:37', '2025-08-24 03:16:37', '2025-08-24 03:16:37'),
+(3, 6, 'transition', '{\"to\": {\"phase\": \"showroom_review\", \"status\": \"pending\"}, \"from\": {\"owner\": null, \"phase\": null, \"status\": null}, \"owner_role\": \"showroom_manager\"}', 'انتقال من مرحلة — (—) إلى مرحلة showroom_review (pending) | المالك: showroom_manager', 1, '2025-08-24 03:16:37', '2025-08-24 03:16:37', '2025-08-24 03:16:37'),
+(4, 6, 'received', '{\"phase\": \"showroom_review\", \"to_status\": \"received\", \"from_status\": \"pending\", \"wait_seconds\": 38.347399}', 'تم تأكيد الاستلام في مرحلة showroom_review (من pending إلى received)', 9, '2025-08-24 03:17:15', '2025-08-24 03:17:15', '2025-08-24 03:17:15'),
+(5, 6, 'transition', '{\"to\": {\"phase\": \"showroom_review\", \"status\": \"under_review\"}, \"from\": {\"owner\": \"showroom_manager\", \"phase\": \"showroom_review\", \"status\": \"received\"}, \"owner_role\": \"showroom_manager\"}', 'انتقال من مرحلة مراجعة المعرض (تم الاستلام) إلى مرحلة مراجعة المعرض (قيد المراجعة) | المالك: مدير المعرض', 9, '2025-08-24 03:39:12', '2025-08-24 03:39:12', '2025-08-24 03:39:12'),
+(6, 6, 'rejected', '{\"phase\": \"showroom_review\", \"to_status\": \"rejected\", \"from_status\": \"under_review\"}', 'تم رفض الطلب في مرحلة مراجعة المعرض (من قيد المراجعة إلى مرفوض) — السبب: يجب تعديل العرض', 9, '2025-08-24 05:22:07', '2025-08-24 05:22:07', '2025-08-24 05:22:07'),
+(7, 6, 'status_changed', '{\"to\": \"under_review\", \"from\": \"pending\", \"note\": null}', 'تم تغيير الحالة إلى: قيد المراجعة', 1, '2025-08-24 06:18:01', '2025-08-24 06:18:01', '2025-08-24 06:18:01'),
+(8, 6, 'content_updated', '{\"reason\": \"تم تعديل بيانات الطلب، إعادة توجيه للمراجعة\"}', 'تعديل على الطلب، إرجاع إلى تحت المراجعة', 1, '2025-08-24 06:59:04', '2025-08-24 06:59:04', '2025-08-24 06:59:04'),
+(9, 6, 'transition', '{\"to\": {\"phase\": \"showroom_review\", \"status\": \"under_review\", \"recv_at\": null, \"sent_at\": \"2025-08-24T09:59:04.000000Z\", \"owner_role\": \"showroom_manager\", \"owner_user\": null}, \"from\": {\"phase\": \"showroom_review\", \"status\": \"rejected\", \"recv_at\": \"2025-08-24T06:17:15.000000Z\", \"sent_at\": \"2025-08-24T06:16:37.000000Z\", \"owner_role\": \"showroom_manager\", \"owner_user\": null}}', 'Phase: showroom_review → showroom_review | Status: rejected → under_review | Owner: showroom_manager → showroom_manager', 1, '2025-08-24 06:59:04', '2025-08-24 06:59:04', '2025-08-24 06:59:04'),
+(10, 6, 'transition', '{\"to\": {\"phase\": \"showroom_review\", \"status\": \"under_review\"}, \"from\": {\"owner\": \"showroom_manager\", \"phase\": \"showroom_review\", \"status\": \"rejected\"}, \"owner_role\": \"showroom_manager\"}', 'انتقال من مرحلة مراجعة المعرض (مرفوض) إلى مرحلة مراجعة المعرض (قيد المراجعة) | المالك: مدير المعرض', 1, '2025-08-24 06:59:04', '2025-08-24 06:59:04', '2025-08-24 06:59:04'),
+(11, 6, 'transition', '{\"to\": {\"phase\": \"showroom_review\", \"status\": \"approved\", \"recv_at\": null, \"sent_at\": \"2025-08-24T09:59:04.000000Z\", \"owner_role\": \"showroom_manager\", \"owner_user\": null}, \"from\": {\"phase\": \"showroom_review\", \"status\": \"under_review\", \"recv_at\": null, \"sent_at\": \"2025-08-24T09:59:04.000000Z\", \"owner_role\": \"showroom_manager\", \"owner_user\": null}}', 'Phase: showroom_review → showroom_review | Status: under_review → approved | Owner: showroom_manager → showroom_manager', 9, '2025-08-24 07:44:53', '2025-08-24 07:44:53', '2025-08-24 07:44:53'),
+(12, 6, 'transition', '{\"to\": {\"phase\": \"showroom_review\", \"status\": \"approved\"}, \"from\": {\"owner\": \"showroom_manager\", \"phase\": \"showroom_review\", \"status\": \"under_review\"}, \"owner_role\": \"showroom_manager\"}', 'انتقال من مرحلة مراجعة المعرض (قيد المراجعة) إلى مرحلة مراجعة المعرض (معتمد) | المالك: مدير المعرض', 9, '2025-08-24 07:44:53', '2025-08-24 07:44:53', '2025-08-24 07:44:53'),
+(13, 6, 'transition', '{\"to\": {\"phase\": \"factory_intake\", \"status\": \"pending\", \"recv_at\": null, \"sent_at\": \"2025-08-24T10:44:53.000000Z\", \"owner_role\": \"factory_manager\", \"owner_user\": null}, \"from\": {\"phase\": \"showroom_review\", \"status\": \"approved\", \"recv_at\": null, \"sent_at\": \"2025-08-24T09:59:04.000000Z\", \"owner_role\": \"showroom_manager\", \"owner_user\": null}}', 'Phase: showroom_review → factory_intake | Status: approved → pending | Owner: showroom_manager → factory_manager', 9, '2025-08-24 07:44:53', '2025-08-24 07:44:53', '2025-08-24 07:44:53'),
+(14, 6, 'transition', '{\"to\": {\"phase\": \"factory_intake\", \"status\": \"pending\"}, \"from\": {\"owner\": \"showroom_manager\", \"phase\": \"showroom_review\", \"status\": \"approved\"}, \"owner_role\": \"factory_manager\"}', 'انتقال من مرحلة مراجعة المعرض (معتمد) إلى مرحلة استلام المصنع (قيد الانتظار) | المالك: مدير المصنع', 9, '2025-08-24 07:44:53', '2025-08-24 07:44:53', '2025-08-24 07:44:53'),
+(15, 6, 'transition', '{\"to\": {\"phase\": \"factory_intake\", \"status\": \"received\", \"recv_at\": \"2025-08-24T10:45:00.000000Z\", \"sent_at\": \"2025-08-24T10:44:53.000000Z\", \"owner_role\": \"factory_manager\", \"owner_user\": null}, \"from\": {\"phase\": \"factory_intake\", \"status\": \"pending\", \"recv_at\": null, \"sent_at\": \"2025-08-24T10:44:53.000000Z\", \"owner_role\": \"factory_manager\", \"owner_user\": null}}', 'Phase: factory_intake → factory_intake | Status: pending → received | Owner: factory_manager → factory_manager', 9, '2025-08-24 07:45:00', '2025-08-24 07:45:00', '2025-08-24 07:45:00'),
+(16, 6, 'received', '{\"phase\": \"factory_intake\", \"to_status\": \"received\", \"from_status\": \"pending\", \"wait_seconds\": 7.139706}', 'تم تأكيد الاستلام في مرحلة استلام المصنع (من قيد الانتظار إلى تم الاستلام)', 9, '2025-08-24 07:45:00', '2025-08-24 07:45:00', '2025-08-24 07:45:00'),
+(17, 6, 'transition', '{\"to\": {\"phase\": \"factory_intake\", \"status\": \"under_review\", \"recv_at\": \"2025-08-24T10:45:00.000000Z\", \"sent_at\": \"2025-08-24T10:44:53.000000Z\", \"owner_role\": \"factory_manager\", \"owner_user\": null}, \"from\": {\"phase\": \"factory_intake\", \"status\": \"received\", \"recv_at\": \"2025-08-24T10:45:00.000000Z\", \"sent_at\": \"2025-08-24T10:44:53.000000Z\", \"owner_role\": \"factory_manager\", \"owner_user\": null}}', 'Phase: factory_intake → factory_intake | Status: received → under_review | Owner: factory_manager → factory_manager', 9, '2025-08-24 07:45:04', '2025-08-24 07:45:04', '2025-08-24 07:45:04'),
+(18, 6, 'transition', '{\"to\": {\"phase\": \"factory_intake\", \"status\": \"under_review\"}, \"from\": {\"owner\": \"factory_manager\", \"phase\": \"factory_intake\", \"status\": \"received\"}, \"owner_role\": \"factory_manager\"}', 'انتقال من مرحلة استلام المصنع (تم الاستلام) إلى مرحلة استلام المصنع (قيد المراجعة) | المالك: مدير المصنع', 9, '2025-08-24 07:45:04', '2025-08-24 07:45:04', '2025-08-24 07:45:04'),
+(19, 6, 'transition', '{\"to\": {\"phase\": \"factory_intake\", \"status\": \"approved\", \"recv_at\": \"2025-08-24T10:45:00.000000Z\", \"sent_at\": \"2025-08-24T10:44:53.000000Z\", \"owner_role\": \"factory_manager\", \"owner_user\": null}, \"from\": {\"phase\": \"factory_intake\", \"status\": \"under_review\", \"recv_at\": \"2025-08-24T10:45:00.000000Z\", \"sent_at\": \"2025-08-24T10:44:53.000000Z\", \"owner_role\": \"factory_manager\", \"owner_user\": null}}', 'Phase: factory_intake → factory_intake | Status: under_review → approved | Owner: factory_manager → factory_manager', 9, '2025-08-24 07:45:08', '2025-08-24 07:45:08', '2025-08-24 07:45:08'),
+(20, 6, 'project_bootstrap', '{\"project_id\": 18, \"files_created\": 1, \"tasks_created\": 1}', 'تم إنشاء مشروع #18 من الطلب — عدد الملفات: 1 | عدد المهام: 1', 9, '2025-08-24 07:45:08', '2025-08-24 07:45:08', '2025-08-24 07:45:08'),
+(21, 6, 'transition', '{\"to\": {\"phase\": \"department_assignment\", \"status\": \"pending\", \"recv_at\": null, \"sent_at\": \"2025-08-24T10:45:08.000000Z\", \"owner_role\": \"factory_manager\", \"owner_user\": null}, \"from\": {\"phase\": \"factory_intake\", \"status\": \"approved\", \"recv_at\": \"2025-08-24T10:45:00.000000Z\", \"sent_at\": \"2025-08-24T10:44:53.000000Z\", \"owner_role\": \"factory_manager\", \"owner_user\": null}}', 'Phase: factory_intake → department_assignment | Status: approved → pending | Owner: factory_manager → factory_manager', 9, '2025-08-24 07:45:08', '2025-08-24 07:45:08', '2025-08-24 07:45:08'),
+(22, 6, 'transition', '{\"to\": {\"phase\": \"department_assignment\", \"status\": \"pending\"}, \"from\": {\"owner\": \"factory_manager\", \"phase\": \"factory_intake\", \"status\": \"approved\"}, \"owner_role\": \"factory_manager\"}', 'انتقال من مرحلة استلام المصنع (معتمد) إلى مرحلة إسناد الأقسام (قيد الانتظار) | المالك: مدير المصنع', 9, '2025-08-24 07:45:08', '2025-08-24 07:45:08', '2025-08-24 07:45:08'),
+(23, 6, 'transition', '{\"to\": {\"phase\": \"factory_intake\", \"status\": \"approved\"}, \"from\": {\"owner\": \"factory_manager\", \"phase\": \"factory_intake\", \"status\": \"under_review\"}, \"owner_role\": \"factory_manager\"}', 'انتقال من مرحلة استلام المصنع (قيد المراجعة) إلى مرحلة استلام المصنع (معتمد) | المالك: مدير المصنع', 9, '2025-08-24 07:45:08', '2025-08-24 07:45:08', '2025-08-24 07:45:08'),
+(24, 6, 'project_bootstrap', '{\"project_id\": 18, \"files_created\": 0, \"tasks_created\": 0}', 'تم إنشاء مشروع #18 من الطلب — عدد الملفات: 0 | عدد المهام: 0', 9, '2025-08-24 07:45:08', '2025-08-24 07:45:08', '2025-08-24 07:45:08'),
+(25, 6, 'transition', '{\"to\": {\"phase\": \"department_assignment\", \"status\": \"pending\"}, \"from\": {\"owner\": \"factory_manager\", \"phase\": \"department_assignment\", \"status\": \"pending\"}, \"owner_role\": \"factory_manager\"}', 'انتقال من مرحلة إسناد الأقسام (قيد الانتظار) إلى مرحلة إسناد الأقسام (قيد الانتظار) | المالك: مدير المصنع', 9, '2025-08-24 07:45:08', '2025-08-24 07:45:08', '2025-08-24 07:45:08'),
+(26, 6, 'transition', '{\"to\": {\"phase\": \"department_assignment\", \"status\": \"received\", \"recv_at\": \"2025-08-24T12:57:00.000000Z\", \"sent_at\": \"2025-08-24T10:45:08.000000Z\", \"owner_role\": \"factory_manager\", \"owner_user\": null}, \"from\": {\"phase\": \"department_assignment\", \"status\": \"pending\", \"recv_at\": null, \"sent_at\": \"2025-08-24T10:45:08.000000Z\", \"owner_role\": \"factory_manager\", \"owner_user\": null}}', 'Phase: department_assignment → department_assignment | Status: pending → received | Owner: factory_manager → factory_manager', 9, '2025-08-24 09:57:00', '2025-08-24 09:57:00', '2025-08-24 09:57:00'),
+(27, 6, 'received', '{\"phase\": \"department_assignment\", \"to_status\": \"received\", \"from_status\": \"pending\", \"wait_seconds\": 7912.978791}', 'تم تأكيد الاستلام في مرحلة department_assignment', 9, '2025-08-24 09:57:00', '2025-08-24 09:57:00', '2025-08-24 09:57:00');
 
 -- --------------------------------------------------------
 
@@ -854,6 +879,7 @@ CREATE TABLE IF NOT EXISTS `production_tasks` (
   `assigned_at` datetime DEFAULT NULL,
   `received_at` datetime DEFAULT NULL,
   `status` enum('pending','received','under_review','approved','rejected','in_progress','materials_wait','materials_prep','materials_done','on_hold','completed','cancelled') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending',
+  `estimated_cost` float(9,2) NOT NULL DEFAULT '0.00',
   `current_owner_user_id` bigint DEFAULT NULL,
   `current_owner_role` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `sent_to_owner_at` datetime DEFAULT NULL,
@@ -873,7 +899,14 @@ CREATE TABLE IF NOT EXISTS `production_tasks` (
   KEY `idx_tasks_status` (`status`),
   KEY `idx_tasks_owner_role` (`current_owner_role`),
   KEY `idx_tasks_owner_user` (`current_owner_user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `production_tasks`
+--
+
+INSERT INTO `production_tasks` (`id`, `project_id`, `department_id`, `assigned_to_employee_id`, `assigned_budget`, `file_path`, `due_date`, `assigned_at`, `received_at`, `status`, `estimated_cost`, `current_owner_user_id`, `current_owner_role`, `sent_to_owner_at`, `received_by_owner_at`, `planned_start_at`, `planned_end_at`, `planned_install_at`, `client_receipt`, `completed_at`, `notes`, `created_at`, `updated_at`) VALUES
+(25, 18, 13, NULL, NULL, 'production_files/2025/08/01K3DBHFF3GEVWCX424VCMQEEN.jpg', NULL, NULL, NULL, 'pending', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'تم إنشاؤها تلقائيًا من ملف الطلب.', '2025-08-24 07:45:08', '2025-08-24 07:45:08');
 
 -- --------------------------------------------------------
 
@@ -895,7 +928,14 @@ CREATE TABLE IF NOT EXISTS `production_tasks_log` (
   PRIMARY KEY (`id`),
   KEY `production_tasks_log_causer_id_foreign` (`causer_id`),
   KEY `production_tasks_log_task_id_happened_at_index` (`task_id`,`happened_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=43 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=44 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `production_tasks_log`
+--
+
+INSERT INTO `production_tasks_log` (`id`, `task_id`, `type`, `data`, `causer_id`, `happened_at`, `created_at`, `updated_at`, `note`) VALUES
+(43, 25, 'created', '{\"owner\": {\"role\": null, \"user\": null}, \"status\": \"pending\", \"department\": 13}', 9, '2025-08-24 07:45:08', '2025-08-24 07:45:08', '2025-08-24 07:45:08', NULL);
 
 -- --------------------------------------------------------
 
@@ -969,7 +1009,14 @@ CREATE TABLE IF NOT EXISTS `projects` (
   UNIQUE KEY `production_request_id` (`production_request_id`),
   KEY `projects_client_id_foreign` (`client_id`),
   KEY `projects_created_by_foreign` (`created_by`)
-) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `projects`
+--
+
+INSERT INTO `projects` (`id`, `production_request_id`, `client_id`, `project_name`, `description`, `start_date`, `end_date`, `status`, `created_by`, `created_at`, `updated_at`) VALUES
+(18, 6, 1, 'مشروع مصنع الرخـام', NULL, '2025-08-24', NULL, 'in_progress', 9, '2025-08-24 07:45:08', '2025-08-24 07:45:08');
 
 -- --------------------------------------------------------
 
@@ -1023,7 +1070,14 @@ CREATE TABLE IF NOT EXISTS `project_files` (
   KEY `idx_files_project` (`project_id`),
   KEY `idx_files_phase` (`department_id`),
   KEY `idx_files_type` (`file_type`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Dumping data for table `project_files`
+--
+
+INSERT INTO `project_files` (`file_id`, `project_id`, `department_id`, `file_name`, `file_path`, `file_type`, `file_size`, `uploaded_by`, `upload_date`, `description`, `version`, `is_current`, `created_at`, `updated_at`) VALUES
+(7, 18, 13, '01K3DBHFF3GEVWCX424VCMQEEN.jpg', 'production_files/2025/08/01K3DBHFF3GEVWCX424VCMQEEN.jpg', 'jpg', 38392, 9, '2025-08-24 07:45:08', NULL, '1', 1, '2025-08-24 07:45:08', '2025-08-24 07:45:08');
 
 -- --------------------------------------------------------
 
@@ -1303,8 +1357,9 @@ CREATE TABLE IF NOT EXISTS `sessions` (
 --
 
 INSERT INTO `sessions` (`id`, `user_id`, `ip_address`, `user_agent`, `payload`, `last_activity`, `created_at`, `updated_at`) VALUES
-('oTgXxl9ZvZhpimFEBPfhbF6PZzIO5jdz7S50n9vO', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', 'YTo3OntzOjY6Il90b2tlbiI7czo0MDoic3BmQVU2aU9RRjIxMXdzZERFZHExWUdpZ2lTb3ZIOXJOYkFQN2VMZyI7czozOiJ1cmwiO2E6MDp7fXM6OToiX3ByZXZpb3VzIjthOjE6e3M6MzoidXJsIjtzOjU4OiJodHRwOi8vMTI3LjAuMC4xOjgwMDAvYWRtaW4vcHJvZHVjdGlvbi1yZXF1ZXN0cy81L3RpbWVsaW5lIjt9czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319czo1MDoibG9naW5fd2ViXzU5YmEzNmFkZGMyYjJmOTQwMTU4MGYwMTRjN2Y1OGVhNGUzMDk4OWQiO2k6MTtzOjE3OiJwYXNzd29yZF9oYXNoX3dlYiI7czo2MDoiJDJ5JDEyJDE3bEVQOXloTWRqZmp6N3JnNmVkRy5uRG5LRU9vWGpsYXZWeWlFaWNCbWZUTnp3Q0NjRHZXIjtzOjg6ImZpbGFtZW50IjthOjA6e319', 1755969048, '2025-08-23 13:44:46', '2025-08-23 17:10:48'),
-('WZ4nSApOFQcHtQDO9iuxcR1lTUaIfbo1uiYldR8P', 9, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', 'YTo3OntzOjY6Il90b2tlbiI7czo0MDoieEl0cmNQTXY1eVRQWkdhdFk3eUt3R0tiYjVLTlZjZ1NRQmpLRm5tcCI7czozOiJ1cmwiO2E6MDp7fXM6OToiX3ByZXZpb3VzIjthOjE6e3M6MzoidXJsIjtzOjU2OiJodHRwOi8vMTI3LjAuMC4xOjgwMDAvYWRtaW4vcHJvZHVjdGlvbi1yZXF1ZXN0cy81L3JldmlldyI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fXM6NTA6ImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjtpOjk7czoxNzoicGFzc3dvcmRfaGFzaF93ZWIiO3M6NjA6IiQyeSQxMiRhaVNNZEI0bjhXWFFDNW5mTGp3QmNlb2kzNW9wampZMS45VTg2LzdkUVBvN0I2U05sRWp6NiI7czo4OiJmaWxhbWVudCI7YTowOnt9fQ==', 1755968997, '2025-08-23 14:21:56', '2025-08-23 17:09:57');
+('yPtDYunzwI94dSLe3bS49H2izZ9pH1VKJ4OMse7a', 10, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36', 'YTo1OntzOjY6Il90b2tlbiI7czo0MDoiWmlqMnJjUW54VDluTDhrSnp3d3hqdVJaSjJucEpyQjd6bmtOREFHNiI7czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6NTg6Imh0dHA6Ly8xMjcuMC4wLjE6ODAwMC9hZG1pbi9wcm9kdWN0aW9uLXJlcXVlc3RzLzYvdGltZWxpbmUiO31zOjUwOiJsb2dpbl93ZWJfNTliYTM2YWRkYzJiMmY5NDAxNTgwZjAxNGM3ZjU4ZWE0ZTMwOTg5ZCI7aToxMDtzOjE3OiJwYXNzd29yZF9oYXNoX3dlYiI7czo2MDoiJDJ5JDEyJFpHWFVReU4weVlJMzlKaTFiYktDY09ZVktnRTVHRTBGYXBZeTJyOUtNb3VXQzdzYjMzQVBpIjt9', 1756027053, '2025-08-24 08:10:40', '2025-08-24 09:17:33'),
+('kDK514lcS3a1JerBPiodASJhVNIEiTbel4wJNFhF', 9, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0', 'YTo2OntzOjY6Il90b2tlbiI7czo0MDoibDd0UmJxSGJHd3RvT1dxcTB1a29BTTBNZERaQm14YVdFckNSVkY2UiI7czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6NDc6Imh0dHA6Ly8xMjcuMC4wLjE6ODAwMC9hZG1pbi9wcm9kdWN0aW9uLXJlcXVlc3RzIjt9czo1MDoibG9naW5fd2ViXzU5YmEzNmFkZGMyYjJmOTQwMTU4MGYwMTRjN2Y1OGVhNGUzMDk4OWQiO2k6OTtzOjE3OiJwYXNzd29yZF9oYXNoX3dlYiI7czo2MDoiJDJ5JDEyJGFpU01kQjRuOFdYUUM1bmZMandCY2VvaTM1b3BqalkxLjlVODYvN2RRUG83QjZTTmxFano2IjtzOjg6ImZpbGFtZW50IjthOjA6e319', 1756042247, '2025-08-24 08:14:51', '2025-08-24 13:30:47'),
+('p9wBhxy4xCZ42e18Z1BUrVnqZhJ3yk9OiUST08Di', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36', 'YTo2OntzOjY6Il90b2tlbiI7czo0MDoiZEpEaWZqRWhLM0w1RU5ycVJUMXBqb3A2a2I5TGpSRWFKMFlCNEprUyI7czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319czo1MDoibG9naW5fd2ViXzU5YmEzNmFkZGMyYjJmOTQwMTU4MGYwMTRjN2Y1OGVhNGUzMDk4OWQiO2k6MTtzOjE3OiJwYXNzd29yZF9oYXNoX3dlYiI7czo2MDoiJDJ5JDEyJDE3bEVQOXloTWRqZmp6N3JnNmVkRy5uRG5LRU9vWGpsYXZWeWlFaWNCbWZUTnp3Q0NjRHZXIjtzOjk6Il9wcmV2aW91cyI7YToxOntzOjM6InVybCI7czo1NjoiaHR0cDovLzEyNy4wLjAuMTo4MDAwL2FkbWluL3Byb2R1Y3Rpb24tcmVxdWVzdHMvNi9yZXZpZXciO31zOjg6ImZpbGFtZW50IjthOjA6e319', 1756042235, '2025-08-24 06:12:45', '2025-08-24 13:30:35');
 
 -- --------------------------------------------------------
 
@@ -1419,8 +1474,8 @@ CREATE TABLE IF NOT EXISTS `users` (
 
 INSERT INTO `users` (`id`, `name`, `email`, `email_verified_at`, `password`, `remember_token`, `created_at`, `updated_at`) VALUES
 (1, 'Admin', 'info@a-elsayed.com', NULL, '$2y$12$17lEP9yhMdjfjz7rg6edG.nDnKEOoXjlavVyiEicBmfTNzwCCcDvW', 'S8rfUBD7m3O1pRzwHgRr2t1ge5OgHSSmfLe15Zrj3JQMwocFn7OBJyNxVqs3', '2025-07-03 14:55:58', '2025-07-03 14:55:58'),
-(9, 'Ahmed', 'designer_4ever@hotmail.com', NULL, '$2y$12$aiSMdB4n8WXQC5nfLjwBceoi35opjjY1.9U86/7dQPo7B6SNlEjz6', 'QdLxIlAR01eetXlFyP7vCnlDmXaKhEhDQwDjSW3679qcljcOUvdO0GDsdWzF', '2025-07-06 06:51:31', '2025-08-16 12:53:42'),
-(10, 'Mohamed Ibrahim', 'mohamed@modernlife.com', NULL, '$2y$12$ZGXUQyN0yYI39Ji1bbKCcOYVKgE5GE0FapYy2r9KMouWC7sb33APi', NULL, '2025-08-20 04:39:55', '2025-08-20 04:40:23');
+(9, 'Ahmed', 'designer_4ever@hotmail.com', NULL, '$2y$12$aiSMdB4n8WXQC5nfLjwBceoi35opjjY1.9U86/7dQPo7B6SNlEjz6', 'kDG4bZA8CXqFT0CUyWpfhIqKgtLKof0LOG9no8QU7N3FxwSQJixOvI2XHnVJ', '2025-07-06 06:51:31', '2025-08-16 12:53:42'),
+(10, 'Mohamed Ibrahim', 'mohamed@modernlife.com', NULL, '$2y$12$ZGXUQyN0yYI39Ji1bbKCcOYVKgE5GE0FapYy2r9KMouWC7sb33APi', 'pEHKBPEJGUhVwMN1di4hIqTfqqhaasmIZtYInqXYTpF8Nmy5zysZFzVSFndR', '2025-08-20 04:39:55', '2025-08-20 04:40:23');
 
 --
 -- Constraints for dumped tables

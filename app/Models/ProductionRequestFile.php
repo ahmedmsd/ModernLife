@@ -12,10 +12,10 @@ class ProductionRequestFile extends Model
         'production_request_id',
         'department_id',
         'file_path',
-        // (اختياري) 'file_name', 'description'
+        'estimated_cost',
     ];
 
-    protected $appends = ['url']; // يضيف حقل url تلقائيًا عند التحويل لمصفوفة/JSON
+    protected $appends = ['url'];
 
     public function productionRequest(): BelongsTo
     {

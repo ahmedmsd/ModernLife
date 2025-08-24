@@ -5,14 +5,13 @@ namespace App\Services;
 use App\Enums\{ProductionRequestPhase as Phase, PhaseStatus as S, RequestType};
 use App\Models\ProductionRequest;
 use App\Models\Project;
-use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Carbon\Carbon;
 
 class ProductionRequestWorkflow
 {
-    /** تهيئة المسار الأولي للطلب */
     public function start(ProductionRequest $pr): ProductionRequest
     {
         $type = $pr->request_type ?? RequestType::Direct->value;
@@ -24,7 +23,6 @@ class ProductionRequestWorkflow
         return $this->move($pr, Phase::ShowroomReview, S::Pending, 'showroom_manager', true);
     }
 
-    /** انتقال عام مع Log + حارس إديمبوتنسي */
     public function move(
         ProductionRequest $pr,
         Phase $toPhase,
@@ -33,10 +31,8 @@ class ProductionRequestWorkflow
         bool $touchSent = false
     ): ProductionRequest {
         return DB::transaction(function () use ($pr, $toPhase, $toStatus, $ownerRole, $touchSent) {
-
             $role = $ownerRole ?? $this->defaultOwnerRole($toPhase);
 
-            // حارس: لا تسجل لوج إذا لم يتغير شيء فعليًا
             $noChange =
                 $pr->current_phase      === $toPhase->value &&
                 $pr->phase_status       === $toStatus->value &&
@@ -44,7 +40,7 @@ class ProductionRequestWorkflow
                 ! $touchSent;
 
             if ($noChange) {
-                return $pr->refresh(); // لا تسجيل
+                return $pr->refresh();
             }
 
             $from = [
@@ -53,7 +49,6 @@ class ProductionRequestWorkflow
                 'owner'  => $pr->current_owner_role,
             ];
 
-            // تحديث الحقول
             $pr->current_phase      = $toPhase->value;
             $pr->phase_status       = $toStatus->value;
             $pr->current_owner_role = $role;
@@ -65,7 +60,15 @@ class ProductionRequestWorkflow
 
             $pr->save();
 
-            // Log انتقال واحد فقط من الخدمة
+            $noteText = sprintf(
+                'انتقال من مرحلة %s (%s) إلى مرحلة %s (%s)%s',
+                $from['phase'] ?? '—',
+                $from['status'] ?? '—',
+                $toPhase->value,
+                $toStatus->value,
+                $role ? " | المالك: {$role}" : ''
+            );
+
             $pr->logs()->create([
                 'causer_id'   => Auth::id(),
                 'type'        => 'transition',
@@ -74,7 +77,7 @@ class ProductionRequestWorkflow
                     'to'         => ['phase' => $toPhase->value, 'status' => $toStatus->value],
                     'owner_role' => $role,
                 ],
-                'note'        => null,
+                'note'        => $noteText,
                 'happened_at' => now(),
             ]);
 
@@ -82,11 +85,13 @@ class ProductionRequestWorkflow
         });
     }
 
-    /** تأكيد استلام من المالك الحالي */
     public function markReceived(ProductionRequest $pr): ProductionRequest
     {
         $fromStatus = $pr->phase_status;
         $sentAt     = $pr->sent_to_owner_at;
+        if ($sentAt && ! $sentAt instanceof Carbon) {
+            $sentAt = Carbon::parse($sentAt);
+        }
 
         $pr->phase_status         = S::Received->value;
         $pr->received_by_owner_at = now();
@@ -103,39 +108,39 @@ class ProductionRequestWorkflow
                 'to_status'    => S::Received->value,
                 'wait_seconds' => $waitSeconds,
             ],
-            'note'        => null,
+            'note'        => "تم تأكيد الاستلام في مرحلة {$pr->current_phase}",
             'happened_at' => now(),
         ]);
 
         return $pr->refresh();
     }
 
-    /** اعتماد المرحلة الحالية. إن كانت FactoryIntake → أنشئ مشروعًا ومهام/ملفات ثم انتقل للتعيين */
+    /** اعتماد المصنع → إنشاء مشروع + الانتقال لتوزيع المهام */
     public function approve(ProductionRequest $pr): ProductionRequest
     {
         $currentPhase = Phase::tryFrom($pr->current_phase) ?? Phase::FactoryIntake;
 
-        // وسم المرحلة الحالية بالمُعتمد
         $pr = $this->move($pr, $currentPhase, S::Approved, $pr->current_owner_role, false);
 
-        // عند اعتماد مدير المصنع: نُنشئ المشروع والمهام من الطلب (بدل Observer)
         if ($currentPhase === Phase::FactoryIntake) {
             $this->bootstrapProjectFromRequest($pr);
 
-            // بعد البناء: انتقل لمرحلة إسناد الأقسام
+            // الطلب يستمر لمسار المهام داخل المشروع → إسناد الأقسام
             $pr = $this->move($pr, Phase::DepartmentAssignment, S::Pending, 'factory_manager', true);
         }
 
         return $pr;
     }
 
-    /** رفض المرحلة الحالية */
     public function reject(ProductionRequest $pr, ?string $reason = null): ProductionRequest
     {
         $fromStatus = $pr->phase_status;
 
         $pr->phase_status = S::Rejected->value;
         $pr->save();
+
+        $baseNote = "تم رفض الطلب في مرحلة {$pr->current_phase}";
+        $noteText = $reason ? "{$baseNote} — السبب: {$reason}" : $baseNote;
 
         $pr->logs()->create([
             'causer_id'   => Auth::id(),
@@ -145,18 +150,16 @@ class ProductionRequestWorkflow
                 'from_status' => $fromStatus,
                 'to_status'   => S::Rejected->value,
             ],
-            'note'        => $reason ?? 'تم الرفض',
+            'note'        => $noteText,
             'happened_at' => now(),
         ]);
 
         return $pr->refresh();
     }
 
-    /** بناء مشروع جديد + نسخ ملفات الطلب + إنشاء مهمة لكل ملف قسم (مستخلَص من Observer) */
     protected function bootstrapProjectFromRequest(ProductionRequest $pr): void
     {
         DB::transaction(function () use ($pr) {
-            // 1) مشروع واحد لكل طلب
             $project = Project::firstOrCreate(
                 ['production_request_id' => $pr->id],
                 [
@@ -169,10 +172,8 @@ class ProductionRequestWorkflow
                 ]
             );
 
-            // 2) ملفات المشروع من ملفات الطلب
             $pr->loadMissing('files');
 
-            $filesCreated = 0;
             foreach ($pr->files as $reqFile) {
                 $filePath = $reqFile->file_path;
                 $fileName = basename($filePath);
@@ -181,7 +182,7 @@ class ProductionRequestWorkflow
                     ? Storage::disk('public')->size($filePath)
                     : 0;
 
-                $created = $project->files()->firstOrCreate(
+                $project->files()->firstOrCreate(
                     [
                         'department_id' => $reqFile->department_id,
                         'file_path'     => $filePath,
@@ -197,50 +198,51 @@ class ProductionRequestWorkflow
                     ]
                 );
 
-                if ($created->wasRecentlyCreated) {
-                    $filesCreated++;
-                }
-            }
-
-            // 3) مهمة لكل ملف قسم
-            $tasksCreated = 0;
-            foreach ($pr->files as $reqFile) {
-                $task = $project->tasks()->firstOrCreate(
+                $project->tasks()->firstOrCreate(
                     [
                         'department_id' => $reqFile->department_id,
                         'file_path'     => $reqFile->file_path,
                     ],
                     [
+                        'notes'                   => 'تم إنشاؤها تلقائيًا من ملف الطلب.',
+                        'status'                  => 'pending',
                         'assigned_to_employee_id' => null,
                         'assigned_budget'         => null,
                         'due_date'                => null,
-                        'notes'                   => 'تم إنشاؤها تلقائيًا من ملفات الطلب.',
-                        'status'                  => 'pending',
-                        'current_owner_role'      => null,
-                        'current_owner_user_id'   => null,
-                        'sent_to_owner_at'        => null,
-                        'received_by_owner_at'    => null,
                     ]
                 );
-
-                if ($task->wasRecentlyCreated) {
-                    $tasksCreated++;
-                }
             }
 
-            // Log تلخيصي (اختياري)
             $pr->logs()->create([
                 'type'        => 'project_bootstrap',
-                'data'        => [
-                    'project_id'    => $project->id,
-                    'files_created' => $filesCreated,
-                    'tasks_created' => $tasksCreated,
-                ],
-                'note'        => 'تم إنشاء مشروع ومهام الأقسام بعد اعتماد مدير المصنع.',
+                'data'        => ['project_id' => $project->id],
+                'note'        => "تم إنشاء مشروع #{$project->id} وربطه بالطلب.",
                 'causer_id'   => Auth::id(),
                 'happened_at' => now(),
             ]);
         });
+    }
+
+    /** يُستدعى عند اكتمال المشروع لإغلاق الطلب (مرحلة: closed، حالة: completed) */
+    public function finalizeRequestAfterProjectDone(ProductionRequest $pr): ProductionRequest
+    {
+        $pr->current_phase        = Phase::Closed->value;
+        $pr->phase_status         = S::Completed->value;
+        $pr->current_owner_role   = null;
+        $pr->current_owner_user_id= null;
+        $pr->sent_to_owner_at     = null;
+        $pr->received_by_owner_at = null;
+        $pr->save();
+
+        $pr->logs()->create([
+            'causer_id'   => Auth::id(),
+            'type'        => 'request_finalized',
+            'data'        => ['by' => 'project_completed'],
+            'note'        => 'اكتمل المشروع وجميع المهام، تم إغلاق الطلب.',
+            'happened_at' => now(),
+        ]);
+
+        return $pr->refresh();
     }
 
     protected function defaultOwnerRole(Phase $phase): ?string

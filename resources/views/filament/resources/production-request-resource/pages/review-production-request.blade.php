@@ -2,12 +2,60 @@
 @php
     use App\Enums\ProductionRequestPhase as Phase;
     use App\Enums\PhaseStatus as S;
+    use Illuminate\Support\Facades\Storage;
+    use Carbon\Carbon;
 
-    $phaseEnum  = Phase::tryFrom($record->current_phase);
-    $statusEnum = S::tryFrom($record->phase_status);
+    /* ---------------- ترجمات بسيطة داخل البلَيد (يمكن نقلها لملفات lang لاحقًا) ---------------- */
+    $phaseLabelFn = function (?string $v): string {
+        return match ($v) {
+            'showroom_review'            => 'مراجعة المعرض',
+            'factory_intake'             => 'استلام المصنع',
+            'department_assignment'      => 'إسناد الأقسام',
+            'purchasing'                 => 'المشتريات',
+            'manufacturing'              => 'التصنيع',
+            'quality_after_manufacture'  => 'جودة ما بعد التصنيع',
+            'installation'               => 'التركيب',
+            'quality_after_installation' => 'جودة ما بعد التركيب',
+            'closed'                     => 'مغلق',
+            default                      => $v ?? '—',
+        };
+    };
 
-    $phaseLabel  = $phaseEnum?->label() ?? ($record->current_phase ?: '—');
-    $statusLabel = $statusEnum?->label() ?? ($record->phase_status ?: '—');
+    $statusLabelFn = function (?string $v): string {
+        return match ($v) {
+            'pending'        => 'قيد الانتظار',
+            'received'       => 'تم الاستلام',
+            'under_review'   => 'قيد المراجعة',
+            'approved'       => 'معتمد',
+            'rejected'       => 'مرفوض',
+            'in_progress'    => 'قيد التنفيذ',
+            'materials_wait' => 'بانتظار الخامات',
+            'materials_prep' => 'تحضير الخامات',
+            'materials_done' => 'تم توفير الخامات',
+            'on_hold'        => 'معلق',
+            'completed'      => 'مكتمل',
+            'cancelled'      => 'ملغي',
+            default          => $v ?? '—',
+        };
+    };
+
+    $roleLabelFn = function (?string $role): string {
+        return match ($role) {
+            'showroom_manager'    => 'مدير المعرض',
+            'factory_manager'     => 'مدير المصنع',
+            'purchasing_manager'  => 'مدير المشتريات',
+            'department_manager'  => 'مدير القسم',
+            'quality_manager'     => 'مسؤول الجودة',
+            'installation_manager'=> 'مدير التركيب',
+            default               => $role ?? '—',
+        };
+    };
+
+    /* ---------------- عناوين و ألوان ---------------- */
+    $phaseEnum   = Phase::tryFrom($record->current_phase);
+    $statusEnum  = S::tryFrom($record->phase_status);
+    $phaseLabel  = $phaseEnum?->label()  ?? $phaseLabelFn($record->current_phase);
+    $statusLabel = $statusEnum?->label() ?? $statusLabelFn($record->phase_status);
 
     $phaseColor = match ($record->current_phase) {
         'sales_intake'              => 'indigo',
@@ -39,18 +87,61 @@
         default          => 'gray',
     };
 
-    // قيم مساعدة
+    /* ---------------- بيانات عامة ---------------- */
     $clientName   = $record->client->client_name ?? '—';
-    $showroomName = $record->showroom->name ?? ($record->productionRequest->showroom->name ?? 'غير مرتبط بمعرض');
+    $showroomName = $record->showroom->name ?? 'غير مرتبط بمعرض';
     $projectName  = $record->project?->project_name ?? '—';
-    $ownerRole    = $record->current_owner_role ?? '—';
+    $ownerRole    = $roleLabelFn($record->current_owner_role ?? null);
     $reqType      = $record->request_type === 'indirect' ? 'غير مباشر' : 'مباشر';
 
-    $sentAt    = $record->sent_to_owner_at?->format('Y-m-d H:i') ?? '—';
-    $received  = $record->received_by_owner_at?->format('Y-m-d H:i') ?? '—';
-    $pendingFor= $record->sent_to_owner_at && $record->phase_status === 'pending'
+    $sentAt    = $record->sent_to_owner_at ? $record->sent_to_owner_at->format('Y-m-d H:i') : '—';
+    $received  = $record->received_by_owner_at ? $record->received_by_owner_at->format('Y-m-d H:i') : '—';
+    $pendingFor= ($record->sent_to_owner_at && $record->phase_status === 'pending')
                     ? $record->sent_to_owner_at->diffForHumans(now(), true)
                     : '—';
+
+    /* ---------------- فورماتر نص اللوج لو note فاضي ---------------- */
+    $formatLogNote = function ($log) use ($phaseLabelFn, $statusLabelFn, $roleLabelFn): string {
+        if (filled($log->note)) return $log->note;
+
+        $type = $log->type ?? '—';
+        $data = is_array($log->data) ? $log->data : [];
+
+        return match ($type) {
+            'transition' => 'انتقال من مرحلة '
+                . $phaseLabelFn($data['from']['phase']   ?? null)
+                . ' (' . $statusLabelFn($data['from']['status'] ?? null) . ')'
+                . ' إلى مرحلة '
+                . $phaseLabelFn($data['to']['phase']     ?? null)
+                . ' (' . $statusLabelFn($data['to']['status'] ?? null) . ')'
+                . (isset($data['owner_role']) ? ' | المالك: ' . $roleLabelFn($data['owner_role']) : ''),
+            'received'   => 'تم تأكيد الاستلام — المرحلة: ' . $phaseLabelFn($data['phase'] ?? null)
+                . ' | من ' . $statusLabelFn($data['from_status'] ?? null)
+                . ' إلى '  . $statusLabelFn($data['to_status']   ?? null),
+            'rejected'   => 'تم الرفض — المرحلة: ' . $phaseLabelFn($data['phase'] ?? null),
+            'project_bootstrap' => 'تجهيز مشروع من الطلب'
+                . (isset($data['project_id']) ? ' #'.$data['project_id'] : '')
+                . ' — ملفات: ' . ($data['files_created'] ?? 0)
+                . ' | مهام: ' . ($data['tasks_created'] ?? 0),
+            default => '—',
+        };
+    };
+
+    $formatWhen = function ($log): array {
+        $at = $log->happened_at ?? $log->created_at ?? null;
+        $carbon = $at instanceof Carbon ? $at : ($at ? Carbon::parse($at) : null);
+        return [
+            'at'   => $carbon?->format('Y-m-d H:i') ?? '—',
+            'human'=> $carbon?->diffForHumans() ?? null,
+        ];
+    };
+
+    /* ---------------- اللوجات: رتب حسب happened_at ثم created_at ---------------- */
+    $logs = collect($record->logs ?? [])
+        ->sortByDesc(function ($l) {
+            return ($l->happened_at ?? $l->created_at ?? now())->value ?? ($l->happened_at ?? $l->created_at ?? now());
+        })
+        ->values();
 @endphp
 
 <x-filament::page>
@@ -78,7 +169,8 @@
             <div><span class="text-gray-500 dark:text-gray-400">العميل:</span> <span class="font-semibold">{{ $clientName }}</span></div>
             <div><span class="text-gray-500 dark:text-gray-400">المعرض:</span> <span class="font-semibold">{{ $showroomName }}</span></div>
 
-            <div><span class="text-gray-500 dark:text-gray-400">المشروع:</span>
+            <div>
+                <span class="text-gray-500 dark:text-gray-400">المشروع:</span>
                 @if ($record->project)
                     <a href="{{ \App\Filament\Resources\ProjectResource::getUrl('view', ['record' => $record->project]) }}"
                        class="text-primary-600 underline">{{ $projectName }}</a>
@@ -148,31 +240,34 @@
     <x-filament::section class="mt-6">
         <x-slot name="heading">سجل النشاط</x-slot>
 
-        @php
-            $logs = $record->logs?->sortByDesc('action_at') ?? collect();
-        @endphp
-
         @if ($logs->count())
             <div class="space-y-3">
                 @foreach ($logs as $log)
+                    @php
+                        $when = $formatWhen($log);
+                        $who  = $log->causer?->name ?? 'النظام';
+                        $what = $formatLogNote($log);
+                    @endphp
+
                     <div class="border rounded-md p-4 bg-white/80 dark:bg-gray-900/70">
                         <div class="flex justify-between text-sm">
                             <div>
-                                <strong>{{ $log->user->name ?? 'مجهول' }}</strong>
+                                <strong>{{ $who }}</strong>
                                 <span class="text-gray-600 dark:text-gray-400">قام بـ</span>
-                                <span class="font-semibold">{{ $log->action ?? '—' }}</span>
+                                <span class="font-semibold">{{ $log->type ?? '—' }}</span>
                             </div>
                             <div class="text-gray-600 dark:text-gray-400">
-                                {{ $log->action_at?->format('Y-m-d H:i') ?? '—' }}
-                                @if($log->action_at)
+                                {{ $when['at'] }}
+                                @if ($when['human'])
                                     <span class="mx-1">•</span>
-                                    <span>{{ $log->action_at->diffForHumans() }}</span>
+                                    <span>{{ $when['human'] }}</span>
                                 @endif
                             </div>
                         </div>
-                        @if ($log->note)
+
+                        @if ($what && $what !== '—')
                             <div class="mt-2 text-sm text-gray-800 dark:text-gray-200">
-                                {{ $log->note }}
+                                {{ $what }}
                             </div>
                         @endif
                     </div>

@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\ProductionRequestResource\Pages;
 
+use Filament\Forms\Components\Fieldset;
+use Filament\Forms\Components\TextInput;
 use App\Enums\{ProductionRequestPhase as Phase, PhaseStatus as S};
 use App\Filament\Resources\ProductionRequestResource;
 use App\Models\ProductionRequest;
@@ -21,149 +23,152 @@ class ReviewProductionRequest extends Page
 
     public function mount(ProductionRequest $record): void
     {
-        $this->record = $record->load(['client','project','logs','productionRequestFiles']);
+        $this->record = $record->load(['client','project','logs','productionRequestFiles','files']);
     }
 
     public function getHeaderActions(): array
     {
-        $cfg = config('production_workflow');
         $actions = [];
 
-        foreach ($cfg['actions'] as $def) {
-            if (! $this->shouldShow($def)) continue;
-
-            $actions[] = $this->makeActionFromDefinition($def);
-        }
-
-        return $actions;
-    }
-
-    /* ---------------- Visibility & Role checks ---------------- */
-
-    private function shouldShow(array $def): bool
-    {
-        // Role gate
-        if (! $this->userAllowed($def['roles'] ?? [])) return false;
-
-        // Phase/Status conditions
-        $phase = $this->record->current_phase;
-        $status = $this->record->phase_status;
-
-        foreach (($def['when'] ?? []) as $cond) {
-            if (isset($cond['phase'])      && $phase !== $cond['phase']) return false;
-            if (isset($cond['phase_in'])   && !in_array($phase, (array)$cond['phase_in'], true)) return false;
-
-            if (isset($cond['status'])     && $status !== $cond['status']) return false;
-            if (isset($cond['status_in'])  && !in_array($status, (array)$cond['status_in'], true)) return false;
-            if (isset($cond['status_not_in']) && in_array($status, (array)$cond['status_not_in'], true)) return false;
-        }
-        return true;
-    }
-
-    private function userAllowed(array $roles): bool
-    {
-        $user = Auth::user();
-        if (! $user) return false;
-
-        // admins can do everything
-        if ($user->hasAnyRole(['admin', 'super-admin'])) return true;
-
-        foreach ($roles as $r) {
-            if ($r === '*owner*') {
-                $owner = $this->record->current_owner_role;
-                if ($owner && $user->hasRole($owner)) return true;
-            } else {
-                if ($user->hasRole($r)) return true;
-            }
-        }
-        return false;
-    }
-
-    /* ---------------- Action builder ---------------- */
-
-    private function makeActionFromDefinition(array $def): Action
-    {
-        $action = Action::make($def['key'])
-            ->label($def['label'] ?? $def['key'])
-            ->icon($def['icon'] ?? 'heroicon-o-bolt')
-            ->color($def['color'] ?? 'primary')
-            ->requiresConfirmation();
-
-        $type = $def['type'] ?? 'status';
-
-        if ($type === 'receive') {
-            $action->action(function () {
+        // تأكيد استلام المالك الحالي
+        $actions[] = Action::make('confirmReceipt')
+            ->label('تأكيد استلامي')
+            ->icon('heroicon-o-hand-thumb-up')
+            ->visible(fn () => Auth::user()?->hasRole($this->record->current_owner_role))
+            ->action(function () {
                 app(ProductionRequestWorkflow::class)->markReceived($this->record);
                 Notification::make()->success()->title('تم تأكيد الاستلام')->send();
                 $this->refreshRecord();
             });
-        }
-        elseif ($type === 'reject') {
-            $action
-                ->form([
-                    \Filament\Forms\Components\Textarea::make('reason')->label('سبب الرفض')->required()->rows(3),
-                ])
-                ->action(function (array $data) {
-                    app(ProductionRequestWorkflow::class)->reject($this->record, $data['reason'] ?? null);
-                    Notification::make()->warning()->title('تم الرفض')->send();
-                    $this->refreshRecord();
-                });
-        }
-        elseif ($type === 'reject_and_back') {
-            $action
-                ->form([
-                    \Filament\Forms\Components\Textarea::make('reason')->label('سبب الرفض')->required()->rows(3),
-                ])
-                ->action(function (array $data) use ($def) {
-                    // 1) reject in current phase
-                    app(ProductionRequestWorkflow::class)->reject($this->record, $data['reason'] ?? null);
-                    // 2) move back to target (usually manufacturing/installation)
-                    $to = $def['to'] ?? [];
-                    app(ProductionRequestWorkflow::class)->move(
-                        $this->record,
-                        Phase::from($to['phase']),
-                        S::from($to['status']),
-                        $to['owner'] ?? null,
-                        (bool)($to['touch_sent'] ?? false)
-                    );
-                    Notification::make()->warning()->title('تم الرفض والرجوع للمرحلة السابقة')->send();
-                    $this->refreshRecord();
-                });
-        }
-        elseif ($type === 'transition') {
-            $action->action(function () use ($def) {
-                $to = $def['to'] ?? [];
-                app(ProductionRequestWorkflow::class)->move(
-                    $this->record,
-                    Phase::from($to['phase']),
-                    S::from($to['status']),
-                    $to['owner'] ?? null,
-                    (bool)($to['touch_sent'] ?? false)
-                );
-                Notification::make()->success()->title('تم الإرسال للمرحلة التالية')->send();
-                $this->refreshRecord();
-            });
-        }
-        else { // 'status'
-            $action->action(function () use ($def) {
-                $toStatus = $def['to']['status'] ?? S::UnderReview->value;
-                app(ProductionRequestWorkflow::class)->move(
-                    $this->record,
-                    Phase::from($this->record->current_phase),
-                    S::from($toStatus),
-                    $this->record->current_owner_role,
-                    false
-                );
-                Notification::make()->success()->title('تم تحديث الحالة')->send();
-                $this->refreshRecord();
-            });
-        }
 
-        return $action;
+        $actions[] = Action::make('setFilesCosts')
+            ->label('تحديد تكاليف الملفات')
+            ->icon('heroicon-o-currency-dollar')
+            ->color('warning')
+            ->visible(fn () =>
+                Auth::user()?->hasRole('showroom_manager') &&
+                $this->record->current_phase === Phase::ShowroomReview->value
+            )
+            ->form(function () {
+                // نبني حقولًا ديناميكية لكل ملف
+                $schema = [];
+                $files = $this->record->files()->with('department')->get();
+                foreach ($files as $f) {
+                    $schema[] = Fieldset::make("ملف: ".($f->file_name ?? basename($f->file_path)))
+                        ->schema([
+                            TextInput::make("cost_{$f->id}")
+                                ->label('التكلفة التقديرية')
+                                ->numeric()
+                                ->minValue(0)
+                                ->prefix('SAR')
+                                ->default($f->estimated_cost)
+                                ->required(),
+                            \Filament\Forms\Components\Placeholder::make("dept_{$f->id}")
+                                ->label('القسم')
+                                ->content($f->department->dept_name ?? '—'),
+                        ])->columns(2);
+                }
+                return $schema ?: [
+                    \Filament\Forms\Components\Placeholder::make('no_files')->content('لا توجد ملفات.')
+                ];
+            })
+            ->action(function (array $data) {
+                $files = $this->record->files()->get();
+                $changed = 0;
+
+                foreach ($files as $f) {
+                    $key = "cost_{$f->id}";
+                    if (array_key_exists($key, $data)) {
+                        $val = $data[$key];
+                        if ($f->estimated_cost != $val) {
+                            $f->update(['estimated_cost' => $val]);
+                            $changed++;
+                        }
+                    }
+                }
+
+                // Log وصفي
+                $this->record->logs()->create([
+                    'type'        => 'files_costs_set',
+                    'data'        => [
+                        'files'   => $files->map(fn($f)=>[
+                            'id'=>$f->id,
+                            'name'=>$f->file_name ?? basename($f->file_path ?? ''),
+                            'estimated_cost'=>$f->estimated_cost,
+                        ])->values()->all(),
+                    ],
+                    'note'        => "تم تحديث تكاليف الملفات (عدد: {$changed})",
+                    'causer_id'   => Auth::id(),
+                    'happened_at' => now(),
+                ]);
+
+                \Filament\Notifications\Notification::make()
+                    ->success()->title('تم حفظ تكاليف الملفات')->send();
+
+                $this->refreshRecord();
+            });
+
+        // (المعرض) اعتماد وإرسال للمصنع (Pending)
+        $actions[] = Action::make('approveShowroomAndSend')
+            ->label('اعتماد وإرسال للمصنع')
+            ->icon('heroicon-o-paper-airplane')
+            ->color('success')
+            ->visible(fn () =>
+                Auth::user()?->hasRole('showroom_manager') &&
+                $this->record->current_phase === Phase::ShowroomReview->value &&
+                in_array($this->record->phase_status, [S::Pending->value, S::UnderReview->value, S::Approved->value], true)
+            )
+            ->action(function () {
+                app(ProductionRequestWorkflow::class)->move(
+                    $this->record,
+                    Phase::FactoryIntake,
+                    S::Pending,
+                    'factory_manager',
+                    true
+                );
+                Notification::make()->success()->title('تم اعتماد الطلب وإرساله للمصنع')->send();
+                $this->refreshRecord();
+            });
+
+        // (المصنع) اعتماد وإنشاء المشروع ثم الانتقال لإسناد الأقسام
+        $actions[] = Action::make('approveFactory')
+            ->label('اعتماد وإنشاء project & tasks')
+            ->icon('heroicon-o-check-circle')
+            ->color('primary')
+            ->visible(fn () =>
+                Auth::user()?->hasRole('factory_manager') &&
+                $this->record->current_phase === Phase::FactoryIntake->value &&
+                in_array($this->record->phase_status, [S::Pending->value, S::Received->value, S::UnderReview->value], true)
+            )
+            ->requiresConfirmation()
+            ->action(function () {
+                app(ProductionRequestWorkflow::class)->approve($this->record);
+                Notification::make()->success()->title('تم اعتماد المصنع وإنشاء المشروع وربط المهام')->send();
+                $this->refreshRecord();
+            });
+
+        // رفض (بأي من الدورين)
+        $actions[] = Action::make('reject')
+            ->label('رفض')
+            ->icon('heroicon-o-x-circle')
+            ->color('danger')
+            ->form([
+                \Filament\Forms\Components\Textarea::make('reason')->label('سبب الرفض')->required(),
+            ])
+            ->visible(fn () =>
+            in_array($this->record->current_owner_role, ['showroom_manager','factory_manager'])
+            )
+            ->action(function (array $data) {
+                app(ProductionRequestWorkflow::class)->reject($this->record, $data['reason']);
+                Notification::make()->warning()->title('تم رفض الطلب')->send();
+                $this->refreshRecord();
+            });
+
+        return $actions;
     }
 
     private function refreshRecord(): void
     {
-        $this->record->refresh()->load(['client','project','logs','productionRequestFiles']);
+        $this->record->refresh()->load(['client','project','logs','productionRequestFiles','files']);
     }
 }

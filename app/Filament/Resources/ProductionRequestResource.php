@@ -119,7 +119,13 @@ class ProductionRequestResource extends Resource
                                     ->searchable()
                                     ->required()
                                     ->columnSpan(4),
-
+                                TextInput::make('estimated_cost')
+                                    ->label('التكلفة التقديرية')
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->prefix('SAR')
+                                    ->required(fn (Get $get) => $get('request_type') === 'direct')
+                                    ->hidden(fn (Get $get) => $get('request_type') === 'indirect'),
                                 FileUpload::make('file_path')
                                     ->label('ملف القسم')
                                     ->helperText('يدعم الصور وملفات PDF — حتى 30MB')

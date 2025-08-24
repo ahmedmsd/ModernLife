@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Models\ProductionTask;
+use App\Models\Project;
 use App\Observers\ProductionTaskObserver;
+use App\Observers\ProjectObserver;
 use Illuminate\Support\ServiceProvider;
 use App\Models\ProductionRequest;
 use App\Observers\ProductionRequestObserver;
@@ -18,6 +20,8 @@ class AppServiceProvider extends ServiceProvider
     {
         ProductionRequest::observe(ProductionRequestObserver::class);
         ProductionTask::observe(ProductionTaskObserver::class);
+        Project::observe(ProjectObserver::class);
+
         \Carbon\Carbon::setLocale('ar');
 
         // Optional preload

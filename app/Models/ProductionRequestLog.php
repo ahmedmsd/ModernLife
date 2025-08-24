@@ -33,9 +33,9 @@ class ProductionRequestLog extends Model
         return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
-    public function causer()
+    public function causer(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'causer_id');
+        return $this->belongsTo(\App\Models\User::class, 'causer_id', 'id');
     }
 
 }
