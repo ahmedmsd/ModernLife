@@ -3,6 +3,7 @@
     use App\Enums\ProductionRequestPhase as Phase;
     use App\Enums\PhaseStatus as S;
     use Illuminate\Support\Facades\Storage;
+    use Illuminate\Support\Str;
 
     $phaseEnum  = Phase::tryFrom($record->current_phase);
     $statusEnum = S::tryFrom($record->phase_status);
@@ -55,7 +56,36 @@
     $tasksTotal = $project?->tasks()->count() ?? 0;
     $tasksDone  = $project?->tasks()->where('status','completed')->count() ?? 0;
     $projectStatus = $project?->status ?? '—';
+
+
+
+    // جهّز صفوف الجدول: أولاً الاتفاقية (إن وجدت)، ثم ملفات الأقسام
+    $rows = collect();
+
+    if ($record->agreement_file) {
+        $rows->push((object)[
+            'is_agreement'   => true,
+            'name'           => 'ملف الاتفاقية',
+            'description'    => 'اتفاقية المشروع (PDF)',
+            'department'     => null,
+            'file_path'      => $record->agreement_file,
+            'estimated_cost' => null,
+        ]);
+    }
+
+    $deptFiles = $record->files ?? collect();
+    foreach ($deptFiles as $f) {
+        $rows->push((object)[
+            'is_agreement'   => false,
+            'name'           => $f->file_name ?? basename($f->file_path ?? ''),
+            'description'    => $f->description ?? '—',
+            'department'     => $f->department->dept_name ?? '—',
+            'file_path'      => $f->file_path,
+            'estimated_cost' => $f->estimated_cost,
+        ]);
+    }
 @endphp
+
 
 <x-filament::page>
     {{-- شارات --}}
@@ -159,19 +189,28 @@
                     </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-800 text-gray-800 dark:text-gray-200">
-                    @foreach ($rows as $row)
+                    @foreach ($rows as $i => $row)
+                        @php
+                            $url = $row->file_path ? Storage::disk('public')->url($row->file_path) : null;
+                        @endphp
                         <tr class="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-900 dark:even:bg-gray-800">
-                            <td class="px-3 py-2">{{ $row['idx'] }}</td>
-                            <td class="px-3 py-2">{{ $row['name'] ?: '—' }}</td>
-                            <td class="px-3 py-2">{{ $row['desc'] }}</td>
-                            <td class="px-3 py-2">{{ $row['dept'] }}</td>
+                            <td class="px-3 py-2">{{ $row->is_agreement ? '—' : $i }}</td>
+                            <td class="px-3 py-2">{{ $row->name }}</td>
+                            <td class="px-3 py-2">{{ $row->description }}</td>
+                            <td class="px-3 py-2">{{ $row->is_agreement ? '—' : $row->department }}</td>
+
+                            {{-- التكلفة: لا تُعرض للاتفاقية --}}
                             <td class="px-3 py-2">
-                                @php $cost = $f->estimated_cost ?? null; @endphp
-                                {{ $cost !== null ? number_format($cost, 2) . ' SAR' : '—' }}
+                                @if(!$row->is_agreement && !is_null($row->estimated_cost))
+                                    SAR {{ number_format((float)$row->estimated_cost, 2) }}
+                                @else
+                                    —
+                                @endif
                             </td>
+
                             <td class="px-3 py-2">
-                                @if ($row['url'])
-                                    <a class="text-primary-600 underline" target="_blank" href="{{ $row['url'] }}">تحميل</a>
+                                @if ($url)
+                                    <a class="text-primary-600 underline" target="_blank" href="{{ $url }}">تحميل</a>
                                 @else
                                     —
                                 @endif
@@ -179,6 +218,7 @@
                         </tr>
                     @endforeach
                     </tbody>
+
                 </table>
             </div>
         @else

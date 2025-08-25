@@ -118,17 +118,15 @@ class ProductionRequestObserver
 
 
     /** لوج حذف */
-    public function deleted(ProductionRequest $pr): void
+    public function deleting(\App\Models\ProductionRequest $pr): void
     {
-        ProductionRequestLog::create([
+        \App\Models\ProductionRequestLog::create([
             'production_request_id' => $pr->id,
             'type'        => 'deleted',
             'data'        => null,
             'note'        => 'تم حذف الطلب',
-            'causer_id'   => Auth::id(),
+            'causer_id'   => \Illuminate\Support\Facades\Auth::id(),
             'happened_at' => now(),
         ]);
     }
-
-    // ملاحظة: أزلنا updated() بالكامل لمنع transition المكرر
 }
