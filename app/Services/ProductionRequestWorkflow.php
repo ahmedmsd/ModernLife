@@ -157,6 +157,55 @@ class ProductionRequestWorkflow
         return $pr->refresh();
     }
 
+    public function routeForReReview(ProductionRequest $pr, ?string $note = null): ProductionRequest
+    {
+        $type = $pr->request_type ?? RequestType::Direct->value;
+
+        // نقطة البداية (للتوثيق في اللوج)
+        $from = [
+            'phase'  => $pr->current_phase,
+            'status' => $pr->phase_status,
+            'owner'  => $pr->current_owner_role,
+        ];
+
+        // حدِّد الوجهة والجهة المالكة
+        if ($type === RequestType::Indirect->value) {
+            $toPhase = Phase::ShowroomReview; // مراجعة المعرض
+            $owner   = 'showroom_manager';
+        } else {
+            $toPhase = Phase::FactoryIntake;  // مراجعة المصنع
+            $owner   = 'factory_manager';
+        }
+
+        return DB::transaction(function () use ($pr, $toPhase, $owner, $from, $note) {
+            // عدّل حالة مسار العمل
+            $pr->current_phase       = $toPhase->value;
+            $pr->phase_status        = S::Pending->value;
+            $pr->current_owner_role  = $owner;
+            $pr->sent_to_owner_at    = now();
+            $pr->received_by_owner_at = null;
+            $pr->save();
+
+            // سجّل انتقال
+            $pr->logs()->create([
+                'type'        => 'transition',
+                'data'        => [
+                    'from' => $from,
+                    'to'   => [
+                        'phase'  => $toPhase->value,
+                        'status' => S::Pending->value,
+                        'owner'  => $owner,
+                    ],
+                ],
+                'note'        => $note ?? 'Route back for re-review after content update.',
+                'causer_id'   => Auth::id(),
+                'happened_at' => now(),
+            ]);
+
+            return $pr->refresh();
+        });
+    }
+
     protected function bootstrapProjectFromRequest(ProductionRequest $pr): void
     {
         DB::transaction(function () use ($pr) {

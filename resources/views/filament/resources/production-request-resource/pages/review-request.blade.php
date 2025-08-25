@@ -3,7 +3,6 @@
     use App\Enums\ProductionRequestPhase as Phase;
     use App\Enums\PhaseStatus as S;
     use Illuminate\Support\Facades\Storage;
-    use Illuminate\Support\Str;
 
     $phaseEnum  = Phase::tryFrom($record->current_phase);
     $statusEnum = S::tryFrom($record->phase_status);
@@ -45,47 +44,18 @@
     $ownerRole    = $record->current_owner_role ?? '—';
     $reqType      = $record->request_type === 'indirect' ? 'غير مباشر' : 'مباشر';
 
-    $sentAt    = $record->sent_to_owner_at?->format('Y-m-d H:i') ?? '—';
-    $received  = $record->received_by_owner_at?->format('Y-m-d H:i') ?? '—';
-    $pendingFor= $record->sent_to_owner_at && $record->phase_status === 'pending'
+    $sentAt     = $record->sent_to_owner_at?->format('Y-m-d H:i') ?? '—';
+    $received   = $record->received_by_owner_at?->format('Y-m-d H:i') ?? '—';
+    $pendingFor = $record->sent_to_owner_at && $record->phase_status === 'pending'
                     ? $record->sent_to_owner_at->diffForHumans(now(), true)
                     : '—';
 
     // مشروع مرتبط (إن وُجد)
-    $project = $record->project ?? null;
-    $tasksTotal = $project?->tasks()->count() ?? 0;
-    $tasksDone  = $project?->tasks()->where('status','completed')->count() ?? 0;
+    $project       = $record->project ?? null;
+    $tasksTotal    = $project?->tasks()->count() ?? 0;
+    $tasksDone     = $project?->tasks()->where('status','completed')->count() ?? 0;
     $projectStatus = $project?->status ?? '—';
-
-
-
-    // جهّز صفوف الجدول: أولاً الاتفاقية (إن وجدت)، ثم ملفات الأقسام
-    $rows = collect();
-
-    if ($record->agreement_file) {
-        $rows->push((object)[
-            'is_agreement'   => true,
-            'name'           => 'ملف الاتفاقية',
-            'description'    => 'اتفاقية المشروع (PDF)',
-            'department'     => null,
-            'file_path'      => $record->agreement_file,
-            'estimated_cost' => null,
-        ]);
-    }
-
-    $deptFiles = $record->files ?? collect();
-    foreach ($deptFiles as $f) {
-        $rows->push((object)[
-            'is_agreement'   => false,
-            'name'           => $f->file_name ?? basename($f->file_path ?? ''),
-            'description'    => $f->description ?? '—',
-            'department'     => $f->department->dept_name ?? '—',
-            'file_path'      => $f->file_path,
-            'estimated_cost' => $f->estimated_cost,
-        ]);
-    }
 @endphp
-
 
 <x-filament::page>
     {{-- شارات --}}
@@ -147,30 +117,41 @@
         <x-slot name="heading">الملفات</x-slot>
 
         @php
+            // نبني صفوف الجدول كمصفوفات فقط (بدون كائنات) لتفادي أخطاء الوصول
             $rows = [];
 
-            // سطر الاتفاقية أولاً (إن وجد)
+            // الاتفاقية أولاً (إن وُجدت)
             if (!empty($record->agreement_file)) {
                 $rows[] = [
-                    'idx'  => '—',
-                    'name' => 'ملف الاتفاقية',
-                    'desc' => 'اتفاقية المشروع (PDF)',
-                    'dept' => '—',
-                    'url'  => Storage::disk('public')->exists($record->agreement_file)
-                                ? Storage::disk('public')->url($record->agreement_file)
-                                : null,
+                    'is_agreement'   => true,
+                    'name'           => 'ملف الاتفاقية',
+                    'description'    => 'اتفاقية المشروع (PDF)',
+                    'department'     => '—',
+                    'file_path'      => $record->agreement_file,
+                    'estimated_cost' => null,
                 ];
             }
 
-            // ثم ملفات الأقسام
-            $files = $record->productionRequestFiles ?? $record->files ?? collect();
+            // ثم ملفات الأقسام (قد تكون Eloquent Models أو Arrays)
+            $files = $record->files ?? collect();
+
             foreach ($files as $i => $f) {
+                // اجلب القيم بشكل آمن سواء كان $f مصفوفة أو موديل
+                $filePath   = is_array($f) ? ($f['file_path'] ?? null) : ($f->file_path ?? null);
+                $fileName   = is_array($f) ? ($f['file_name'] ?? basename($filePath ?? '')) : ($f->file_name ?? basename($filePath ?? ''));
+                $desc       = is_array($f) ? ($f['description'] ?? '—') : ($f->description ?? '—');
+                $deptName   = is_array($f)
+                                ? (data_get($f, 'department.dept_name', '—'))
+                                : ($f->department->dept_name ?? '—');
+                $estCost    = is_array($f) ? ($f['estimated_cost'] ?? null) : ($f->estimated_cost ?? null);
+
                 $rows[] = [
-                    'idx'  => $i + 1,
-                    'name' => $f->file_name ?? basename($f->file_path ?? ''),
-                    'desc' => $f->description ?? '—',
-                    'dept' => $f->department->dept_name ?? '—',
-                    'url'  => $f->file_path ? Storage::disk('public')->url($f->file_path) : null,
+                    'is_agreement'   => false,
+                    'name'           => $fileName ?: '—',
+                    'description'    => $desc ?: '—',
+                    'department'     => $deptName ?: '—',
+                    'file_path'      => $filePath,
+                    'estimated_cost' => $estCost,
                 ];
             }
         @endphp
@@ -191,23 +172,23 @@
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-800 text-gray-800 dark:text-gray-200">
                     @foreach ($rows as $i => $row)
                         @php
-                            $url = $row->file_path ? Storage::disk('public')->url($row->file_path) : null;
+                            $url = null;
+                            if (!empty($row['file_path']) && Storage::disk('public')->exists($row['file_path'])) {
+                                $url = Storage::disk('public')->url($row['file_path']);
+                            }
                         @endphp
                         <tr class="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-900 dark:even:bg-gray-800">
-                            <td class="px-3 py-2">{{ $row->is_agreement ? '—' : $i }}</td>
-                            <td class="px-3 py-2">{{ $row->name }}</td>
-                            <td class="px-3 py-2">{{ $row->description }}</td>
-                            <td class="px-3 py-2">{{ $row->is_agreement ? '—' : $row->department }}</td>
-
-                            {{-- التكلفة: لا تُعرض للاتفاقية --}}
+                            <td class="px-3 py-2">{{ $row['is_agreement'] ? '—' : $loop->iteration - (empty($record->agreement_file) ? 0 : 1) }}</td>
+                            <td class="px-3 py-2">{{ $row['name'] }}</td>
+                            <td class="px-3 py-2">{{ $row['description'] }}</td>
+                            <td class="px-3 py-2">{{ $row['is_agreement'] ? '—' : $row['department'] }}</td>
                             <td class="px-3 py-2">
-                                @if(!$row->is_agreement && !is_null($row->estimated_cost))
-                                    SAR {{ number_format((float)$row->estimated_cost, 2) }}
+                                @if(!$row['is_agreement'] && !is_null($row['estimated_cost']))
+                                    SAR {{ number_format((float)$row['estimated_cost'], 2) }}
                                 @else
                                     —
                                 @endif
                             </td>
-
                             <td class="px-3 py-2">
                                 @if ($url)
                                     <a class="text-primary-600 underline" target="_blank" href="{{ $url }}">تحميل</a>
@@ -218,7 +199,6 @@
                         </tr>
                     @endforeach
                     </tbody>
-
                 </table>
             </div>
         @else
@@ -226,7 +206,7 @@
         @endif
     </x-filament::section>
 
-    {{-- سجل النشاط المختصر (يعتمد صفحة الـ Timeline المفصلة لديك) --}}
+    {{-- ملاحظات --}}
     <x-filament::section class="mt-6">
         <x-slot name="heading">ملاحظات</x-slot>
         <div class="text-sm text-gray-600 dark:text-gray-300">

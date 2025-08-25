@@ -4,42 +4,105 @@ namespace App\Policies;
 
 use App\Models\User;
 use App\Models\ProductionRequest;
+use Illuminate\Auth\Access\HandlesAuthorization;
 
 class ProductionRequestPolicy
 {
+    use HandlesAuthorization;
+
+    /**
+     * Determine whether the user can view any models.
+     */
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin', 'factory_manager', 'sales', 'showroom_manager']);
+        return $user->can('view_any_production::request');
     }
 
-    public function view(User $user, ProductionRequest $record): bool
+    /**
+     * Determine whether the user can view the model.
+     */
+    public function view(User $user, ProductionRequest $productionRequest): bool
     {
-        return $this->viewAny($user);
+        return $user->can('view_production::request');
     }
 
+    /**
+     * Determine whether the user can create models.
+     */
     public function create(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin', 'sales', 'showroom_manager']);
+        return $user->can('create_production::request');
     }
 
-    public function update(User $user, ProductionRequest $record): bool
+    /**
+     * Determine whether the user can update the model.
+     */
+    public function update(User $user, ProductionRequest $productionRequest): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin', 'factory_manager', 'sales', 'showroom_manager']);
+        return $user->can('update_production::request');
     }
 
-    public function delete(User $user, ProductionRequest $record): bool
+    /**
+     * Determine whether the user can delete the model.
+     */
+    public function delete(User $user, ProductionRequest $productionRequest): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']);
+        return $user->can('delete_production::request');
     }
 
-    public function restore(User $user, ProductionRequest $record): bool
+    /**
+     * Determine whether the user can bulk delete.
+     */
+    public function deleteAny(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']);
+        return $user->can('delete_any_production::request');
     }
 
-    public function forceDelete(User $user, ProductionRequest $record): bool
+    /**
+     * Determine whether the user can permanently delete.
+     */
+    public function forceDelete(User $user, ProductionRequest $productionRequest): bool
     {
-        return $user->hasAnyRole(['admin', 'super-admin']);
+        return $user->can('force_delete_production::request');
+    }
+
+    /**
+     * Determine whether the user can permanently bulk delete.
+     */
+    public function forceDeleteAny(User $user): bool
+    {
+        return $user->can('force_delete_any_production::request');
+    }
+
+    /**
+     * Determine whether the user can restore.
+     */
+    public function restore(User $user, ProductionRequest $productionRequest): bool
+    {
+        return $user->can('restore_production::request');
+    }
+
+    /**
+     * Determine whether the user can bulk restore.
+     */
+    public function restoreAny(User $user): bool
+    {
+        return $user->can('restore_any_production::request');
+    }
+
+    /**
+     * Determine whether the user can replicate.
+     */
+    public function replicate(User $user, ProductionRequest $productionRequest): bool
+    {
+        return $user->can('replicate_production::request');
+    }
+
+    /**
+     * Determine whether the user can reorder.
+     */
+    public function reorder(User $user): bool
+    {
+        return $user->can('reorder_production::request');
     }
 }
-
