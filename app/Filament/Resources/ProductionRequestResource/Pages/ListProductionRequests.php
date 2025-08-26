@@ -38,9 +38,9 @@ class ListProductionRequests extends ListRecords
                     'showroom_manager','admin','super-admin',
                 ])),
 
-            Actions\CreateAction::make()
-                ->label('إنشاء طلب')
-                ->visible(fn () => auth()->user()?->hasAnyRole(['admin','super-admin'])),
+//            Actions\CreateAction::make()
+//                ->label('إنشاء طلب')
+//                ->visible(fn () => auth()->user()?->hasAnyRole(['admin','super-admin'])),
         ];
     }
 }

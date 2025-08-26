@@ -60,22 +60,38 @@ class ProductionRequestWorkflow
 
             $pr->save();
 
+            // ملاحظة عربية مع تسميات مفهومة
             $noteText = sprintf(
                 'انتقال من مرحلة %s (%s) إلى مرحلة %s (%s)%s',
-                $from['phase'] ?? '—',
-                $from['status'] ?? '—',
-                $toPhase->value,
-                $toStatus->value,
-                $role ? " | المالك: {$role}" : ''
+                $this->phaseLabel($from['phase'] ?? '—'),
+                $this->statusLabel($from['status'] ?? '—'),
+                $this->phaseLabel($toPhase->value),
+                $this->statusLabel($toStatus->value),
+                $role ? ' | المالك: '.$this->roleLabel($role) : ''
             );
 
             $pr->logs()->create([
                 'causer_id'   => Auth::id(),
                 'type'        => 'transition',
                 'data'        => [
-                    'from'       => $from,
-                    'to'         => ['phase' => $toPhase->value, 'status' => $toStatus->value],
-                    'owner_role' => $role,
+                    'from' => [
+                        'phase'        => $from['phase'],
+                        'status'       => $from['status'],
+                        'owner'        => $from['owner'],
+                        // تسميات عربية (اختياري):
+                        'phase_label'  => $this->phaseLabel((string)($from['phase'] ?? '')),
+                        'status_label' => $this->statusLabel((string)($from['status'] ?? '')),
+                        'owner_label'  => $this->roleLabel((string)($from['owner'] ?? '')),
+                    ],
+                    'to' => [
+                        'phase'        => $toPhase->value,
+                        'status'       => $toStatus->value,
+                        // تسميات عربية (اختياري):
+                        'phase_label'  => $this->phaseLabel($toPhase->value),
+                        'status_label' => $this->statusLabel($toStatus->value),
+                    ],
+                    'owner_role'       => $role,
+                    'owner_role_label' => $this->roleLabel($role),
                 ],
                 'note'        => $noteText,
                 'happened_at' => now(),
@@ -103,12 +119,15 @@ class ProductionRequestWorkflow
             'causer_id'   => Auth::id(),
             'type'        => 'received',
             'data'        => [
-                'phase'        => $pr->current_phase,
-                'from_status'  => $fromStatus,
-                'to_status'    => S::Received->value,
-                'wait_seconds' => $waitSeconds,
+                'phase'         => $pr->current_phase,
+                'phase_label'   => $this->phaseLabel((string)$pr->current_phase),
+                'from_status'   => $fromStatus,
+                'from_label'    => $this->statusLabel((string)$fromStatus),
+                'to_status'     => S::Received->value,
+                'to_label'      => $this->statusLabel(S::Received->value),
+                'wait_seconds'  => $waitSeconds,
             ],
-            'note'        => "تم تأكيد الاستلام في مرحلة {$pr->current_phase}",
+            'note'        => 'تم تأكيد الاستلام في مرحلة '.$this->phaseLabel((string)$pr->current_phase),
             'happened_at' => now(),
         ]);
 
@@ -139,16 +158,19 @@ class ProductionRequestWorkflow
         $pr->phase_status = S::Rejected->value;
         $pr->save();
 
-        $baseNote = "تم رفض الطلب في مرحلة {$pr->current_phase}";
+        $baseNote = 'تم رفض الطلب في مرحلة '.$this->phaseLabel((string)$pr->current_phase);
         $noteText = $reason ? "{$baseNote} — السبب: {$reason}" : $baseNote;
 
         $pr->logs()->create([
             'causer_id'   => Auth::id(),
             'type'        => 'rejected',
             'data'        => [
-                'phase'       => $pr->current_phase,
-                'from_status' => $fromStatus,
-                'to_status'   => S::Rejected->value,
+                'phase'        => $pr->current_phase,
+                'phase_label'  => $this->phaseLabel((string)$pr->current_phase),
+                'from_status'  => $fromStatus,
+                'from_label'   => $this->statusLabel((string)$fromStatus),
+                'to_status'    => S::Rejected->value,
+                'to_label'     => $this->statusLabel(S::Rejected->value),
             ],
             'note'        => $noteText,
             'happened_at' => now(),
@@ -161,14 +183,12 @@ class ProductionRequestWorkflow
     {
         $type = $pr->request_type ?? RequestType::Direct->value;
 
-        // نقطة البداية (للتوثيق في اللوج)
         $from = [
             'phase'  => $pr->current_phase,
             'status' => $pr->phase_status,
             'owner'  => $pr->current_owner_role,
         ];
 
-        // حدِّد الوجهة والجهة المالكة
         if ($type === RequestType::Indirect->value) {
             $toPhase = Phase::ShowroomReview; // مراجعة المعرض
             $owner   = 'showroom_manager';
@@ -178,26 +198,38 @@ class ProductionRequestWorkflow
         }
 
         return DB::transaction(function () use ($pr, $toPhase, $owner, $from, $note) {
-            // عدّل حالة مسار العمل
-            $pr->current_phase       = $toPhase->value;
-            $pr->phase_status        = S::Pending->value;
-            $pr->current_owner_role  = $owner;
-            $pr->sent_to_owner_at    = now();
+            $pr->current_phase        = $toPhase->value;
+            $pr->phase_status         = S::Pending->value;
+            $pr->current_owner_role   = $owner;
+            $pr->sent_to_owner_at     = now();
             $pr->received_by_owner_at = null;
             $pr->save();
 
-            // سجّل انتقال
+            $defaultNote = 'إعادة توجيه الطلب للمراجعة مرة أخرى بعد تحديث المحتوى.';
             $pr->logs()->create([
                 'type'        => 'transition',
                 'data'        => [
-                    'from' => $from,
-                    'to'   => [
-                        'phase'  => $toPhase->value,
-                        'status' => S::Pending->value,
-                        'owner'  => $owner,
+                    'from' => [
+                        'phase'        => $from['phase'],
+                        'status'       => $from['status'],
+                        'owner'        => $from['owner'],
+                        'phase_label'  => $this->phaseLabel((string)($from['phase'] ?? '')),
+                        'status_label' => $this->statusLabel((string)($from['status'] ?? '')),
+                        'owner_label'  => $this->roleLabel((string)($from['owner'] ?? '')),
                     ],
+                    'to'   => [
+                        'phase'        => $toPhase->value,
+                        'status'       => S::Pending->value,
+                        'owner'        => $owner,
+                        'phase_label'  => $this->phaseLabel($toPhase->value),
+                        'status_label' => $this->statusLabel(S::Pending->value),
+                        'owner_label'  => $this->roleLabel($owner),
+                    ],
+                    // مهم لإظهاره أعلى المستوى في الـ timeline:
+                    'owner_role'       => $owner,
+                    'owner_role_label' => $this->roleLabel($owner),
                 ],
-                'note'        => $note ?? 'Route back for re-review after content update.',
+                'note'        => $note ?? $defaultNote,
                 'causer_id'   => Auth::id(),
                 'happened_at' => now(),
             ]);
@@ -231,23 +263,26 @@ class ProductionRequestWorkflow
                     ? Storage::disk('public')->size($filePath)
                     : 0;
 
-                $project->files()->firstOrCreate(
+                // ✅ لا تضع estimated_cost ضمن مفاتيح المطابقة — حتى لا تُنشئ سجلاً جديدًا عند تغيّرها
+                $project->files()->updateOrCreate(
                     [
                         'department_id' => $reqFile->department_id,
                         'file_path'     => $filePath,
                     ],
                     [
-                        'file_name'   => $fileName,
-                        'file_type'   => $fileType,
-                        'file_size'   => $fileSize,
-                        'uploaded_by' => Auth::id() ?? 0,
-                        'upload_date' => now(),
-                        'version'     => 1,
-                        'is_current'  => true,
+                        'file_name'      => $fileName,
+                        'file_type'      => $fileType,
+                        'file_size'      => $fileSize,
+                        'estimated_cost' => (float) ($reqFile->estimated_cost ?? 0),
+                        'uploaded_by'    => Auth::id() ?? 0,
+                        'upload_date'    => now(),
+                        'version'        => 1,
+                        'is_current'     => true,
                     ]
                 );
 
-                $project->tasks()->firstOrCreate(
+                // ✅ حدّث/أنشئ المهمة مع تمرير التكلفة
+                $project->tasks()->updateOrCreate(
                     [
                         'department_id' => $reqFile->department_id,
                         'file_path'     => $reqFile->file_path,
@@ -256,7 +291,7 @@ class ProductionRequestWorkflow
                         'notes'                   => 'تم إنشاؤها تلقائيًا من ملف الطلب.',
                         'status'                  => 'pending',
                         'assigned_to_employee_id' => null,
-                        'assigned_budget'         => null,
+                        'estimated_cost'          => (float) ($reqFile->estimated_cost ?? 0),
                         'due_date'                => null,
                     ]
                 );
@@ -306,6 +341,60 @@ class ProductionRequestWorkflow
             Phase::Installation             => 'installation_manager',
             Phase::QualityAfterInstallation => 'quality_manager',
             Phase::Closed                   => null,
+        };
+    }
+
+    /* ======================= Helpers: Arabic labels ======================= */
+
+    private function phaseLabel(string $phase): string
+    {
+        return match ($phase) {
+            'sales_intake'               => 'استلام المبيعات',
+            'showroom_review'            => 'مراجعة المعرض',
+            'factory_intake'             => 'استلام المصنع',
+            'department_assignment'      => 'إسناد الأقسام',
+            'purchasing'                 => 'المشتريات',
+            'manufacturing'              => 'التصنيع',
+            'quality_after_manufacture'  => 'جودة ما بعد التصنيع',
+            'installation'               => 'التركيب',
+            'quality_after_installation' => 'جودة ما بعد التركيب',
+            'closed'                     => 'مغلق',
+            default                      => $phase,
+        };
+    }
+
+    private function statusLabel(string $status): string
+    {
+        return match ($status) {
+            'pending'        => 'قيد الانتظار',
+            'received'       => 'تم الاستلام',
+            'under_review'   => 'قيد المراجعة',
+            'approved'       => 'معتمد',
+            'rejected'       => 'مرفوض',
+            'in_progress'    => 'قيد التنفيذ',
+            'materials_prep' => 'تحضير الخامات',
+            'materials_done' => 'تم توفير الخامات',
+            'on_hold'        => 'معلق',
+            'completed'      => 'مكتمل',
+            'cancelled'      => 'ملغي',
+            default          => $status,
+        };
+    }
+
+    private function roleLabel(?string $role): ?string
+    {
+        if (!$role) return null;
+
+        return match ($role) {
+            'factory_manager'       => 'مدير المصنع',
+            'showroom_manager'      => 'مدير المعرض',
+            'purchasing_manager'    => 'مدير المشتريات',
+            'department_manager'    => 'رئيس القسم',
+            'quality_manager'       => 'مدير الجودة',
+            'installation_manager'  => 'مدير التركيب',
+            'manufacturing_manager' => 'مدير التصنيع',
+            'sales_manager'         => 'مدير المبيعات',
+            default                 => $role,
         };
     }
 }

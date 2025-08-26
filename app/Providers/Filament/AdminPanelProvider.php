@@ -52,7 +52,7 @@ class AdminPanelProvider extends PanelProvider
                 SystemSettings::class,
             ])
             ->databaseNotifications()
-            ->databaseNotificationsPolling('30s')
+            ->databaseNotificationsPolling('15s')
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
 //                Widgets\AccountWidget::class,
@@ -188,29 +188,32 @@ class AdminPanelProvider extends PanelProvider
                             ])
                     )
                     ->group(
-                        NavigationGroup::make()
+                        \Filament\Navigation\NavigationGroup::make()
                             ->label('الإعدادات ')
                             ->collapsible()
                             ->icon('heroicon-o-cog')
                             ->collapsed()
                             ->items([
-                                // NavigationItem::make('إدارة إعدادات النظام')
-                                //     ->url(SystemSettingResource::getUrl()),
-                                NavigationItem::make('إعدادات النظام')
-                                    ->url(SystemSettings::getUrl()),
-                                NavigationItem::make('إدارة المعارض')
-                                    ->url(ShowroomResource::getUrl()),
-                                NavigationItem::make('إدارة الدول')
-                                    ->url(CountryResource::getUrl()),
-                                NavigationItem::make('إدارة المدن')
-                                    ->url(CityResource::getUrl()),
-                                NavigationItem::make('إدارة الأدوار')
+                                \Filament\Navigation\NavigationItem::make('إعدادات النظام')
+                                    ->url(\App\Filament\Pages\SystemSettings::getUrl()),
+
+                                \Filament\Navigation\NavigationItem::make('إدارة المعارض')
+                                    ->url(\App\Filament\Resources\ShowroomResource::getUrl()),
+
+                                \Filament\Navigation\NavigationItem::make('إدارة الدول')
+                                    ->url(\App\Filament\Resources\CountryResource::getUrl()),
+
+                                \Filament\Navigation\NavigationItem::make('إدارة المدن')
+                                    ->url(\App\Filament\Resources\CityResource::getUrl()),
+
+                                \Filament\Navigation\NavigationItem::make('إدارة الأدوار')
                                     ->url(RoleResource::getUrl()),
 
-                                NavigationItem::make('إدارة الصلاحيات')
+                                \Filament\Navigation\NavigationItem::make('إدارة الصلاحيات')
                                     ->url(PermissionResource::getUrl()),
                             ])
-                    );
+                    )
+                    ;
             });
     }
 }

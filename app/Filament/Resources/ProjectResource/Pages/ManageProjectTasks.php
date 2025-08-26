@@ -60,7 +60,7 @@ class ManageProjectTasks extends ManageRelatedRecords
                 ->preload()
                 ->nullable(),
 
-            Forms\Components\TextInput::make('assigned_budget')
+            Forms\Components\TextInput::make('estimated_cost')
                 ->label('الميزانية المتوقعة')
                 ->numeric()
                 ->nullable(),
@@ -118,7 +118,7 @@ class ManageProjectTasks extends ManageRelatedRecords
                 ->required()
                 ->native(false)
                 ->searchable(),
-            Forms\Components\TextInput::make('assigned_budget')
+            Forms\Components\TextInput::make('estimated_cost')
                 ->label('الميزانية المتوقعة')
                 ->numeric()
                 ->nullable(),
@@ -149,7 +149,7 @@ class ManageProjectTasks extends ManageRelatedRecords
                     ->label('الموظف المسؤول')
                     ->toggleable(),
 
-                Tables\Columns\TextColumn::make('assigned_budget')
+                Tables\Columns\TextColumn::make('estimated_cost')
                     ->label('الميزانية المتوقعة')
                     ->money('SAR')
                     ->toggleable(),

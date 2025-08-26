@@ -21,9 +21,32 @@ class ViewProductionTimeline extends Page
     protected static ?string $title   = 'معلومات الطلب التفصيلية';
 
     public ProductionRequest $record;
-
-    /** عناصر الخط الزمني الجاهزة للعرض */
     public array $timeline = [];
+
+    /** قاموس تعريب بسيط للأدوار والمفاتيح الشائعة داخل data */
+    protected array $i18n = [
+        'roles' => [
+            'factory_manager'      => 'مدير المصنع',
+            'showroom_manager'     => 'مدير المعرض',
+            'purchasing_manager'   => 'مدير المشتريات',
+            'sales_manager'        => 'مدير المبيعات',
+            'quality_manager'      => 'مدير الجودة',
+            'manufacturing_manager'=> 'مدير التصنيع',
+            'installer'            => 'فني التركيب',
+        ],
+        'keys' => [
+            'phase'          => 'المرحلة',
+            'status'         => 'الحالة',
+            'from'           => 'من',
+            'to'             => 'إلى',
+            'owner_role'     => 'المالك',
+            'wait_seconds'   => 'مدة الانتظار',
+            'project_id'     => 'رقم المشروع',
+            'files_created'  => 'عدد الملفات',
+            'tasks_created'  => 'عدد المهام',
+            'note'           => 'ملاحظة',
+        ],
+    ];
 
     public static function canAccess(array $parameters = []): bool
     {
@@ -32,6 +55,10 @@ class ViewProductionTimeline extends Page
 
     public function mount(ProductionRequest $record): void
     {
+        // ✅ تعريب الوقت
+        app()->setLocale('ar');
+        Carbon::setLocale('ar');
+
         $this->record = $record->load([
             'logs.causer',
             'client',
@@ -41,13 +68,10 @@ class ViewProductionTimeline extends Page
 
         $this->timeline = $this->record->logs
             ->map(fn ($log) => $this->mapLogToTimelineRow($log))
-            // الأحدث أولاً: بالأساس على happened_at ثم id
             ->sortByDesc(fn ($row) => $row['sort_key'])
             ->values()
             ->all();
     }
-
-    /* ======================== Actions اختيارية (إبقاء ما كان لديك) ======================== */
 
     public function getHeaderActions(): array
     {
@@ -118,11 +142,11 @@ class ViewProductionTimeline extends Page
 
     private function mapLogToTimelineRow($log): array
     {
-        // توقيت موحّد
+        // وقت موحّد ومُعرّب
         $at = $log->happened_at ?? $log->created_at;
         $atC = $at instanceof Carbon ? $at : ($at ? Carbon::parse($at) : null);
-        $atDate = $atC?->format('Y-m-d H:i') ?? '—';
-        $atHuman = $atC?->diffForHumans() ?? '—';
+        $atDate  = $atC?->isoFormat('YYYY-MM-DD HH:mm') ?? '—'; // يبقى شكل التاريخ نفسه
+        $atHuman = $atC?->diffForHumans() ?? '—';               // ← عربي بعد setLocale
         $sortKey = $atC?->timestamp ?? 0;
 
         $type  = (string) ($log->type ?? 'event');
@@ -142,14 +166,14 @@ class ViewProductionTimeline extends Page
         $toStatus    = $data['to']['status']    ?? ($data['to_status'] ?? null);
         $ownerRole   = $data['owner_role']      ?? null;
         $projectId   = $data['project_id']      ?? null;
-        $filesCount  = $data['files_created']    ?? null;
-        $tasksCount  = $data['tasks_created']    ?? null;
+        $filesCount  = $data['files_created']   ?? null;
+        $tasksCount  = $data['tasks_created']   ?? null;
 
-        // تحويل للأسماء المترجمة
-        $fromPhaseL = $fromPhase ? $this->phaseLabel($fromPhase) : null;
-        $toPhaseL   = $toPhase   ? $this->phaseLabel($toPhase)   : null;
-        $fromStatusL= $fromStatus? $this->statusLabel($fromStatus): null;
-        $toStatusL  = $toStatus  ? $this->statusLabel($toStatus)  : null;
+        $fromPhaseL  = $fromPhase ? $this->phaseLabel($fromPhase) : null;
+        $toPhaseL    = $toPhase   ? $this->phaseLabel($toPhase)   : null;
+        $fromStatusL = $fromStatus? $this->statusLabel($fromStatus): null;
+        $toStatusL   = $toStatus  ? $this->statusLabel($toStatus)  : null;
+        $ownerRoleL  = $this->ownerRoleLabel($ownerRole);
 
         switch ($type) {
             case 'created':
@@ -169,7 +193,7 @@ class ViewProductionTimeline extends Page
                     $fromStatusL ?? '—',
                     $toPhaseL   ?? '—',
                     $toStatusL  ?? '—',
-                    $ownerRole ? " | المالك: {$ownerRole}" : ''
+                    $ownerRoleL ? " | المالك: {$ownerRoleL}" : ''
                 );
                 if ($note) $desc .= " — {$note}";
                 break;
@@ -185,7 +209,7 @@ class ViewProductionTimeline extends Page
                     $this->statusLabel($toStatus   ?? 'received')
                 );
                 if (isset($data['wait_seconds'])) {
-                    $desc .= ' مدة الانتظار: ' . $this->secondsToHuman($data['wait_seconds']);
+                    $desc .= ' — مدة الانتظار: ' . $this->secondsToHuman((int) $data['wait_seconds']);
                 }
                 if ($note) $desc .= " — {$note}";
                 break;
@@ -219,7 +243,9 @@ class ViewProductionTimeline extends Page
                 $title = 'إنشاء مشروع ومهام الأقسام';
                 $icon  = 'heroicon-o-briefcase';
                 $color = 'success';
-                $desc  = "مشروع #{$projectId} — ملفات: " . ((string)($filesCount ?? 0)) . " | مهام: " . ((string)($tasksCount ?? 0));
+                $desc  = 'رقم المشروع: '.((string)($projectId ?? '—'))
+                    .' — عدد الملفات: '.((string)($filesCount ?? 0))
+                    .' — عدد المهام: '.((string)($tasksCount ?? 0));
                 if ($note) $desc .= " — {$note}";
                 break;
 
@@ -232,7 +258,8 @@ class ViewProductionTimeline extends Page
 
             default:
                 $title = $this->typeLabel($type);
-                $desc  = $note ?: (empty($data) ? '—' : json_encode($data, JSON_UNESCAPED_UNICODE));
+                // إن كانت data غير معروفة البنية، نحاول وصفها عربيًا بدل JSON
+                $desc  = $note ?: $this->describeData($data);
                 $icon  = 'heroicon-o-information-circle';
                 $color = 'gray';
                 break;
@@ -246,8 +273,8 @@ class ViewProductionTimeline extends Page
             'icon'      => $icon,
             'color'     => $color,
             'at'        => $atDate,
-            'at_human'  => $atHuman,
-            'sort_key'  => $sortKey * 1000 + (int) $log->id, // لضمان استقرار الترتيب
+            'at_human'  => $atHuman, // ← “قبل دقيقة / منذ ساعة …”
+            'sort_key'  => $sortKey * 1000 + (int) $log->id,
         ];
     }
 
@@ -273,6 +300,60 @@ class ViewProductionTimeline extends Page
         if ($m)   $parts[] = "{$m} دقيقة";
         if ($sec || empty($parts)) $parts[] = "{$sec} ثانية";
         return implode(' و ', $parts);
+    }
+
+    private function ownerRoleLabel(?string $role): ?string
+    {
+        if (!$role) return null;
+        return $this->i18n['roles'][$role] ?? $role;
+    }
+
+    /** وصف عربي مبسّط لمصفوفة data عند الأنواع غير المعروفة */
+    private function describeData(array $data): string
+    {
+        if (empty($data)) return '—';
+
+        // معالجة from/to إن وجدت
+        $parts = [];
+        if (isset($data['from']) || isset($data['to'])) {
+            $from = $data['from'] ?? null;
+            $to   = $data['to']   ?? null;
+
+            if ($from || $to) {
+                $fromStr = [];
+                if ($from['phase']  ?? false)  $fromStr[] = $this->phaseLabel((string)$from['phase']);
+                if ($from['status'] ?? false)  $fromStr[] = $this->statusLabel((string)$from['status']);
+
+                $toStr   = [];
+                if ($to['phase']    ?? false)  $toStr[]   = $this->phaseLabel((string)$to['phase']);
+                if ($to['status']   ?? false)  $toStr[]   = $this->statusLabel((string)$to['status']);
+
+                if ($fromStr || $toStr) {
+                    $parts[] = 'من: ' . (implode(' / ', $fromStr) ?: '—') . ' → إلى: ' . (implode(' / ', $toStr) ?: '—');
+                }
+            }
+        }
+
+        // مفاتيح شائعة أخرى
+        $map = [
+            'phase'         => fn($v) => $this->phaseLabel((string)$v),
+            'status'        => fn($v) => $this->statusLabel((string)$v),
+            'owner_role'    => fn($v) => $this->ownerRoleLabel((string)$v) ?? (string)$v,
+            'project_id'    => fn($v) => (string)$v,
+            'files_created' => fn($v) => (string)$v,
+            'tasks_created' => fn($v) => (string)$v,
+            'wait_seconds'  => fn($v) => $this->secondsToHuman((int)$v),
+            'note'          => fn($v) => (string)$v,
+        ];
+
+        foreach ($map as $k => $format) {
+            if (array_key_exists($k, $data) && $data[$k] !== null) {
+                $label = $this->i18n['keys'][$k] ?? $k;
+                $parts[] = $label . ': ' . $format($data[$k]);
+            }
+        }
+
+        return $parts ? implode(' | ', $parts) : json_encode($data, JSON_UNESCAPED_UNICODE);
     }
 
     private function phaseLabel(string $phase): string

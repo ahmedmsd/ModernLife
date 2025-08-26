@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\{ProductionRequest, Project, ProductionTask, Department, ProductionTasksLog};
+use App\Models\{ProductionRequest, Project, ProductionTask, Department, TaskLog};
 use Illuminate\Support\Facades\DB;
 
 class CreateTasksFromRequest
@@ -35,14 +35,14 @@ class CreateTasksFromRequest
                     'project_id'              => $project->id,
                     'department_id'           => $file->department_id,
                     'assigned_to_employee_id' => $managerEmployeeId, // يُسند لمدير القسم إن وُجد
-                    'assigned_budget'         => $pr->total_price ?: 0, // يمكن لاحقًا تخصيص ميزانية لكل مهمة
+                    'estimated_cost'          => $file->estimated_cost ?: 0, // يمكن لاحقًا تخصيص ميزانية لكل مهمة
                     'file_path'               => $file->file_path,
                     'status'                  => $managerEmployeeId ? 'assigned' : 'pending',
                     'assigned_at'             => $managerEmployeeId ? now() : null,
                 ]);
 
                 // لوج
-                ProductionTasksLog::create([
+                TaskLog::create([
                     'task_id'     => $task->id,
                     'type'        => 'created',
                     'data'        => ['status' => $task->status, 'department_id' => $file->department_id],

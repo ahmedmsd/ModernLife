@@ -69,7 +69,10 @@ class Employee extends Authenticatable
     {
         return $this->user->email ?? null;
     }
-
+    public function routeNotificationForWhatsApp(): ?string
+    {
+        return $this->mobile ?? null;
+    }
     public function getNameAttribute(): ?string
     {
         return $this->attributes['employee_name'] ?? $this->user->name ?? null;

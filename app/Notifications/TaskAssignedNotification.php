@@ -27,7 +27,7 @@ class TaskAssignedNotification extends Notification implements ShouldQueue
         $project   = $this->task->project;
         $deptName  = optional($this->task->department)->dept_name;
         $dueDate   = $this->task->due_date?->format('Y-m-d');
-        $budget    = $this->task->assigned_budget ? number_format($this->task->assigned_budget, 2) . ' SAR' : '—';
+        $budget    = $this->task->estimated_cost ? number_format($this->task->estimated_cost, 2) . ' SAR' : '—';
         $status    = $this->task->status;
         $notes     = $this->task->notes ?: '—';
 

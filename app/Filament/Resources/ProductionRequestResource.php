@@ -188,7 +188,7 @@ class ProductionRequestResource extends Resource
                         'closed'                     => 'gray',
                         default                      => 'secondary',
                     })
-                    ->formatStateUsing(fn ($state) => $state ? __($state) : '—'),
+                    ->formatStateUsing(fn ($state) => $state ? static::phaseLabel((string) $state) : '—'),
 
                 TextColumn::make('phase_status')
                     ->label('الحالة')
@@ -207,7 +207,7 @@ class ProductionRequestResource extends Resource
                         'cancelled'      => 'gray',
                         default          => 'secondary',
                     })
-                    ->formatStateUsing(fn ($state) => $state ?: '—'),
+                    ->formatStateUsing(fn ($state) => $state ? static::statusLabel((string) $state) : '—'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
@@ -220,6 +220,42 @@ class ProductionRequestResource extends Resource
                 Tables\Actions\DeleteAction::make(),
             ]);
     }
+
+    protected static function phaseLabel(string $phase): string
+    {
+        return match ($phase) {
+            'sales_intake'               => 'استلام المبيعات',
+            'showroom_review'            => 'مراجعة المعرض',
+            'factory_intake'             => 'استلام المصنع',
+            'department_assignment'      => 'إسناد الأقسام',
+            'purchasing'                 => 'المشتريات',
+            'manufacturing'              => 'التصنيع',
+            'quality_after_manufacture'  => 'جودة ما بعد التصنيع',
+            'installation'               => 'التركيب',
+            'quality_after_installation' => 'جودة ما بعد التركيب',
+            'closed'                     => 'مغلق',
+            default                      => $phase,
+        };
+    }
+
+    protected static function statusLabel(string $status): string
+    {
+        return match ($status) {
+            'pending'        => 'قيد الانتظار',
+            'received'       => 'تم الاستلام',
+            'under_review'   => 'قيد المراجعة',
+            'approved'       => 'معتمد',
+            'rejected'       => 'مرفوض',
+            'in_progress'    => 'قيد التنفيذ',
+            'materials_prep' => 'تحضير الخامات',
+            'materials_done' => 'تم توفير الخامات',
+            'on_hold'        => 'معلق',
+            'completed'      => 'مكتمل',
+            'cancelled'      => 'ملغي',
+            default          => $status,
+        };
+    }
+
 
     public static function getPages(): array
     {

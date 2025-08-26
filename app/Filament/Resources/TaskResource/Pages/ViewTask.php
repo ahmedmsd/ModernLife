@@ -11,16 +11,20 @@ use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Carbon;
 use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\Notification as LaravelNotification;
+use App\Notifications\ActionHandoffNotification;
 
 // موديلات
 use App\Models\ProductionTask;
 use App\Models\TaskLog;
 use App\Models\MaterialRequest;
 use App\Models\Employee;
+use App\Services\ProductionRequestWorkflow;
 
 class ViewTask extends ViewRecord
 {
@@ -36,19 +40,19 @@ class ViewTask extends ViewRecord
     {
         parent::mount($record);
 
-        // تحميل العلاقات المهمة
+        // تحميل العلاقات المطلوبة فقط
         $this->record->load([
             'project:id,project_name,production_request_id',
-            'project.productionRequest:id,total_price',
+            'project.productionRequest:id',
             'department:dept_id,dept_name',
             'employee:employee_id,employee_name,user_id',
             'logs.causer:id,name',
-            'materialRequests:id,task_id,status,requested_at,approved_at,provided_at,expected_delivery_at,estimated_cost,po_number',
+            'materialRequests:id,task_id,status,requested_at,provided_at,expected_delivery_at,estimated_cost,actual_cost,po_number,po_file',
         ]);
     }
 
     /* ===============================
-     * مسارات رجوع الخبز/التوجيه
+     * تنقّل
      * ===============================*/
     protected function getParentTasksUrl(): string
     {
@@ -87,11 +91,20 @@ class ViewTask extends ViewRecord
     }
 
     /* ===============================
-     * أدوات الحالة/الألوان (الحالات الجديدة)
+     * حالات/ألوان
      * ===============================*/
-    private function normalizeStatus(?string $s): ?string
+    private function normalizeStatus(mixed $s): ?string
     {
-        // دعم قيَم قديمة لو كانت موجودة في اللوج/السجلات
+        if (is_array($s)) {
+            $s = $s['status'] ?? $s['to'] ?? $s['from'] ?? null;
+        }
+        if ($s instanceof \BackedEnum) {
+            $s = $s->value;
+        }
+        if ($s === null) return null;
+
+        $s = (string) $s;
+
         return match ($s) {
             'assigned'     => 'pending',
             'acknowledged' => 'received',
@@ -108,19 +121,20 @@ class ViewTask extends ViewRecord
         $val = $this->normalizeStatus($val);
 
         return match ($val) {
-            'pending'         => 'بانتظار التأكيد',
-            'received'        => 'تم الاستلام',
-            'under_review'    => 'قيد المراجعة',
-            'approved'        => 'معتمد',
-            'rejected'        => 'مرفوض',
-            'in_progress'     => 'قيد التنفيذ',
-            'materials_wait'  => 'بانتظار اعتماد المشتريات',
-            'materials_prep'  => 'جارٍ تجهيز الخامات',
-            'materials_done'  => 'تم توفير الخامات',
-            'on_hold'         => 'متوقفة مؤقتًا',
-            'completed'       => 'مكتملة',
-            'cancelled'       => 'ملغاة',
-            default           => $val,
+            'pending'            => 'بانتظار التأكيد',
+            'received'           => 'تم الاستلام',
+            'waiting_production' => 'بانتظار التصنيع',
+            'under_review'       => 'قيد المراجعة',
+            'approved'           => 'معتمد',
+            'rejected'           => 'مرفوض',
+            'in_progress'        => 'قيد التنفيذ',
+            'materials_wait'     => 'بانتظار اعتماد المشتريات',
+            'materials_prep'     => 'جارٍ تجهيز الخامات',
+            'materials_done'     => 'تم توفير الخامات',
+            'on_hold'            => 'متوقفة مؤقتًا',
+            'completed'          => 'مكتملة',
+            'cancelled'          => 'ملغاة',
+            default              => $val,
         };
     }
 
@@ -129,19 +143,20 @@ class ViewTask extends ViewRecord
         $val = $this->normalizeStatus($val);
 
         return match ($val) {
-            'pending'         => 'warning',
-            'received'        => 'info',
-            'under_review'    => 'cyan',
-            'approved'        => 'success',
-            'rejected'        => 'danger',
-            'in_progress'     => 'primary',
-            'materials_wait'  => 'warning',
-            'materials_prep'  => 'primary',
-            'materials_done'  => 'success',
-            'on_hold'         => 'gray',
-            'completed'       => 'success',
-            'cancelled'       => 'gray',
-            default           => 'secondary',
+            'pending'            => 'warning',
+            'received'           => 'info',
+            'waiting_production' => 'warning',
+            'under_review'       => 'cyan',
+            'approved'           => 'success',
+            'rejected'           => 'danger',
+            'in_progress'        => 'primary',
+            'materials_wait'     => 'warning',
+            'materials_prep'     => 'primary',
+            'materials_done'     => 'success',
+            'on_hold'            => 'gray',
+            'completed'          => 'success',
+            'cancelled'          => 'gray',
+            default              => 'secondary',
         };
     }
 
@@ -149,19 +164,20 @@ class ViewTask extends ViewRecord
     {
         $status = $this->normalizeStatus($status);
         return match ($status) {
-            'pending'         => '#f59e0b', // amber
-            'received'        => '#3b82f6', // blue
-            'under_review'    => '#06b6d4', // cyan
-            'approved'        => '#10b981', // emerald
-            'rejected'        => '#ef4444', // red
-            'in_progress'     => '#0ea5e9', // sky
-            'materials_wait'  => '#f59e0b', // amber
-            'materials_prep'  => '#0ea5e9', // sky
-            'materials_done'  => '#22c55e', // green
-            'on_hold'         => '#6b7280', // gray
-            'completed'       => '#22c55e', // green
-            'cancelled'       => '#9ca3af', // gray-400
-            default           => '#6b7280',
+            'pending'            => '#f59e0b',
+            'received'           => '#3b82f6',
+            'waiting_production' => '#f59e0b',
+            'under_review'       => '#06b6d4',
+            'approved'           => '#10b981',
+            'rejected'           => '#ef4444',
+            'in_progress'        => '#0ea5e9',
+            'materials_wait'     => '#f59e0b',
+            'materials_prep'     => '#0ea5e9',
+            'materials_done'     => '#22c55e',
+            'on_hold'            => '#6b7280',
+            'completed'          => '#22c55e',
+            'cancelled'          => '#9ca3af',
+            default              => '#6b7280',
         };
     }
 
@@ -171,9 +187,87 @@ class ViewTask extends ViewRecord
         return $s instanceof \BackedEnum ? $s->value : (string) $s;
     }
 
+    /* نسبة السقف (من 0..100 في الإعدادات) ← كسر (0..1) */
+    private function budgetCapFraction(): float
+    {
+        $defaultPercent = 50.0;
+        $raw = null;
+
+        try {
+            $raw = config('system.purchasing_budget_cap_pct');
+
+            if ($raw === null) {
+                if (Schema::hasTable('system_settings')) {
+                    $raw = DB::table('system_settings')
+                        ->where('key', 'purchasing_budget_cap_pct')
+                        ->value('value');
+                } elseif (Schema::hasTable('settings')) {
+                    $raw = DB::table('settings')
+                        ->where('key', 'purchasing_budget_cap_pct')
+                        ->value('value');
+                }
+            }
+        } catch (\Throwable) {}
+
+        $percent = is_null($raw) ? $defaultPercent : (float) $raw;
+        return max(0.0, min(1.0, $percent / 100.0));
+    }
+
     /* ===============================
-     * ملكية/إرسال/استلام (للـ 3 أيام تذكير)
+     * تنبيهات للمسؤول
      * ===============================*/
+    private function usersByRole(?string $role)
+    {
+        if (!$role) return collect();
+        $r = Role::where('name', $role)->first();
+        return $r ? $r->users : collect();
+    }
+
+    // أرسل لمجموعة مستخدمين: إشعار داخل النظام + بريد
+    private function notifyUsers($users, string $title, ?string $body = null, ?string $url = null): void
+    {
+        // 1) إشعارات قاعدة البيانات (Filament)
+        foreach ($users as $user) {
+            \Filament\Notifications\Notification::make()
+                ->title($title)
+                ->body($body ?? '')
+                ->sendToDatabase($user);
+        }
+
+        // 2) بريد (Laravel Notifications)
+        if ($users && count($users)) {
+            LaravelNotification::send($users, new ActionHandoffNotification($title, $body, $url));
+        }
+    }
+
+// أرسل للمالك الحالي/المحدد: إشعار داخل النظام + بريد
+    private function notifyOwner(
+        string $title,
+        ?string $body = null,
+        ?string $roleOverride = null,
+        ?int $userIdOverride = null,
+        ?string $url = null
+    ): void {
+        // مستخدم محدد؟
+        if ($userIdOverride) {
+            $user = \App\Models\User::find($userIdOverride);
+            if ($user) {
+                \Filament\Notifications\Notification::make()->title($title)->body($body ?? '')->sendToDatabase($user);
+                LaravelNotification::send($user, new ActionHandoffNotification($title, $body, $url));
+                return;
+            }
+        }
+
+        // حسب الدور
+        $role  = $roleOverride ?? $this->record->current_owner_role;
+        $users = $this->usersByRole($role);
+        if ($users->count()) {
+            $this->notifyUsers($users, $title, $body, $url);
+        }
+    }
+
+
+    /* ملكية */
     private function setOwner(?string $role, ?int $userId = null, bool $touchSent = true, ?string $note = null): void
     {
         $payload = [
@@ -193,6 +287,14 @@ class ViewTask extends ViewRecord
             'causer_id'   => Auth::id(),
             'happened_at' => now(),
         ]);
+
+        // تنبيه المالك الجديد مباشرة
+        $this->notifyOwner(
+            title: 'لديك مهمة بانتظار الإجراء',
+            body: 'تم تحويل ملكية المهمة إليك. ' . ($note ? "ملاحظة: {$note}" : ''),
+            roleOverride: $role,
+            userIdOverride: $userId
+        );
     }
 
     private function markOwnerReceived(?string $note = null): void
@@ -209,11 +311,12 @@ class ViewTask extends ViewRecord
             'causer_id'   => Auth::id(),
             'happened_at' => now(),
         ]);
+
+        // تنبيه المالك الحالي
+        $this->notifyOwner('تم تسجيل تأكيد الاستلام', $note);
     }
 
-    /* ===============================
-     * مواد/مشتريات
-     * ===============================*/
+    /* مشتريات */
     protected function hasOpenMaterialsRequest(): bool
     {
         return $this->record->materialRequests()
@@ -221,6 +324,57 @@ class ViewTask extends ViewRecord
             ->whereIn('status', ['requested','approved'])
             ->exists();
     }
+
+    /* إقفال المشروع/الطلب إن اكتملت كل المهام */
+    private function finalizeIfProjectDone(): void
+    {
+        $proj = $this->record->project;
+        if (! $proj) return;
+
+        $hasOpen = $proj->tasks()
+            ->whereNotIn('status', ['completed','cancelled'])
+            ->exists();
+
+        if (! $hasOpen) {
+            if (Schema::hasColumn('projects', 'status')) {
+                $proj->update(['status' => 'completed']);
+            }
+            try {
+                if (method_exists($proj, 'productionRequest') && $proj->productionRequest) {
+                    app(ProductionRequestWorkflow::class)->finalizeRequestAfterProjectDone($proj->productionRequest);
+                }
+            } catch (\Throwable $e) {
+                // تجاهل لو الخدمة غير متاحة
+            }
+        }
+    }
+
+    private function lastQaPhase(): ?string
+    {
+        $log = $this->record->logs()
+            ->where('type', 'status_changed')
+            ->orderByDesc('happened_at')
+            ->orderByDesc('id')
+            ->get()
+            ->first(function ($l) {
+                $data = is_array($l->data) ? $l->data
+                    : (is_string($l->data) ? (json_decode($l->data, true) ?? []) : (array) $l->data);
+                return ($data['to'] ?? null) === 'under_review';
+            });
+
+        if (! $log) return null;
+
+        $data = is_array($log->data) ? $log->data
+            : (is_string($log->data) ? (json_decode($log->data, true) ?? []) : (array) $log->data);
+
+        return $data['phase'] ?? null; // 'post_manufacture_qa' أو 'post_install_qa'
+    }
+
+    private function isQaAcknowledged(): bool
+    {
+        return ! is_null($this->record->received_by_owner_at);
+    }
+
 
     /* ===============================
      * أزرار رأس الصفحة
@@ -230,11 +384,14 @@ class ViewTask extends ViewRecord
         $task = $this->record;
 
         return [
-            // 1) إسناد لمدير القسم => pending + تعيين المالك
+            // 1) إسناد لمدير القسم (لو غير مُسند)
             Action::make('assign_to_dept_manager')
                 ->label('إسناد لمدير القسم')
                 ->icon('heroicon-o-user-plus')
-                ->visible(fn () => Auth::user()?->hasAnyRole(['factory_manager','admin','super-admin']))
+                ->visible(fn () =>
+                    Auth::user()?->hasAnyRole(['factory_manager','admin','super-admin'])
+                    && blank($task->assigned_to_employee_id)
+                )
                 ->form([
                     Forms\Components\Select::make('employee_id')
                         ->label('المسؤول')
@@ -269,16 +426,21 @@ class ViewTask extends ViewRecord
                         'happened_at' => now(),
                     ]);
 
+                    // تنبيه إضافي: للمصنع بأن الإسناد تم
+                    $this->notifyOwner('تم إسناد المهمة', 'تم إسناد المهمة لمدير القسم.');
+
                     Notification::make()->title('تم الإسناد')->success()->send();
                 }),
 
-            // 2) تأكيد الاستلام (مدير القسم) => received + توقيت الاستلام
+            // 2) تأكيد استلام المهمة (بعد الإسناد)
             Action::make('acknowledge')
                 ->label('تأكيد استلام المهمة')
                 ->icon('heroicon-o-hand-thumb-up')
                 ->color('success')
-                ->visible(fn () => Auth::user()?->hasAnyRole(['department_manager','admin','super-admin'])
-                    && $this->statusVal() === 'pending')
+                ->visible(fn () =>
+                    Auth::user()?->hasAnyRole(['department_manager','admin','super-admin'])
+                    && ($this->statusVal() === 'pending' || $this->statusVal() === 'assigned')
+                )
                 ->action(function () {
                     $task = $this->record;
                     $from = $this->statusVal();
@@ -298,17 +460,39 @@ class ViewTask extends ViewRecord
                         'happened_at' => now(),
                     ]);
 
+                    // تنبيه: لمدير القسم (المالك الحالي)
+                    $this->notifyOwner('تم تأكيد الاستلام', 'يمكنك الآن طلب الخامات إذا لزم.');
+
                     Notification::make()->title('تم تأكيد الاستلام')->success()->send();
                 }),
 
-            // 3) طلب خامات => materials_wait + تحويل المالك للمشتريات
+            // 3) طلب خامات + رفع ملف أمر الشراء (PO) — بعد الاستلام
             Action::make('request_materials')
                 ->label('طلب خامات')
                 ->icon('heroicon-o-truck')
                 ->color('warning')
-                ->visible(fn () => Auth::user()?->hasAnyRole(['department_manager','admin','super-admin']))
+                ->visible(fn () =>
+                    Auth::user()?->hasAnyRole(['department_manager','admin','super-admin'])
+                    && $this->statusVal() === 'received'
+                    && ! $this->hasOpenMaterialsRequest()
+                )
                 ->form([
-                    Forms\Components\Textarea::make('note')->label('تفاصيل المطلوب')->rows(3)->required(),
+                    Forms\Components\Textarea::make('note')
+                        ->label('تفاصيل المطلوب')
+                        ->rows(3)
+                        ->required(),
+                    Forms\Components\FileUpload::make('po_file')
+                        ->label('ملف أمر الشراء (PO)')
+                        ->helperText('PDF أو صورة — حد أقصى 20MB')
+                        ->disk('public')
+                        ->directory('purchase_orders/' . now()->format('Y/m'))
+                        ->acceptedFileTypes(['application/pdf', 'image/*'])
+                        ->maxSize(20_480)
+                        ->openable()
+                        ->downloadable()
+                        ->moveFiles()
+                        ->visibility('public')
+                        ->required(),
                 ])
                 ->action(function (array $data) {
                     $task = $this->record;
@@ -321,10 +505,10 @@ class ViewTask extends ViewRecord
                         'requested_at'  => now(),
                         'status'        => 'requested',
                         'note'          => $data['note'],
+                        'po_file'       => $data['po_file'],
                     ]);
 
                     $task->update(['status' => 'materials_wait']);
-
                     $this->setOwner('purchasing_manager', null, true, 'طلب خامات');
 
                     TaskLog::create([
@@ -335,20 +519,26 @@ class ViewTask extends ViewRecord
                         'happened_at' => now(),
                     ]);
 
-                    Notification::make()->title('تم إرسال طلب الخامات')->success()->send();
+                    // تنبيه للمشتريات (مالك جديد)
+                    $this->notifyOwner('طلب خامات جديد بانتظارك', 'برجاء مراجعة الطلب وتحديد موعد التوريد.');
+
+                    Notification::make()->title('تم إرسال طلب الخامات مرفقًا بأمر الشراء')->success()->send();
                 }),
 
-            // 4) اعتماد المشتريات + سقف الشراء => materials_prep
-            Action::make('purchasing_approve')
-                ->label('اعتماد طلب الخامات')
+            // 4) (المشتريات) تأكيد استلام طلب الخامات + موعد التوريد المتوقع
+            Action::make('purchasing_receive')
+                ->label('تأكيد استلام طلب الخامات')
                 ->icon('heroicon-o-check-badge')
                 ->color('primary')
-                ->visible(fn () => Auth::user()?->hasAnyRole(['purchasing_manager','admin','super-admin'])
-                    && $this->hasOpenMaterialsRequest())
+                ->visible(fn () =>
+                    Auth::user()?->hasAnyRole(['purchasing_manager','admin','super-admin'])
+                    && $this->statusVal() === 'materials_wait'
+                    && $this->hasOpenMaterialsRequest()
+                )
                 ->form([
                     Forms\Components\TextInput::make('po_number')->label('رقم الطلب/المرجع'),
-                    Forms\Components\TextInput::make('estimated_cost')->label('التكلفة المتوقعة')->numeric()->required(),
                     Forms\Components\DateTimePicker::make('expected_delivery_at')->label('موعد التوريد المتوقع')->required(),
+                    Forms\Components\TextInput::make('estimated_cost')->label('التكلفة المتوقعة')->numeric(),
                     Forms\Components\Textarea::make('note')->label('ملاحظة')->rows(2),
                 ])
                 ->action(function (array $data) {
@@ -360,52 +550,42 @@ class ViewTask extends ViewRecord
                         return;
                     }
 
-                    // سقف الشراء
-                    $percent = (float) config('manufacturing.purchase_ceiling_percent', 50);
-                    $orderPrice = (float) ($task->project?->productionRequest?->total_price ?? 0);
-                    $ceiling = $orderPrice * ($percent / 100);
-
-                    if (($data['estimated_cost'] ?? 0) > $ceiling && $orderPrice > 0) {
-                        foreach (Role::whereIn('name', ['factory_manager','super-admin'])->get() as $role) {
-                            foreach ($role->users as $user) {
-                                Notification::make()
-                                    ->title('تنبيه: تجاوز حد المشتريات')
-                                    ->body("التكلفة {$data['estimated_cost']} تجاوزت {$percent}% من سعر الطلب.")
-                                    ->sendToDatabase($user);
-                            }
-                        }
-                        Notification::make()->warning()
-                            ->title('تم الاعتماد مع تحذير الميزانية')
-                            ->body('التكلفة التقديرية تخطّت الحد المسموح.')
-                            ->send();
-                    } else {
-                        Notification::make()->success()
-                            ->title('تم اعتماد طلب الشراء')
-                            ->send();
-                    }
-
                     $mr->update([
                         'po_number'            => $data['po_number'] ?? $mr->po_number,
-                        'estimated_cost'       => $data['estimated_cost'],
+                        'estimated_cost'       => $data['estimated_cost'] ?? $mr->estimated_cost,
                         'expected_delivery_at' => $data['expected_delivery_at'],
                         'note'                 => trim(($mr->note ? $mr->note . "\n" : '') . ($data['note'] ?? '')),
                         'status'               => 'approved',
-                        'approved_at'          => now(),
-                        'approved_by'          => Auth::id(),
                     ]);
 
                     $task->update(['status' => 'materials_prep']);
-                    $this->setOwner('purchasing_manager', null, false, 'اعتماد المشتريات');
+                    $this->setOwner('purchasing_manager', null, false, 'تأكيد استلام طلب الخامات');
+
+                    // تنبيه للمشتريات (نفس المالك) لتتبع التحضير
+                    $this->notifyOwner('تم تسجيل موعد التوريد', 'يرجى متابعة توريد الخامات في الموعد المحدد.');
+
+                    Notification::make()->title('تم تسجيل استلام طلب الخامات وتحديد موعد التوريد')->success()->send();
                 }),
 
-            // 5) تأكيد توفير الخامات => materials_done + إعادة المالك لمدير القسم
+            // 5) (المشتريات) تأكيد توفير الخامات + إدخال تكلفة الشراء الفعلية + مقارنة بسقف المهمة
             Action::make('materials_provided')
-                ->label('تأكيد توفير الخامات')
-                ->icon('heroicon-o-box')
+                ->label('تأكيد توفر الخامات')
+                ->icon('heroicon-o-archive-box')
                 ->color('success')
-                ->visible(fn () => Auth::user()?->hasAnyRole(['purchasing_manager','admin','super-admin'])
-                    && $this->hasOpenMaterialsRequest())
-                ->action(function () {
+                ->visible(fn () =>
+                    Auth::user()?->hasAnyRole(['purchasing_manager','admin','super-admin'])
+                    && $this->hasOpenMaterialsRequest()
+                )
+                ->form([
+                    Forms\Components\TextInput::make('actual_cost')
+                        ->label('قيمة الشراء الفعلية')
+                        ->numeric()
+                        ->required(),
+                    Forms\Components\Textarea::make('note')
+                        ->label('ملاحظة')
+                        ->rows(2),
+                ])
+                ->action(function (array $data) {
                     $task = $this->record;
                     $mr   = $task->materialRequests()->whereNull('provided_at')->latest()->first();
 
@@ -414,7 +594,14 @@ class ViewTask extends ViewRecord
                         return;
                     }
 
+                    $capFraction = $this->budgetCapFraction(); // مثال: 50% => 0.5
+                    $taskSales   = (float) ($task->estimated_cost ?? 0);
+                    $ceiling     = $taskSales > 0 ? $taskSales * $capFraction : 0.0;
+                    $actual      = (float) ($data['actual_cost'] ?? 0);
+
                     $mr->update([
+                        'actual_cost' => $actual,
+                        'note'        => trim(($mr->note ? $mr->note . "\n" : '') . ($data['note'] ?? '')),
                         'provided_by' => Auth::id(),
                         'provided_at' => now(),
                         'status'      => 'fulfilled',
@@ -422,78 +609,114 @@ class ViewTask extends ViewRecord
 
                     $task->update(['status' => 'materials_done']);
 
-                    // إعادة المالك لمدير القسم
                     $deptManagerEmp = Employee::whereHas('roles', fn($q)=>$q->where('name','department_manager'))
                         ->where('department_id', $task->department_id)
                         ->first();
                     $this->setOwner('department_manager', $deptManagerEmp?->user_id, true, 'توفير الخامات');
 
-                    Notification::make()->title('تم توفير الخامات')->success()->send();
+                    // تنبيه لمدير القسم (مالك جديد)
+                    $this->notifyOwner('الخامات جاهزة للاستلام', 'يرجى تأكيد استلام الخامات ومتابعة تحديد المواعيد.');
+
+                    // تحذير تجاوز السقف
+                    if ($ceiling > 0 && $actual > $ceiling) {
+                        $roles = Role::whereIn('name', ['factory_manager','admin','super-admin'])->get();
+                        foreach ($roles as $role) {
+                            foreach ($role->users as $user) {
+                                Notification::make()
+                                    ->title('تنبيه: تجاوز سقف المشتريات للمهمة')
+                                    ->body('التكلفة الفعلية ' . number_format($actual, 2) . ' تجاوزت السقف ' . number_format($ceiling, 2) . '.')
+                                    ->sendToDatabase($user);
+                            }
+                        }
+                        Notification::make()
+                            ->warning()
+                            ->title('تم توفير الخامات مع تحذير تجاوز السقف')
+                            ->send();
+                    } else {
+                        Notification::make()
+                            ->success()
+                            ->title('تم توفير الخامات بنجاح')
+                            ->send();
+                    }
                 }),
 
-            // 6) تأكيد استلام الخامات (مدير القسم) => in_progress
+            // 6) (مدير القسم) تأكيد استلام الخامات + تحديد المواعيد → waiting_production
             Action::make('materials_received_ok')
                 ->label('تأكيد استلام الخامات')
                 ->icon('heroicon-o-hand-thumb-up')
                 ->color('success')
-                ->visible(fn () => Auth::user()?->hasAnyRole(['department_manager','admin','super-admin'])
-                    && $this->statusVal() === 'materials_done')
-                ->action(function () {
+                ->visible(fn () =>
+                    Auth::user()?->hasAnyRole(['department_manager','admin','super-admin'])
+                    && $this->statusVal() === 'materials_done'
+                )
+                ->form([
+                    Forms\Components\DatePicker::make('planned_start')->label('بداية التصنيع (متوقعة)')->required(),
+                    Forms\Components\DatePicker::make('planned_install')->label('موعد التركيب (متوقع)')->required(),
+                ])
+                ->action(function (array $data) {
                     $task = $this->record;
-                    $from = $this->statusVal();
 
-                    $task->update(['status' => 'in_progress']);
-                    $this->markOwnerReceived('تم استلام الخامات');
+                    $task->update([
+                        'status'               => 'waiting_production',
+                        'planned_start_at'     => $data['planned_start'],
+                        'planned_install_at'   => $data['planned_install'],
+                    ]);
+
+                    $this->markOwnerReceived('تم استلام الخامات وتحديد المواعيد (بانتظار التصنيع)');
 
                     TaskLog::create([
                         'task_id'     => $task->id,
                         'type'        => 'status_changed',
-                        'data'        => ['from' => $from, 'to' => 'in_progress'],
+                        'data'        => ['from' => 'materials_done', 'to' => 'waiting_production'],
                         'causer_id'   => Auth::id(),
                         'happened_at' => now(),
                     ]);
 
-                    Notification::make()->title('بدأ التنفيذ')->success()->send();
+                    // تنبيه لمدير القسم
+                    $this->notifyOwner('بانتظار بدء التصنيع', 'اضغط بدء التصنيع عند الجاهزية.');
+
+                    Notification::make()->title('الحالة: بانتظار التصنيع')->success()->send();
                 }),
 
-            // 7) مواعيد التنفيذ المتوقع
-            Action::make('set_plan_dates')
-                ->label('تحديد المواعيد المتوقعة')
-                ->icon('heroicon-o-calendar-days')
-                ->visible(fn () => Auth::user()?->hasAnyRole(['department_manager','admin','super-admin']))
-                ->form([
-                    Forms\Components\DatePicker::make('planned_start')->label('بداية التصنيع (متوقعة)')->required(),
-                    Forms\Components\DatePicker::make('planned_end')->label('نهاية التصنيع (متوقعة)')->required(),
-                    Forms\Components\DatePicker::make('planned_install')->label('موعد التركيب (متوقع)'),
-                ])
-                ->action(function (array $data) {
-                    $this->record->update([
-                        'planned_start_at'   => $data['planned_start'],
-                        'planned_end_at'     => $data['planned_end'],
-                        'planned_install_at' => $data['planned_install'] ?? null,
-                    ]);
-
-                    TaskLog::create([
-                        'task_id'     => $this->record->id,
-                        'type'        => 'plan_set',
-                        'data'        => $data,
-                        'causer_id'   => Auth::id(),
-                        'happened_at' => now(),
-                    ]);
-
-                    Notification::make()->title('تم حفظ المواعيد')->success()->send();
-                }),
-
-            // 8) إرسال للجودة (بعد التصنيع) => under_review + تحويل المالك للجودة
-            Action::make('send_to_qa_after_manu')
-                ->label('إرسال للجودة (بعد التصنيع)')
-                ->icon('heroicon-o-arrow-right-circle')
-                ->color('info')
-                ->visible(fn () => Auth::user()?->hasAnyRole(['department_manager','admin','super-admin'])
-                    && $this->statusVal() === 'in_progress')
+            // 7) (مدير القسم) بدء التصنيع
+            Action::make('start_production')
+                ->label('بدء التصنيع')
+                ->icon('heroicon-o-play-circle')
+                ->color('primary')
+                ->visible(fn () =>
+                    Auth::user()?->hasAnyRole(['department_manager','admin','super-admin'])
+                    && $this->statusVal() === 'waiting_production'
+                )
                 ->action(function () {
                     $task = $this->record;
-                    $from = $this->statusVal();
+
+                    $task->update(['status' => 'in_progress']);
+
+                    TaskLog::create([
+                        'task_id'     => $task->id,
+                        'type'        => 'status_changed',
+                        'data'        => ['from' => 'waiting_production', 'to' => 'in_progress', 'phase' => 'manufacturing'],
+                        'causer_id'   => Auth::id(),
+                        'happened_at' => now(),
+                    ]);
+
+                    // تنبيه لمدير القسم
+                    $this->notifyOwner('بدأت أعمال التصنيع', 'يرجى الضغط على اكتمال التصنيع عند الانتهاء.');
+
+                    Notification::make()->title('بدأ التصنيع')->success()->send();
+                }),
+
+            // 8) (مدير القسم) اكتمال التصنيع → للجودة بعد التصنيع
+            Action::make('production_complete')
+                ->label('اكتمال التصنيع (إرسال للجودة)')
+                ->icon('heroicon-o-clipboard-document-check')
+                ->color('info')
+                ->visible(fn () =>
+                    Auth::user()?->hasAnyRole(['department_manager','admin','super-admin'])
+                    && $this->statusVal() === 'in_progress'
+                )
+                ->action(function () {
+                    $task = $this->record;
 
                     $task->update(['status' => 'under_review']);
                     $this->setOwner('quality_manager', null, true, 'مراجعة ما بعد التصنيع');
@@ -501,49 +724,83 @@ class ViewTask extends ViewRecord
                     TaskLog::create([
                         'task_id'     => $task->id,
                         'type'        => 'status_changed',
-                        'data'        => ['from' => $from, 'to' => 'under_review'],
+                        'data'        => ['from' => 'in_progress', 'to' => 'under_review', 'phase' => 'post_manufacture_qa'],
                         'causer_id'   => Auth::id(),
                         'happened_at' => now(),
                     ]);
 
-                    Notification::make()->title('تم إرسال المهمة للجودة')->success()->send();
+                    // تنبيه للجودة (مالك جديد)
+                    $this->notifyOwner('مهمة بانتظار فحص الجودة (بعد التصنيع)', 'يرجى الاعتماد أو الرفض.');
+
+                    Notification::make()->title('أُرسلت للجودة بعد التصنيع')->success()->send();
                 }),
 
-            // 9) اعتماد/رفض الجودة (بعد التصنيع)
+            Action::make('qa_receive')
+                ->label('تأكيد استلام مهمة الجودة')
+                ->icon('heroicon-o-hand-thumb-up')
+                ->color('success')
+                ->visible(fn () =>
+                    Auth::user()?->hasAnyRole(['quality_manager','admin','super-admin'])
+                    && $this->statusVal() === 'under_review'
+                    && is_null($this->record->received_by_owner_at)
+                )
+                ->action(function () {
+                    $this->markOwnerReceived('تأكيد استلام المراجعة من الجودة');
+                    \Filament\Notifications\Notification::make()
+                        ->title('تم تأكيد استلام مهمة الجودة')
+                        ->success()
+                        ->send();
+                }),
+
+
+            // 9) (الجودة) اعتماد/رفض الجودة بعد التصنيع
             Action::make('qa_approve_after_manu')
                 ->label('اعتماد الجودة (ما بعد التصنيع)')
                 ->icon('heroicon-o-check-badge')
                 ->color('success')
-                ->visible(fn () => Auth::user()?->hasAnyRole(['quality_manager','admin','super-admin'])
-                    && $this->statusVal() === 'under_review')
+                ->visible(fn () =>
+                    Auth::user()?->hasAnyRole(['quality_manager','admin','super-admin'])
+                    && $this->statusVal() === 'under_review'
+                    && $this->isQaAcknowledged()
+                    && $this->lastQaPhase() === 'post_manufacture_qa'
+                )
                 ->action(function () {
                     $task = $this->record;
-                    $from = $this->statusVal();
 
+                    // اعتماد ثم تحويل للتركيب (بانتظار البدء)
                     $task->update(['status' => 'approved']);
                     $this->markOwnerReceived('اعتماد الجودة بعد التصنيع');
+
+                    // إعادة توجيه للتركيب
+                    $this->setOwner('installation_manager', null, true, 'جاهز للتركيب');
 
                     TaskLog::create([
                         'task_id'     => $task->id,
                         'type'        => 'status_changed',
-                        'data'        => ['from' => $from, 'to' => 'approved'],
+                        'data'        => ['from' => 'under_review', 'to' => 'approved'],
                         'causer_id'   => Auth::id(),
                         'happened_at' => now(),
                     ]);
 
-                    Notification::make()->title('تم اعتماد الجودة')->success()->send();
+                    // تنبيه للتركيب (مالك جديد)
+                    $this->notifyOwner('مهمة جاهزة للتركيب', 'يرجى بدء أعمال التركيب.');
+
+                    Notification::make()->title('تم الاعتماد: جاهز للتركيب')->success()->send();
                 }),
 
             Action::make('qa_reject_after_manu')
                 ->label('رفض الجودة (إعادة تصنيع)')
                 ->icon('heroicon-o-x-circle')
                 ->color('danger')
-                ->visible(fn () => Auth::user()?->hasAnyRole(['quality_manager','admin','super-admin'])
-                    && $this->statusVal() === 'under_review')
+                ->visible(fn () =>
+                    Auth::user()?->hasAnyRole(['quality_manager','admin','super-admin'])
+                    && $this->statusVal() === 'under_review'
+                    && $this->isQaAcknowledged()
+                    && $this->lastQaPhase() === 'post_manufacture_qa'
+                )
                 ->form([Forms\Components\Textarea::make('reason')->label('سبب الرفض')->required()->rows(3)])
                 ->action(function (array $data) {
                     $task = $this->record;
-                    $from = $this->statusVal();
 
                     $task->update(['status' => 'rejected']);
                     // إعادة المالك لمدير القسم لإعادة العمل
@@ -555,48 +812,59 @@ class ViewTask extends ViewRecord
                     TaskLog::create([
                         'task_id'     => $task->id,
                         'type'        => 'rejected',
-                        'data'        => ['from' => $from, 'to' => 'rejected', 'reason' => $data['reason']],
+                        'data'        => ['from' => 'under_review', 'to' => 'rejected', 'reason' => $data['reason']],
                         'causer_id'   => Auth::id(),
                         'happened_at' => now(),
                     ]);
+
+                    // تنبيه لمدير القسم (مالك جديد)
+                    $this->notifyOwner('إرجاع من الجودة لإعادة التصنيع', 'يرجى معالجة الملاحظات وإعادة الإرسال للجودة.');
 
                     Notification::make()->title('تم الرفض وإرجاع المهمة للتصنيع')->warning()->send();
                 }),
 
-            // 10) إرسال للتركيب => in_progress + تحويل المالك للتركيب
-            Action::make('send_to_install')
-                ->label('إرسال للتركيب')
-                ->icon('heroicon-o-truck')
-                ->visible(fn () => Auth::user()?->hasAnyRole(['factory_manager','admin','super-admin'])
-                    && $this->statusVal() === 'approved')
+            // 10) (التركيب) بدء التركيب (بعد اعتماد الجودة)
+            Action::make('install_start')
+                ->label('بدء التركيب')
+                ->icon('heroicon-o-play-circle')
+                ->color('primary')
+                ->visible(fn () =>
+                    Auth::user()?->hasAnyRole(['installation_manager','admin','super-admin'])
+                    && $this->statusVal() === 'approved'
+                    && ($this->record->current_owner_role === 'installation_manager')
+                )
                 ->action(function () {
                     $task = $this->record;
-                    $from = $this->statusVal();
 
                     $task->update(['status' => 'in_progress']);
-                    $this->setOwner('installation_manager', null, true, 'بدء التركيب');
+                    $this->markOwnerReceived('بدء أعمال التركيب');
 
                     TaskLog::create([
                         'task_id'     => $task->id,
                         'type'        => 'status_changed',
-                        'data'        => ['from' => $from, 'to' => 'in_progress', 'phase' => 'installation'],
+                        'data'        => ['from' => 'approved', 'to' => 'in_progress', 'phase' => 'installation'],
                         'causer_id'   => Auth::id(),
                         'happened_at' => now(),
                     ]);
 
-                    Notification::make()->title('تم إرسال المهمة للتركيب')->success()->send();
+                    // تنبيه لمسؤول التركيب (المالك الحالي)
+                    $this->notifyOwner('بدأت أعمال التركيب', 'اكمل ثم أرسل للجودة بعد التركيب.');
+
+                    Notification::make()->title('بدأ التركيب')->success()->send();
                 }),
 
-            // 11) إرسال للجودة (بعد التركيب) => under_review + تحويل المالك للجودة
-            Action::make('send_to_qa_after_install')
-                ->label('إرسال للجودة (بعد التركيب)')
-                ->icon('heroicon-o-arrow-right-circle')
+            // 11) (التركيب) اكتمال التركيب → للجودة بعد التركيب
+            Action::make('installation_complete')
+                ->label('اكتمال التركيب (إرسال للجودة)')
+                ->icon('heroicon-o-clipboard-document-check')
                 ->color('info')
-                ->visible(fn () => Auth::user()?->hasAnyRole(['installation_manager','factory_manager','admin','super-admin'])
-                    && $this->statusVal() === 'in_progress')
+                ->visible(fn () =>
+                    Auth::user()?->hasAnyRole(['installation_manager','admin','super-admin'])
+                    && $this->statusVal() === 'in_progress'
+                    && ($this->record->current_owner_role === 'installation_manager')
+                )
                 ->action(function () {
                     $task = $this->record;
-                    $from = $this->statusVal();
 
                     $task->update(['status' => 'under_review']);
                     $this->setOwner('quality_manager', null, true, 'مراجعة ما بعد التركيب');
@@ -604,21 +872,28 @@ class ViewTask extends ViewRecord
                     TaskLog::create([
                         'task_id'     => $task->id,
                         'type'        => 'status_changed',
-                        'data'        => ['from' => $from, 'to' => 'under_review', 'phase' => 'post_install_qa'],
+                        'data'        => ['from' => 'in_progress', 'to' => 'under_review', 'phase' => 'post_install_qa'],
                         'causer_id'   => Auth::id(),
                         'happened_at' => now(),
                     ]);
 
-                    Notification::make()->title('تم إرسال المهمة للجودة (بعد التركيب)')->success()->send();
+                    // تنبيه للجودة (مالك جديد)
+                    $this->notifyOwner('مهمة بانتظار فحص الجودة (بعد التركيب)', 'يرجى الاعتماد أو الرفض.');
+
+                    Notification::make()->title('أُرسلت للجودة بعد التركيب')->success()->send();
                 }),
 
-            // 12) اعتماد الجودة بعد التركيب وإغلاق => completed (+ سند العميل)
+            // 12) (الجودة بعد التركيب) اعتماد/رفض
             Action::make('qa_after_install_approve')
-                ->label('اعتماد الجودة بعد التركيب وإغلاق')
-                ->icon('heroicon-o-badge-check')
+                ->label('اعتماد الجودة بعد التركيب وإغلاق المهمة')
+                ->icon('heroicon-o-check-badge')
                 ->color('success')
-                ->visible(fn () => Auth::user()?->hasAnyRole(['quality_manager','admin','super-admin'])
-                    && $this->statusVal() === 'under_review')
+                ->visible(fn () =>
+                    Auth::user()?->hasAnyRole(['quality_manager','admin','super-admin'])
+                    && $this->statusVal() === 'under_review'
+                    && $this->isQaAcknowledged()
+                    && $this->lastQaPhase() === 'post_install_qa'
+                )
                 ->form([
                     Forms\Components\FileUpload::make('client_receipt')
                         ->label('سند استلام العميل (موقّع)')
@@ -627,7 +902,6 @@ class ViewTask extends ViewRecord
                 ])
                 ->action(function (array $data) {
                     $task = $this->record;
-                    $from = $this->statusVal();
 
                     $task->update([
                         'status'         => 'completed',
@@ -635,24 +909,65 @@ class ViewTask extends ViewRecord
                         'client_receipt' => $data['client_receipt'],
                     ]);
 
-                    // إغلاق الملكية
                     $this->setOwner(null, null, false, 'إغلاق المهمة');
 
                     TaskLog::create([
                         'task_id'     => $task->id,
                         'type'        => 'closed',
-                        'data'        => ['from' => $from, 'to' => 'completed', 'client_receipt' => $data['client_receipt']],
+                        'data'        => ['from' => 'under_review', 'to' => 'completed', 'client_receipt' => $data['client_receipt']],
                         'causer_id'   => Auth::id(),
                         'happened_at' => now(),
                     ]);
 
+                    // تنبيه للإدارة بإغلاق المهمة
+                    $this->notifyUsers(
+                        Role::whereIn('name',['factory_manager','admin','super-admin'])->get()->pluck('users')->flatten(),
+                        'تم إغلاق مهمة',
+                        'تم اعتماد الجودة بعد التركيب وإغلاق المهمة.'
+                    );
+
+                    // إقفال المشروع/الطلب إذا اكتملت كل المهام
+                    $this->finalizeIfProjectDone();
+
                     Notification::make()->title('تم الإغلاق وتوثيق سند العميل')->success()->send();
+                }),
+
+            Action::make('qa_after_install_reject')
+                ->label('رفض الجودة بعد التركيب (إرجاع للتركيب)')
+                ->icon('heroicon-o-x-circle')
+                ->color('danger')
+                ->visible(fn () =>
+                    Auth::user()?->hasAnyRole(['quality_manager','admin','super-admin'])
+                    && $this->statusVal() === 'under_review'
+                    && $this->isQaAcknowledged()
+                    && $this->lastQaPhase() === 'post_install_qa'
+                )
+                ->form([Forms\Components\Textarea::make('reason')->label('سبب الرفض')->required()->rows(3)])
+                ->action(function (array $data) {
+                    $task = $this->record;
+
+                    // يعود للتركيب لإصلاح الملاحظات
+                    $task->update(['status' => 'in_progress']);
+                    $this->setOwner('installation_manager', null, true, 'ملاحظات الجودة بعد التركيب');
+
+                    TaskLog::create([
+                        'task_id'     => $task->id,
+                        'type'        => 'rejected',
+                        'data'        => ['from' => 'under_review', 'to' => 'in_progress', 'reason' => $data['reason'], 'phase' => 'installation_fix'],
+                        'causer_id'   => Auth::id(),
+                        'happened_at' => now(),
+                    ]);
+
+                    // تنبيه لمسؤول التركيب (مالك جديد)
+                    $this->notifyOwner('إرجاع من الجودة لإصلاح بعد التركيب', 'يرجى معالجة الملاحظات وإعادة الإرسال للجودة.');
+
+                    Notification::make()->title('تم الرفض وإرجاع المهمة للتركيب للإصلاح')->warning()->send();
                 }),
         ];
     }
 
     /* ===============================
-     * مدد المراحل (حسب اللوج + الحالات الجديدة)
+     * مدد المراحل (تحليل زمني)
      * ===============================*/
     private function buildStageDurations(ProductionTask $task): array
     {
@@ -699,7 +1014,11 @@ class ViewTask extends ViewRecord
 
         $total = array_sum($seconds);
 
-        $order = ['pending','received','materials_wait','materials_prep','materials_done','in_progress','under_review','approved','rejected','on_hold','completed','cancelled','unknown'];
+        $order = [
+            'pending','received','materials_wait','materials_prep','materials_done',
+            'waiting_production','in_progress','under_review','approved',
+            'rejected','on_hold','completed','cancelled','unknown'
+        ];
 
         $rows = collect($seconds)
             ->map(fn ($sec, $status) => [
@@ -823,20 +1142,38 @@ class ViewTask extends ViewRecord
 
                     TextEntry::make('current_owner_role')
                         ->label('المالك الحالي (الدور)')
-                        ->formatStateUsing(fn($s) => $s
-                            ? match ($s) {
-                                'department_manager'  => 'مدير القسم',
-                                'purchasing_manager'  => 'مدير المشتريات',
-                                'quality_manager'     => 'مدير الجودة',
-                                'installation_manager'=> 'مسؤول التركيب',
-                                'factory_manager'     => 'مدير المصنع',
-                                default               => $s,
-                            }
+                        ->formatStateUsing(fn ($state) =>
+                        $state
+                            ? match ($state) {
+                            'department_manager'  => 'مدير القسم',
+                            'purchasing_manager'  => 'مدير المشتريات',
+                            'quality_manager'     => 'مدير الجودة',
+                            'installation_manager'=> 'مسؤول التركيب',
+                            'factory_manager'     => 'مدير المصنع',
+                            default               => $state,
+                        }
                             : '—'
                         ),
                     TextEntry::make('sent_to_owner_at')->label('أُرسل للمالك')->dateTime()->placeholder('—'),
                     TextEntry::make('received_by_owner_at')->label('مؤكد الاستلام')->dateTime()->placeholder('—'),
                 ])->columns(2),
+
+            // قسم المشتريات: رابط أمر الشراء
+            Section::make('المشتريات')
+                ->schema([
+                    TextEntry::make('po_file_link')
+                        ->label('أمر الشراء (PO)')
+                        ->html()
+                        ->state(function (ProductionTask $record) {
+                            $mr = $record->materialRequests()->orderByDesc('id')->first();
+                            if (! $mr || blank($mr->po_file)) {
+                                return '<span style="opacity:.7">—</span>';
+                            }
+                            $url  = Storage::disk('public')->url($mr->po_file);
+                            $name = e(basename($mr->po_file));
+                            return '<a href="'.e($url).'" target="_blank" style="color:#2563eb; text-decoration:underline; font-weight:600;">'.$name.' ▸</a>';
+                        }),
+                ])->columns(1),
 
             Section::make('مدد المراحل')
                 ->columns(1)
@@ -866,34 +1203,36 @@ class ViewTask extends ViewRecord
                             }
 
                             $statusMap = [
-                                'pending'         => 'بانتظار التأكيد',
-                                'received'        => 'تم الاستلام',
-                                'under_review'    => 'قيد المراجعة',
-                                'approved'        => 'معتمد',
-                                'rejected'        => 'مرفوض',
-                                'in_progress'     => 'قيد التنفيذ',
-                                'materials_wait'  => 'بانتظار اعتماد المشتريات',
-                                'materials_prep'  => 'جارٍ تجهيز الخامات',
-                                'materials_done'  => 'تم توفير الخامات',
-                                'on_hold'         => 'متوقفة مؤقتًا',
-                                'completed'       => 'مكتملة',
-                                'cancelled'       => 'ملغاة',
+                                'pending'            => 'بانتظار التأكيد',
+                                'received'           => 'تم الاستلام',
+                                'waiting_production' => 'بانتظار التصنيع',
+                                'under_review'       => 'قيد المراجعة',
+                                'approved'           => 'معتمد',
+                                'rejected'           => 'مرفوض',
+                                'in_progress'        => 'قيد التنفيذ',
+                                'materials_wait'     => 'بانتظار اعتماد المشتريات',
+                                'materials_prep'     => 'جارٍ تجهيز الخامات',
+                                'materials_done'     => 'تم توفير الخامات',
+                                'on_hold'            => 'متوقفة مؤقتًا',
+                                'completed'          => 'مكتملة',
+                                'cancelled'          => 'ملغاة',
                             ];
 
                             $colorBy = function (?string $to, ?string $type): string {
                                 $to = $this->normalizeStatus($to);
                                 return match ($to ?? '') {
-                                    'completed'         => '#22c55e',
-                                    'approved'          => '#10b981',
-                                    'on_hold','cancelled'=> '#6b7280',
-                                    'under_review'      => '#06b6d4',
-                                    'in_progress'       => '#f59e0b',
-                                    'rejected'          => '#ef4444',
-                                    'received'          => '#3b82f6',
-                                    'pending'           => '#f59e0b',
-                                    'materials_wait'    => '#f59e0b',
-                                    'materials_prep'    => '#0ea5e9',
-                                    'materials_done'    => '#22c55e',
+                                    'completed'           => '#22c55e',
+                                    'approved'            => '#10b981',
+                                    'on_hold','cancelled' => '#6b7280',
+                                    'under_review'        => '#06b6d4',
+                                    'in_progress'         => '#f59e0b',
+                                    'rejected'            => '#ef4444',
+                                    'received'            => '#3b82f6',
+                                    'waiting_production'  => '#f59e0b',
+                                    'pending'             => '#f59e0b',
+                                    'materials_wait'      => '#f59e0b',
+                                    'materials_prep'      => '#0ea5e9',
+                                    'materials_done'      => '#22c55e',
                                     default => match ($type ?? '') {
                                         'assigned_changed'  => '#f59e0b',
                                         'due_changed'       => '#a855f7',
@@ -917,7 +1256,7 @@ class ViewTask extends ViewRecord
                                 $type   = $curr->type ?? 'event';
                                 $from   = $this->normalizeStatus($data['from'] ?? null);
                                 $to     = $this->normalizeStatus($data['to']   ?? null);
-                                $note   = $data['note'] ?? ($data['reason'] ?? ($data['message'] ?? ($data['raw'] ?? null)));
+                                $note   = $data['reason'] ?? ($data['note'] ?? ($data['message'] ?? ($data['raw'] ?? null)));
                                 $byName = $curr->causer?->name;
 
                                 $date     = $tsCurr ? Carbon::parse($tsCurr)->format('H:i:s Y-m-d') : '—';

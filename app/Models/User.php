@@ -42,15 +42,15 @@ class User extends Authenticatable
 
 
 
-//    public function directPermissions(): BelongsToMany
-//    {
-//        return $this->belongsToMany(
-//            Permission::class,
-//            'model_has_permissions',
-//            'model_id',
-//            'permission_id'
-//        )->withTimestamps();
-//    }
+    public function directPermissions(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Permission::class,
+            'model_has_permissions',
+            'model_id',
+            'permission_id'
+        )->withTimestamps();
+    }
 
     public function getAllPermissionsAttribute()
     {

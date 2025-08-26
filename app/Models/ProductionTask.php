@@ -11,7 +11,7 @@ class ProductionTask extends Model
     protected $fillable = [
         'project_id',
         'department_id',
-        'assigned_budget',
+        'estimated_cost',
         'assigned_to_employee_id',
         'file_path',
         'due_date',
@@ -40,7 +40,7 @@ class ProductionTask extends Model
 
     public function project(): BelongsTo
     {
-        return $this->belongsTo(Project::class);
+        return $this->belongsTo(Project::class, 'project_id', 'id');
     }
 
     public function department(): BelongsTo
