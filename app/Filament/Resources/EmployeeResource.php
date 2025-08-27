@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\EmployeeResource\Pages;
 use App\Models\Employee;
 use Filament\Forms;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -13,6 +14,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
+
 
 class EmployeeResource extends Resource
 {
@@ -118,16 +121,14 @@ class EmployeeResource extends Resource
 
                 Forms\Components\Section::make('مجموعات المستخدمين والصلاحيات')
                     ->schema([
-                        Forms\Components\Select::make('roles')
+                        Select::make('roles_ids')
                             ->label('الأدوار')
                             ->multiple()
+                            ->searchable()
                             ->preload()
-                            ->options(fn () => Role::query()->pluck('name', 'name')->all())
-                            ->default(fn ($record) => $record?->user?->roles?->pluck('name')?->all() ?? [])
+                            ->options(fn () => Role::where('guard_name', 'web')->pluck('name', 'id')->all())
                             ->dehydrated(false)
-                            ->disabled(fn ($record) => ! $record?->user_id)
-                            ->helperText('تُسنَد الأدوار إلى حساب المستخدم المرتبط بالموظف (User).'),
-                    ])->columns(1) // Changed to single column for better layout
+                    ])->columns(1)
             ]);
     }
 

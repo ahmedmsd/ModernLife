@@ -3,6 +3,7 @@
 namespace App\Filament\Pages\Purchasing;
 
 use App\Models\MaterialRequest;
+use App\Models\SystemSetting;
 use Filament\Forms;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -14,7 +15,6 @@ use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
 use Spatie\Permission\Models\Role;
-use App\Models\SystemSetting;
 
 class MaterialsRequests extends Page implements HasTable
 {
@@ -32,7 +32,7 @@ class MaterialsRequests extends Page implements HasTable
     public static function shouldRegisterNavigation(): bool
     {
         $u = Auth::user();
-        return $u && $u->hasAnyRole(['purchasing_manager','admin','super-admin']);
+        return $u && $u->hasAnyRole(['purchasing_manager', 'admin', 'super-admin']);
     }
 
     public static function getNavigationBadge(): ?string
@@ -40,7 +40,7 @@ class MaterialsRequests extends Page implements HasTable
         // المطلوب اعتمادها أو توريدها
         return (string) MaterialRequest::query()
             ->whereNull('provided_at')
-            ->whereIn('status', ['requested','approved'])
+            ->whereIn('status', ['requested', 'approved'])
             ->count();
     }
 
@@ -51,7 +51,7 @@ class MaterialsRequests extends Page implements HasTable
             ->query(
                 MaterialRequest::query()
                     ->whereNull('provided_at')
-                    ->whereIn('status', ['requested','approved'])
+                    ->whereIn('status', ['requested', 'approved'])
                     ->with([
                         'task.project.productionRequest', // المشروع والطلب الأم
                         'department',
@@ -60,8 +60,15 @@ class MaterialsRequests extends Page implements HasTable
             )
             ->columns([
                 TextColumn::make('id')->label('#')->sortable(),
-                TextColumn::make('task.id')->label('المهمة')->sortable(),
-                TextColumn::make('department.dept_name')->label('القسم')->sortable()->searchable(),
+
+                TextColumn::make('task.id')
+                    ->label('المهمة')
+                    ->sortable(),
+
+                TextColumn::make('department.dept_name')
+                    ->label('القسم')
+                    ->sortable()
+                    ->searchable(),
 
                 TextColumn::make('task.project.project_name')
                     ->label('المشروع')
@@ -69,14 +76,18 @@ class MaterialsRequests extends Page implements HasTable
 
                 TextColumn::make('requester')
                     ->label('مقدّم الطلب')
-                    ->state(fn (MaterialRequest $r) =>
-                        ($r->requestedBy?->name)
-                        ?? ($r->task?->employee?->employee_name)
+                    // ✅ استخدم $record
+                    ->state(fn (MaterialRequest $record) =>
+                        ($record->requestedBy?->name)
+                        ?? ($record->task?->employee?->employee_name)
                         ?? '—'
                     )
                     ->searchable(),
 
-                TextColumn::make('note')->label('المطلوبات')->wrap()->limit(120),
+                TextColumn::make('note')
+                    ->label('المطلوبات')
+                    ->wrap()
+                    ->limit(120),
 
                 TextColumn::make('requested_at')
                     ->label('تاريخ الطلب')
@@ -91,23 +102,20 @@ class MaterialsRequests extends Page implements HasTable
                 TextColumn::make('status')
                     ->label('الحالة')
                     ->badge()
-                    ->formatStateUsing(function (?string $s) {
-                        return match ($s) {
-                            'requested' => 'بانتظار اعتماد المشتريات',
-                            'approved'  => 'بانتظار التوريد',
-                            'fulfilled' => 'مورَّد',
-                            'cancelled' => 'ملغى',
-                            default     => '—',
-                        };
+                    // ✅ استخدم $state
+                    ->formatStateUsing(fn (?string $state) => match ($state) {
+                        'requested' => 'بانتظار اعتماد المشتريات',
+                        'approved'  => 'بانتظار التوريد',
+                        'fulfilled' => 'مورَّد',
+                        'cancelled' => 'ملغى',
+                        default     => '—',
                     })
-                    ->color(function (?string $s) {
-                        return match ($s) {
-                            'requested' => 'warning',
-                            'approved'  => 'info',
-                            'fulfilled' => 'success',
-                            'cancelled' => 'gray',
-                            default     => 'secondary',
-                        };
+                    ->color(fn (?string $state) => match ($state) {
+                        'requested' => 'warning',
+                        'approved'  => 'info',
+                        'fulfilled' => 'success',
+                        'cancelled' => 'gray',
+                        default     => 'secondary',
                     }),
             ])
             ->filters([
@@ -128,18 +136,21 @@ class MaterialsRequests extends Page implements HasTable
                     ->label('اعتماد طلب الشراء')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
-                    ->visible(fn (MaterialRequest $r) =>
-                        auth()->user()?->hasAnyRole(['purchasing_manager','admin','super-admin'])
-                        && $r->status === 'requested'
+                    // ✅ $record بدل $r
+                    ->visible(fn (MaterialRequest $record) =>
+                        auth()->user()?->hasAnyRole(['purchasing_manager', 'admin', 'super-admin'])
+                        && $record->status === 'requested'
                     )
                     ->form([
                         Forms\Components\TextInput::make('estimated_cost')
                             ->label('التكلفة التقديرية')
                             ->numeric()
                             ->required(),
+
                         Forms\Components\DateTimePicker::make('expected_delivery_at')
                             ->label('التاريخ المتوقع للتسليم')
                             ->required(),
+
                         Forms\Components\Textarea::make('note')
                             ->label('ملاحظة (اختياري)')
                             ->rows(3),
@@ -162,24 +173,28 @@ class MaterialsRequests extends Page implements HasTable
                         $matCost = (float) $record->estimated_cost;
 
                         if ($order > 0 && $matCost > ($order * $capPct)) {
-                            foreach (['factory_manager','super-admin'] as $roleName) {
+                            foreach (['factory_manager', 'super-admin'] as $roleName) {
                                 try {
                                     $role = Role::findByName($roleName);
                                     foreach ($role->users as $user) {
                                         Notification::make()
                                             ->title('تنبيه تجاوز حدّ المشتريات')
-                                            ->body("طلب #{$pr?->id}: التكلفة {$matCost} تخطّت " . ($capPct*100) . "% من سعر الطلب {$order}.")
+                                            ->body("طلب #{$pr?->id}: التكلفة {$matCost} تخطّت " . ($capPct * 100) . "% من سعر الطلب {$order}.")
                                             ->sendToDatabase($user);
                                     }
-                                } catch (\Throwable $e) {}
+                                } catch (\Throwable $e) {
+                                    // تجاهل أي خطأ في الإشعارات
+                                }
                             }
+
                             Notification::make()
                                 ->warning()
                                 ->title('تم الاعتماد مع تحذير الميزانية')
                                 ->body('التكلفة التقديرية تخطّت الحدّ المسموح—تم تنبيه الإدارة.')
                                 ->send();
                         } else {
-                            Notification::make()->success()
+                            Notification::make()
+                                ->success()
                                 ->title('تم اعتماد طلب الشراء')
                                 ->send();
                         }
@@ -190,10 +205,11 @@ class MaterialsRequests extends Page implements HasTable
                     ->label('تأكيد توفير الخامات')
                     ->icon('heroicon-o-check-badge')
                     ->color('primary')
-                    ->visible(fn (MaterialRequest $r) =>
-                        auth()->user()?->hasAnyRole(['purchasing_manager','admin','super-admin'])
-                        && $r->status === 'approved'
-                        && is_null($r->provided_at)
+                    // ✅ $record بدل $r
+                    ->visible(fn (MaterialRequest $record) =>
+                        auth()->user()?->hasAnyRole(['purchasing_manager', 'admin', 'super-admin'])
+                        && $record->status === 'approved'
+                        && is_null($record->provided_at)
                     )
                     ->form([
                         Forms\Components\TextInput::make('po_number')->label('رقم الطلب/مرجع (اختياري)'),
@@ -211,10 +227,11 @@ class MaterialsRequests extends Page implements HasTable
 
                         // إعادة المهمة للتنفيذ إن كانت متوقفة ولا توجد طلبات خامات مفتوحة أخرى
                         $task = $record->task;
+
                         if ($task && $task->status === 'blocked') {
                             $hasOpen = $task->materialRequests()
                                 ->whereNull('provided_at')
-                                ->whereIn('status', ['requested','approved'])
+                                ->whereIn('status', ['requested', 'approved'])
                                 ->exists();
 
                             if (! $hasOpen) {
@@ -222,7 +239,10 @@ class MaterialsRequests extends Page implements HasTable
                             }
                         }
 
-                        Notification::make()->title('تم تأكيد توفير الخامات')->success()->send();
+                        Notification::make()
+                            ->title('تم تأكيد توفير الخامات')
+                            ->success()
+                            ->send();
                     }),
             ])
             ->bulkActions([
@@ -245,18 +265,23 @@ class MaterialsRequests extends Page implements HasTable
                             ]);
 
                             $task = $record->task;
+
                             if ($task && $task->status === 'blocked') {
                                 $hasOpen = $task->materialRequests()
                                     ->whereNull('provided_at')
-                                    ->whereIn('status', ['requested','approved'])
+                                    ->whereIn('status', ['requested', 'approved'])
                                     ->exists();
+
                                 if (! $hasOpen) {
                                     $task->update(['status' => 'in_progress']);
                                 }
                             }
                         }
 
-                        Notification::make()->title('تم تأكيد التوفير للمهام المحددة')->success()->send();
+                        Notification::make()
+                            ->title('تم تأكيد التوفير للمهام المحددة')
+                            ->success()
+                            ->send();
                     }),
             ])
             ->emptyStateHeading('لا توجد طلبات خامات قيد المعالجة');
@@ -273,6 +298,8 @@ class MaterialsRequests extends Page implements HasTable
                     ->body($body)
                     ->sendToDatabase($user);
             }
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+            // تجاهل أي خطأ في الإشعارات
+        }
     }
 }

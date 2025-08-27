@@ -32,12 +32,12 @@ class TaskResource extends Resource
         return $form;
     }
 
-    public static function getRelations(): array
-    {
-        return [
-            \App\Filament\Resources\TaskResource\RelationManagers\CommentsRelationManager::class,
-        ];
-    }
+//    public static function getRelations(): array
+//    {
+//        return [
+//            \App\Filament\Resources\TaskResource\RelationManagers\CommentsRelationManager::class,
+//        ];
+//    }
 
 
     public static function infolist(Infolist $infolist): Infolist

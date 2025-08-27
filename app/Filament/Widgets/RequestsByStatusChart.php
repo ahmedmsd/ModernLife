@@ -2,49 +2,85 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\ProductionRequest;
+use App\Models\ProductionTask;
 use Filament\Widgets\ChartWidget;
 
 class RequestsByStatusChart extends ChartWidget
 {
-    protected static ?string $heading = 'الطلبات حسب الحالة';
+    protected static ?string $heading   = 'المهام حسب الحالة';
     protected static ?string $maxHeight = '320px';
     protected int|string|array $columnSpan = ['default' => 1, 'lg' => 1];
-
     protected static ?int $sort = 9;
+
+    // الحالة => الوسم العربي (بالترتيب المرغوب)
+    protected array $statusLabels = [
+        'pending'       => 'قيد الإنشاء',
+        'assigned'      => 'مُسندة',
+        'acknowledged'  => 'تأكيد الاستلام',
+        'in_progress'   => 'قيد التنفيذ',
+        'blocked'       => 'متوقفة مؤقتًا',
+        'under_review'  => 'قيد المراجعة',
+        'rework'        => 'إعادة عمل',
+        'completed'     => 'مكتملة',
+        'closed'        => 'مغلقة',
+        'cancelled'     => 'ملغاة',
+    ];
+
+    // الحالة => اللون
     protected array $statusColors = [
-        'draft'        => '#9CA3AF', // Gray-400
-        'submitted'    => '#3B82F6', // Blue-500
-        'under_review' => '#F59E0B', // Amber-500
-        'approved'     => '#10B981', // Emerald-500
-        'rejected'     => '#EF4444', // Red-500
+        'pending'       => '#9CA3AF', // Gray-400
+        'assigned'      => '#3B82F6', // Blue-500
+        'acknowledged'  => '#06B6D4', // Cyan-500
+        'in_progress'   => '#10B981', // Emerald-500
+        'blocked'       => '#EF4444', // Red-500
+        'under_review'  => '#F59E0B', // Amber-500
+        'rework'        => '#A855F7', // Violet-500
+        'completed'     => '#16A34A', // Green-600
+        'closed'        => '#374151', // Gray-700
+        'cancelled'     => '#E11D48', // Rose-600
+        'other'         => '#6B7280', // Gray-500 (لأي حالات غير متوقعة)
     ];
 
     protected function getData(): array
     {
-        // الترتيب الظاهر في المخطط
-        $labels = ['مسودة','مقدمة','تحت المراجعة','معتمدة','مرفوضة'];
-        $keys   = ['draft','submitted','under_review','approved','rejected'];
+        // إجلب التعدادات من قاعدة البيانات
+        $rows = ProductionTask::query()
+            ->selectRaw('COALESCE(status, "unknown") as status, COUNT(*) as c')
+            ->groupBy('status')
+            ->pluck('c', 'status')
+            ->toArray();
 
-        // البيانات
-        $data = [];
-        foreach ($keys as $k) {
-            $data[] = ProductionRequest::where('status', $k)->count();
+        $labels = [];
+        $data   = [];
+        $colors = [];
+
+        $knownTotal = 0;
+        foreach ($this->statusLabels as $key => $ar) {
+            $count   = (int) ($rows[$key] ?? 0);
+            $labels[] = $ar;
+            $data[]   = $count;
+            $colors[] = $this->statusColors[$key] ?? '#6B7280';
+            $knownTotal += $count;
         }
 
-        // الألوان المتطابقة مع نفس الترتيب
-        $background = array_map(fn($k) => $this->statusColors[$k] ?? '#6B7280', $keys);
-        $hover      = array_map(fn($hex) => $this->lighten($hex, 12), $background);
+        // أجمع أي حالات لم نعرّفها تحت "أخرى"
+        $allTotal = array_sum($rows);
+        $other    = max(0, $allTotal - $knownTotal);
+        if ($other > 0) {
+            $labels[] = 'أخرى';
+            $data[]   = $other;
+            $colors[] = $this->statusColors['other'];
+        }
 
-        // معالجة عدم وجود بيانات
+        // لا بيانات إطلاقًا
         if (array_sum($data) === 0) {
             return [
                 'datasets' => [[
-                    'label' => 'الطلبات',
-                    'data'  => [1],
-                    'backgroundColor' => ['#E5E7EB'], // رمادي فاتح
+                    'label'                => 'المهام',
+                    'data'                 => [1],
+                    'backgroundColor'      => ['#E5E7EB'],
                     'hoverBackgroundColor' => ['#E5E7EB'],
-                    'borderWidth' => 1,
+                    'borderWidth'          => 1,
                 ]],
                 'labels' => ['لا بيانات'],
             ];
@@ -52,11 +88,11 @@ class RequestsByStatusChart extends ChartWidget
 
         return [
             'datasets' => [[
-                'label' => 'الطلبات',
-                'data'  => $data,
-                'backgroundColor'     => $background,
-                'hoverBackgroundColor' => $hover,
-                'borderWidth' => 1,
+                'label'                => 'المهام',
+                'data'                 => $data,
+                'backgroundColor'      => $colors,
+                'hoverBackgroundColor' => array_map(fn ($hex) => $this->lighten($hex, 12), $colors),
+                'borderWidth'          => 1,
             ]],
             'labels' => $labels,
         ];
@@ -66,22 +102,9 @@ class RequestsByStatusChart extends ChartWidget
     {
         return [
             'maintainAspectRatio' => false,
+            'cutout' => '70%',
             'plugins' => [
-                'legend' => [
-                    'position' => 'bottom',
-                    // يمكن ضبط لون النص إن أردت:
-                    // 'labels' => ['color' => '#111827'],
-                ],
-                // إظهار القيم داخل التولتيب
-                'tooltip' => [
-                    'callbacks' => [
-                        'label' => \Illuminate\Support\Js::from(
-                        // نطبع: الحالة: العدد
-                        // (Chart.js سيضيف النسبة تلقائياً لو أردت إضافات أخرى)
-                            function($ctx) { return $ctx->label.': '.$ctx->parsed; }
-                        ),
-                    ],
-                ],
+                'legend' => ['position' => 'bottom'],
             ],
         ];
     }
