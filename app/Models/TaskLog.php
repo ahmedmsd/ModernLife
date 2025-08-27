@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 
 class TaskLog extends Model
@@ -14,7 +15,23 @@ class TaskLog extends Model
         'data'        => 'array',
         'happened_at' => 'datetime',
     ];
+    protected function typeLabel(): Attribute
+    {
+        return Attribute::get(function () {
+            $key = "tasks.logs.types.{$this->type}";
+            return __($key) !== $key
+                ? __($key)
+                : str($this->type)->replace('_', ' ')->title();
+        });
+    }
 
+    protected function statusLabel(): array|\Illuminate\Contracts\Translation\Translator|\Illuminate\Foundation\Application|string|null
+    {
+        $status = data_get($this->data, 'status');
+        if (!$status) return null;
+        $key = "tasks.statuses.$status";
+        return __($key) !== $key ? __($key) : $status;
+    }
     public function task(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(ProductionTask::class, 'task_id', 'id');

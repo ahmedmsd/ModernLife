@@ -24,13 +24,21 @@ class TaskResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->with(['project','department','employee','logs']);
+            ->with(['project','department','employee','logs','comments']);
     }
 
     public static function form(Form $form): Form
     {
         return $form;
     }
+
+    public static function getRelations(): array
+    {
+        return [
+            \App\Filament\Resources\TaskResource\RelationManagers\CommentsRelationManager::class,
+        ];
+    }
+
 
     public static function infolist(Infolist $infolist): Infolist
     {

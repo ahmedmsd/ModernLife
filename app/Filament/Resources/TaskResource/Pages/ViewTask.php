@@ -3,6 +3,10 @@
 namespace App\Filament\Resources\TaskResource\Pages;
 
 use App\Filament\Resources\TaskResource;
+use App\Models\TaskComment;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Textarea;
+use Filament\Resources\Pages\Concerns\HasRelationManagers;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Infolists\Infolist;
 use Filament\Infolists\Components\Section;
@@ -18,6 +22,7 @@ use Illuminate\Support\Carbon;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Notification as LaravelNotification;
 use App\Notifications\ActionHandoffNotification;
+use Filament\Infolists\Components\RepeatableEntry;
 
 // موديلات
 use App\Models\ProductionTask;
@@ -28,6 +33,8 @@ use App\Services\ProductionRequestWorkflow;
 
 class ViewTask extends ViewRecord
 {
+    use HasRelationManagers;
+
     protected static string $resource = TaskResource::class;
 
     protected static ?string $title           = 'عرض المهمة';
@@ -72,7 +79,7 @@ class ViewTask extends ViewRecord
     {
         $user = Auth::user();
 
-        return ($user && $user->hasAnyRole(['super-admin', 'admin', 'project_manager']))
+        return ($user && $user->hasAnyRole(['super-admin', 'admin', 'factory_manager']))
             ? 'مهام المشروع'
             : 'مهامي';
     }
@@ -187,7 +194,6 @@ class ViewTask extends ViewRecord
         return $s instanceof \BackedEnum ? $s->value : (string) $s;
     }
 
-    /* نسبة السقف (من 0..100 في الإعدادات) ← كسر (0..1) */
     private function budgetCapFraction(): float
     {
         $defaultPercent = 50.0;
@@ -384,6 +390,25 @@ class ViewTask extends ViewRecord
         $task = $this->record;
 
         return [
+
+                Action::make('addComment')
+                ->label('تعليق سريع')
+                ->icon('heroicon-m-chat-bubble-left-right')
+                ->form([
+                    Textarea::make('body')->label('نص التعليق')->required()->autosize(),
+                    FileUpload::make('attachments')->label('مرفقات (اختياري)')
+                        ->multiple()->directory('task-comments')->preserveFilenames()
+                        ->downloadable()->openable(),
+                ])
+                ->action(function (array $data) {
+                    TaskComment::create([
+                        'task_id'     => $this->record->id,  // FK كما طلبت: task_id
+                        'user_id'     => auth()->id(),
+                        'body'        => $data['body'],
+                        'attachments' => isset($data['attachments']) ? array_values((array) $data['attachments']) : null,
+                    ]);
+                    Notification::make()->title('تم إضافة التعليق')->success()->send();
+                }),
             // 1) إسناد لمدير القسم (لو غير مُسند)
             Action::make('assign_to_dept_manager')
                 ->label('إسناد لمدير القسم')
