@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, HasOne};
 use Illuminate\Database\Eloquent\SoftDeletes;
-
+use App\Models\Concerns\HasStatusScopes;
 class ProductionRequest extends Model
 {
 //    use SoftDeletes;
+    use HasStatusScopes;
     protected $fillable = [
         'project_name',
         'client_id',

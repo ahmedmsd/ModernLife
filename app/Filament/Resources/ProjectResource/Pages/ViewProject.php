@@ -103,8 +103,24 @@ class ViewProject extends ViewRecord
 
     /* -------------------- Helpers (labels + colors) -------------------- */
 
-    private function statusAr(?string $v): ?string
+      private function normalizeStatus(string|array|null $v): ?string
     {
+        if (is_array($v)) {
+            // جرّب أكثر المفاتيح شيوعًا
+            $v = $v['status'] ?? $v['to'] ?? $v['value'] ?? array_values($v)[0] ?? null;
+            // لو ما زالت مصفوفة، خذ أول عنصر
+            if (is_array($v)) {
+                $v = array_values($v)[0] ?? null;
+            }
+        }
+        if ($v === null) return null;
+        return (string) $v;
+    }
+
+    /** ترجمة عربية للحالة بعد تطبيعها */
+    private function statusAr(string|array|null $v): ?string
+    {
+        $v = $this->normalizeStatus($v);
         $map = [
             'pending'=>'قيد الإنشاء','assigned'=>'مُسندة','acknowledged'=>'تأكيد الاستلام',
             'in_progress'=>'قيد التنفيذ','blocked'=>'متوقفة','under_review'=>'قيد المراجعة',
@@ -114,8 +130,10 @@ class ViewProject extends ViewRecord
         return $map[$v] ?? $v;
     }
 
-    private function statusHex(?string $status): string
+    /** لون الحالة — يقبل مصفوفة أيضًا تحسّبًا */
+    private function statusHex(string|array|null $status): string
     {
+        $status = $this->normalizeStatus($status);
         return match ($status) {
             'pending','draft'            => '#64748b',
             'assigned','acknowledged'    => '#f59e0b',
@@ -254,12 +272,30 @@ class ViewProject extends ViewRecord
         ])->filter(fn($f)=>!empty($f['file']))->values()->all();
 
         // آخر نشاط
-        $activity = $tasks->flatMap(fn($t)=>$t->logs)->sortByDesc('happened_at')->take(30)->values()->map(function($log){
-            $at = $log->happened_at ?? $log->created_at;
-            $at = $at ? Carbon::parse($at) : null;
-            $act = is_array($log->data ?? null) ? ($log->data['to'] ?? ($log->data['action'] ?? $log->type)) : ($log->type ?? '—');
-            return ['at'=>$at?->format('Y-m-d H:i') ?? '—','when'=>$at?->diffForHumans() ?? '—','type'=>$log->type ?? '—','what'=>$this->statusAr($act) ?? $act,'task'=>$log->task_id ?? null];
-        })->all();
+        $activity = $tasks->flatMap(fn($t)=>$t->logs)
+            ->sortByDesc('happened_at')
+            ->take(30)
+            ->values()
+            ->map(function($log){
+                $at = $log->happened_at ?? $log->created_at;
+                $at = $at ? Carbon::parse($at) : null;
+
+                // لو كانت data مصفوفة مع انتقال حالة، التقط القيمة الصحيحة
+                $raw = $log->data ?? null;
+                $act = is_array($raw)
+                    ? ($raw['to'] ?? $raw['status'] ?? $raw['action'] ?? $log->type)
+                    : ($log->type ?? '—');
+
+                $actNorm = $this->normalizeStatus($act);
+
+                return [
+                    'at'   => $at?->format('Y-m-d H:i') ?? '—',
+                    'when' => $at?->diffForHumans() ?? '—',
+                    'type' => $log->type ?? '—',
+                    'what' => $this->statusAr($actNorm) ?? $actNorm ?? '—',
+                    'task' => $log->task_id ?? null,
+                ];
+            })->all();
 
         // الإنجاز اليومي (آخر 14 يوم)
         $days = 14;

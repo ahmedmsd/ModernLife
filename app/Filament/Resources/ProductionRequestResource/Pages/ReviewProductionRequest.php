@@ -2,10 +2,6 @@
 
 namespace App\Filament\Resources\ProductionRequestResource\Pages;
 
-use Filament\Forms\Components\Fieldset;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Placeholder;
 use App\Enums\{ProductionRequestPhase as Phase, PhaseStatus as S};
 use App\Filament\Resources\ProductionRequestResource;
 use App\Models\ProductionRequest;
@@ -13,7 +9,6 @@ use App\Services\ProductionRequestWorkflow;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
-use Illuminate\Support\Facades\Auth;
 
 class ReviewProductionRequest extends Page
 {
@@ -25,7 +20,7 @@ class ReviewProductionRequest extends Page
 
     public function mount(ProductionRequest $record): void
     {
-        $this->record = $record->load(['client','project','logs','productionRequestFiles','files']);
+        $this->record = $record->load(['client', 'project', 'logs', 'productionRequestFiles', 'files']);
     }
 
     public function getHeaderActions(): array
@@ -33,24 +28,34 @@ class ReviewProductionRequest extends Page
         $rid = (string) $this->record->getKey();
         $actions = [];
 
-        // ==== 1) تأكيد الاستلام (يظهر فقط عند pending) ====
+        // Helper محلي لتوحيد نوع الدور إلى string أو null
+        $normalizeRole = function (string|\BackedEnum|null $role): ?string {
+            if ($role instanceof \BackedEnum) return (string) $role->value; // Enum -> string
+            if (is_string($role) && $role !== '') return $role;            // string جاهز
+            return null;                                                  // null أو غير مدعوم
+        };
+
+        // ==== 1) تأكيد الاستلام (يظهر فقط عند pending، وللمالك الحالي) ====
         $actions[] = Action::make('confirmReceiptAction')
             ->label('تأكيد استلامي')
             ->icon('heroicon-o-hand-thumb-up')
             ->modalHeading("تأكيد الاستلام — طلب #{$rid}")
             ->extraAttributes(['wire:key' => "confirm-receipt-{$rid}"])
-            ->visible(fn () =>
-                auth()->user()?->hasRole($this->record->current_owner_role)
-                && $this->record->phase_status === S::Pending->value // <-- القيد الأهم
-            )
+            ->visible(function () use ($normalizeRole) {
+                $ownerRole = $normalizeRole($this->record->current_owner_role);
+                return $ownerRole
+                    && auth()->check()
+                    && auth()->user()->hasRole($ownerRole)
+                    && $this->record->phase_status === S::Pending->value;
+            })
             ->action(function () {
                 app(ProductionRequestWorkflow::class)->markReceived($this->record);
-                \Filament\Notifications\Notification::make()->success()->title('تم تأكيد الاستلام')->send();
+                Notification::make()->success()->title('تم تأكيد الاستلام')->send();
                 $this->refreshRecord();
             })
             ->after(fn () => [$this->resetErrorBag(), $this->resetValidation()]);
 
-        // ==== 2) بدء مراجعة المعرض (يظهر فقط عند received وفي مرحلة المعرض) ====
+        // ==== 2) بدء مراجعة المعرض (received وفي مرحلة المعرض) ====
         $actions[] = Action::make('startShowroomReviewAction')
             ->label('بدء مراجعة المعرض')
             ->icon('heroicon-o-play-circle')
@@ -58,15 +63,16 @@ class ReviewProductionRequest extends Page
             ->modalHeading("بدء مراجعة المعرض — طلب #{$rid}")
             ->extraAttributes(['wire:key' => "start-showroom-review-{$rid}"])
             ->visible(fn () =>
-                auth()->user()?->hasRole('showroom_manager')
+                auth()->check()
+                && auth()->user()->hasRole('showroom_manager')
                 && $this->record->current_phase === Phase::ShowroomReview->value
                 && $this->record->phase_status === S::Received->value
             )
             ->action(function () {
-                app(\App\Services\ProductionRequestWorkflow::class)->move(
+                app(ProductionRequestWorkflow::class)->move(
                     $this->record, Phase::ShowroomReview, S::UnderReview, 'showroom_manager', false
                 );
-                \Filament\Notifications\Notification::make()->success()->title('تم بدء مراجعة المعرض')->send();
+                Notification::make()->success()->title('تم بدء مراجعة المعرض')->send();
                 $this->refreshRecord();
             })
             ->after(fn () => [$this->resetErrorBag(), $this->resetValidation()]);
@@ -80,15 +86,16 @@ class ReviewProductionRequest extends Page
             ->modalWidth('3xl')
             ->extraAttributes(['wire:key' => "set-files-costs-{$rid}"])
             ->visible(fn () =>
-                auth()->user()?->hasRole('showroom_manager')
+                auth()->check()
+                && auth()->user()->hasRole('showroom_manager')
                 && $this->record->current_phase === Phase::ShowroomReview->value
-                && $this->record->phase_status === S::UnderReview->value // <-- فقط أثناء المراجعة
+                && $this->record->phase_status === S::UnderReview->value
             )
             ->form(function () {
                 $schema = [];
                 $files = $this->record->files()->with('department')->get();
                 foreach ($files as $f) {
-                    $schema[] = \Filament\Forms\Components\Fieldset::make("ملف: ".($f->file_name ?? basename($f->file_path)))
+                    $schema[] = \Filament\Forms\Components\Fieldset::make("ملف: " . ($f->file_name ?? basename($f->file_path)))
                         ->schema([
                             \Filament\Forms\Components\TextInput::make("cost_{$f->id}")
                                 ->label('التكلفة التقديرية')->numeric()->minValue(0)->prefix('SAR')
@@ -102,9 +109,11 @@ class ReviewProductionRequest extends Page
             ->action(function (array $data) {
                 foreach ($this->record->files as $f) {
                     $k = "cost_{$f->id}";
-                    if (array_key_exists($k, $data)) $f->update(['estimated_cost' => $data[$k]]);
+                    if (array_key_exists($k, $data)) {
+                        $f->update(['estimated_cost' => $data[$k]]);
+                    }
                 }
-                \Filament\Notifications\Notification::make()->success()->title('تم حفظ تكاليف الملفات')->send();
+                Notification::make()->success()->title('تم حفظ تكاليف الملفات')->send();
                 $this->refreshRecord();
             })
             ->after(fn () => [$this->resetErrorBag(), $this->resetValidation()]);
@@ -117,7 +126,8 @@ class ReviewProductionRequest extends Page
             ->modalHeading("اعتماد المعرض — طلب #{$rid}")
             ->extraAttributes(['wire:key' => "approve-showroom-send-{$rid}"])
             ->visible(fn () =>
-                auth()->user()?->hasRole('showroom_manager')
+                auth()->check()
+                && auth()->user()->hasRole('showroom_manager')
                 && $this->record->current_phase === Phase::ShowroomReview->value
                 && $this->record->phase_status === S::UnderReview->value
             )
@@ -125,15 +135,15 @@ class ReviewProductionRequest extends Page
                 if ($this->record->request_type === 'indirect') {
                     $missing = $this->record->files()->whereNull('estimated_cost')->count();
                     if ($missing > 0) {
-                        \Filament\Notifications\Notification::make()->danger()
+                        Notification::make()->danger()
                             ->title('غير مكتمل')->body("حدد تكلفة جميع الملفات. ناقص: {$missing}")->send();
                         return;
                     }
                 }
-                app(\App\Services\ProductionRequestWorkflow::class)->move(
+                app(ProductionRequestWorkflow::class)->move(
                     $this->record, Phase::FactoryIntake, S::Pending, 'factory_manager', true
                 );
-                \Filament\Notifications\Notification::make()->success()->title('تم الإرسال للمصنع')->send();
+                Notification::make()->success()->title('تم الإرسال للمصنع')->send();
                 $this->refreshRecord();
             })
             ->after(fn () => [$this->resetErrorBag(), $this->resetValidation()]);
@@ -146,37 +156,39 @@ class ReviewProductionRequest extends Page
             ->extraAttributes(['wire:key' => "reject-showroom-{$rid}"])
             ->form([\Filament\Forms\Components\Textarea::make('reason')->label('سبب الرفض')->required()->rows(3)])
             ->visible(fn () =>
-                auth()->user()?->hasRole('showroom_manager')
+                auth()->check()
+                && auth()->user()->hasRole('showroom_manager')
                 && $this->record->current_phase === Phase::ShowroomReview->value
                 && $this->record->phase_status === S::UnderReview->value
             )
             ->action(function (array $data) {
-                app(\App\Services\ProductionRequestWorkflow::class)->reject($this->record, $data['reason']);
-                \Filament\Notifications\Notification::make()->warning()->title('تم الرفض')->send();
+                app(ProductionRequestWorkflow::class)->reject($this->record, $data['reason']);
+                Notification::make()->warning()->title('تم الرفض')->send();
                 $this->refreshRecord();
             });
 
-        // ==== 6) بدء مراجعة المصنع (يظهر فقط عند received في المصنع) ====
+        // ==== 6) بدء مراجعة المصنع (received في المصنع) ====
         $actions[] = Action::make('startFactoryReviewAction')
             ->label('بدء مراجعة المصنع')
             ->icon('heroicon-o-play-circle')->color('info')
             ->modalHeading("بدء مراجعة المصنع — طلب #{$rid}")
             ->extraAttributes(['wire:key' => "start-factory-review-{$rid}"])
             ->visible(fn () =>
-                auth()->user()?->hasRole('factory_manager')
+                auth()->check()
+                && auth()->user()->hasRole('factory_manager')
                 && $this->record->current_phase === Phase::FactoryIntake->value
                 && $this->record->phase_status === S::Received->value
             )
             ->action(function () {
-                app(\App\Services\ProductionRequestWorkflow::class)->move(
+                app(ProductionRequestWorkflow::class)->move(
                     $this->record, Phase::FactoryIntake, S::UnderReview, 'factory_manager', false
                 );
-                \Filament\Notifications\Notification::make()->success()->title('تم بدء مراجعة المصنع')->send();
+                Notification::make()->success()->title('تم بدء مراجعة المصنع')->send();
                 $this->refreshRecord();
             })
             ->after(fn () => [$this->resetErrorBag(), $this->resetValidation()]);
 
-        // ==== 7) اعتماد المصنع وإنشاء المشروع (فقط أثناء under_review في المصنع) ====
+        // ==== 7) اعتماد المصنع وإنشاء المشروع (under_review في المصنع) ====
         $actions[] = Action::make('approveFactoryAction')
             ->label('اعتماد وإنشاء project & tasks')
             ->icon('heroicon-o-check-circle')->color('primary')
@@ -184,19 +196,20 @@ class ReviewProductionRequest extends Page
             ->modalHeading("اعتماد المصنع — طلب #{$rid}")
             ->extraAttributes(['wire:key' => "approve-factory-{$rid}"])
             ->visible(fn () =>
-                auth()->user()?->hasRole('factory_manager')
+                auth()->check()
+                && auth()->user()->hasRole('factory_manager')
                 && $this->record->current_phase === Phase::FactoryIntake->value
                 && $this->record->phase_status === S::UnderReview->value
             )
             ->action(function () {
                 $missing = $this->record->files()->whereNull('estimated_cost')->count();
                 if ($missing > 0) {
-                    \Filament\Notifications\Notification::make()->danger()
+                    Notification::make()->danger()
                         ->title('لا يمكن الإنشاء')->body("يوجد {$missing} ملف بدون تكلفة.")->send();
-                return;
-            }
-                app(\App\Services\ProductionRequestWorkflow::class)->approve($this->record);
-                \Filament\Notifications\Notification::make()->success()->title('تم إنشاء المشروع والمهام')->send();
+                    return;
+                }
+                app(ProductionRequestWorkflow::class)->approve($this->record);
+                Notification::make()->success()->title('تم إنشاء المشروع والمهام')->send();
                 $this->refreshRecord();
             })
             ->after(fn () => [$this->resetErrorBag(), $this->resetValidation()]);
@@ -209,22 +222,22 @@ class ReviewProductionRequest extends Page
             ->extraAttributes(['wire:key' => "reject-factory-{$rid}"])
             ->form([\Filament\Forms\Components\Textarea::make('reason')->label('سبب الرفض')->required()->rows(3)])
             ->visible(fn () =>
-                auth()->user()?->hasRole('factory_manager')
+                auth()->check()
+                && auth()->user()->hasRole('factory_manager')
                 && $this->record->current_phase === Phase::FactoryIntake->value
                 && $this->record->phase_status === S::UnderReview->value
             )
             ->action(function (array $data) {
-                app(\App\Services\ProductionRequestWorkflow::class)->reject($this->record, $data['reason']);
-                \Filament\Notifications\Notification::make()->warning()->title('تم الرفض')->send();
+                app(ProductionRequestWorkflow::class)->reject($this->record, $data['reason']);
+                Notification::make()->warning()->title('تم الرفض')->send();
                 $this->refreshRecord();
             });
 
         return $actions;
     }
 
-
     private function refreshRecord(): void
     {
-        $this->record->refresh()->load(['client','project','logs','productionRequestFiles','files']);
+        $this->record->refresh()->load(['client', 'project', 'logs', 'productionRequestFiles', 'files']);
     }
 }

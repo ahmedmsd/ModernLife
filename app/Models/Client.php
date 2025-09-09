@@ -37,4 +37,9 @@ class Client extends Model
         return $this->belongsTo(\App\Models\City::class);
     }
 
+    public function legacyProjects(): HasMany
+    {
+        return $this->hasMany(\App\Models\LegacyClientProject::class, 'client_id', 'client_id');
+    }
+
 }

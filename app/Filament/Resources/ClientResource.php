@@ -112,7 +112,19 @@ class ClientResource extends Resource
             IconColumn::make('is_active')
                 ->label('نشط')
                 ->boolean(),
-
+            TextColumn::make('legacy_projects_count')
+                ->counts('legacyProjects')
+                ->label('مشروعات قديمة')
+                ->badge()
+                ->url(fn ($record) => LegacyClientProjectResource::getUrl('index', [
+                    'tableFilters' => [
+                        'client_id' => ['value' => $record->client_id],
+                    ],
+                    'client_id' => $record->client_id,
+                ]))
+                ->openUrlInNewTab(false) // غيّرها true لو تحب في تبويب جديد
+                ->extraAttributes(['class' => 'text-primary-600 hover:underline'])
+                ->sortable(),
             TextColumn::make('contacts_count')
                 ->label('عدد جهات الاتصال')
                 ->counts('contacts')
@@ -121,9 +133,9 @@ class ClientResource extends Resource
                 ->color('primary')
                 ->icon('heroicon-o-users'),
 
-            TextColumn::make('created_at')
-                ->label('تاريخ الإضافة')
-                ->dateTime(),
+//            TextColumn::make('created_at')
+//                ->label('تاريخ الإضافة')
+//                ->dateTime(),
 
         ])->actions([
                 Tables\Actions\EditAction::make()

@@ -7,6 +7,7 @@ use App\Filament\Resources\CityResource;
 use App\Filament\Resources\ClientResource;
 use App\Filament\Resources\CountryResource;
 use App\Filament\Resources\ShowroomResource;
+use App\Models\Project;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -121,9 +122,13 @@ class AdminPanelProvider extends PanelProvider
                             ->icon('heroicon-o-briefcase')
                             ->collapsed()
                             ->items([
-                                NavigationItem::make('إدارة المشروعات')
-                                    ->url(ProjectResource::getUrl()),
-                            ])
+                                NavigationItem::make('المشروعات الحالية')
+                                    ->url(ProjectResource::getUrl('index') . '?tableFilters[is_completed][value]=false')
+                                    ->badge(fn () => Project::query()->where('status', '!=', 'completed')->count()),
+                                NavigationItem::make('المشروعات المكتملة')
+                                    ->url(ProjectResource::getUrl('index') . '?tableFilters[is_completed][value]=true')
+                                    ->badge(fn () => Project::query()->where('status', 'completed')->count()),
+                                    ])
                     )
                     ->group(
                         NavigationGroup::make()

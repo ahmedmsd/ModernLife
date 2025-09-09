@@ -20,13 +20,13 @@ class Dashboard extends BaseDashboard
             \App\Filament\Widgets\MainStats::class,
 
 
-            
+
             \App\Filament\Widgets\RequestsPerMonthChart::class,
 
             \App\Filament\Widgets\ProjectsPerClientBar::class,
 
             \App\Filament\Widgets\ClientsMonthlyChart::class,
-            \App\Filament\Widgets\EmployeesByDepartmentDoughnut::class,
+            \App\Filament\Widgets\EmployeesByDepartmentDonut::class,
 
 
             \App\Filament\Widgets\RequestsByStatusChart::class,

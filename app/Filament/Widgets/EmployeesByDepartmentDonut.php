@@ -5,7 +5,7 @@ namespace App\Filament\Widgets;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Facades\DB;
 
-class EmployeesByDepartmentDoughnut extends ChartWidget
+class EmployeesByDepartmentDonut extends ChartWidget
 {
     protected static ?string $heading = 'توزيع الموظفين حسب الأقسام';
     protected static ?string $maxHeight = '320px';

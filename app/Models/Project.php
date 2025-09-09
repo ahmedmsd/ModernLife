@@ -7,9 +7,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, HasManyThrough};
 use Illuminate\Support\Carbon;
+use App\Models\Concerns\HasStatusScopes;
 
 class Project extends Model
 {
+    use HasStatusScopes;
     protected $table = 'projects';
     protected $primaryKey = 'id';
 

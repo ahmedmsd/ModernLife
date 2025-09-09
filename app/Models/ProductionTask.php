@@ -5,9 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Concerns\HasStatusScopes;
 
 class ProductionTask extends Model
 {
+    use HasStatusScopes;
     protected $table = 'production_tasks';
     protected $primaryKey = 'id';
 

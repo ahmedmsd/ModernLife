@@ -9,11 +9,12 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Illuminate\Support\Facades\Auth;
 use Filament\Tables\Actions\Action;
-
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 
 class ProjectResource extends Resource
 {
@@ -71,6 +72,9 @@ class ProjectResource extends Resource
         ]);
     }
 
+    /**
+     * @throws \Exception
+     */
     public static function table(Table $table): Table
     {
         return $table
@@ -98,7 +102,27 @@ class ProjectResource extends Resource
                     ),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
-            ]);
+            ])
+            ->filters([
+                TernaryFilter::make('is_completed')
+                    ->label('الحالة')
+                    ->trueLabel('مكتملة فقط')
+                    ->falseLabel('حالية فقط')
+                    ->placeholder('الكل')
+                    ->queries(
+                        true:  fn (EloquentBuilder $q) => $q->where('status', 'completed'),
+                        false: fn (EloquentBuilder $q) => $q->where('status', '!=', 'completed'),
+                        blank: fn (EloquentBuilder $q) => $q, // لا شيء = الكل
+                    )
+                    ->indicateUsing(function (array $data) {
+                        return match ($data['value'] ?? null) {
+                            true  => 'مكتملة فقط',
+                            false => 'حالية فقط',
+                            default => null,
+                        };
+                    }),
+            ])
+            ->persistFiltersInSession();
     }
 
     public static function getRelations(): array
