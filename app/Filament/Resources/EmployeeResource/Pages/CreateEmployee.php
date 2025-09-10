@@ -6,6 +6,8 @@ use App\Filament\Resources\EmployeeResource;
 use App\Models\User;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class CreateEmployee extends CreateRecord
 {
@@ -15,15 +17,18 @@ class CreateEmployee extends CreateRecord
     {
         if (!empty($data['user'])) {
             $userData = $data['user'];
+
             $user = User::create([
                 'name'     => $data['employee_name'] ?? ($userData['email'] ?? 'User'),
                 'email'    => $userData['email'],
                 'password' => Hash::make($userData['password']),
             ]);
+
             $data['user_id'] = $user->id;
         }
 
-        unset($data['user']);
+        unset($data['user'], $data['roles_ids'], $data['roles']);
+
         return $data;
     }
 
@@ -36,9 +41,23 @@ class CreateEmployee extends CreateRecord
             $employee->refresh();
         }
 
-        $roleNames = (array) ($this->data['roles'] ?? []);
         if ($employee->user) {
-            $employee->user->syncRoles($roleNames);
+            $state = $this->form->getRawState();
+
+            $ids = $state['roles_ids'] ?? $state['roles'] ?? [];
+            $ids = array_values(array_filter(array_map('intval', (array) $ids)));
+
+            $guard = $employee->user->guard_name ?? config('auth.defaults.guard', 'web');
+
+            $validIds = Role::query()
+                ->where('guard_name', $guard)
+                ->whereIn('id', $ids)
+                ->pluck('id')
+                ->all();
+
+            $employee->user->roles()->sync($validIds);
+
+            app(PermissionRegistrar::class)->forgetCachedPermissions();
         }
     }
 

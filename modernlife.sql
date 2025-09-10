@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3306
--- Generation Time: Sep 09, 2025 at 01:40 PM
+-- Generation Time: Sep 10, 2025 at 01:39 PM
 -- Server version: 8.0.21
 -- PHP Version: 8.3.23
 
@@ -62,9 +62,7 @@ CREATE TABLE IF NOT EXISTS `cache` (
 --
 
 INSERT INTO `cache` (`key`, `value`, `expiration`, `created_at`, `updated_at`) VALUES
-('modernlife_cache_spatie.permission.cache', 'a:3:{s:5:\"alias\";a:4:{s:1:\"a\";s:2:\"id\";s:1:\"b\";s:4:\"name\";s:1:\"c\";s:10:\"guard_name\";s:1:\"r\";s:5:\"roles\";}s:11:\"permissions\";a:73:{i:0;a:4:{s:1:\"a\";i:1;s:1:\"b\";s:10:\"view_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:1;a:4:{s:1:\"a\";i:2;s:1:\"b\";s:12:\"manage-roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:2;a:4:{s:1:\"a\";i:3;s:1:\"b\";s:12:\"create_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:3;a:4:{s:1:\"a\";i:4;s:1:\"b\";s:10:\"edit_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:4;a:4:{s:1:\"a\";i:5;s:1:\"b\";s:12:\"delete_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:5;a:4:{s:1:\"a\";i:6;s:1:\"b\";s:16:\"view_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:6;a:4:{s:1:\"a\";i:7;s:1:\"b\";s:18:\"create_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:7;a:4:{s:1:\"a\";i:8;s:1:\"b\";s:16:\"edit_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:8;a:4:{s:1:\"a\";i:9;s:1:\"b\";s:18:\"delete_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:9;a:4:{s:1:\"a\";i:10;s:1:\"b\";s:10:\"view_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:10;a:4:{s:1:\"a\";i:11;s:1:\"b\";s:12:\"create_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:11;a:4:{s:1:\"a\";i:12;s:1:\"b\";s:10:\"edit_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:12;a:4:{s:1:\"a\";i:13;s:1:\"b\";s:12:\"delete_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:13;a:4:{s:1:\"a\";i:14;s:1:\"b\";s:12:\"manage_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:14;a:4:{s:1:\"a\";i:15;s:1:\"b\";s:14:\"view_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:15;a:4:{s:1:\"a\";i:16;s:1:\"b\";s:16:\"create_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:16;a:4:{s:1:\"a\";i:17;s:1:\"b\";s:14:\"edit_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:17;a:4:{s:1:\"a\";i:18;s:1:\"b\";s:16:\"delete_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:18;a:4:{s:1:\"a\";i:19;s:1:\"b\";s:16:\"manage_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:19;a:4:{s:1:\"a\";i:20;s:1:\"b\";s:13:\"view_any_role\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:20;a:4:{s:1:\"a\";i:21;s:1:\"b\";s:18:\"view_city_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:21;a:4:{s:1:\"a\";i:22;s:1:\"b\";s:20:\"create_city_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:22;a:4:{s:1:\"a\";i:23;s:1:\"b\";s:18:\"edit_city_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:23;a:4:{s:1:\"a\";i:24;s:1:\"b\";s:20:\"delete_city_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:24;a:4:{s:1:\"a\";i:25;s:1:\"b\";s:20:\"view_client_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:3;}}i:25;a:4:{s:1:\"a\";i:26;s:1:\"b\";s:22:\"create_client_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:26;a:4:{s:1:\"a\";i:27;s:1:\"b\";s:20:\"edit_client_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:27;a:4:{s:1:\"a\";i:28;s:1:\"b\";s:22:\"delete_client_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:28;a:4:{s:1:\"a\";i:29;s:1:\"b\";s:21:\"view_country_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:29;a:4:{s:1:\"a\";i:30;s:1:\"b\";s:23:\"create_country_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:30;a:4:{s:1:\"a\";i:31;s:1:\"b\";s:21:\"edit_country_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:31;a:4:{s:1:\"a\";i:32;s:1:\"b\";s:23:\"delete_country_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:32;a:4:{s:1:\"a\";i:33;s:1:\"b\";s:35:\"view_department_categories_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:33;a:4:{s:1:\"a\";i:34;s:1:\"b\";s:37:\"create_department_categories_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:34;a:4:{s:1:\"a\";i:35;s:1:\"b\";s:35:\"edit_department_categories_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:35;a:4:{s:1:\"a\";i:36;s:1:\"b\";s:37:\"delete_department_categories_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:36;a:4:{s:1:\"a\";i:37;s:1:\"b\";s:24:\"view_department_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:37;a:4:{s:1:\"a\";i:38;s:1:\"b\";s:26:\"create_department_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:6;}}i:38;a:4:{s:1:\"a\";i:39;s:1:\"b\";s:24:\"edit_department_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:39;a:4:{s:1:\"a\";i:40;s:1:\"b\";s:26:\"delete_department_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:40;a:4:{s:1:\"a\";i:41;s:1:\"b\";s:22:\"view_employee_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:41;a:4:{s:1:\"a\";i:42;s:1:\"b\";s:24:\"create_employee_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:42;a:4:{s:1:\"a\";i:43;s:1:\"b\";s:22:\"edit_employee_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:43;a:4:{s:1:\"a\";i:44;s:1:\"b\";s:24:\"delete_employee_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:44;a:4:{s:1:\"a\";i:45;s:1:\"b\";s:24:\"view_permission_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:45;a:4:{s:1:\"a\";i:46;s:1:\"b\";s:26:\"create_permission_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:46;a:4:{s:1:\"a\";i:47;s:1:\"b\";s:24:\"edit_permission_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:47;a:4:{s:1:\"a\";i:48;s:1:\"b\";s:26:\"delete_permission_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:48;a:4:{s:1:\"a\";i:49;s:1:\"b\";s:32:\"view_production_request_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:3;i:2;i:6;}}i:49;a:4:{s:1:\"a\";i:50;s:1:\"b\";s:34:\"create_production_request_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:4:{i:0;i:1;i:1;i:2;i:2;i:3;i:3;i:6;}}i:50;a:4:{s:1:\"a\";i:51;s:1:\"b\";s:32:\"edit_production_request_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:4:{i:0;i:1;i:1;i:2;i:2;i:3;i:3;i:6;}}i:51;a:4:{s:1:\"a\";i:52;s:1:\"b\";s:34:\"delete_production_request_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:52;a:4:{s:1:\"a\";i:53;s:1:\"b\";s:21:\"view_project_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:53;a:4:{s:1:\"a\";i:54;s:1:\"b\";s:23:\"create_project_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:6;}}i:54;a:4:{s:1:\"a\";i:55;s:1:\"b\";s:21:\"edit_project_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:55;a:4:{s:1:\"a\";i:56;s:1:\"b\";s:23:\"delete_project_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:56;a:4:{s:1:\"a\";i:57;s:1:\"b\";s:18:\"view_role_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:57;a:4:{s:1:\"a\";i:58;s:1:\"b\";s:20:\"create_role_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:58;a:4:{s:1:\"a\";i:59;s:1:\"b\";s:18:\"edit_role_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:59;a:4:{s:1:\"a\";i:60;s:1:\"b\";s:20:\"delete_role_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:60;a:4:{s:1:\"a\";i:61;s:1:\"b\";s:22:\"view_showroom_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:61;a:4:{s:1:\"a\";i:62;s:1:\"b\";s:24:\"create_showroom_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:62;a:4:{s:1:\"a\";i:63;s:1:\"b\";s:22:\"edit_showroom_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:63;a:4:{s:1:\"a\";i:64;s:1:\"b\";s:24:\"delete_showroom_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:64;a:4:{s:1:\"a\";i:65;s:1:\"b\";s:27:\"access_manage_project_tasks\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:5:{i:0;i:1;i:1;i:2;i:2;i:4;i:3;i:5;i:4;i:6;}}i:65;a:4:{s:1:\"a\";i:66;s:1:\"b\";s:19:\"access_view_project\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:4:{i:0;i:1;i:1;i:2;i:2;i:4;i:3;i:6;}}i:66;a:4:{s:1:\"a\";i:67;s:1:\"b\";s:32:\"access_review_production_request\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:4:{i:0;i:1;i:1;i:2;i:2;i:4;i:3;i:6;}}i:67;a:4:{s:1:\"a\";i:68;s:1:\"b\";s:31:\"access_view_production_timeline\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:4:{i:0;i:1;i:1;i:2;i:2;i:4;i:3;i:6;}}i:68;a:4:{s:1:\"a\";i:69;s:1:\"b\";s:18:\"view_task_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:4;i:1;i:5;}}i:69;a:4:{s:1:\"a\";i:70;s:1:\"b\";s:20:\"create_task_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:70;a:3:{s:1:\"a\";i:71;s:1:\"b\";s:18:\"edit_task_resource\";s:1:\"c\";s:3:\"web\";}i:71;a:4:{s:1:\"a\";i:72;s:1:\"b\";s:20:\"delete_task_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:72;a:3:{s:1:\"a\";i:73;s:1:\"b\";s:12:\"manage-tasks\";s:1:\"c\";s:3:\"web\";}}s:5:\"roles\";a:6:{i:0;a:3:{s:1:\"a\";i:1;s:1:\"b\";s:11:\"super-admin\";s:1:\"c\";s:3:\"web\";}i:1;a:3:{s:1:\"a\";i:2;s:1:\"b\";s:5:\"admin\";s:1:\"c\";s:3:\"web\";}i:2;a:3:{s:1:\"a\";i:3;s:1:\"b\";s:5:\"sales\";s:1:\"c\";s:3:\"web\";}i:3;a:3:{s:1:\"a\";i:6;s:1:\"b\";s:16:\"showroom_manager\";s:1:\"c\";s:3:\"web\";}i:4;a:3:{s:1:\"a\";i:4;s:1:\"b\";s:18:\"department_manager\";s:1:\"c\";s:3:\"web\";}i:5;a:3:{s:1:\"a\";i:5;s:1:\"b\";s:18:\"purchasing_manager\";s:1:\"c\";s:3:\"web\";}}}', 1757489082, '2025-09-09 07:24:42', '2025-09-09 07:24:42'),
-('modernlife_cache_356a192b7913b04c54574d18c28d46e6395428ab:timer', 'i:1757417387;', 1757417387, '2025-09-09 11:28:47', '2025-09-09 11:28:47'),
-('modernlife_cache_356a192b7913b04c54574d18c28d46e6395428ab', 'i:1;', 1757417387, '2025-09-09 11:28:47', '2025-09-09 11:28:47');
+('modernlife_cache_spatie.permission.cache', 'a:3:{s:5:\"alias\";a:4:{s:1:\"a\";s:2:\"id\";s:1:\"b\";s:4:\"name\";s:1:\"c\";s:10:\"guard_name\";s:1:\"r\";s:5:\"roles\";}s:11:\"permissions\";a:77:{i:0;a:4:{s:1:\"a\";i:1;s:1:\"b\";s:10:\"view_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:1;a:4:{s:1:\"a\";i:2;s:1:\"b\";s:12:\"manage-roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:2;a:4:{s:1:\"a\";i:3;s:1:\"b\";s:12:\"create_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:3;a:4:{s:1:\"a\";i:4;s:1:\"b\";s:10:\"edit_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:4;a:4:{s:1:\"a\";i:5;s:1:\"b\";s:12:\"delete_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:5;a:4:{s:1:\"a\";i:6;s:1:\"b\";s:16:\"view_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:6;a:4:{s:1:\"a\";i:7;s:1:\"b\";s:18:\"create_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:7;a:4:{s:1:\"a\";i:8;s:1:\"b\";s:16:\"edit_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:8;a:4:{s:1:\"a\";i:9;s:1:\"b\";s:18:\"delete_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:9;a:4:{s:1:\"a\";i:10;s:1:\"b\";s:10:\"view_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:10;a:4:{s:1:\"a\";i:11;s:1:\"b\";s:12:\"create_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:11;a:4:{s:1:\"a\";i:12;s:1:\"b\";s:10:\"edit_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:12;a:4:{s:1:\"a\";i:13;s:1:\"b\";s:12:\"delete_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:13;a:4:{s:1:\"a\";i:14;s:1:\"b\";s:12:\"manage_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:14;a:4:{s:1:\"a\";i:15;s:1:\"b\";s:14:\"view_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:15;a:4:{s:1:\"a\";i:16;s:1:\"b\";s:16:\"create_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:16;a:4:{s:1:\"a\";i:17;s:1:\"b\";s:14:\"edit_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:17;a:4:{s:1:\"a\";i:18;s:1:\"b\";s:16:\"delete_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:18;a:4:{s:1:\"a\";i:19;s:1:\"b\";s:16:\"manage_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:19;a:4:{s:1:\"a\";i:20;s:1:\"b\";s:13:\"view_any_role\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:20;a:4:{s:1:\"a\";i:21;s:1:\"b\";s:18:\"view_city_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:21;a:4:{s:1:\"a\";i:22;s:1:\"b\";s:20:\"create_city_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:22;a:4:{s:1:\"a\";i:23;s:1:\"b\";s:18:\"edit_city_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:23;a:4:{s:1:\"a\";i:24;s:1:\"b\";s:20:\"delete_city_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:24;a:4:{s:1:\"a\";i:25;s:1:\"b\";s:20:\"view_client_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:3;}}i:25;a:4:{s:1:\"a\";i:26;s:1:\"b\";s:22:\"create_client_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:26;a:4:{s:1:\"a\";i:27;s:1:\"b\";s:20:\"edit_client_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:27;a:4:{s:1:\"a\";i:28;s:1:\"b\";s:22:\"delete_client_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:28;a:4:{s:1:\"a\";i:29;s:1:\"b\";s:21:\"view_country_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:29;a:4:{s:1:\"a\";i:30;s:1:\"b\";s:23:\"create_country_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:30;a:4:{s:1:\"a\";i:31;s:1:\"b\";s:21:\"edit_country_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:31;a:4:{s:1:\"a\";i:32;s:1:\"b\";s:23:\"delete_country_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:32;a:4:{s:1:\"a\";i:33;s:1:\"b\";s:35:\"view_department_categories_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:33;a:4:{s:1:\"a\";i:34;s:1:\"b\";s:37:\"create_department_categories_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:34;a:4:{s:1:\"a\";i:35;s:1:\"b\";s:35:\"edit_department_categories_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:35;a:4:{s:1:\"a\";i:36;s:1:\"b\";s:37:\"delete_department_categories_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:36;a:4:{s:1:\"a\";i:37;s:1:\"b\";s:24:\"view_department_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:37;a:4:{s:1:\"a\";i:38;s:1:\"b\";s:26:\"create_department_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:6;}}i:38;a:4:{s:1:\"a\";i:39;s:1:\"b\";s:24:\"edit_department_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:39;a:4:{s:1:\"a\";i:40;s:1:\"b\";s:26:\"delete_department_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:40;a:4:{s:1:\"a\";i:41;s:1:\"b\";s:22:\"view_employee_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:41;a:4:{s:1:\"a\";i:42;s:1:\"b\";s:24:\"create_employee_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:42;a:4:{s:1:\"a\";i:43;s:1:\"b\";s:22:\"edit_employee_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:43;a:4:{s:1:\"a\";i:44;s:1:\"b\";s:24:\"delete_employee_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:44;a:4:{s:1:\"a\";i:45;s:1:\"b\";s:24:\"view_permission_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:45;a:4:{s:1:\"a\";i:46;s:1:\"b\";s:26:\"create_permission_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:46;a:4:{s:1:\"a\";i:47;s:1:\"b\";s:24:\"edit_permission_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:47;a:4:{s:1:\"a\";i:48;s:1:\"b\";s:26:\"delete_permission_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:48;a:4:{s:1:\"a\";i:49;s:1:\"b\";s:32:\"view_production_request_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:3;i:2;i:6;}}i:49;a:4:{s:1:\"a\";i:50;s:1:\"b\";s:34:\"create_production_request_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:4:{i:0;i:1;i:1;i:2;i:2;i:3;i:3;i:6;}}i:50;a:4:{s:1:\"a\";i:51;s:1:\"b\";s:32:\"edit_production_request_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:4:{i:0;i:1;i:1;i:2;i:2;i:3;i:3;i:6;}}i:51;a:4:{s:1:\"a\";i:52;s:1:\"b\";s:34:\"delete_production_request_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:52;a:4:{s:1:\"a\";i:53;s:1:\"b\";s:21:\"view_project_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:53;a:4:{s:1:\"a\";i:54;s:1:\"b\";s:23:\"create_project_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:6;}}i:54;a:4:{s:1:\"a\";i:55;s:1:\"b\";s:21:\"edit_project_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:55;a:4:{s:1:\"a\";i:56;s:1:\"b\";s:23:\"delete_project_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:56;a:4:{s:1:\"a\";i:57;s:1:\"b\";s:18:\"view_role_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:57;a:4:{s:1:\"a\";i:58;s:1:\"b\";s:20:\"create_role_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:58;a:4:{s:1:\"a\";i:59;s:1:\"b\";s:18:\"edit_role_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:59;a:4:{s:1:\"a\";i:60;s:1:\"b\";s:20:\"delete_role_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:60;a:4:{s:1:\"a\";i:61;s:1:\"b\";s:22:\"view_showroom_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:61;a:4:{s:1:\"a\";i:62;s:1:\"b\";s:24:\"create_showroom_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:62;a:4:{s:1:\"a\";i:63;s:1:\"b\";s:22:\"edit_showroom_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:63;a:4:{s:1:\"a\";i:64;s:1:\"b\";s:24:\"delete_showroom_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:64;a:4:{s:1:\"a\";i:65;s:1:\"b\";s:27:\"access_manage_project_tasks\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:5:{i:0;i:1;i:1;i:2;i:2;i:4;i:3;i:5;i:4;i:6;}}i:65;a:4:{s:1:\"a\";i:66;s:1:\"b\";s:19:\"access_view_project\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:4:{i:0;i:1;i:1;i:2;i:2;i:4;i:3;i:6;}}i:66;a:4:{s:1:\"a\";i:67;s:1:\"b\";s:32:\"access_review_production_request\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:4:{i:0;i:1;i:1;i:2;i:2;i:4;i:3;i:6;}}i:67;a:4:{s:1:\"a\";i:68;s:1:\"b\";s:31:\"access_view_production_timeline\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:4:{i:0;i:1;i:1;i:2;i:2;i:4;i:3;i:6;}}i:68;a:4:{s:1:\"a\";i:69;s:1:\"b\";s:18:\"view_task_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:4;i:1;i:5;}}i:69;a:4:{s:1:\"a\";i:70;s:1:\"b\";s:20:\"create_task_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:70;a:3:{s:1:\"a\";i:71;s:1:\"b\";s:18:\"edit_task_resource\";s:1:\"c\";s:3:\"web\";}i:71;a:4:{s:1:\"a\";i:72;s:1:\"b\";s:20:\"delete_task_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:72;a:3:{s:1:\"a\";i:73;s:1:\"b\";s:12:\"manage-tasks\";s:1:\"c\";s:3:\"web\";}i:73;a:3:{s:1:\"a\";i:74;s:1:\"b\";s:35:\"view_legacy_client_project_resource\";s:1:\"c\";s:3:\"web\";}i:74;a:3:{s:1:\"a\";i:75;s:1:\"b\";s:37:\"create_legacy_client_project_resource\";s:1:\"c\";s:3:\"web\";}i:75;a:3:{s:1:\"a\";i:76;s:1:\"b\";s:35:\"edit_legacy_client_project_resource\";s:1:\"c\";s:3:\"web\";}i:76;a:3:{s:1:\"a\";i:77;s:1:\"b\";s:37:\"delete_legacy_client_project_resource\";s:1:\"c\";s:3:\"web\";}}s:5:\"roles\";a:6:{i:0;a:3:{s:1:\"a\";i:1;s:1:\"b\";s:11:\"super-admin\";s:1:\"c\";s:3:\"web\";}i:1;a:3:{s:1:\"a\";i:2;s:1:\"b\";s:5:\"admin\";s:1:\"c\";s:3:\"web\";}i:2;a:3:{s:1:\"a\";i:3;s:1:\"b\";s:5:\"sales\";s:1:\"c\";s:3:\"web\";}i:3;a:3:{s:1:\"a\";i:6;s:1:\"b\";s:16:\"showroom_manager\";s:1:\"c\";s:3:\"web\";}i:4;a:3:{s:1:\"a\";i:4;s:1:\"b\";s:18:\"department_manager\";s:1:\"c\";s:3:\"web\";}i:5;a:3:{s:1:\"a\";i:5;s:1:\"b\";s:18:\"purchasing_manager\";s:1:\"c\";s:3:\"web\";}}}', 1757597056, '2025-09-10 13:24:16', '2025-09-10 13:24:16');
 
 -- --------------------------------------------------------
 
@@ -97,7 +95,7 @@ CREATE TABLE IF NOT EXISTS `cities` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `cities_country_id_foreign` (`country_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `cities`
@@ -120,7 +118,8 @@ INSERT INTO `cities` (`id`, `name`, `country_id`, `created_at`, `updated_at`) VA
 (15, 'نجران', 1, '2025-07-09 07:32:49', '2025-07-09 07:32:49'),
 (16, 'جازان', 1, '2025-07-09 07:32:49', '2025-07-09 07:32:49'),
 (17, 'القطيف', 1, '2025-07-09 07:32:49', '2025-07-09 07:32:49'),
-(18, 'عرعر', 1, '2025-07-09 07:32:49', '2025-07-09 07:32:49');
+(18, 'عرعر', 1, '2025-07-09 07:32:49', '2025-07-09 07:32:49'),
+(21, 'سيهـات', 1, '2025-09-10 12:14:10', '2025-09-10 12:14:23');
 
 -- --------------------------------------------------------
 
@@ -200,7 +199,7 @@ CREATE TABLE IF NOT EXISTS `countries` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `countries`
@@ -212,7 +211,7 @@ INSERT INTO `countries` (`id`, `name`, `code`, `created_at`, `updated_at`) VALUE
 (4, 'قطر', 'QA', '2025-07-09 07:31:53', '2025-07-09 07:31:53'),
 (5, 'البحرين', 'BH', '2025-07-09 07:31:53', '2025-07-09 07:31:53'),
 (6, 'الكويت', 'KW', '2025-07-09 07:31:53', '2025-07-09 07:31:53'),
-(7, 'عمان', 'OM', '2025-07-09 07:31:53', '2025-07-09 07:31:53'),
+(7, 'عُمان', 'OM', '2025-07-09 07:31:53', '2025-09-10 12:13:31'),
 (8, 'مصر', 'EG', '2025-07-09 07:31:53', '2025-07-09 07:31:53'),
 (9, 'الأردن', 'JO', '2025-07-09 07:31:53', '2025-07-09 07:31:53'),
 (10, 'لبنان', 'LB', '2025-07-09 07:31:53', '2025-07-09 07:31:53'),
@@ -327,7 +326,7 @@ CREATE TABLE IF NOT EXISTS `employees` (
   PRIMARY KEY (`employee_id`),
   KEY `idx_employees_department` (`department_id`),
   KEY `idx_employees_status` (`is_active`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `employees`
@@ -335,7 +334,8 @@ CREATE TABLE IF NOT EXISTS `employees` (
 
 INSERT INTO `employees` (`employee_id`, `user_id`, `national_id`, `employee_name`, `gender`, `birth_date`, `email`, `phone`, `address`, `department_id`, `position`, `hire_date`, `salary`, `employment_type`, `is_active`, `emergency_contact_name`, `emergency_contact_phone`, `notes`, `created_at`, `updated_at`) VALUES
 (6, 9, '2264078805', 'Ahmed Mohamed', 'male', '2025-07-10', 'designer_4ever@hotmail.com', '0560645034', 'Dammam', 7, 'Developer', NULL, NULL, 'full_time', 1, NULL, NULL, NULL, '2025-07-06 06:51:31', '2025-07-06 09:46:32'),
-(7, 10, '123466678', 'Mohamed Ibrahim', 'male', '1992-06-09', NULL, '05012345678', NULL, 11, 'Sales', NULL, NULL, 'full_time', 1, NULL, NULL, NULL, '2025-08-20 04:39:55', '2025-08-20 04:39:55');
+(7, 10, '123466678', 'Mohamed Ibrahim', 'male', '1992-06-09', NULL, '05012345678', NULL, 11, 'Sales', NULL, NULL, 'full_time', 1, NULL, NULL, NULL, '2025-08-20 04:39:55', '2025-08-20 04:39:55'),
+(8, 11, '1236566565', 'Ibrahim Elsayed', 'male', NULL, NULL, '0500212222', NULL, 7, 'Sales', NULL, NULL, 'full_time', 1, NULL, NULL, NULL, '2025-09-10 12:27:21', '2025-09-10 12:27:21');
 
 -- --------------------------------------------------------
 
@@ -616,13 +616,6 @@ CREATE TABLE IF NOT EXISTS `legacy_client_projects` (
   KEY `legacy_client_projects_client_id_end_date_index` (`client_id`,`end_date`)
 ) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Dumping data for table `legacy_client_projects`
---
-
-INSERT INTO `legacy_client_projects` (`id`, `client_id`, `project_name`, `start_date`, `end_date`, `details`, `created_at`, `updated_at`) VALUES
-(1, 1, 'مطبخ رخام', '2024-01-01', '2025-09-09', 'تفاصيل المطبخ هنا', '2025-09-09 10:47:50', '2025-09-09 10:47:50');
-
 -- --------------------------------------------------------
 
 --
@@ -736,7 +729,7 @@ CREATE TABLE IF NOT EXISTS `migrations` (
   `migration` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `batch` int NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `migrations`
@@ -755,7 +748,8 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 (10, '2025_08_18_100430_create_production_tasks_time_entries', 8),
 (11, '2025_08_19_141411_create_production_tasks_material_requests', 9),
 (12, '2025_08_27_091334_create_production_tasks_comments_table', 10),
-(13, '2025_09_09_122457_create_legacy_client_projects_table', 11);
+(13, '2025_09_09_122457_create_legacy_client_projects_table', 11),
+(14, '2025_09_10_144035_add_meta_columns_to_system_settings_table', 12);
 
 -- --------------------------------------------------------
 
@@ -814,7 +808,8 @@ INSERT INTO `model_has_roles` (`role_id`, `model_type`, `model_id`) VALUES
 (8, 'App\\Models\\User', 9),
 (9, 'App\\Models\\User', 9),
 (3, 'App\\Models\\User', 10),
-(4, 'App\\Models\\User', 10);
+(4, 'App\\Models\\User', 10),
+(3, 'App\\Models\\User', 11);
 
 -- --------------------------------------------------------
 
@@ -909,7 +904,7 @@ CREATE TABLE IF NOT EXISTS `permissions` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `permissions_name_guard_name_unique` (`name`,`guard_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=74 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=78 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `permissions`
@@ -988,7 +983,11 @@ INSERT INTO `permissions` (`id`, `name`, `guard_name`, `created_at`, `updated_at
 (70, 'create_task_resource', 'web', '2025-08-19 12:22:31', '2025-08-19 12:22:31'),
 (71, 'edit_task_resource', 'web', '2025-08-19 12:22:31', '2025-08-19 12:22:31'),
 (72, 'delete_task_resource', 'web', '2025-08-19 12:22:31', '2025-08-19 12:22:31'),
-(73, 'manage-tasks', 'web', '2025-08-19 12:42:36', '2025-08-19 12:42:36');
+(73, 'manage-tasks', 'web', '2025-08-19 12:42:36', '2025-08-19 12:42:36'),
+(74, 'view_legacy_client_project_resource', 'web', '2025-09-10 12:24:51', '2025-09-10 12:24:51'),
+(75, 'create_legacy_client_project_resource', 'web', '2025-09-10 12:24:51', '2025-09-10 12:24:51'),
+(76, 'edit_legacy_client_project_resource', 'web', '2025-09-10 12:24:51', '2025-09-10 12:24:51'),
+(77, 'delete_legacy_client_project_resource', 'web', '2025-09-10 12:24:51', '2025-09-10 12:24:51');
 
 -- --------------------------------------------------------
 
@@ -1732,7 +1731,7 @@ CREATE TABLE IF NOT EXISTS `sessions` (
 --
 
 INSERT INTO `sessions` (`id`, `user_id`, `ip_address`, `user_agent`, `payload`, `last_activity`, `created_at`, `updated_at`) VALUES
-('3kaByuNsfncQ9BkoKqKN6nOqPTAye2zKr64NluDS', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', 'YTo3OntzOjY6Il90b2tlbiI7czo0MDoiNDdxQ3lmWUdEblJXV2o5eUFQMENFVENWejdtZjd4ZjM3UVpMREVrTSI7czo1MDoibG9naW5fd2ViXzU5YmEzNmFkZGMyYjJmOTQwMTU4MGYwMTRjN2Y1OGVhNGUzMDk4OWQiO2k6MTtzOjE3OiJwYXNzd29yZF9oYXNoX3dlYiI7czo2MDoiJDJ5JDEyJDE3bEVQOXloTWRqZmp6N3JnNmVkRy5uRG5LRU9vWGpsYXZWeWlFaWNCbWZUTnp3Q0NjRHZXIjtzOjk6Il9wcmV2aW91cyI7YToxOntzOjM6InVybCI7czo1MjoiaHR0cDovLzEyNy4wLjAuMTo4MDAwL2FkbWluL2xlZ2FjeS1jbGllbnQtcHJvamVjdHMvMSI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fXM6NjoidGFibGVzIjthOjI6e3M6NDA6ImIxZDZmYzM0Mzk3OTFkYzc2MDhhZTEyM2FmMDQ4ZDVmX2ZpbHRlcnMiO2E6MTp7czoxMjoiaXNfY29tcGxldGVkIjthOjE6e3M6NToidmFsdWUiO3M6MToiMSI7fX1zOjQxOiJlYjI5OWI1ZDQwMThjZjE1MWNmMjBjNmNjNTliN2Y3YV9wZXJfcGFnZSI7czoxOiI1Ijt9czo4OiJmaWxhbWVudCI7YTowOnt9fQ==', 1757425223, '2025-09-09 07:11:12', '2025-09-09 13:40:23');
+('ymrWUz2fvV1brzTKrZxhcfWhhOLiopLZdCPqmC8L', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', 'YTo3OntzOjY6Il90b2tlbiI7czo0MDoiTVhtWDNocWNBZmlBVWo2eUtzZGxDN0ZuYTk2WWRhaWRNTVRQNUFsNiI7czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319czo1MDoibG9naW5fd2ViXzU5YmEzNmFkZGMyYjJmOTQwMTU4MGYwMTRjN2Y1OGVhNGUzMDk4OWQiO2k6MTtzOjE3OiJwYXNzd29yZF9oYXNoX3dlYiI7czo2MDoiJDJ5JDEyJDE3bEVQOXloTWRqZmp6N3JnNmVkRy5uRG5LRU9vWGpsYXZWeWlFaWNCbWZUTnp3Q0NjRHZXIjtzOjk6Il9wcmV2aW91cyI7YToxOntzOjM6InVybCI7czo0NDoiaHR0cDovLzEyNy4wLjAuMTo4MDAwL2FkbWluL2VtcGxveWVlcy9jcmVhdGUiO31zOjg6ImZpbGFtZW50IjthOjA6e31zOjY6InRhYmxlcyI7YToyOntzOjQxOiIxMmEwMWM4N2M0MmU1NDM0YmZiZTU3MzE2Y2YzZDE0OV9wZXJfcGFnZSI7czozOiJhbGwiO3M6NDE6IjFmYzk2ZjM5YThmYWRiMWJjMGMzOGRjMmEzNDVlNTBlX3Blcl9wYWdlIjtzOjM6ImFsbCI7fX0=', 1757511536, '2025-09-10 10:45:12', '2025-09-10 13:38:56');
 
 -- --------------------------------------------------------
 
@@ -1754,7 +1753,7 @@ CREATE TABLE IF NOT EXISTS `showrooms` (
   PRIMARY KEY (`id`),
   KEY `showrooms_city_id_foreign` (`city_id`),
   KEY `showrooms_manager_id_foreign` (`manager_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `showrooms`
@@ -1791,7 +1790,11 @@ DROP TABLE IF EXISTS `system_settings`;
 CREATE TABLE IF NOT EXISTS `system_settings` (
   `setting_id` int NOT NULL AUTO_INCREMENT,
   `setting_key` varchar(50) NOT NULL,
-  `setting_value` text NOT NULL,
+  `setting_value` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci,
+  `setting_options` json DEFAULT NULL,
+  `is_sensitive` tinyint(1) NOT NULL DEFAULT '0',
+  `validation_rules` varchar(255) DEFAULT NULL,
+  `help_text` text,
   `setting_group` varchar(50) DEFAULT NULL,
   `setting_type` varchar(50) DEFAULT NULL,
   `is_public` tinyint(1) DEFAULT '0',
@@ -1802,25 +1805,63 @@ CREATE TABLE IF NOT EXISTS `system_settings` (
   UNIQUE KEY `setting_key` (`setting_key`),
   KEY `idx_settings_key` (`setting_key`),
   KEY `idx_settings_group` (`setting_group`)
-) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=52 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `system_settings`
 --
 
-INSERT INTO `system_settings` (`setting_id`, `setting_key`, `setting_value`, `setting_group`, `setting_type`, `is_public`, `description`, `created_at`, `updated_at`) VALUES
-(2, 'site_name', 'نظام إدارة التصنيع', 'general', 'text', 1, 'اسم النظام المعروض في العنوان', '2025-07-09 11:41:12', '2025-07-09 10:02:19'),
-(3, 'system_email', 'info@factory.com', 'general', 'email', 0, 'البريد الإلكتروني العام للنظام', '2025-07-09 11:41:12', '2025-07-09 10:02:19'),
-(4, 'default_language', 'ar', 'general', 'select', 0, 'اللغة الافتراضية للنظام', '2025-07-09 11:41:12', '2025-07-09 10:02:19'),
-(5, 'notify_on_late_department_response', '1', 'notifications', 'boolean', 0, 'إرسال إشعار عند تأخر القسم عن الرد', '2025-07-09 11:41:12', '2025-07-09 10:02:19'),
-(6, 'notify_manager_on_request', '1', 'notifications', 'boolean', 0, 'إشعار مدير المصنع عند وصول طلب جديد', '2025-07-09 11:41:12', '2025-07-09 10:02:19'),
-(7, 'notification_email', 'notifications@factory.com', 'notifications', 'email', 0, 'البريد المستلم للتنبيهات', '2025-07-09 11:41:12', '2025-07-09 10:02:19'),
-(8, 'factory_name', 'مصنع الحياة الحديثة للأثاث', 'factory', 'text', 1, 'الاسم التجاري للمصنع', '2025-07-09 11:41:12', '2025-07-09 10:02:19'),
-(9, 'factory_logo', 'settings/bullet.png', 'factory', 'file', 1, 'شعار المصنع الرسمي', '2025-07-09 11:41:12', '2025-07-09 10:02:19'),
-(10, 'factory_address', 'جدة - المدينة الصناعية', 'factory', 'text', 1, 'عنوان المصنع الرئيسي', '2025-07-09 11:41:12', '2025-07-09 10:02:19'),
-(11, 'factory_phone', '+966500000000', 'factory', 'text', 1, 'رقم الهاتف الرئيسي', '2025-07-09 11:41:12', '2025-07-09 10:02:19'),
-(12, 'factory_email', 'support@factory.com', 'factory', 'email', 1, 'البريد الإلكتروني الرسمي', '2025-07-09 11:41:12', '2025-07-09 10:02:19'),
-(13, 'purchasing_budget_cap_pct', '50', NULL, NULL, 0, NULL, '2025-08-21 07:48:21', '2025-08-26 10:24:00');
+INSERT INTO `system_settings` (`setting_id`, `setting_key`, `setting_value`, `setting_options`, `is_sensitive`, `validation_rules`, `help_text`, `setting_group`, `setting_type`, `is_public`, `description`, `created_at`, `updated_at`) VALUES
+(2, 'site_name', 'نظام إدارة التصنيع', NULL, 0, NULL, NULL, 'general', 'text', 1, 'اسم النظام المعروض في العنوان', '2025-07-09 11:41:12', '2025-07-09 10:02:19'),
+(3, 'system_email', 'info@factory.com', NULL, 0, NULL, NULL, 'general', 'email', 0, 'البريد الإلكتروني العام للنظام', '2025-07-09 11:41:12', '2025-07-09 10:02:19'),
+(4, 'default_language', 'ar', NULL, 0, NULL, NULL, 'general', 'select', 0, 'اللغة الافتراضية للنظام', '2025-07-09 11:41:12', '2025-07-09 10:02:19'),
+(5, 'notify_on_late_department_response', '1', NULL, 0, NULL, NULL, 'notifications', 'boolean', 0, 'إرسال إشعار عند تأخر القسم عن الرد', '2025-07-09 11:41:12', '2025-09-10 12:05:52'),
+(6, 'notify_manager_on_request', '1', NULL, 0, NULL, NULL, 'notifications', 'boolean', 0, 'إشعار مدير المصنع عند وصول طلب جديد', '2025-07-09 11:41:12', '2025-09-10 12:05:52'),
+(7, 'notification_email', 'notifications@factory.com', NULL, 0, NULL, NULL, 'notifications', 'email', 0, 'البريد المستلم للتنبيهات', '2025-07-09 11:41:12', '2025-07-09 10:02:19'),
+(8, 'factory_name', 'مصنع الحياة الحديثة للأثاث', NULL, 0, NULL, NULL, 'factory', 'text', 1, 'الاسم التجاري للمصنع', '2025-07-09 11:41:12', '2025-07-09 10:02:19'),
+(9, 'factory_logo', 'settings/bullet.png', NULL, 0, NULL, NULL, 'factory', 'file', 1, 'شعار المصنع الرسمي', '2025-07-09 11:41:12', '2025-07-09 10:02:19'),
+(10, 'factory_address', 'جدة - المدينة الصناعية', NULL, 0, NULL, NULL, 'factory', 'text', 1, 'عنوان المصنع الرئيسي', '2025-07-09 11:41:12', '2025-07-09 10:02:19'),
+(11, 'factory_phone', '+966500000000', NULL, 0, NULL, NULL, 'factory', 'text', 1, 'رقم الهاتف الرئيسي', '2025-07-09 11:41:12', '2025-07-09 10:02:19'),
+(12, 'factory_email', 'support@factory.com', NULL, 0, NULL, NULL, 'factory', 'email', 1, 'البريد الإلكتروني الرسمي', '2025-07-09 11:41:12', '2025-07-09 10:02:19'),
+(13, 'purchasing_budget_cap_pct', '50', NULL, 0, NULL, NULL, 'general', 'text', 1, 'سقف الميزانية للمشتريات', '2025-08-21 07:48:21', '2025-09-10 12:03:29'),
+(14, 'app_name', 'ModernLife', NULL, 0, NULL, NULL, 'general', 'text', 0, 'اسم النظام', '2025-09-10 11:42:32', '2025-09-10 11:55:02'),
+(15, 'company_name', 'ModernLife Co.', NULL, 0, NULL, NULL, 'general', 'text', 0, 'اسم الشركة', '2025-09-10 11:42:32', '2025-09-10 11:55:02'),
+(16, 'support_email', 'support@example.com', NULL, 0, 'nullable|email', 'ستُستخدم لاستقبال رسائل الدعم', 'general', 'email', 0, 'بريد الدعم', '2025-09-10 11:42:32', '2025-09-10 11:55:02'),
+(17, 'support_phone', NULL, NULL, 0, 'nullable|string|max:30', NULL, 'general', 'text', 0, 'هاتف الدعم', '2025-09-10 11:42:32', '2025-09-10 12:02:17'),
+(18, 'base_url', 'http://localhost:8000', NULL, 0, 'required|url', NULL, 'general', 'url', 0, 'رابط النظام', '2025-09-10 11:42:32', '2025-09-10 11:55:02'),
+(19, 'brand_logo', NULL, NULL, 0, NULL, 'يفضل PNG بخلفية شفافة', 'branding', 'image', 0, 'شعار الشركة', '2025-09-10 11:55:02', '2025-09-10 11:55:02'),
+(20, 'brand_favicon', NULL, NULL, 0, NULL, 'مقاس 32x32 أو 64x64', 'branding', 'image', 0, 'Favicon', '2025-09-10 11:55:02', '2025-09-10 11:55:02'),
+(21, 'primary_color', '#0ea5e9', NULL, 0, NULL, NULL, 'branding', 'color', 0, 'اللون الأساسي', '2025-09-10 11:55:02', '2025-09-10 11:55:02'),
+(22, 'secondary_color', '#22c55e', NULL, 0, NULL, NULL, 'branding', 'color', 0, 'اللون الثانوي', '2025-09-10 11:55:02', '2025-09-10 11:55:02'),
+(23, 'locale', 'ar', '{\"ar\": \"العربية\", \"en\": \"English\"}', 0, 'required|in:ar,en', 'تؤثر على لغة واجهة فيلامنت والتواريخ.', 'locale', 'locale', 0, 'لغة الواجهة', '2025-09-10 11:55:02', '2025-09-10 11:55:02'),
+(24, 'timezone', 'Asia/Riyadh', NULL, 0, 'required|string', NULL, 'locale', 'timezone', 0, 'المنطقة الزمنية', '2025-09-10 11:55:02', '2025-09-10 12:05:52'),
+(25, 'date_format', 'Y-m-d', '{\"Y-m-d\": \"2025-09-09\", \"d/m/Y\": \"09/09/2025\", \"m/d/Y\": \"09/09/2025\", \"M j, Y\": \"Sep 9, 2025\"}', 0, 'required|string', 'تأثيره يظهر في أعمدة/حقول التاريخ.', 'locale', 'select', 0, 'تنسيق التاريخ', '2025-09-10 11:55:02', '2025-09-10 11:55:02'),
+(26, 'time_format', 'h:i A', '{\"H:i\": \"23:15\", \"h:i A\": \"11:15 PM\"}', 0, 'required|string', NULL, 'locale', 'select', 0, 'تنسيق الوقت', '2025-09-10 11:55:02', '2025-09-10 12:05:52'),
+(27, 'week_starts_on', 'saturday', '{\"monday\": \"الاثنين\", \"sunday\": \"الأحد\", \"saturday\": \"السبت\"}', 0, 'required|in:saturday,sunday,monday', NULL, 'locale', 'select', 0, 'أول أيام الأسبوع', '2025-09-10 11:55:02', '2025-09-10 11:55:02'),
+(28, 'project_due_soon_days', '7', NULL, 0, 'required|integer|min:0', NULL, 'projects', 'number', 0, 'إنذار قبل انتهاء المشروع (أيام)', '2025-09-10 11:55:02', '2025-09-10 11:55:02'),
+(29, 'task_overdue_grace_hours', '24', NULL, 0, 'required|integer|min:0', NULL, 'projects', 'number', 0, 'ساعات سماح لتأخير المهام', '2025-09-10 11:55:02', '2025-09-10 11:55:02'),
+(30, 'max_upload_mb', '50', NULL, 0, 'required|integer|min:1|max:200', NULL, 'files', 'number', 0, 'الحد الأقصى لحجم الملف (MB)', '2025-09-10 11:55:02', '2025-09-10 11:55:02'),
+(31, 'allowed_mime_extra', NULL, NULL, 0, NULL, 'سطر لكل نوع، مثال:\napplication/zip\ntext/csv', 'files', 'textarea', 0, 'أنواع MIME إضافية مسموحة', '2025-09-10 11:55:02', '2025-09-10 12:02:17'),
+(32, 'notify_in_app', '1', NULL, 0, NULL, NULL, 'notifications', 'boolean', 0, 'تفعيل تنبيهات داخل النظام', '2025-09-10 11:55:02', '2025-09-10 12:05:52'),
+(33, 'notify_email', '1', NULL, 0, NULL, NULL, 'notifications', 'boolean', 0, 'تفعيل تنبيهات البريد', '2025-09-10 11:55:02', '2025-09-10 12:05:52'),
+(34, 'notify_slack', '0', NULL, 0, NULL, NULL, 'notifications', 'boolean', 0, 'تفعيل تنبيهات Slack', '2025-09-10 11:55:02', '2025-09-10 12:05:52'),
+(35, 'notify_telegram', '0', NULL, 0, NULL, NULL, 'notifications', 'boolean', 0, 'تفعيل تنبيهات Telegram', '2025-09-10 11:55:02', '2025-09-10 12:05:52'),
+(36, 'quiet_hours_start', '21:00', NULL, 0, 'nullable|regex:/^\\d{2}:\\d{2}$/', 'لن تُرسل إشعارات فورية خلال هذه المدة.', 'notifications', 'text', 0, 'بدء الساعات الهادئة (HH:mm)', '2025-09-10 11:55:02', '2025-09-10 11:55:02'),
+(37, 'quiet_hours_end', '08:00', NULL, 0, 'nullable|regex:/^\\d{2}:\\d{2}$/', NULL, 'notifications', 'text', 0, 'انتهاء الساعات الهادئة (HH:mm)', '2025-09-10 11:55:02', '2025-09-10 11:55:02'),
+(38, 'daily_digest_time', '09:00', NULL, 0, 'nullable|regex:/^\\d{2}:\\d{2}$/', NULL, 'notifications', 'text', 0, 'موعد الملخص اليومي (HH:mm)', '2025-09-10 11:55:02', '2025-09-10 11:55:02'),
+(39, 'weekly_digest_day', 'sunday', '{\"friday\": \"الجمعة\", \"monday\": \"الاثنين\", \"sunday\": \"الأحد\", \"tuesday\": \"الثلاثاء\", \"saturday\": \"السبت\", \"thursday\": \"الخميس\", \"wednesday\": \"الأربعاء\"}', 0, 'nullable|in:saturday,sunday,monday,tuesday,wednesday,thursday,friday', NULL, 'notifications', 'select', 0, 'يوم الملخص الأسبوعي', '2025-09-10 11:55:02', '2025-09-10 11:55:02'),
+(40, 'weekly_digest_time', '09:00', NULL, 0, 'nullable|regex:/^\\d{2}:\\d{2}$/', NULL, 'notifications', 'text', 0, 'موعد الملخص الأسبوعي (HH:mm)', '2025-09-10 11:55:02', '2025-09-10 11:55:02'),
+(41, 'mail_from_name', 'ModernLife', NULL, 0, 'required|string|max:100', NULL, 'mail', 'text', 0, 'اسم المرسل', '2025-09-10 11:55:02', '2025-09-10 11:55:02'),
+(42, 'mail_from_address', 'no-reply@example.com', NULL, 0, 'required|email', NULL, 'mail', 'email', 0, 'بريد المرسل', '2025-09-10 11:55:02', '2025-09-10 11:55:02'),
+(43, 'smtp_host', NULL, NULL, 0, 'nullable|string', NULL, 'mail', 'text', 0, 'SMTP Host', '2025-09-10 11:55:02', '2025-09-10 12:02:17'),
+(44, 'smtp_port', '587', NULL, 0, 'nullable|integer|min:1', NULL, 'mail', 'number', 0, 'SMTP Port', '2025-09-10 11:55:02', '2025-09-10 11:55:02'),
+(45, 'smtp_username', NULL, NULL, 0, 'nullable|string', NULL, 'mail', 'text', 0, 'SMTP Username', '2025-09-10 11:55:02', '2025-09-10 12:02:17'),
+(46, 'smtp_password', NULL, NULL, 1, 'nullable|string', 'يُحفظ مُشفّرًا من صفحة الإعدادات', 'mail', 'secret', 0, 'SMTP Password', '2025-09-10 11:55:02', '2025-09-10 12:02:17'),
+(47, 'smtp_encryption', 'tls', '{\"ssl\": \"SSL\", \"tls\": \"TLS\", \"none\": \"بدون\"}', 0, 'nullable|in:tls,ssl,none', NULL, 'mail', 'select', 0, 'التشفير', '2025-09-10 11:55:02', '2025-09-10 11:55:02'),
+(48, 'slack_webhook_url', NULL, NULL, 0, 'nullable|url', NULL, 'integrations', 'url', 0, 'Slack Webhook URL', '2025-09-10 11:55:02', '2025-09-10 12:02:17'),
+(49, 'telegram_bot_token', 'eyJpdiI6Ik1Sd3JpV0U0a01BOGx5STh0aEdjV3c9PSIsInZhbHVlIjoiWFFnMWlqaStMRFFxUlFDRlRITWlBUT09IiwibWFjIjoiZjJlZmQ5ZTI2ZDJjMjZlZjZmM2ZlNmRjYmFjYWFjZjAyYjgxMGZiNmZlYzkwYzIxODc4NDYyZjQ0MTkwMjEyNiIsInRhZyI6IiJ9', NULL, 1, 'nullable|string', NULL, 'integrations', 'secret', 0, 'توكن بوت تيليجرام', '2025-09-10 11:55:02', '2025-09-10 12:05:52'),
+(50, 'telegram_chat_id', NULL, NULL, 0, 'nullable|string', NULL, 'integrations', 'text', 0, 'رقم محادثة تيليجرام', '2025-09-10 11:55:02', '2025-09-10 12:02:17'),
+(51, 'webhook_url', NULL, NULL, 0, 'nullable|url', NULL, 'integrations', 'url', 0, 'Webhook عام', '2025-09-10 11:55:02', '2025-09-10 12:02:17');
 
 -- --------------------------------------------------------
 
@@ -1839,7 +1880,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `users`
@@ -1848,7 +1889,8 @@ CREATE TABLE IF NOT EXISTS `users` (
 INSERT INTO `users` (`id`, `name`, `email`, `email_verified_at`, `password`, `remember_token`, `created_at`, `updated_at`) VALUES
 (1, 'Admin', 'info@a-elsayed.com', NULL, '$2y$12$17lEP9yhMdjfjz7rg6edG.nDnKEOoXjlavVyiEicBmfTNzwCCcDvW', 'S8rfUBD7m3O1pRzwHgRr2t1ge5OgHSSmfLe15Zrj3JQMwocFn7OBJyNxVqs3', '2025-07-03 14:55:58', '2025-07-03 14:55:58'),
 (9, 'Ahmed', 'designer_4ever@hotmail.com', NULL, '$2y$12$aiSMdB4n8WXQC5nfLjwBceoi35opjjY1.9U86/7dQPo7B6SNlEjz6', '7KdbHTviO2V2KG6VzN0oujoBMYbxA9pxrZTQwgb63ZsFenoizfbUdOiSFN5Q', '2025-07-06 06:51:31', '2025-08-16 12:53:42'),
-(10, 'Mohamed Ibrahim', 'mohamed@modernlife.com', NULL, '$2y$12$ZGXUQyN0yYI39Ji1bbKCcOYVKgE5GE0FapYy2r9KMouWC7sb33APi', 'wFzGUrWmGvzcQKO8KjYbnjvSjhefEYHzxr9n1Aon870sMxJqB14rUdwGvkWE', '2025-08-20 04:39:55', '2025-08-20 04:40:23');
+(10, 'Mohamed Ibrahim', 'mohamed@modernlife.com', NULL, '$2y$12$ZGXUQyN0yYI39Ji1bbKCcOYVKgE5GE0FapYy2r9KMouWC7sb33APi', 'wFzGUrWmGvzcQKO8KjYbnjvSjhefEYHzxr9n1Aon870sMxJqB14rUdwGvkWE', '2025-08-20 04:39:55', '2025-08-20 04:40:23'),
+(11, 'Ibrahim Elsayed', 'test@mod.com', NULL, '$2y$12$TEI/maqiu/PfN/F6cKvU6.3YJIOdzuNTKfJvQ00Ff4HUoRtXpIdqi', NULL, '2025-09-10 12:27:21', '2025-09-10 12:27:21');
 
 --
 -- Constraints for dumped tables

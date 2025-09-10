@@ -5,12 +5,13 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\LegacyClientProjectResource\Pages;
 use App\Filament\Resources\LegacyClientProjectResource\RelationManagers\LegacyFilesRelationManager;
 use App\Models\LegacyClientProject;
-use Filament\Actions\Action;
+//use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Tables\Actions\Action;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class LegacyClientProjectResource extends Resource

@@ -28,8 +28,7 @@ class LegacyFilesRelationManager extends RelationManager
                 ])
                 ->required(),
 
-            Forms\Components\TextInput::make('title')
-                ->label('العنوان'),
+            Forms\Components\TextInput::make('title')->label('العنوان'),
 
             Forms\Components\Textarea::make('description')
                 ->label('وصف')
@@ -60,18 +59,25 @@ class LegacyFilesRelationManager extends RelationManager
                     ->label('معاينة')
                     ->getStateUsing(fn ($record) => route('legacy-files.show', ['file' => $record->id]))
                     ->extraImgAttributes(['class' => 'h-12 w-12 rounded object-cover'])
-                    ->visible(fn ($record): bool => Str::startsWith($record->mime_type ?? '', 'image/')),
+                    ->visible(fn ($record): bool => Str::startsWith((string)($record->mime_type ?? ''), 'image/')),
 
                 Tables\Columns\TextColumn::make('title')
                     ->label('العنوان')
-                    ->limit(40),
+                    ->state(function ($record): ?string {
+                        if ($record->title) {
+                            return $record->title;
+                        }
+                        return $record->file_path ? basename($record->file_path) : null;
+                    })
+                    ->limit(40)
+                    ->searchable(),
 
-                Tables\Columns\TextColumn::make('mime_type')
-                    ->label('MIME')
-                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('category')
+                    ->label('النوع')
+                    ->badge(),
 
                 Tables\Columns\TextColumn::make('file_size')
-                    ->label('الحجم (KB)')
+                    ->label('(KB) الحجم')
                     ->formatStateUsing(fn (?int $state): ?string => $state ? number_format($state / 1024, 1) : null)
                     ->alignRight(),
 
@@ -86,7 +92,15 @@ class LegacyFilesRelationManager extends RelationManager
                     ->url(fn ($record) => route('legacy-files.show', ['file' => $record->id]))
                     ->openUrlInNewTab()
                     ->icon('heroicon-o-arrow-top-right-on-square')
-                    ->visible(fn ($record): bool => Str::startsWith($record->mime_type ?? '', 'image/')),
+                    ->visible(fn ($record): bool => Str::startsWith((string)($record->mime_type ?? ''), 'image/')),
+
+                Tables\Columns\TextColumn::make('download_link')
+                    ->label('تحميل')
+                    ->state('تحميل')
+                    ->url(fn ($record) => route('legacy-files.download', ['file' => $record->id]))
+                    ->openUrlInNewTab()
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->visible(fn ($record): bool => ! Str::startsWith((string)($record->mime_type ?? ''), 'image/')),
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make()
@@ -120,6 +134,4 @@ class LegacyFilesRelationManager extends RelationManager
             ])
             ->defaultSort('id', 'desc');
     }
-
-
 }

@@ -23,7 +23,6 @@ class EditEmployee extends EditRecord
 
     protected function resolveRecord(int | string $key): \Illuminate\Database\Eloquent\Model
     {
-        // حمّل user مع roles لتسريع/ضمان التهيئة
         return static::getModel()::with('user.roles')->findOrFail($key);
     }
 
@@ -31,7 +30,6 @@ class EditEmployee extends EditRecord
     {
         parent::mount($record);
 
-        // املأ النموذج بالقيم الحالية + بيانات المستخدم + IDs الأدوار الحالية
         $this->form->fill(array_merge(
             $this->record->toArray(),
             [
@@ -47,7 +45,7 @@ class EditEmployee extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        // إنشاء/تحديث User المرتبط
+
         $userData = $data['user'] ?? null;
 
         if ($userData) {
@@ -69,7 +67,6 @@ class EditEmployee extends EditRecord
             }
         }
 
-        // لا تحفظ هذه الحقول على جدول الموظف
         unset($data['user'], $data['roles_ids'], $data['roles']);
 
         return $data;
@@ -79,21 +76,17 @@ class EditEmployee extends EditRecord
     {
         $employee = $this->record;
 
-        // لو أُنشئ المستخدم للتو عبر mutateFormDataBeforeSave
         if (! $employee->user && ! empty($this->data['user'])) {
             $employee->user()->create($this->data['user']);
             $employee->refresh();
         }
 
         if ($employee->user) {
-            // نقرأ قيمة الحقول الخام؛ لأن roles_ids غير مُجفَّف
             $state = $this->form->getRawState();
 
-            // ندعم إما roles_ids (الموصى به) أو roles لو عندك حقل قديم بهذا الاسم
             $ids = $state['roles_ids'] ?? $state['roles'] ?? [];
             $ids = array_values(array_filter(array_map('intval', (array) $ids)));
 
-            // تحقّق الأدوار لحارس المستخدم (web افتراضًا)
             $guard = $employee->user->guard_name ?? config('auth.defaults.guard', 'web');
 
             $validIds = Role::query()
@@ -102,10 +95,8 @@ class EditEmployee extends EditRecord
                 ->pluck('id')
                 ->all();
 
-            // مزامنة مباشرة على Pivot (model_has_roles) لتفادي خطأ "There is no role named 'X'"
             $employee->user->roles()->sync($validIds);
 
-            // مسح كاش الصلاحيات
             app(PermissionRegistrar::class)->forgetCachedPermissions();
         }
     }

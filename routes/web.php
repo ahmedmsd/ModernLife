@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\LegacyFileController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
@@ -7,6 +8,13 @@ use App\Http\Controllers\ZohoOauthController;
 
 Route::get('/', function () {
     return view('welcome');
+});
+Route::middleware(['auth'])->group(function () {
+    Route::get('/files/legacy/{file}', [LegacyFileController::class, 'show'])
+        ->name('legacy-files.show');
+
+    Route::get('/files/legacy/{file}/download', [LegacyFileController::class, 'download'])
+        ->name('legacy-files.download');
 });
 
 Route::get('/dev/zoho-perm-test', function () {
