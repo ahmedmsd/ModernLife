@@ -78,7 +78,7 @@ class LegacyClientProjectResource extends Resource
                     ->icon('heroicon-o-plus')
                     ->url(function () {
                         $clientId = request()->input('tableFilters.client_id.value')
-                            ?? request('client_id'); // fallback لو جاء من رابط آخر
+                            ?? request('client_id');
                         return \App\Filament\Resources\LegacyClientProjectResource::getUrl('create', [
                             'client_id' => $clientId,
                         ]);

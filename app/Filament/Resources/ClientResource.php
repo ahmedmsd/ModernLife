@@ -69,22 +69,23 @@ class ClientResource extends Resource
                 ->searchable()
                 ->preload()
                 ->required(),
-            Toggle::make('is_active')
-                ->label('نشط')
-                ->default(true),
 
-            TextInput::make('credit_limit')
-                ->label('الحد الائتماني')
-                ->numeric()
-                ->default(0.00),
 
-            TextInput::make('payment_terms')
-                ->label('مدة السداد (أيام)')
-                ->numeric()
-                ->default(30),
+//            TextInput::make('credit_limit')
+//                ->label('الحد الائتماني')
+//                ->numeric()
+//                ->default(0.00),
+//
+//            TextInput::make('payment_terms')
+//                ->label('مدة السداد (أيام)')
+//                ->numeric()
+//                ->default(30),
 
             Textarea::make('notes')
                 ->label('ملاحظات'),
+            Toggle::make('is_active')
+                ->label('نشط')
+                ->default(true),
         ]);
     }
 
@@ -122,20 +123,17 @@ class ClientResource extends Resource
                     ],
                     'client_id' => $record->client_id,
                 ]))
-                ->openUrlInNewTab(false) // غيّرها true لو تحب في تبويب جديد
+                ->openUrlInNewTab(false)
                 ->extraAttributes(['class' => 'text-primary-600 hover:underline'])
                 ->sortable(),
             TextColumn::make('contacts_count')
-                ->label('عدد جهات الاتصال')
+                ->label(' جهات الاتصال')
                 ->counts('contacts')
                 ->sortable()
                 ->url(fn($record) => route('filament.admin.resources.clients.edit', $record) . '#relationManagerComponent=contacts')
                 ->color('primary')
                 ->icon('heroicon-o-users'),
 
-//            TextColumn::make('created_at')
-//                ->label('تاريخ الإضافة')
-//                ->dateTime(),
 
         ])->actions([
                 Tables\Actions\EditAction::make()

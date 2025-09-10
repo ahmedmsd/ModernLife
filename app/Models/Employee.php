@@ -8,10 +8,11 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Employee extends Authenticatable
 {
-    use HasRoles, Notifiable;
+    use HasRoles, Notifiable, softDeletes;
 
     protected $guard_name = 'web';
 
@@ -63,6 +64,37 @@ class Employee extends Authenticatable
     public function department(): BelongsTo
     {
         return $this->belongsTo(\App\Models\Department::class, 'department_id', 'dept_id');
+    }
+
+    protected static function booted(): void
+    {
+        static::deleting(function (Employee $employee) {
+            if (method_exists($employee, 'isForceDeleting') && ! $employee->isForceDeleting()) {
+                $employee->setAttribute('_skip_user_delete', true);
+            }
+        });
+
+        static::deleted(function (Employee $employee) {
+            if ($employee->getAttribute('_skip_user_delete') ?? false) {
+                return;
+            }
+
+            if (! $employee->user_id) {
+                return;
+            }
+
+            $hasAnother = self::query()
+                ->where('user_id', $employee->user_id)
+                ->exists();
+
+            if (! $hasAnother) {
+                $user = $employee->user()->first();
+                if ($user) {
+
+                    $user->delete();
+                }
+            }
+        });
     }
 
     public function routeNotificationForMail($notification): ?string
