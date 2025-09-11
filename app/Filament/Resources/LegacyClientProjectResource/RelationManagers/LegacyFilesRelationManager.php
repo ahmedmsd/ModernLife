@@ -6,9 +6,12 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
+use Filament\Tables\Actions\BulkAction;
 use Filament\Tables\Table;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Filament\Tables\Actions\DeleteAction;
 
 class LegacyFilesRelationManager extends RelationManager
 {
@@ -59,7 +62,7 @@ class LegacyFilesRelationManager extends RelationManager
                     ->label('معاينة')
                     ->getStateUsing(fn ($record) => route('legacy-files.show', ['file' => $record->id]))
                     ->extraImgAttributes(['class' => 'h-12 w-12 rounded object-cover'])
-                    ->visible(fn ($record): bool => Str::startsWith((string)($record->mime_type ?? ''), 'image/')),
+                    ->visible(fn ($record): bool => $this->isImageRecord($record)),
 
                 Tables\Columns\TextColumn::make('title')
                     ->label('العنوان')
@@ -92,7 +95,7 @@ class LegacyFilesRelationManager extends RelationManager
                     ->url(fn ($record) => route('legacy-files.show', ['file' => $record->id]))
                     ->openUrlInNewTab()
                     ->icon('heroicon-o-arrow-top-right-on-square')
-                    ->visible(fn ($record): bool => Str::startsWith((string)($record->mime_type ?? ''), 'image/')),
+                    ->visible(fn ($record): bool => $this->isImageRecord($record)),
 
                 Tables\Columns\TextColumn::make('download_link')
                     ->label('تحميل')
@@ -100,7 +103,22 @@ class LegacyFilesRelationManager extends RelationManager
                     ->url(fn ($record) => route('legacy-files.download', ['file' => $record->id]))
                     ->openUrlInNewTab()
                     ->icon('heroicon-o-arrow-down-tray')
-                    ->visible(fn ($record): bool => ! Str::startsWith((string)($record->mime_type ?? ''), 'image/')),
+                    ->visible(fn ($record): bool => ! $this->isImageRecord($record)),
+            ])
+            ->bulkActions([
+                BulkAction::make('delete_files')
+                    ->label('حذف المحدد')
+                    ->icon('heroicon-o-trash')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('حذف الملفات المحددة')
+                    ->modalDescription('سيتم حذف السجلات والملفات من التخزين نهائيًا.')
+                    ->modalSubmitActionLabel('حذف')
+                    ->action(function (Collection $records) {
+                        // هوك الموديل سينفّذ حذف الملفات من التخزين تلقائيًا
+                        $records->each->delete();
+                    })
+                    ->successNotificationTitle('تم حذف الملفات المحددة'),
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make()
@@ -134,4 +152,30 @@ class LegacyFilesRelationManager extends RelationManager
             ])
             ->defaultSort('id', 'desc');
     }
+
+    protected function isImageRecord($record): bool
+    {
+        $category = (string) ($record->category ?? '');
+        if ($category === 'image') return true;
+
+        $mime = strtolower((string) ($record->mime_type ?? ''));
+        if ($mime !== '' && str_starts_with($mime, 'image/')) return true;
+
+        $path = (string) ($record->file_path ?? '');
+        $ext  = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        if (in_array($ext, ['jpg','jpeg','png','gif','webp','bmp','svg','svgz','avif','heic','heif'])) {
+            return true;
+        }
+
+        try {
+            if ($path !== '' && \Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
+                $mime = strtolower((string) \Illuminate\Support\Facades\Storage::disk('public')->mimeType($path));
+                return $mime !== '' && str_starts_with($mime, 'image/');
+            }
+        } catch (\Throwable $e) {
+        }
+
+        return false;
+    }
+
 }
