@@ -2,15 +2,15 @@
 
 namespace App\Providers;
 
+use App\Models\ProductionRequest;
 use App\Models\ProductionTask;
 use App\Models\Project;
+use App\Observers\ProductionRequestObserver;
 use App\Observers\ProductionTaskObserver;
 use App\Observers\ProjectObserver;
 use Illuminate\Support\ServiceProvider;
-use App\Models\ProductionRequest;
-use App\Observers\ProductionRequestObserver;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class AppServiceProvider extends ServiceProvider
 {

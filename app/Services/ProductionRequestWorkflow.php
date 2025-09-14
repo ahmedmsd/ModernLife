@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
+use Filament\Notifications\Notification as FNotification;
+use Filament\Notifications\Actions\Action as FAction;
 
 class ProductionRequestWorkflow
 {
@@ -144,9 +146,10 @@ class ProductionRequestWorkflow
         if ($currentPhase === Phase::FactoryIntake) {
             $this->bootstrapProjectFromRequest($pr);
 
-            // الطلب يستمر لمسار المهام داخل المشروع → إسناد الأقسام
             $pr = $this->move($pr, Phase::DepartmentAssignment, S::Pending, 'factory_manager', true);
         }
+
+
 
         return $pr;
     }
@@ -240,7 +243,8 @@ class ProductionRequestWorkflow
 
     protected function bootstrapProjectFromRequest(ProductionRequest $pr): void
     {
-        DB::transaction(function () use ($pr) {
+
+        DB::transaction(function () use ( $pr) {
             $project = Project::firstOrCreate(
                 ['production_request_id' => $pr->id],
                 [
@@ -263,8 +267,7 @@ class ProductionRequestWorkflow
                     ? Storage::disk('public')->size($filePath)
                     : 0;
 
-                // ✅ لا تضع estimated_cost ضمن مفاتيح المطابقة — حتى لا تُنشئ سجلاً جديدًا عند تغيّرها
-                $project->files()->updateOrCreate(
+               $project->files()->updateOrCreate(
                     [
                         'department_id' => $reqFile->department_id,
                         'file_path'     => $filePath,
@@ -281,8 +284,7 @@ class ProductionRequestWorkflow
                     ]
                 );
 
-                // ✅ حدّث/أنشئ المهمة مع تمرير التكلفة
-                $project->tasks()->updateOrCreate(
+                $task = $project->tasks()->updateOrCreate(
                     [
                         'department_id' => $reqFile->department_id,
                         'file_path'     => $reqFile->file_path,
@@ -295,6 +297,33 @@ class ProductionRequestWorkflow
                         'due_date'                => null,
                     ]
                 );
+
+                $dept = $task->department()->with(['manager', 'managerEmployee.user'])->first();
+                $managerUser = null;
+
+                if ($dept?->manager) {
+                    $managerUser = $dept->manager;
+                }
+                elseif ($dept?->managerEmployee?->user) {
+                    $managerUser = $dept->managerEmployee->user;
+                }
+
+                if ($managerUser) {
+                    $url = \App\Filament\Resources\ProjectResource::getUrl('view', ['record' => $project->id]);
+
+                    FNotification::make()
+                        ->title('مهمة جديدة لقسمك')
+                        ->body("المهمة (#{$task->id}) على المشروع #{$project->id}")
+                        ->icon('heroicon-o-clipboard-document-check')
+                        ->success()
+                        ->actions([
+                            FAction::make('عرض المشروع')->button()->url($url),
+                        ])
+                        ->sendToDatabase($managerUser);
+
+                    // (اختياري) بريد — فعِّله إن رغبت
+                    // $managerUser->notify(new \App\Notifications\DepartmentTaskMail($task, 'created'));
+                }
             }
 
             $pr->logs()->create([

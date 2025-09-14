@@ -46,12 +46,12 @@ class ViewTask extends ViewRecord
 
     /* ====== Owner role constants & helpers ====== */
     private const ROLE_DEPT    = 'department_manager';
+    private const ROLE_SHOWROOM = 'showroom_manager';
     private const ROLE_PURCH   = 'purchasing_manager';
-    private const ROLE_QA      = 'qa';
-    private const ROLE_INSTALL = 'install';
-    private const ROLE_PROD    = 'production';
+    private const ROLE_QA      = 'quality_manager';
+    private const ROLE_INSTALL = 'installation_manager';
+    private const ROLE_PROD    = 'factory_manager';
 
-    /** طَبِّع قيمة الدور (حذف مسافات/حروف + دعم الأسماء القديمة) */
     private function normRole(?string $r): ?string
     {
         if ($r === null) return null;
@@ -59,10 +59,12 @@ class ViewTask extends ViewRecord
 
         return match ($r) {
             // مدير القسم
-            'dept_manager','departmentmanager','manager_department' => self::ROLE_DEPT,
+            'dept_manager','department_manager','manager_department' => self::ROLE_DEPT,
+            // مدير المعرض
+            'showroom_manager' => self::ROLE_SHOWROOM,
 
             // المشتريات
-            'purchasing','purchase','procurement','purchasingmanager' => self::ROLE_PURCH,
+            'purchasing','purchase','procurement','purchasing_manager' => self::ROLE_PURCH,
 
             // الجودة
             'quality','quality_manager','qm','q/a' => self::ROLE_QA,
@@ -71,13 +73,13 @@ class ViewTask extends ViewRecord
             'installation','installer','installation_manager' => self::ROLE_INSTALL,
 
             // التصنيع
-            'prod','manufacturing','production_manager' => self::ROLE_PROD,
+            'factory_manager','manufacturing','production_manager' => self::ROLE_PROD,
 
             default => $r,
         };
     }
 
-    /** الدور الحالي (مطبح) */
+    /** الدور الحالي (مطبع) */
     protected function ownerRole(): ?string
     {
         return $this->normRole($this->record->current_owner_role);
@@ -238,12 +240,6 @@ class ViewTask extends ViewRecord
             'cancelled'          => '#9ca3af',
             default              => '#6b7280',
         };
-    }
-
-    private function statusVal(): string
-    {
-        $s = $this->record->status;
-        return $s instanceof \BackedEnum ? $s->value : (string) $s;
     }
 
     private function budgetCapFraction(): float
@@ -423,7 +419,6 @@ class ViewTask extends ViewRecord
         return $data['phase'] ?? null; // 'post_manufacture_qa' أو 'post_install_qa'
     }
 
-
     private function isQaAcknowledged(): bool
     {
         return ! is_null($this->record->received_by_owner_at);
@@ -446,6 +441,7 @@ class ViewTask extends ViewRecord
                         ->multiple()->directory('task-comments')->preserveFilenames()
                         ->downloadable()->openable(),
                 ])
+                ->requiresConfirmation()
                 ->action(function (array $data) {
                     TaskComment::create([
                         'task_id'     => $this->record->id,
@@ -475,6 +471,7 @@ class ViewTask extends ViewRecord
                         ->required(),
                     Forms\Components\DateTimePicker::make('due_date')->label('تاريخ التسليم المتوقع')->required(),
                 ])
+                ->requiresConfirmation()
                 ->action(function (array $data) use ($task) {
                     $from = $this->statusVal();
 
@@ -508,6 +505,7 @@ class ViewTask extends ViewRecord
                 ->icon('heroicon-o-hand-thumb-up')
                 ->color('success')
                 ->visible(fn () => $this->canDeptAcknowledge())
+                ->requiresConfirmation()
                 ->action(function () {
                     $task = $this->record;
                     $from = $this->statusVal();
@@ -552,6 +550,7 @@ class ViewTask extends ViewRecord
                         ->visibility('public')
                         ->required(),
                 ])
+                ->requiresConfirmation()
                 ->action(function (array $data) {
                     $task = $this->record;
                     $from = $this->statusVal();
@@ -593,6 +592,7 @@ class ViewTask extends ViewRecord
                     Forms\Components\TextInput::make('estimated_cost')->label('التكلفة المتوقعة')->numeric(),
                     Forms\Components\Textarea::make('note')->label('ملاحظة')->rows(2),
                 ])
+                ->requiresConfirmation()
                 ->action(function (array $data) {
                     $task = $this->record;
                     $mr   = $task->materialRequests()->whereNull('provided_at')->latest()->first();
@@ -634,6 +634,7 @@ class ViewTask extends ViewRecord
                         ->label('ملاحظة')
                         ->rows(2),
                 ])
+                ->requiresConfirmation()
                 ->action(function (array $data) {
                     $task = $this->record;
                     $mr   = $task->materialRequests()->whereNull('provided_at')->latest()->first();
@@ -689,6 +690,7 @@ class ViewTask extends ViewRecord
                     }
                 }),
 
+            /* 6) تأكيد استلام الخامات (مدير القسم) + التخطيط */
             Action::make('materials_received_ok')
                 ->label('تأكيد استلام الخامات (مدير القسم)')
                 ->icon('heroicon-o-hand-thumb-up')
@@ -708,18 +710,19 @@ class ViewTask extends ViewRecord
                         ->native(false)
                         ->required(),
                 ])
+                ->requiresConfirmation()
                 ->action(function (array $data) {
                     $task = $this->record;
 
-                    $start   = $data['planned_start'] ? \Illuminate\Support\Carbon::parse($data['planned_start']) : null;
-                    $end     = $data['planned_end']   ? \Illuminate\Support\Carbon::parse($data['planned_end'])   : null;
-                    $install = $data['planned_install'] ? \Illuminate\Support\Carbon::parse($data['planned_install']) : null;
+                    $start   = $data['planned_start'] ? Carbon::parse($data['planned_start']) : null;
+                    $end     = $data['planned_end']   ? Carbon::parse($data['planned_end'])   : null;
+                    $install = $data['planned_install'] ? Carbon::parse($data['planned_install']) : null;
 
                     // تحقق منطقي للترتيب: start <= end <= install
                     if (!$start || !$end || !$install) {
                         Notification::make()->danger()->title('الحقول مطلوبة')->body('يرجى تعبئة جميع التواريخ.')->send();
-            return;
-        }
+                        return;
+                    }
                     if ($end->lt($start)) {
                         Notification::make()->danger()->title('تاريخ غير صحيح')->body('يجب أن تكون نهاية التصنيع بعد أو مساوية لبدايته.')->send();
                         return;
@@ -759,9 +762,8 @@ class ViewTask extends ViewRecord
 
                     // تنبيه لمالك المرحلة التالية (التصنيع)
                     $this->notifyOwner('بانتظار تأكيد استلام التصنيع', 'على فريق التصنيع تأكيد الاستلام قبل البدء.');
-
                     Notification::make()->title('تم الحفظ: بداية/نهاية التصنيع + موعد التركيب')->success()->send();
-    }),
+                }),
 
             /* 7) التصنيع يؤكد استلامه قبل البدء */
             Action::make('productionAcknowledge')
@@ -786,6 +788,7 @@ class ViewTask extends ViewRecord
                     Forms\Components\DateTimePicker::make('started_at')->label('تاريخ/وقت البدء')->default(now())->required(),
                     Forms\Components\Textarea::make('note')->label('ملاحظة (اختياري)')->rows(3),
                 ])
+                ->requiresConfirmation()
                 ->action(function (array $data) {
                     $task = $this->record;
 
@@ -1131,6 +1134,7 @@ class ViewTask extends ViewRecord
                         ->openable()
                         ->required(),
                 ])
+                ->requiresConfirmation()
                 ->action(function (ProductionTask $record, array $data) {
                     $path = Arr::get($data, 'client_receipt');
 
@@ -1195,11 +1199,49 @@ class ViewTask extends ViewRecord
     }
 
     /* ========= Helpers للظهور المشروط ========= */
-    protected function canDeptAcknowledge(): bool
+    private function norm(?string $v): ?string
     {
-        return Auth::user()?->hasAnyRole([self::ROLE_DEPT,'admin','super-admin'])
-            && in_array($this->statusVal(), ['pending','assigned'], true)
-            && $this->ownerIs(self::ROLE_DEPT);
+        return is_null($v) ? null : strtolower(trim($v));
+    }
+
+    private function statusVal(): ?string
+    {
+        $s = $this->norm($this->record->status ?? null);
+        if ($s === 'acknowledged') $s = 'received'; // تطبيع بيانات قديمة لو وُجدت
+        return $s;
+    }
+
+    private function ownerUserId(): ?int
+    {
+        return $this->record->current_owner_user_id ?? null;
+    }
+
+    private function userIsDeptManager(): bool
+    {
+        $u = auth()->user();
+        if (! $u) return false;
+
+        // Spatie hasAnyRole أولاً:
+        if (method_exists($u, 'hasAnyRole') && $u->hasAnyRole(['department_manager','admin','super-admin'])) {
+            return true;
+        }
+
+        try {
+            $names = method_exists($u, 'roles') ? $u->roles->pluck('name')->map(fn($n) => strtolower(trim($n)))->all() : [];
+            return array_intersect($names, ['department_manager','admin','super-admin']) !== [];
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    private function canDeptAcknowledge(): bool
+    {
+        $statusOk       = in_array($this->statusVal(), ['pending','assigned'], true);
+        $ownerRoleOk    = $this->ownerRole() === 'department_manager';
+        $notReceivedYet = blank($this->record->received_at);
+        $userIsOwner    = !$this->ownerUserId() || $this->ownerUserId() === auth()->id();
+
+        return $this->userIsDeptManager() && $statusOk && $ownerRoleOk && $notReceivedYet && $userIsOwner;
     }
 
     protected function canRequestMaterials(): bool

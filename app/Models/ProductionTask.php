@@ -6,12 +6,15 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\Concerns\HasStatusScopes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class ProductionTask extends Model
 {
-    use HasStatusScopes;
+    use HasStatusScopes , HasFactory;
     protected $table = 'production_tasks';
     protected $primaryKey = 'id';
+    protected $afterCommit = true;
+    protected $guarded = [];
 
     protected $fillable = [
         'project_id','department_id','estimated_cost','assigned_to_employee_id',

@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3306
--- Generation Time: Sep 14, 2025 at 01:42 PM
--- Server version: 8.0.21
--- PHP Version: 8.3.23
+-- Generation Time: Sep 14, 2025 at 10:31 PM
+-- Server version: 8.3.0
+-- PHP Version: 8.3.6
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -31,15 +31,15 @@ DROP TABLE IF EXISTS `activity_log`;
 CREATE TABLE IF NOT EXISTS `activity_log` (
   `log_id` int NOT NULL AUTO_INCREMENT,
   `user_id` int DEFAULT NULL,
-  `action` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
-  `entity_type` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
+  `action` varchar(50) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `entity_type` varchar(50) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
   `entity_id` int DEFAULT NULL,
-  `description` text COLLATE utf8_unicode_ci,
-  `ip_address` varchar(45) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `description` text CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci,
+  `ip_address` varchar(45) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`log_id`),
   KEY `user_id` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -49,24 +49,20 @@ CREATE TABLE IF NOT EXISTS `activity_log` (
 
 DROP TABLE IF EXISTS `cache`;
 CREATE TABLE IF NOT EXISTS `cache` (
-  `key` varchar(190) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
-  `value` mediumtext CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `key` varchar(190) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `value` mediumtext CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
   `expiration` int NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`key`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `cache`
 --
 
 INSERT INTO `cache` (`key`, `value`, `expiration`, `created_at`, `updated_at`) VALUES
-('modernlife_cache_spatie.permission.cache', 'a:3:{s:5:\"alias\";a:4:{s:1:\"a\";s:2:\"id\";s:1:\"b\";s:4:\"name\";s:1:\"c\";s:10:\"guard_name\";s:1:\"r\";s:5:\"roles\";}s:11:\"permissions\";a:77:{i:0;a:4:{s:1:\"a\";i:1;s:1:\"b\";s:10:\"view_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:1;a:4:{s:1:\"a\";i:2;s:1:\"b\";s:12:\"manage-roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:2;a:4:{s:1:\"a\";i:3;s:1:\"b\";s:12:\"create_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:3;a:4:{s:1:\"a\";i:4;s:1:\"b\";s:10:\"edit_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:4;a:4:{s:1:\"a\";i:5;s:1:\"b\";s:12:\"delete_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:5;a:4:{s:1:\"a\";i:6;s:1:\"b\";s:16:\"view_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:6;a:4:{s:1:\"a\";i:7;s:1:\"b\";s:18:\"create_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:7;a:4:{s:1:\"a\";i:8;s:1:\"b\";s:16:\"edit_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:8;a:4:{s:1:\"a\";i:9;s:1:\"b\";s:18:\"delete_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:9;a:4:{s:1:\"a\";i:10;s:1:\"b\";s:10:\"view_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:10;a:4:{s:1:\"a\";i:11;s:1:\"b\";s:12:\"create_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:11;a:4:{s:1:\"a\";i:12;s:1:\"b\";s:10:\"edit_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:12;a:4:{s:1:\"a\";i:13;s:1:\"b\";s:12:\"delete_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:13;a:4:{s:1:\"a\";i:14;s:1:\"b\";s:12:\"manage_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:14;a:4:{s:1:\"a\";i:15;s:1:\"b\";s:14:\"view_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:15;a:4:{s:1:\"a\";i:16;s:1:\"b\";s:16:\"create_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:16;a:4:{s:1:\"a\";i:17;s:1:\"b\";s:14:\"edit_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:17;a:4:{s:1:\"a\";i:18;s:1:\"b\";s:16:\"delete_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:18;a:4:{s:1:\"a\";i:19;s:1:\"b\";s:16:\"manage_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:19;a:4:{s:1:\"a\";i:20;s:1:\"b\";s:13:\"view_any_role\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:20;a:4:{s:1:\"a\";i:21;s:1:\"b\";s:18:\"view_city_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:21;a:4:{s:1:\"a\";i:22;s:1:\"b\";s:20:\"create_city_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:22;a:4:{s:1:\"a\";i:23;s:1:\"b\";s:18:\"edit_city_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:23;a:4:{s:1:\"a\";i:24;s:1:\"b\";s:20:\"delete_city_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:24;a:4:{s:1:\"a\";i:25;s:1:\"b\";s:20:\"view_client_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:3;}}i:25;a:4:{s:1:\"a\";i:26;s:1:\"b\";s:22:\"create_client_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:26;a:4:{s:1:\"a\";i:27;s:1:\"b\";s:20:\"edit_client_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:27;a:4:{s:1:\"a\";i:28;s:1:\"b\";s:22:\"delete_client_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:28;a:4:{s:1:\"a\";i:29;s:1:\"b\";s:21:\"view_country_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:29;a:4:{s:1:\"a\";i:30;s:1:\"b\";s:23:\"create_country_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:30;a:4:{s:1:\"a\";i:31;s:1:\"b\";s:21:\"edit_country_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:31;a:4:{s:1:\"a\";i:32;s:1:\"b\";s:23:\"delete_country_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:32;a:4:{s:1:\"a\";i:33;s:1:\"b\";s:35:\"view_department_categories_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:33;a:4:{s:1:\"a\";i:34;s:1:\"b\";s:37:\"create_department_categories_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:34;a:4:{s:1:\"a\";i:35;s:1:\"b\";s:35:\"edit_department_categories_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:35;a:4:{s:1:\"a\";i:36;s:1:\"b\";s:37:\"delete_department_categories_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:36;a:4:{s:1:\"a\";i:37;s:1:\"b\";s:24:\"view_department_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:37;a:4:{s:1:\"a\";i:38;s:1:\"b\";s:26:\"create_department_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:6;}}i:38;a:4:{s:1:\"a\";i:39;s:1:\"b\";s:24:\"edit_department_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:39;a:4:{s:1:\"a\";i:40;s:1:\"b\";s:26:\"delete_department_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:40;a:4:{s:1:\"a\";i:41;s:1:\"b\";s:22:\"view_employee_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:41;a:4:{s:1:\"a\";i:42;s:1:\"b\";s:24:\"create_employee_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:42;a:4:{s:1:\"a\";i:43;s:1:\"b\";s:22:\"edit_employee_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:43;a:4:{s:1:\"a\";i:44;s:1:\"b\";s:24:\"delete_employee_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:44;a:4:{s:1:\"a\";i:45;s:1:\"b\";s:24:\"view_permission_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:45;a:4:{s:1:\"a\";i:46;s:1:\"b\";s:26:\"create_permission_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:46;a:4:{s:1:\"a\";i:47;s:1:\"b\";s:24:\"edit_permission_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:47;a:4:{s:1:\"a\";i:48;s:1:\"b\";s:26:\"delete_permission_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:48;a:4:{s:1:\"a\";i:49;s:1:\"b\";s:32:\"view_production_request_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:3;i:2;i:6;}}i:49;a:4:{s:1:\"a\";i:50;s:1:\"b\";s:34:\"create_production_request_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:4:{i:0;i:1;i:1;i:2;i:2;i:3;i:3;i:6;}}i:50;a:4:{s:1:\"a\";i:51;s:1:\"b\";s:32:\"edit_production_request_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:4:{i:0;i:1;i:1;i:2;i:2;i:3;i:3;i:6;}}i:51;a:4:{s:1:\"a\";i:52;s:1:\"b\";s:34:\"delete_production_request_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:52;a:4:{s:1:\"a\";i:53;s:1:\"b\";s:21:\"view_project_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:53;a:4:{s:1:\"a\";i:54;s:1:\"b\";s:23:\"create_project_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:6;}}i:54;a:4:{s:1:\"a\";i:55;s:1:\"b\";s:21:\"edit_project_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:55;a:4:{s:1:\"a\";i:56;s:1:\"b\";s:23:\"delete_project_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:56;a:4:{s:1:\"a\";i:57;s:1:\"b\";s:18:\"view_role_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:57;a:4:{s:1:\"a\";i:58;s:1:\"b\";s:20:\"create_role_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:58;a:4:{s:1:\"a\";i:59;s:1:\"b\";s:18:\"edit_role_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:59;a:4:{s:1:\"a\";i:60;s:1:\"b\";s:20:\"delete_role_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:60;a:4:{s:1:\"a\";i:61;s:1:\"b\";s:22:\"view_showroom_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:61;a:4:{s:1:\"a\";i:62;s:1:\"b\";s:24:\"create_showroom_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:62;a:4:{s:1:\"a\";i:63;s:1:\"b\";s:22:\"edit_showroom_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:63;a:4:{s:1:\"a\";i:64;s:1:\"b\";s:24:\"delete_showroom_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:64;a:4:{s:1:\"a\";i:65;s:1:\"b\";s:27:\"access_manage_project_tasks\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:5:{i:0;i:1;i:1;i:2;i:2;i:4;i:3;i:5;i:4;i:6;}}i:65;a:4:{s:1:\"a\";i:66;s:1:\"b\";s:19:\"access_view_project\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:4:{i:0;i:1;i:1;i:2;i:2;i:4;i:3;i:6;}}i:66;a:4:{s:1:\"a\";i:67;s:1:\"b\";s:32:\"access_review_production_request\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:4:{i:0;i:1;i:1;i:2;i:2;i:4;i:3;i:6;}}i:67;a:4:{s:1:\"a\";i:68;s:1:\"b\";s:31:\"access_view_production_timeline\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:4:{i:0;i:1;i:1;i:2;i:2;i:4;i:3;i:6;}}i:68;a:4:{s:1:\"a\";i:69;s:1:\"b\";s:18:\"view_task_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:4;i:1;i:5;}}i:69;a:4:{s:1:\"a\";i:70;s:1:\"b\";s:20:\"create_task_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:70;a:3:{s:1:\"a\";i:71;s:1:\"b\";s:18:\"edit_task_resource\";s:1:\"c\";s:3:\"web\";}i:71;a:4:{s:1:\"a\";i:72;s:1:\"b\";s:20:\"delete_task_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:72;a:3:{s:1:\"a\";i:73;s:1:\"b\";s:12:\"manage-tasks\";s:1:\"c\";s:3:\"web\";}i:73;a:3:{s:1:\"a\";i:74;s:1:\"b\";s:35:\"view_legacy_client_project_resource\";s:1:\"c\";s:3:\"web\";}i:74;a:3:{s:1:\"a\";i:75;s:1:\"b\";s:37:\"create_legacy_client_project_resource\";s:1:\"c\";s:3:\"web\";}i:75;a:3:{s:1:\"a\";i:76;s:1:\"b\";s:35:\"edit_legacy_client_project_resource\";s:1:\"c\";s:3:\"web\";}i:76;a:3:{s:1:\"a\";i:77;s:1:\"b\";s:37:\"delete_legacy_client_project_resource\";s:1:\"c\";s:3:\"web\";}}s:5:\"roles\";a:6:{i:0;a:3:{s:1:\"a\";i:1;s:1:\"b\";s:11:\"super-admin\";s:1:\"c\";s:3:\"web\";}i:1;a:3:{s:1:\"a\";i:2;s:1:\"b\";s:5:\"admin\";s:1:\"c\";s:3:\"web\";}i:2;a:3:{s:1:\"a\";i:3;s:1:\"b\";s:5:\"sales\";s:1:\"c\";s:3:\"web\";}i:3;a:3:{s:1:\"a\";i:6;s:1:\"b\";s:16:\"showroom_manager\";s:1:\"c\";s:3:\"web\";}i:4;a:3:{s:1:\"a\";i:4;s:1:\"b\";s:18:\"department_manager\";s:1:\"c\";s:3:\"web\";}i:5;a:3:{s:1:\"a\";i:5;s:1:\"b\";s:18:\"purchasing_manager\";s:1:\"c\";s:3:\"web\";}}}', 1757927895, '2025-09-14 09:18:15', '2025-09-14 09:18:15'),
-('modernlife_cache_356a192b7913b04c54574d18c28d46e6395428ab:timer', 'i:1757856700;', 1757856700, '2025-09-14 13:30:40', '2025-09-14 13:30:40'),
-('modernlife_cache_356a192b7913b04c54574d18c28d46e6395428ab', 'i:2;', 1757856700, '2025-09-14 13:30:40', '2025-09-14 13:30:48'),
-('modernlife_cache_livewire-rate-limiter:a17961fa74e9275d529f489537f179c05d50c2f3:timer', 'i:1757855116;', 1757855116, '2025-09-14 13:04:16', '2025-09-14 13:04:16'),
-('modernlife_cache_livewire-rate-limiter:a17961fa74e9275d529f489537f179c05d50c2f3', 'i:1;', 1757855116, '2025-09-14 13:04:16', '2025-09-14 13:04:16');
+('modernlife_cache_spatie.permission.cache', 'a:3:{s:5:\"alias\";a:4:{s:1:\"a\";s:2:\"id\";s:1:\"b\";s:4:\"name\";s:1:\"c\";s:10:\"guard_name\";s:1:\"r\";s:5:\"roles\";}s:11:\"permissions\";a:77:{i:0;a:4:{s:1:\"a\";i:1;s:1:\"b\";s:10:\"view_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:1;a:4:{s:1:\"a\";i:2;s:1:\"b\";s:12:\"manage-roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:2;a:4:{s:1:\"a\";i:3;s:1:\"b\";s:12:\"create_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:3;a:4:{s:1:\"a\";i:4;s:1:\"b\";s:10:\"edit_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:4;a:4:{s:1:\"a\";i:5;s:1:\"b\";s:12:\"delete_roles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:5;a:4:{s:1:\"a\";i:6;s:1:\"b\";s:16:\"view_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:6;a:4:{s:1:\"a\";i:7;s:1:\"b\";s:18:\"create_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:7;a:4:{s:1:\"a\";i:8;s:1:\"b\";s:16:\"edit_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:8;a:4:{s:1:\"a\";i:9;s:1:\"b\";s:18:\"delete_permissions\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:9;a:4:{s:1:\"a\";i:10;s:1:\"b\";s:10:\"view_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:10;a:4:{s:1:\"a\";i:11;s:1:\"b\";s:12:\"create_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:11;a:4:{s:1:\"a\";i:12;s:1:\"b\";s:10:\"edit_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:12;a:4:{s:1:\"a\";i:13;s:1:\"b\";s:12:\"delete_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:13;a:4:{s:1:\"a\";i:14;s:1:\"b\";s:12:\"manage_users\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:14;a:4:{s:1:\"a\";i:15;s:1:\"b\";s:14:\"view_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:15;a:4:{s:1:\"a\";i:16;s:1:\"b\";s:16:\"create_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:16;a:4:{s:1:\"a\";i:17;s:1:\"b\";s:14:\"edit_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:17;a:4:{s:1:\"a\";i:18;s:1:\"b\";s:16:\"delete_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:18;a:4:{s:1:\"a\";i:19;s:1:\"b\";s:16:\"manage_employees\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:19;a:4:{s:1:\"a\";i:20;s:1:\"b\";s:13:\"view_any_role\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:20;a:4:{s:1:\"a\";i:21;s:1:\"b\";s:18:\"view_city_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:21;a:4:{s:1:\"a\";i:22;s:1:\"b\";s:20:\"create_city_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:22;a:4:{s:1:\"a\";i:23;s:1:\"b\";s:18:\"edit_city_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:23;a:4:{s:1:\"a\";i:24;s:1:\"b\";s:20:\"delete_city_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:24;a:4:{s:1:\"a\";i:25;s:1:\"b\";s:20:\"view_client_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:3;}}i:25;a:4:{s:1:\"a\";i:26;s:1:\"b\";s:22:\"create_client_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:26;a:4:{s:1:\"a\";i:27;s:1:\"b\";s:20:\"edit_client_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:27;a:4:{s:1:\"a\";i:28;s:1:\"b\";s:22:\"delete_client_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:28;a:4:{s:1:\"a\";i:29;s:1:\"b\";s:21:\"view_country_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:29;a:4:{s:1:\"a\";i:30;s:1:\"b\";s:23:\"create_country_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:30;a:4:{s:1:\"a\";i:31;s:1:\"b\";s:21:\"edit_country_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:31;a:4:{s:1:\"a\";i:32;s:1:\"b\";s:23:\"delete_country_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:32;a:4:{s:1:\"a\";i:33;s:1:\"b\";s:35:\"view_department_categories_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:33;a:4:{s:1:\"a\";i:34;s:1:\"b\";s:37:\"create_department_categories_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:34;a:4:{s:1:\"a\";i:35;s:1:\"b\";s:35:\"edit_department_categories_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:35;a:4:{s:1:\"a\";i:36;s:1:\"b\";s:37:\"delete_department_categories_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:36;a:4:{s:1:\"a\";i:37;s:1:\"b\";s:24:\"view_department_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:37;a:4:{s:1:\"a\";i:38;s:1:\"b\";s:26:\"create_department_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:6;}}i:38;a:4:{s:1:\"a\";i:39;s:1:\"b\";s:24:\"edit_department_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:39;a:4:{s:1:\"a\";i:40;s:1:\"b\";s:26:\"delete_department_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:40;a:4:{s:1:\"a\";i:41;s:1:\"b\";s:22:\"view_employee_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:41;a:4:{s:1:\"a\";i:42;s:1:\"b\";s:24:\"create_employee_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:42;a:4:{s:1:\"a\";i:43;s:1:\"b\";s:22:\"edit_employee_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:43;a:4:{s:1:\"a\";i:44;s:1:\"b\";s:24:\"delete_employee_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:44;a:4:{s:1:\"a\";i:45;s:1:\"b\";s:24:\"view_permission_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:45;a:4:{s:1:\"a\";i:46;s:1:\"b\";s:26:\"create_permission_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:46;a:4:{s:1:\"a\";i:47;s:1:\"b\";s:24:\"edit_permission_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:47;a:4:{s:1:\"a\";i:48;s:1:\"b\";s:26:\"delete_permission_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:48;a:4:{s:1:\"a\";i:49;s:1:\"b\";s:32:\"view_production_request_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:3;i:2;i:6;}}i:49;a:4:{s:1:\"a\";i:50;s:1:\"b\";s:34:\"create_production_request_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:4:{i:0;i:1;i:1;i:2;i:2;i:3;i:3;i:6;}}i:50;a:4:{s:1:\"a\";i:51;s:1:\"b\";s:32:\"edit_production_request_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:4:{i:0;i:1;i:1;i:2;i:2;i:3;i:3;i:6;}}i:51;a:4:{s:1:\"a\";i:52;s:1:\"b\";s:34:\"delete_production_request_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:52;a:4:{s:1:\"a\";i:53;s:1:\"b\";s:21:\"view_project_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:53;a:4:{s:1:\"a\";i:54;s:1:\"b\";s:23:\"create_project_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:6;}}i:54;a:4:{s:1:\"a\";i:55;s:1:\"b\";s:21:\"edit_project_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:55;a:4:{s:1:\"a\";i:56;s:1:\"b\";s:23:\"delete_project_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:56;a:4:{s:1:\"a\";i:57;s:1:\"b\";s:18:\"view_role_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:57;a:4:{s:1:\"a\";i:58;s:1:\"b\";s:20:\"create_role_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:58;a:4:{s:1:\"a\";i:59;s:1:\"b\";s:18:\"edit_role_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:59;a:4:{s:1:\"a\";i:60;s:1:\"b\";s:20:\"delete_role_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:60;a:4:{s:1:\"a\";i:61;s:1:\"b\";s:22:\"view_showroom_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:61;a:4:{s:1:\"a\";i:62;s:1:\"b\";s:24:\"create_showroom_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:62;a:4:{s:1:\"a\";i:63;s:1:\"b\";s:22:\"edit_showroom_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:63;a:4:{s:1:\"a\";i:64;s:1:\"b\";s:24:\"delete_showroom_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:64;a:4:{s:1:\"a\";i:65;s:1:\"b\";s:27:\"access_manage_project_tasks\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:5:{i:0;i:1;i:1;i:2;i:2;i:4;i:3;i:5;i:4;i:6;}}i:65;a:4:{s:1:\"a\";i:66;s:1:\"b\";s:19:\"access_view_project\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:4:{i:0;i:1;i:1;i:2;i:2;i:4;i:3;i:6;}}i:66;a:4:{s:1:\"a\";i:67;s:1:\"b\";s:32:\"access_review_production_request\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:4:{i:0;i:1;i:1;i:2;i:2;i:4;i:3;i:6;}}i:67;a:4:{s:1:\"a\";i:68;s:1:\"b\";s:31:\"access_view_production_timeline\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:4:{i:0;i:1;i:1;i:2;i:2;i:4;i:3;i:6;}}i:68;a:4:{s:1:\"a\";i:69;s:1:\"b\";s:18:\"view_task_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:4;i:1;i:5;}}i:69;a:4:{s:1:\"a\";i:70;s:1:\"b\";s:20:\"create_task_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:70;a:3:{s:1:\"a\";i:71;s:1:\"b\";s:18:\"edit_task_resource\";s:1:\"c\";s:3:\"web\";}i:71;a:4:{s:1:\"a\";i:72;s:1:\"b\";s:20:\"delete_task_resource\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:72;a:3:{s:1:\"a\";i:73;s:1:\"b\";s:12:\"manage-tasks\";s:1:\"c\";s:3:\"web\";}i:73;a:3:{s:1:\"a\";i:74;s:1:\"b\";s:35:\"view_legacy_client_project_resource\";s:1:\"c\";s:3:\"web\";}i:74;a:3:{s:1:\"a\";i:75;s:1:\"b\";s:37:\"create_legacy_client_project_resource\";s:1:\"c\";s:3:\"web\";}i:75;a:3:{s:1:\"a\";i:76;s:1:\"b\";s:35:\"edit_legacy_client_project_resource\";s:1:\"c\";s:3:\"web\";}i:76;a:3:{s:1:\"a\";i:77;s:1:\"b\";s:37:\"delete_legacy_client_project_resource\";s:1:\"c\";s:3:\"web\";}}s:5:\"roles\";a:6:{i:0;a:3:{s:1:\"a\";i:1;s:1:\"b\";s:11:\"super-admin\";s:1:\"c\";s:3:\"web\";}i:1;a:3:{s:1:\"a\";i:2;s:1:\"b\";s:5:\"admin\";s:1:\"c\";s:3:\"web\";}i:2;a:3:{s:1:\"a\";i:3;s:1:\"b\";s:5:\"sales\";s:1:\"c\";s:3:\"web\";}i:3;a:3:{s:1:\"a\";i:6;s:1:\"b\";s:16:\"showroom_manager\";s:1:\"c\";s:3:\"web\";}i:4;a:3:{s:1:\"a\";i:4;s:1:\"b\";s:18:\"department_manager\";s:1:\"c\";s:3:\"web\";}i:5;a:3:{s:1:\"a\";i:5;s:1:\"b\";s:18:\"purchasing_manager\";s:1:\"c\";s:3:\"web\";}}}', 1757970213, '2025-09-14 21:03:33', '2025-09-14 21:03:33');
 
 -- --------------------------------------------------------
 
@@ -76,13 +72,13 @@ INSERT INTO `cache` (`key`, `value`, `expiration`, `created_at`, `updated_at`) V
 
 DROP TABLE IF EXISTS `cache_locks`;
 CREATE TABLE IF NOT EXISTS `cache_locks` (
-  `key` varchar(190) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
-  `owner` varchar(190) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `key` varchar(190) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `owner` varchar(190) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
   `expiration` int NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`key`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -93,13 +89,13 @@ CREATE TABLE IF NOT EXISTS `cache_locks` (
 DROP TABLE IF EXISTS `cities`;
 CREATE TABLE IF NOT EXISTS `cities` (
   `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `name` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
   `country_id` bigint UNSIGNED NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `cities_country_id_foreign` (`country_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `cities`
@@ -134,24 +130,24 @@ INSERT INTO `cities` (`id`, `name`, `country_id`, `created_at`, `updated_at`) VA
 DROP TABLE IF EXISTS `clients`;
 CREATE TABLE IF NOT EXISTS `clients` (
   `client_id` int NOT NULL AUTO_INCREMENT,
-  `client_name` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
-  `client_type` enum('individual','company') COLLATE utf8_unicode_ci NOT NULL,
-  `tax_number` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `commercial_registration` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `email` varchar(100) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `phone` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
-  `secondary_phone` varchar(20) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `address` text COLLATE utf8_unicode_ci,
+  `client_name` varchar(100) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `client_type` enum('individual','company') CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `tax_number` varchar(50) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
+  `commercial_registration` varchar(50) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
+  `email` varchar(100) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
+  `phone` varchar(20) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `secondary_phone` varchar(20) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
+  `address` text CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci,
   `city_id` smallint DEFAULT NULL,
   `country_id` smallint DEFAULT '1',
   `is_active` tinyint(1) DEFAULT '1',
   `credit_limit` decimal(15,2) DEFAULT '0.00',
   `payment_terms` int DEFAULT '30',
-  `notes` text COLLATE utf8_unicode_ci,
+  `notes` text CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`client_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `clients`
@@ -171,17 +167,17 @@ DROP TABLE IF EXISTS `client_contacts`;
 CREATE TABLE IF NOT EXISTS `client_contacts` (
   `contact_id` int NOT NULL AUTO_INCREMENT,
   `client_id` int NOT NULL,
-  `contact_name` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
-  `position` varchar(100) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `email` varchar(100) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `phone` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
+  `contact_name` varchar(100) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `position` varchar(100) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
+  `email` varchar(100) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
+  `phone` varchar(20) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
   `is_primary` tinyint(1) DEFAULT '0',
-  `notes` text COLLATE utf8_unicode_ci,
+  `notes` text CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`contact_id`),
   KEY `client_id` (`client_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `client_contacts`
@@ -200,12 +196,12 @@ INSERT INTO `client_contacts` (`contact_id`, `client_id`, `contact_name`, `posit
 DROP TABLE IF EXISTS `countries`;
 CREATE TABLE IF NOT EXISTS `countries` (
   `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
-  `name` varchar(150) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
-  `code` varchar(50) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `name` varchar(150) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `code` varchar(50) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `countries`
@@ -241,22 +237,22 @@ DROP TABLE IF EXISTS `departments`;
 CREATE TABLE IF NOT EXISTS `departments` (
   `dept_id` int NOT NULL AUTO_INCREMENT,
   `factory_id` int NOT NULL DEFAULT '1',
-  `dept_name` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
-  `dept_code` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
+  `dept_name` varchar(100) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `dept_code` varchar(20) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
   `parent_dept_id` int DEFAULT '0',
   `manager_id` int DEFAULT NULL,
   `dept_type` tinyint NOT NULL,
-  `location` varchar(100) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `phone_extension` varchar(10) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `email` varchar(100) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `location` varchar(100) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
+  `phone_extension` varchar(10) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
+  `email` varchar(100) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
   `is_active` tinyint(1) DEFAULT '1',
-  `color_code` varchar(7) COLLATE utf8_unicode_ci DEFAULT '#3498db',
+  `color_code` varchar(7) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT '#3498db',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`dept_id`),
   KEY `idx_dept_parent` (`parent_dept_id`),
   KEY `idx_dept_active` (`is_active`)
-) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `departments`
@@ -282,15 +278,15 @@ INSERT INTO `departments` (`dept_id`, `factory_id`, `dept_name`, `dept_code`, `p
 DROP TABLE IF EXISTS `department_categories`;
 CREATE TABLE IF NOT EXISTS `department_categories` (
   `category_id` int NOT NULL AUTO_INCREMENT,
-  `category_name` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
-  `description` text COLLATE utf8_unicode_ci,
-  `color_code` varchar(7) COLLATE utf8_unicode_ci DEFAULT '#95a5a6',
-  `icon` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `category_name` varchar(50) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `description` text CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci,
+  `color_code` varchar(7) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT '#95a5a6',
+  `icon` varchar(50) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`category_id`),
   KEY `category_id` (`category_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `department_categories`
@@ -311,29 +307,29 @@ DROP TABLE IF EXISTS `employees`;
 CREATE TABLE IF NOT EXISTS `employees` (
   `employee_id` int NOT NULL AUTO_INCREMENT,
   `user_id` int DEFAULT NULL,
-  `national_id` varchar(20) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `employee_name` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
-  `gender` enum('male','female') COLLATE utf8_unicode_ci DEFAULT NULL,
+  `national_id` varchar(20) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
+  `employee_name` varchar(100) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `gender` enum('male','female') CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
   `birth_date` date DEFAULT NULL,
-  `email` varchar(100) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `phone` varchar(20) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
-  `address` text COLLATE utf8_unicode_ci,
+  `email` varchar(100) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
+  `phone` varchar(20) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
+  `address` text CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci,
   `department_id` int DEFAULT NULL,
-  `position` varchar(100) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `position` varchar(100) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
   `hire_date` date DEFAULT NULL,
   `salary` decimal(15,2) DEFAULT NULL,
-  `employment_type` enum('full_time','part_time','contractor') COLLATE utf8_unicode_ci DEFAULT 'full_time',
+  `employment_type` enum('full_time','part_time','contractor') CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT 'full_time',
   `is_active` tinyint(1) DEFAULT '1',
-  `emergency_contact_name` varchar(100) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `emergency_contact_phone` varchar(20) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `notes` text COLLATE utf8_unicode_ci,
+  `emergency_contact_name` varchar(100) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
+  `emergency_contact_phone` varchar(20) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
+  `notes` text CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `deleted_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`employee_id`),
   KEY `idx_employees_department` (`department_id`),
   KEY `idx_employees_status` (`is_active`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `employees`
@@ -353,17 +349,17 @@ INSERT INTO `employees` (`employee_id`, `user_id`, `national_id`, `employee_name
 DROP TABLE IF EXISTS `failed_jobs`;
 CREATE TABLE IF NOT EXISTS `failed_jobs` (
   `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
-  `uuid` varchar(190) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
-  `connection` text CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
-  `queue` text CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
-  `payload` longtext CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
-  `exception` longtext CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `uuid` varchar(190) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `connection` text CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `queue` text CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `payload` longtext CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `exception` longtext CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
   `failed_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `failed_jobs_uuid_unique` (`uuid`)
-) ENGINE=MyISAM AUTO_INCREMENT=94 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=94 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `failed_jobs`
@@ -506,7 +502,7 @@ CREATE TABLE IF NOT EXISTS `group_permissions` (
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`group_id`,`permission_id`),
   KEY `permission_id` (`permission_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `group_permissions`
@@ -525,15 +521,36 @@ INSERT INTO `group_permissions` (`group_id`, `permission_id`, `created_at`, `upd
 DROP TABLE IF EXISTS `jobs`;
 CREATE TABLE IF NOT EXISTS `jobs` (
   `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
-  `queue` varchar(190) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
-  `payload` longtext CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `queue` varchar(190) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `payload` longtext CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
   `attempts` tinyint UNSIGNED NOT NULL,
   `reserved_at` int UNSIGNED DEFAULT NULL,
   `available_at` int UNSIGNED NOT NULL,
   `created_at` int UNSIGNED NOT NULL,
   PRIMARY KEY (`id`),
   KEY `jobs_queue_index` (`queue`)
-) ENGINE=MyISAM AUTO_INCREMENT=193 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=208 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
+
+--
+-- Dumping data for table `jobs`
+--
+
+INSERT INTO `jobs` (`id`, `queue`, `payload`, `attempts`, `reserved_at`, `available_at`, `created_at`) VALUES
+(193, 'default', '{\"uuid\":\"d6c2a68c-db2f-4c90-a0fc-cedad7e2074c\",\"displayName\":\"App\\\\Notifications\\\\TaskAssignedNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:19:\\\"App\\\\Models\\\\Employee\\\";s:2:\\\"id\\\";a:1:{i:0;i:6;}s:9:\\\"relations\\\";a:1:{i:0;s:4:\\\"user\\\";}s:10:\\\"connection\\\";s:5:\\\"mysql\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:42:\\\"App\\\\Notifications\\\\TaskAssignedNotification\\\":3:{s:4:\\\"task\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:25:\\\"App\\\\Models\\\\ProductionTask\\\";s:2:\\\"id\\\";i:34;s:9:\\\"relations\\\";a:2:{i:0;s:8:\\\"employee\\\";i:1;s:13:\\\"employee.user\\\";}s:10:\\\"connection\\\";N;s:15:\\\"collectionClass\\\";N;}s:14:\\\"isReassignment\\\";b:0;s:2:\\\"id\\\";s:36:\\\"609bfae1-834e-41fb-8cc7-ece070c46ba1\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:4:\\\"mail\\\";}}\"},\"createdAt\":1757882003,\"delay\":null}', 0, NULL, 1757882003, 1757882003),
+(194, 'default', '{\"uuid\":\"328c3c0e-84ca-4991-b8fb-999213572e61\",\"displayName\":\"App\\\\Notifications\\\\TaskAssignedNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:19:\\\"App\\\\Models\\\\Employee\\\";s:2:\\\"id\\\";a:1:{i:0;i:7;}s:9:\\\"relations\\\";a:1:{i:0;s:4:\\\"user\\\";}s:10:\\\"connection\\\";s:5:\\\"mysql\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:42:\\\"App\\\\Notifications\\\\TaskAssignedNotification\\\":3:{s:4:\\\"task\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:25:\\\"App\\\\Models\\\\ProductionTask\\\";s:2:\\\"id\\\";i:34;s:9:\\\"relations\\\";a:2:{i:0;s:8:\\\"employee\\\";i:1;s:13:\\\"employee.user\\\";}s:10:\\\"connection\\\";s:5:\\\"mysql\\\";s:15:\\\"collectionClass\\\";N;}s:14:\\\"isReassignment\\\";b:1;s:2:\\\"id\\\";s:36:\\\"41036cf7-8b72-4200-ab92-8d05b7a65051\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:4:\\\"mail\\\";}}\"},\"createdAt\":1757888403,\"delay\":null}', 0, NULL, 1757888403, 1757888403),
+(195, 'default', '{\"uuid\":\"a854739e-552d-4ad8-9dd7-bea5460fde1e\",\"displayName\":\"App\\\\Notifications\\\\TaskAssignedNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:19:\\\"App\\\\Models\\\\Employee\\\";s:2:\\\"id\\\";a:1:{i:0;i:6;}s:9:\\\"relations\\\";a:1:{i:0;s:4:\\\"user\\\";}s:10:\\\"connection\\\";s:5:\\\"mysql\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:42:\\\"App\\\\Notifications\\\\TaskAssignedNotification\\\":3:{s:4:\\\"task\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:25:\\\"App\\\\Models\\\\ProductionTask\\\";s:2:\\\"id\\\";i:34;s:9:\\\"relations\\\";a:2:{i:0;s:8:\\\"employee\\\";i:1;s:13:\\\"employee.user\\\";}s:10:\\\"connection\\\";s:5:\\\"mysql\\\";s:15:\\\"collectionClass\\\";N;}s:14:\\\"isReassignment\\\";b:1;s:2:\\\"id\\\";s:36:\\\"88052b70-5307-4f17-9322-818699263f53\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:4:\\\"mail\\\";}}\"},\"createdAt\":1757889065,\"delay\":null}', 0, NULL, 1757889065, 1757889065),
+(196, 'default', '{\"uuid\":\"392d1c5a-e633-49d7-aa3e-310de998f718\",\"displayName\":\"Filament\\\\Notifications\\\\DatabaseNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";a:1:{i:0;i:9;}s:9:\\\"relations\\\";a:0:{}s:10:\\\"connection\\\";s:5:\\\"mysql\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:43:\\\"Filament\\\\Notifications\\\\DatabaseNotification\\\":2:{s:4:\\\"data\\\";a:11:{s:7:\\\"actions\\\";a:0:{}s:4:\\\"body\\\";s:58:\\\"تأكيد استلام المهمة (مدير القسم)\\\";s:5:\\\"color\\\";N;s:8:\\\"duration\\\";s:10:\\\"persistent\\\";s:4:\\\"icon\\\";N;s:9:\\\"iconColor\\\";N;s:6:\\\"status\\\";N;s:5:\\\"title\\\";s:43:\\\"تم تسجيل تأكيد الاستلام\\\";s:4:\\\"view\\\";s:36:\\\"filament-notifications::notification\\\";s:8:\\\"viewData\\\";a:0:{}s:6:\\\"format\\\";s:8:\\\"filament\\\";}s:2:\\\"id\\\";s:36:\\\"8ac564eb-20d2-4f21-9429-f0b0f8c65fe1\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:8:\\\"database\\\";}}\"},\"createdAt\":1757889082,\"delay\":null}', 0, NULL, 1757889082, 1757889082),
+(197, 'default', '{\"uuid\":\"0f3b15e3-fa13-415e-99ae-72ec450f4488\",\"displayName\":\"Filament\\\\Notifications\\\\DatabaseNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";a:1:{i:0;i:10;}s:9:\\\"relations\\\";a:0:{}s:10:\\\"connection\\\";s:5:\\\"mysql\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:43:\\\"Filament\\\\Notifications\\\\DatabaseNotification\\\":2:{s:4:\\\"data\\\";a:11:{s:7:\\\"actions\\\";a:0:{}s:4:\\\"body\\\";s:58:\\\"تأكيد استلام المهمة (مدير القسم)\\\";s:5:\\\"color\\\";N;s:8:\\\"duration\\\";s:10:\\\"persistent\\\";s:4:\\\"icon\\\";N;s:9:\\\"iconColor\\\";N;s:6:\\\"status\\\";N;s:5:\\\"title\\\";s:43:\\\"تم تسجيل تأكيد الاستلام\\\";s:4:\\\"view\\\";s:36:\\\"filament-notifications::notification\\\";s:8:\\\"viewData\\\";a:0:{}s:6:\\\"format\\\";s:8:\\\"filament\\\";}s:2:\\\"id\\\";s:36:\\\"094734f8-969e-4dbd-b591-b8db56c4a80f\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:8:\\\"database\\\";}}\"},\"createdAt\":1757889082,\"delay\":null}', 0, NULL, 1757889082, 1757889082),
+(198, 'default', '{\"uuid\":\"e2f26285-7634-481c-bd88-1d1b621a325f\",\"displayName\":\"Filament\\\\Notifications\\\\DatabaseNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";a:1:{i:0;i:12;}s:9:\\\"relations\\\";a:0:{}s:10:\\\"connection\\\";s:5:\\\"mysql\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:43:\\\"Filament\\\\Notifications\\\\DatabaseNotification\\\":2:{s:4:\\\"data\\\";a:11:{s:7:\\\"actions\\\";a:0:{}s:4:\\\"body\\\";s:58:\\\"تأكيد استلام المهمة (مدير القسم)\\\";s:5:\\\"color\\\";N;s:8:\\\"duration\\\";s:10:\\\"persistent\\\";s:4:\\\"icon\\\";N;s:9:\\\"iconColor\\\";N;s:6:\\\"status\\\";N;s:5:\\\"title\\\";s:43:\\\"تم تسجيل تأكيد الاستلام\\\";s:4:\\\"view\\\";s:36:\\\"filament-notifications::notification\\\";s:8:\\\"viewData\\\";a:0:{}s:6:\\\"format\\\";s:8:\\\"filament\\\";}s:2:\\\"id\\\";s:36:\\\"dde729a7-ee35-4ee6-8484-622fb6b73a3d\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:8:\\\"database\\\";}}\"},\"createdAt\":1757889082,\"delay\":null}', 0, NULL, 1757889082, 1757889082),
+(199, 'default', '{\"uuid\":\"03f046b4-06aa-4e8b-904b-0cacfa60ec47\",\"displayName\":\"App\\\\Notifications\\\\ActionHandoffNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";a:1:{i:0;i:9;}s:9:\\\"relations\\\";a:0:{}s:10:\\\"connection\\\";s:5:\\\"mysql\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:43:\\\"App\\\\Notifications\\\\ActionHandoffNotification\\\":4:{s:5:\\\"title\\\";s:43:\\\"تم تسجيل تأكيد الاستلام\\\";s:4:\\\"body\\\";s:58:\\\"تأكيد استلام المهمة (مدير القسم)\\\";s:3:\\\"url\\\";N;s:2:\\\"id\\\";s:36:\\\"0ed12b7f-ba4f-4322-838f-8b7b4db46016\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:4:\\\"mail\\\";}}\"},\"createdAt\":1757889082,\"delay\":null}', 0, NULL, 1757889082, 1757889082),
+(200, 'default', '{\"uuid\":\"64ce1a3a-8f4e-40ae-ac93-b6482b569213\",\"displayName\":\"App\\\\Notifications\\\\ActionHandoffNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";a:1:{i:0;i:10;}s:9:\\\"relations\\\";a:0:{}s:10:\\\"connection\\\";s:5:\\\"mysql\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:43:\\\"App\\\\Notifications\\\\ActionHandoffNotification\\\":4:{s:5:\\\"title\\\";s:43:\\\"تم تسجيل تأكيد الاستلام\\\";s:4:\\\"body\\\";s:58:\\\"تأكيد استلام المهمة (مدير القسم)\\\";s:3:\\\"url\\\";N;s:2:\\\"id\\\";s:36:\\\"a5a8cae1-1e59-4bf3-8db0-e582a87142d3\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:4:\\\"mail\\\";}}\"},\"createdAt\":1757889082,\"delay\":null}', 0, NULL, 1757889082, 1757889082),
+(201, 'default', '{\"uuid\":\"5f719d97-318e-4f6f-866a-1040c59cbe18\",\"displayName\":\"App\\\\Notifications\\\\ActionHandoffNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";a:1:{i:0;i:12;}s:9:\\\"relations\\\";a:0:{}s:10:\\\"connection\\\";s:5:\\\"mysql\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:43:\\\"App\\\\Notifications\\\\ActionHandoffNotification\\\":4:{s:5:\\\"title\\\";s:43:\\\"تم تسجيل تأكيد الاستلام\\\";s:4:\\\"body\\\";s:58:\\\"تأكيد استلام المهمة (مدير القسم)\\\";s:3:\\\"url\\\";N;s:2:\\\"id\\\";s:36:\\\"b38c9f1a-3b59-44a5-bc20-612f11f31a58\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:4:\\\"mail\\\";}}\"},\"createdAt\":1757889082,\"delay\":null}', 0, NULL, 1757889082, 1757889082),
+(202, 'default', '{\"uuid\":\"f47f5f14-3a61-45ab-b3c4-5158916d238a\",\"displayName\":\"Filament\\\\Notifications\\\\DatabaseNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";a:1:{i:0;i:9;}s:9:\\\"relations\\\";a:0:{}s:10:\\\"connection\\\";s:5:\\\"mysql\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:43:\\\"Filament\\\\Notifications\\\\DatabaseNotification\\\":2:{s:4:\\\"data\\\";a:11:{s:7:\\\"actions\\\";a:0:{}s:4:\\\"body\\\";s:56:\\\"يمكنك الآن طلب الخامات إذا لزم.\\\";s:5:\\\"color\\\";N;s:8:\\\"duration\\\";s:10:\\\"persistent\\\";s:4:\\\"icon\\\";N;s:9:\\\"iconColor\\\";N;s:6:\\\"status\\\";N;s:5:\\\"title\\\";s:32:\\\"تم تأكيد الاستلام\\\";s:4:\\\"view\\\";s:36:\\\"filament-notifications::notification\\\";s:8:\\\"viewData\\\";a:0:{}s:6:\\\"format\\\";s:8:\\\"filament\\\";}s:2:\\\"id\\\";s:36:\\\"755a9dc9-504e-4539-a6b7-ff2e1c24f785\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:8:\\\"database\\\";}}\"},\"createdAt\":1757889082,\"delay\":null}', 0, NULL, 1757889082, 1757889082),
+(203, 'default', '{\"uuid\":\"13381029-c9d9-458b-a710-f4b0124c4cf6\",\"displayName\":\"Filament\\\\Notifications\\\\DatabaseNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";a:1:{i:0;i:10;}s:9:\\\"relations\\\";a:0:{}s:10:\\\"connection\\\";s:5:\\\"mysql\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:43:\\\"Filament\\\\Notifications\\\\DatabaseNotification\\\":2:{s:4:\\\"data\\\";a:11:{s:7:\\\"actions\\\";a:0:{}s:4:\\\"body\\\";s:56:\\\"يمكنك الآن طلب الخامات إذا لزم.\\\";s:5:\\\"color\\\";N;s:8:\\\"duration\\\";s:10:\\\"persistent\\\";s:4:\\\"icon\\\";N;s:9:\\\"iconColor\\\";N;s:6:\\\"status\\\";N;s:5:\\\"title\\\";s:32:\\\"تم تأكيد الاستلام\\\";s:4:\\\"view\\\";s:36:\\\"filament-notifications::notification\\\";s:8:\\\"viewData\\\";a:0:{}s:6:\\\"format\\\";s:8:\\\"filament\\\";}s:2:\\\"id\\\";s:36:\\\"30f52fee-cc01-45d5-ad5a-bc5c527b54e6\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:8:\\\"database\\\";}}\"},\"createdAt\":1757889082,\"delay\":null}', 0, NULL, 1757889082, 1757889082),
+(204, 'default', '{\"uuid\":\"63bf2da0-de1b-47d1-9b9d-781e89a0bc69\",\"displayName\":\"Filament\\\\Notifications\\\\DatabaseNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";a:1:{i:0;i:12;}s:9:\\\"relations\\\";a:0:{}s:10:\\\"connection\\\";s:5:\\\"mysql\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:43:\\\"Filament\\\\Notifications\\\\DatabaseNotification\\\":2:{s:4:\\\"data\\\";a:11:{s:7:\\\"actions\\\";a:0:{}s:4:\\\"body\\\";s:56:\\\"يمكنك الآن طلب الخامات إذا لزم.\\\";s:5:\\\"color\\\";N;s:8:\\\"duration\\\";s:10:\\\"persistent\\\";s:4:\\\"icon\\\";N;s:9:\\\"iconColor\\\";N;s:6:\\\"status\\\";N;s:5:\\\"title\\\";s:32:\\\"تم تأكيد الاستلام\\\";s:4:\\\"view\\\";s:36:\\\"filament-notifications::notification\\\";s:8:\\\"viewData\\\";a:0:{}s:6:\\\"format\\\";s:8:\\\"filament\\\";}s:2:\\\"id\\\";s:36:\\\"36f3f64c-133b-4fd0-8c04-90ff1a34ba34\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:8:\\\"database\\\";}}\"},\"createdAt\":1757889082,\"delay\":null}', 0, NULL, 1757889082, 1757889082),
+(205, 'default', '{\"uuid\":\"357d7f2d-0d8a-4e1d-a87e-65432afc01eb\",\"displayName\":\"App\\\\Notifications\\\\ActionHandoffNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";a:1:{i:0;i:9;}s:9:\\\"relations\\\";a:0:{}s:10:\\\"connection\\\";s:5:\\\"mysql\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:43:\\\"App\\\\Notifications\\\\ActionHandoffNotification\\\":4:{s:5:\\\"title\\\";s:32:\\\"تم تأكيد الاستلام\\\";s:4:\\\"body\\\";s:56:\\\"يمكنك الآن طلب الخامات إذا لزم.\\\";s:3:\\\"url\\\";N;s:2:\\\"id\\\";s:36:\\\"bb5c09c2-ca4e-40ab-b450-51d45a6173ac\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:4:\\\"mail\\\";}}\"},\"createdAt\":1757889082,\"delay\":null}', 0, NULL, 1757889082, 1757889082),
+(206, 'default', '{\"uuid\":\"3d24849d-2061-4d9b-8da0-0ea4c053cd1b\",\"displayName\":\"App\\\\Notifications\\\\ActionHandoffNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";a:1:{i:0;i:10;}s:9:\\\"relations\\\";a:0:{}s:10:\\\"connection\\\";s:5:\\\"mysql\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:43:\\\"App\\\\Notifications\\\\ActionHandoffNotification\\\":4:{s:5:\\\"title\\\";s:32:\\\"تم تأكيد الاستلام\\\";s:4:\\\"body\\\";s:56:\\\"يمكنك الآن طلب الخامات إذا لزم.\\\";s:3:\\\"url\\\";N;s:2:\\\"id\\\";s:36:\\\"7c9eab7e-12f2-41b6-a958-2e8e8dcc7ee2\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:4:\\\"mail\\\";}}\"},\"createdAt\":1757889082,\"delay\":null}', 0, NULL, 1757889082, 1757889082),
+(207, 'default', '{\"uuid\":\"a9d7a8a2-04be-4925-ae71-0496fa8edffd\",\"displayName\":\"App\\\\Notifications\\\\ActionHandoffNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";a:1:{i:0;i:12;}s:9:\\\"relations\\\";a:0:{}s:10:\\\"connection\\\";s:5:\\\"mysql\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:43:\\\"App\\\\Notifications\\\\ActionHandoffNotification\\\":4:{s:5:\\\"title\\\";s:32:\\\"تم تأكيد الاستلام\\\";s:4:\\\"body\\\";s:56:\\\"يمكنك الآن طلب الخامات إذا لزم.\\\";s:3:\\\"url\\\";N;s:2:\\\"id\\\";s:36:\\\"b986a46e-cc3b-4eca-9586-0f3f4dcc1049\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:4:\\\"mail\\\";}}\"},\"createdAt\":1757889082,\"delay\":null}', 0, NULL, 1757889082, 1757889082);
 
 -- --------------------------------------------------------
 
@@ -543,18 +560,18 @@ CREATE TABLE IF NOT EXISTS `jobs` (
 
 DROP TABLE IF EXISTS `job_batches`;
 CREATE TABLE IF NOT EXISTS `job_batches` (
-  `id` varchar(190) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
-  `name` varchar(190) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `id` varchar(190) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `name` varchar(190) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
   `total_jobs` int NOT NULL,
   `pending_jobs` int NOT NULL,
   `failed_jobs` int NOT NULL,
-  `failed_job_ids` longtext CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
-  `options` mediumtext CHARACTER SET utf8 COLLATE utf8_unicode_ci,
+  `failed_job_ids` longtext CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `options` mediumtext CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci,
   `cancelled_at` int DEFAULT NULL,
   `created_at` int NOT NULL,
   `finished_at` int DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -566,16 +583,16 @@ DROP TABLE IF EXISTS `legacy_client_projects`;
 CREATE TABLE IF NOT EXISTS `legacy_client_projects` (
   `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
   `client_id` bigint UNSIGNED NOT NULL,
-  `project_name` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `project_name` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
   `start_date` date DEFAULT NULL,
   `end_date` date DEFAULT NULL,
-  `details` text CHARACTER SET utf8 COLLATE utf8_unicode_ci,
+  `details` text CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `legacy_client_projects_client_id_start_date_index` (`client_id`,`start_date`),
   KEY `legacy_client_projects_client_id_end_date_index` (`client_id`,`end_date`)
-) ENGINE=MyISAM AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `legacy_client_projects`
@@ -594,11 +611,11 @@ DROP TABLE IF EXISTS `legacy_client_project_files`;
 CREATE TABLE IF NOT EXISTS `legacy_client_project_files` (
   `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
   `legacy_project_id` bigint UNSIGNED NOT NULL,
-  `category` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
-  `title` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
-  `description` text CHARACTER SET utf8 COLLATE utf8_unicode_ci,
-  `file_path` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
-  `mime_type` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `category` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
+  `title` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
+  `description` text CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci,
+  `file_path` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `mime_type` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
   `file_size` bigint UNSIGNED DEFAULT NULL,
   `uploaded_by` bigint UNSIGNED DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
@@ -606,7 +623,7 @@ CREATE TABLE IF NOT EXISTS `legacy_client_project_files` (
   PRIMARY KEY (`id`),
   KEY `legacy_client_project_files_legacy_project_id_foreign` (`legacy_project_id`),
   KEY `legacy_client_project_files_uploaded_by_foreign` (`uploaded_by`)
-) ENGINE=MyISAM AUTO_INCREMENT=5 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `legacy_client_project_files`
@@ -626,9 +643,9 @@ DROP TABLE IF EXISTS `lessons_learned`;
 CREATE TABLE IF NOT EXISTS `lessons_learned` (
   `lesson_id` int NOT NULL AUTO_INCREMENT,
   `project_id` int NOT NULL,
-  `category` enum('process','quality','schedule','cost','safety') COLLATE utf8_unicode_ci NOT NULL,
-  `lesson_description` text COLLATE utf8_unicode_ci NOT NULL,
-  `recommendations` text COLLATE utf8_unicode_ci NOT NULL,
+  `category` enum('process','quality','schedule','cost','safety') CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `lesson_description` text CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `recommendations` text CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
   `recorded_by` int NOT NULL,
   `record_date` datetime DEFAULT CURRENT_TIMESTAMP,
   `implemented` tinyint(1) DEFAULT '0',
@@ -637,7 +654,7 @@ CREATE TABLE IF NOT EXISTS `lessons_learned` (
   PRIMARY KEY (`lesson_id`),
   KEY `project_id` (`project_id`),
   KEY `recorded_by` (`recorded_by`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -648,13 +665,13 @@ CREATE TABLE IF NOT EXISTS `lessons_learned` (
 DROP TABLE IF EXISTS `manufacturing_projects`;
 CREATE TABLE IF NOT EXISTS `manufacturing_projects` (
   `project_id` int NOT NULL AUTO_INCREMENT,
-  `project_name` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  `project_name` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
   `client_id` int NOT NULL,
   `production_manager_id` int DEFAULT NULL,
   `start_date` date DEFAULT NULL,
   `deadline_date` date DEFAULT NULL,
   `actual_end_date` date DEFAULT NULL,
-  `status` enum('pending','design','procurement','production','quality_check','installation','completed','delayed') COLLATE utf8_unicode_ci DEFAULT 'pending',
+  `status` enum('pending','design','procurement','production','quality_check','installation','completed','delayed') CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT 'pending',
   `priority` tinyint DEFAULT '2',
   `current_phase` tinyint NOT NULL DEFAULT '1',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
@@ -664,7 +681,7 @@ CREATE TABLE IF NOT EXISTS `manufacturing_projects` (
   KEY `idx_projects_status` (`status`),
   KEY `idx_projects_deadline` (`deadline_date`),
   KEY `idx_projects_client` (`client_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -675,15 +692,15 @@ CREATE TABLE IF NOT EXISTS `manufacturing_projects` (
 DROP TABLE IF EXISTS `measurement_units`;
 CREATE TABLE IF NOT EXISTS `measurement_units` (
   `unit_id` int NOT NULL AUTO_INCREMENT,
-  `unit_name` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
-  `unit_symbol` varchar(10) COLLATE utf8_unicode_ci NOT NULL,
-  `unit_type` enum('length','weight','volume','area','count') COLLATE utf8_unicode_ci NOT NULL,
+  `unit_name` varchar(20) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `unit_symbol` varchar(10) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `unit_type` enum('length','weight','volume','area','count') CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
   `base_unit` tinyint(1) DEFAULT '0',
   `conversion_factor` decimal(15,6) DEFAULT '1.000000',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`unit_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -694,10 +711,10 @@ CREATE TABLE IF NOT EXISTS `measurement_units` (
 DROP TABLE IF EXISTS `migrations`;
 CREATE TABLE IF NOT EXISTS `migrations` (
   `id` int UNSIGNED NOT NULL AUTO_INCREMENT,
-  `migration` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `migration` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
   `batch` int NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `migrations`
@@ -728,12 +745,12 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 DROP TABLE IF EXISTS `model_has_permissions`;
 CREATE TABLE IF NOT EXISTS `model_has_permissions` (
   `permission_id` bigint UNSIGNED NOT NULL,
-  `model_type` varchar(150) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `model_type` varchar(150) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
   `model_id` bigint UNSIGNED NOT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`permission_id`,`model_id`,`model_type`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -744,11 +761,11 @@ CREATE TABLE IF NOT EXISTS `model_has_permissions` (
 DROP TABLE IF EXISTS `model_has_roles`;
 CREATE TABLE IF NOT EXISTS `model_has_roles` (
   `role_id` bigint UNSIGNED NOT NULL,
-  `model_type` varchar(150) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `model_type` varchar(150) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
   `model_id` bigint UNSIGNED NOT NULL,
   PRIMARY KEY (`role_id`,`model_id`,`model_type`),
   KEY `model_has_roles_model_id_model_type_index` (`model_id`,`model_type`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `model_has_roles`
@@ -789,17 +806,17 @@ INSERT INTO `model_has_roles` (`role_id`, `model_type`, `model_id`) VALUES
 
 DROP TABLE IF EXISTS `notifications`;
 CREATE TABLE IF NOT EXISTS `notifications` (
-  `id` char(36) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
-  `type` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
-  `notifiable_type` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `id` char(36) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `type` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `notifiable_type` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
   `notifiable_id` bigint UNSIGNED NOT NULL,
-  `data` text CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `data` text CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
   `read_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `notifications_notifiable_type_notifiable_id_index` (`notifiable_type`,`notifiable_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `notifications`
@@ -813,9 +830,11 @@ INSERT INTO `notifications` (`id`, `type`, `notifiable_type`, `notifiable_id`, `
 ('46d10c3f-efd9-498d-bf65-53698e5677e4', 'Filament\\Notifications\\DatabaseNotification', 'App\\Models\\User', 10, '{\"actions\":[],\"body\":\"\\u0627\\u0636\\u063a\\u0637 \\u0628\\u062f\\u0621 \\u0627\\u0644\\u062a\\u0635\\u0646\\u064a\\u0639 \\u0639\\u0646\\u062f \\u0627\\u0644\\u062c\\u0627\\u0647\\u0632\\u064a\\u0629.\",\"color\":null,\"duration\":\"persistent\",\"icon\":null,\"iconColor\":null,\"status\":null,\"title\":\"\\u0628\\u0627\\u0646\\u062a\\u0638\\u0627\\u0631 \\u0628\\u062f\\u0621 \\u0627\\u0644\\u062a\\u0635\\u0646\\u064a\\u0639\",\"view\":\"filament-notifications::notification\",\"viewData\":[],\"format\":\"filament\"}', NULL, '2025-09-14 07:09:34', '2025-09-14 07:09:34'),
 ('5ede3fe2-d6f0-4129-95a6-d355d0b5bbe8', 'Filament\\Notifications\\DatabaseNotification', 'App\\Models\\User', 10, '{\"actions\":[],\"body\":\"\\u062a\\u0645 \\u0627\\u0639\\u062a\\u0645\\u0627\\u062f \\u0627\\u0644\\u062c\\u0648\\u062f\\u0629 \\u0628\\u0639\\u062f \\u0627\\u0644\\u062a\\u0631\\u0643\\u064a\\u0628 \\u0648\\u0625\\u063a\\u0644\\u0627\\u0642 \\u0627\\u0644\\u0645\\u0647\\u0645\\u0629.\",\"color\":null,\"duration\":\"persistent\",\"icon\":null,\"iconColor\":null,\"status\":null,\"title\":\"\\u062a\\u0645 \\u0625\\u063a\\u0644\\u0627\\u0642 \\u0645\\u0647\\u0645\\u0629\",\"view\":\"filament-notifications::notification\",\"viewData\":[],\"format\":\"filament\"}', '2025-08-27 06:36:32', '2025-08-26 13:53:33', '2025-08-27 06:36:32'),
 ('6c43916d-f655-40df-8a63-43e731480aec', 'Filament\\Notifications\\DatabaseNotification', 'App\\Models\\User', 10, '{\"actions\":[],\"body\":\"\\u0627\\u0644\\u062a\\u0643\\u0644\\u0641\\u0629 \\u0627\\u0644\\u0641\\u0639\\u0644\\u064a\\u0629 2,000.00 \\u062a\\u062c\\u0627\\u0648\\u0632\\u062a \\u0627\\u0644\\u0633\\u0642\\u0641 1,250.00.\",\"color\":null,\"duration\":\"persistent\",\"icon\":null,\"iconColor\":null,\"status\":null,\"title\":\"\\u062a\\u0646\\u0628\\u064a\\u0647: \\u062a\\u062c\\u0627\\u0648\\u0632 \\u0633\\u0642\\u0641 \\u0627\\u0644\\u0645\\u0634\\u062a\\u0631\\u064a\\u0627\\u062a \\u0644\\u0644\\u0645\\u0647\\u0645\\u0629\",\"view\":\"filament-notifications::notification\",\"viewData\":[],\"format\":\"filament\"}', '2025-08-27 06:36:32', '2025-08-26 13:53:14', '2025-08-27 06:36:32'),
+('6d23f31a-7a7c-4ed9-a12b-09b219147720', 'App\\Notifications\\TaskAssignedInAppNotification', 'App\\Models\\User', 9, '{\"title\":\"\\u0625\\u0639\\u0627\\u062f\\u0629 \\u0625\\u0633\\u0646\\u0627\\u062f \\u0645\\u0647\\u0645\\u0629 \\u062a\\u0635\\u0646\\u064a\\u0639\",\"body\":\"\\u0627\\u0644\\u0645\\u0634\\u0631\\u0648\\u0639: \\u0645\\u0634\\u0631\\u0648\\u0639 \\u062a\\u062c\\u0631\\u064a\\u0628\\u064a \\u062c\\u062f\\u064a\\u062f \\u2014 \\u0627\\u0644\\u0642\\u0633\\u0645: \\u0642\\u0633\\u0645 \\u0627\\u0644\\u0623\\u0644\\u0648\\u0645\\u0646\\u064a\\u0648\\u0645 \\u2014 \\u0627\\u0644\\u062a\\u0633\\u0644\\u064a\\u0645: 2025-09-25\",\"project_id\":25,\"task_id\":34,\"url\":\"http:\\/\\/127.0.0.1:8000\\/admin\\/projects\\/25\\/manage-tasks\",\"action_text\":\"\\u0641\\u062a\\u062d \\u0627\\u0644\\u0645\\u0647\\u0645\\u0629\"}', NULL, '2025-09-14 22:31:05', '2025-09-14 22:31:05'),
 ('73c636b3-767d-4e29-8229-cf1f03843e5f', 'App\\Notifications\\TaskAssignedInAppNotification', 'App\\Models\\User', 9, '{\"title\":\"\\u0645\\u0647\\u0645\\u0629 \\u062a\\u0635\\u0646\\u064a\\u0639 \\u062c\\u062f\\u064a\\u062f\\u0629 \\u0623\\u064f\\u0633\\u0646\\u062f\\u062a \\u0625\\u0644\\u064a\\u0643\",\"body\":\"\\u0627\\u0644\\u0645\\u0634\\u0631\\u0648\\u0639: \\u0645\\u0634\\u0631\\u0648\\u0639 \\u0645\\u0635\\u0646\\u0639 \\u0627\\u0644\\u0631\\u062e\\u0627\\u0645 \\u2014 \\u0627\\u0644\\u0642\\u0633\\u0645: \\u0642\\u0633\\u0645 \\u0627\\u0644\\u0632\\u062c\\u0627\\u062c \\u2014 \\u0627\\u0644\\u062a\\u0633\\u0644\\u064a\\u0645: 2025-08-31\",\"project_id\":14,\"task_id\":18,\"url\":\"http:\\/\\/localhost:8000\\/admin\\/projects\\/14\\/manage-tasks\",\"action_text\":\"\\u0641\\u062a\\u062d \\u0627\\u0644\\u0645\\u0647\\u0645\\u0629\"}', NULL, '2025-08-19 13:57:01', '2025-08-19 13:57:01'),
 ('7ab023db-1018-4444-9ae7-a9e20919e63c', 'Filament\\Notifications\\DatabaseNotification', 'App\\Models\\User', 10, '{\"actions\":[],\"body\":\"\\u064a\\u0631\\u062c\\u0649 \\u062a\\u0623\\u0643\\u064a\\u062f \\u0627\\u0633\\u062a\\u0644\\u0627\\u0645 \\u0627\\u0644\\u062e\\u0627\\u0645\\u0627\\u062a \\u0648\\u0645\\u062a\\u0627\\u0628\\u0639\\u0629 \\u062a\\u062d\\u062f\\u064a\\u062f \\u0627\\u0644\\u0645\\u0648\\u0627\\u0639\\u064a\\u062f.\",\"color\":null,\"duration\":\"persistent\",\"icon\":null,\"iconColor\":null,\"status\":null,\"title\":\"\\u0627\\u0644\\u062e\\u0627\\u0645\\u0627\\u062a \\u062c\\u0627\\u0647\\u0632\\u0629 \\u0644\\u0644\\u0627\\u0633\\u062a\\u0644\\u0627\\u0645\",\"view\":\"filament-notifications::notification\",\"viewData\":[],\"format\":\"filament\"}', NULL, '2025-09-14 07:10:44', '2025-09-14 07:10:44'),
 ('7e1215dd-2808-491e-80d3-19c7e9e4220d', 'Filament\\Notifications\\DatabaseNotification', 'App\\Models\\User', 9, '{\"actions\":[{\"name\":\"\\u0639\\u0631\\u0636 \\u0627\\u0644\\u0637\\u0644\\u0628\",\"color\":null,\"event\":null,\"eventData\":[],\"dispatchDirection\":false,\"dispatchToComponent\":null,\"extraAttributes\":[],\"icon\":null,\"iconPosition\":\"before\",\"iconSize\":null,\"isOutlined\":false,\"isDisabled\":false,\"label\":\"\\u0639\\u0631\\u0636\\u0627\\u0644\\u0637\\u0644\\u0628\",\"shouldClose\":false,\"shouldMarkAsRead\":false,\"shouldMarkAsUnread\":false,\"shouldOpenUrlInNewTab\":false,\"size\":\"sm\",\"tooltip\":null,\"url\":\"http:\\/\\/127.0.0.1:8000\\/admin\\/production-requests\\/13\\/timeline\",\"view\":\"filament-actions::button-action\"}],\"body\":\"\\u0631\\u0642\\u0645 \\u0627\\u0644\\u0637\\u0644\\u0628: #13 \\u2022 \\u0645\\u0634\\u0631\\u0648\\u0639 \\u062a\\u062c\\u0631\\u064a\\u0628\\u064a \\u062c\\u062f\\u064a\\u062f\",\"color\":null,\"duration\":\"persistent\",\"icon\":\"heroicon-o-briefcase\",\"iconColor\":\"success\",\"status\":\"success\",\"title\":\"\\u0637\\u0644\\u0628 \\u062a\\u0635\\u0646\\u064a\\u0639 \\u0645\\u0628\\u0627\\u0634\\u0631\",\"view\":\"filament-notifications::notification\",\"viewData\":[],\"format\":\"filament\"}', NULL, '2025-09-14 13:04:34', '2025-09-14 13:04:34'),
+('80eb436d-bd5e-40e6-a5e1-ff304f2378ab', 'App\\Notifications\\TaskAssignedInAppNotification', 'App\\Models\\User', 10, '{\"title\":\"\\u0625\\u0639\\u0627\\u062f\\u0629 \\u0625\\u0633\\u0646\\u0627\\u062f \\u0645\\u0647\\u0645\\u0629 \\u062a\\u0635\\u0646\\u064a\\u0639\",\"body\":\"\\u0627\\u0644\\u0645\\u0634\\u0631\\u0648\\u0639: \\u0645\\u0634\\u0631\\u0648\\u0639 \\u062a\\u062c\\u0631\\u064a\\u0628\\u064a \\u062c\\u062f\\u064a\\u062f \\u2014 \\u0627\\u0644\\u0642\\u0633\\u0645: \\u0642\\u0633\\u0645 \\u0627\\u0644\\u0623\\u0644\\u0648\\u0645\\u0646\\u064a\\u0648\\u0645 \\u2014 \\u0627\\u0644\\u062a\\u0633\\u0644\\u064a\\u0645: 2025-09-25\",\"project_id\":25,\"task_id\":34,\"url\":\"http:\\/\\/127.0.0.1:8000\\/admin\\/projects\\/25\\/manage-tasks\",\"action_text\":\"\\u0641\\u062a\\u062d \\u0627\\u0644\\u0645\\u0647\\u0645\\u0629\"}', NULL, '2025-09-14 22:20:03', '2025-09-14 22:20:03'),
 ('9096dd5f-b256-40fd-9015-25048b9ea4a1', 'Filament\\Notifications\\DatabaseNotification', 'App\\Models\\User', 10, '{\"actions\":[],\"body\":\"\\u062a\\u0645 \\u062a\\u062d\\u0648\\u064a\\u0644 \\u0645\\u0644\\u0643\\u064a\\u0629 \\u0627\\u0644\\u0645\\u0647\\u0645\\u0629 \\u0625\\u0644\\u064a\\u0643. \\u0645\\u0644\\u0627\\u062d\\u0638\\u0629: \\u062a\\u0648\\u0641\\u064a\\u0631 \\u0627\\u0644\\u062e\\u0627\\u0645\\u0627\\u062a\",\"color\":null,\"duration\":\"persistent\",\"icon\":null,\"iconColor\":null,\"status\":null,\"title\":\"\\u0644\\u062f\\u064a\\u0643 \\u0645\\u0647\\u0645\\u0629 \\u0628\\u0627\\u0646\\u062a\\u0638\\u0627\\u0631 \\u0627\\u0644\\u0625\\u062c\\u0631\\u0627\\u0621\",\"view\":\"filament-notifications::notification\",\"viewData\":[],\"format\":\"filament\"}', NULL, '2025-09-14 07:11:33', '2025-09-14 07:11:33'),
 ('9ad05e43-51ad-4602-ad44-0a0e7e3a241c', 'App\\Notifications\\TaskAssignedInAppNotification', 'App\\Models\\User', 9, '{\"title\":\"\\u0625\\u0639\\u0627\\u062f\\u0629 \\u0625\\u0633\\u0646\\u0627\\u062f \\u0645\\u0647\\u0645\\u0629 \\u062a\\u0635\\u0646\\u064a\\u0639\",\"body\":\"\\u0627\\u0644\\u0645\\u0634\\u0631\\u0648\\u0639: \\u0645\\u0634\\u0631\\u0648\\u0639 \\u0641\\u064a\\u0644\\u0627 \\u0627\\u0644\\u062e\\u0628\\u0631 \\u2014 \\u0627\\u0644\\u0642\\u0633\\u0645: \\u0642\\u0633\\u0645 \\u0627\\u0644\\u0632\\u062c\\u0627\\u062c \\u2014 \\u0627\\u0644\\u062a\\u0633\\u0644\\u064a\\u0645: 2025-08-28\",\"project_id\":17,\"task_id\":23,\"url\":\"http:\\/\\/127.0.0.1:8000\\/admin\\/projects\\/17\\/manage-tasks\",\"action_text\":\"\\u0641\\u062a\\u062d \\u0627\\u0644\\u0645\\u0647\\u0645\\u0629\"}', NULL, '2025-08-20 07:26:12', '2025-08-20 07:26:12'),
 ('9b635bdf-084a-4a75-adc8-2d1144998c41', 'Filament\\Notifications\\DatabaseNotification', 'App\\Models\\User', 10, '{\"actions\":[],\"body\":\"\\u064a\\u0631\\u062c\\u0649 \\u0627\\u0644\\u0636\\u063a\\u0637 \\u0639\\u0644\\u0649 \\u0627\\u0643\\u062a\\u0645\\u0627\\u0644 \\u0627\\u0644\\u062a\\u0635\\u0646\\u064a\\u0639 \\u0639\\u0646\\u062f \\u0627\\u0644\\u0627\\u0646\\u062a\\u0647\\u0627\\u0621.\",\"color\":null,\"duration\":\"persistent\",\"icon\":null,\"iconColor\":null,\"status\":null,\"title\":\"\\u0628\\u062f\\u0623\\u062a \\u0623\\u0639\\u0645\\u0627\\u0644 \\u0627\\u0644\\u062a\\u0635\\u0646\\u064a\\u0639\",\"view\":\"filament-notifications::notification\",\"viewData\":[],\"format\":\"filament\"}', NULL, '2025-09-14 07:10:58', '2025-09-14 07:10:58'),
@@ -834,7 +853,8 @@ INSERT INTO `notifications` (`id`, `type`, `notifiable_type`, `notifiable_id`, `
 ('f7f0190c-6e14-4353-bcaf-d28e2be6a669', 'Filament\\Notifications\\DatabaseNotification', 'App\\Models\\User', 10, '{\"actions\":[],\"body\":\"\\u062a\\u0645 \\u062a\\u062d\\u0648\\u064a\\u0644 \\u0645\\u0644\\u0643\\u064a\\u0629 \\u0627\\u0644\\u0645\\u0647\\u0645\\u0629 \\u0625\\u0644\\u064a\\u0643. \\u0645\\u0644\\u0627\\u062d\\u0638\\u0629: \\u062a\\u0648\\u0641\\u064a\\u0631 \\u0627\\u0644\\u062e\\u0627\\u0645\\u0627\\u062a\",\"color\":null,\"duration\":\"persistent\",\"icon\":null,\"iconColor\":null,\"status\":null,\"title\":\"\\u0644\\u062f\\u064a\\u0643 \\u0645\\u0647\\u0645\\u0629 \\u0628\\u0627\\u0646\\u062a\\u0638\\u0627\\u0631 \\u0627\\u0644\\u0625\\u062c\\u0631\\u0627\\u0621\",\"view\":\"filament-notifications::notification\",\"viewData\":[],\"format\":\"filament\"}', NULL, '2025-08-27 14:40:24', '2025-08-27 14:40:24'),
 ('fa716779-3970-476e-8aa3-67e6e7e219b9', 'Filament\\Notifications\\DatabaseNotification', 'App\\Models\\User', 10, '{\"actions\":[],\"body\":\"\\u064a\\u0631\\u062c\\u0649 \\u062a\\u0623\\u0643\\u064a\\u062f \\u0627\\u0633\\u062a\\u0644\\u0627\\u0645 \\u0627\\u0644\\u062e\\u0627\\u0645\\u0627\\u062a \\u0648\\u0645\\u062a\\u0627\\u0628\\u0639\\u0629 \\u062a\\u062d\\u062f\\u064a\\u062f \\u0627\\u0644\\u0645\\u0648\\u0627\\u0639\\u064a\\u062f.\",\"color\":null,\"duration\":\"persistent\",\"icon\":null,\"iconColor\":null,\"status\":null,\"title\":\"\\u0627\\u0644\\u062e\\u0627\\u0645\\u0627\\u062a \\u062c\\u0627\\u0647\\u0632\\u0629 \\u0644\\u0644\\u0627\\u0633\\u062a\\u0644\\u0627\\u0645\",\"view\":\"filament-notifications::notification\",\"viewData\":[],\"format\":\"filament\"}', NULL, '2025-09-14 07:11:38', '2025-09-14 07:11:38'),
 ('fd1437ca-87fc-4b20-b649-2c4ef1d64019', 'Filament\\Notifications\\DatabaseNotification', 'App\\Models\\User', 9, '{\"actions\":[{\"name\":\"\\u0639\\u0631\\u0636 \\u0627\\u0644\\u0637\\u0644\\u0628\",\"color\":null,\"event\":null,\"eventData\":[],\"dispatchDirection\":false,\"dispatchToComponent\":null,\"extraAttributes\":[],\"icon\":null,\"iconPosition\":\"before\",\"iconSize\":null,\"isOutlined\":false,\"isDisabled\":false,\"label\":\"\\u0639\\u0631\\u0636\\u0627\\u0644\\u0637\\u0644\\u0628\",\"shouldClose\":false,\"shouldMarkAsRead\":false,\"shouldMarkAsUnread\":false,\"shouldOpenUrlInNewTab\":false,\"size\":\"sm\",\"tooltip\":null,\"url\":\"http:\\/\\/127.0.0.1:8000\\/admin\\/production-requests\\/15\\/review\",\"view\":\"filament-actions::button-action\"}],\"body\":\"\\u0631\\u0642\\u0645 \\u0627\\u0644\\u0637\\u0644\\u0628: #15 \\u2022 \\u0645\\u0634\\u0631\\u0648\\u0639 \\u062a\\u062c\\u0631\\u064a\\u0628\\u064a \\u062c\\u062f\\u064a\\u062f\",\"color\":null,\"duration\":\"persistent\",\"icon\":\"heroicon-o-briefcase\",\"iconColor\":\"success\",\"status\":\"success\",\"title\":\"\\u0637\\u0644\\u0628 \\u062a\\u0635\\u0646\\u064a\\u0639 \\u0645\\u0628\\u0627\\u0634\\u0631\",\"view\":\"filament-notifications::notification\",\"viewData\":[],\"format\":\"filament\"}', NULL, '2025-09-14 13:30:58', '2025-09-14 13:30:58'),
-('feefbdb5-e94a-4467-a849-c0588bf492f6', 'Filament\\Notifications\\DatabaseNotification', 'App\\Models\\User', 10, '{\"actions\":[],\"body\":\"\\u064a\\u0631\\u062c\\u0649 \\u0627\\u0644\\u0636\\u063a\\u0637 \\u0639\\u0644\\u0649 \\u0627\\u0643\\u062a\\u0645\\u0627\\u0644 \\u0627\\u0644\\u062a\\u0635\\u0646\\u064a\\u0639 \\u0639\\u0646\\u062f \\u0627\\u0644\\u0627\\u0646\\u062a\\u0647\\u0627\\u0621.\",\"color\":null,\"duration\":\"persistent\",\"icon\":null,\"iconColor\":null,\"status\":null,\"title\":\"\\u0628\\u062f\\u0623\\u062a \\u0623\\u0639\\u0645\\u0627\\u0644 \\u0627\\u0644\\u062a\\u0635\\u0646\\u064a\\u0639\",\"view\":\"filament-notifications::notification\",\"viewData\":[],\"format\":\"filament\"}', NULL, '2025-09-14 07:09:40', '2025-09-14 07:09:40');
+('feefbdb5-e94a-4467-a849-c0588bf492f6', 'Filament\\Notifications\\DatabaseNotification', 'App\\Models\\User', 10, '{\"actions\":[],\"body\":\"\\u064a\\u0631\\u062c\\u0649 \\u0627\\u0644\\u0636\\u063a\\u0637 \\u0639\\u0644\\u0649 \\u0627\\u0643\\u062a\\u0645\\u0627\\u0644 \\u0627\\u0644\\u062a\\u0635\\u0646\\u064a\\u0639 \\u0639\\u0646\\u062f \\u0627\\u0644\\u0627\\u0646\\u062a\\u0647\\u0627\\u0621.\",\"color\":null,\"duration\":\"persistent\",\"icon\":null,\"iconColor\":null,\"status\":null,\"title\":\"\\u0628\\u062f\\u0623\\u062a \\u0623\\u0639\\u0645\\u0627\\u0644 \\u0627\\u0644\\u062a\\u0635\\u0646\\u064a\\u0639\",\"view\":\"filament-notifications::notification\",\"viewData\":[],\"format\":\"filament\"}', NULL, '2025-09-14 07:09:40', '2025-09-14 07:09:40'),
+('fef7681e-b0b8-4e52-aec4-5c4018485589', 'App\\Notifications\\TaskAssignedInAppNotification', 'App\\Models\\User', 9, '{\"title\":\"\\u0645\\u0647\\u0645\\u0629 \\u062a\\u0635\\u0646\\u064a\\u0639 \\u062c\\u062f\\u064a\\u062f\\u0629 \\u0623\\u064f\\u0633\\u0646\\u062f\\u062a \\u0625\\u0644\\u064a\\u0643\",\"body\":\"\\u0627\\u0644\\u0645\\u0634\\u0631\\u0648\\u0639: \\u0645\\u0634\\u0631\\u0648\\u0639 \\u062a\\u062c\\u0631\\u064a\\u0628\\u064a \\u062c\\u062f\\u064a\\u062f \\u2014 \\u0627\\u0644\\u0642\\u0633\\u0645: \\u0642\\u0633\\u0645 \\u0627\\u0644\\u0623\\u0644\\u0648\\u0645\\u0646\\u064a\\u0648\\u0645 \\u2014 \\u0627\\u0644\\u062a\\u0633\\u0644\\u064a\\u0645: 2025-09-25\",\"project_id\":25,\"task_id\":34,\"url\":\"http:\\/\\/127.0.0.1:8000\\/admin\\/projects\\/25\\/manage-tasks\",\"action_text\":\"\\u0641\\u062a\\u062d \\u0627\\u0644\\u0645\\u0647\\u0645\\u0629\"}', NULL, '2025-09-14 20:33:24', '2025-09-14 20:33:24');
 
 -- --------------------------------------------------------
 
@@ -844,11 +864,11 @@ INSERT INTO `notifications` (`id`, `type`, `notifiable_type`, `notifiable_id`, `
 
 DROP TABLE IF EXISTS `password_reset_tokens`;
 CREATE TABLE IF NOT EXISTS `password_reset_tokens` (
-  `email` varchar(190) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
-  `token` varchar(190) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `email` varchar(190) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `token` varchar(190) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`email`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -859,13 +879,13 @@ CREATE TABLE IF NOT EXISTS `password_reset_tokens` (
 DROP TABLE IF EXISTS `permissions`;
 CREATE TABLE IF NOT EXISTS `permissions` (
   `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
-  `name` varchar(150) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
-  `guard_name` varchar(150) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `name` varchar(150) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `guard_name` varchar(150) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `permissions_name_guard_name_unique` (`name`,`guard_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=78 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=78 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `permissions`
@@ -959,17 +979,17 @@ INSERT INTO `permissions` (`id`, `name`, `guard_name`, `created_at`, `updated_at
 DROP TABLE IF EXISTS `production_requests`;
 CREATE TABLE IF NOT EXISTS `production_requests` (
   `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
-  `request_type` enum('direct','indirect') CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL DEFAULT 'indirect',
-  `project_name` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
-  `project_description` text CHARACTER SET utf8 COLLATE utf8_unicode_ci,
+  `request_type` enum('direct','indirect') CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL DEFAULT 'indirect',
+  `project_name` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `project_description` text CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci,
   `client_id` bigint UNSIGNED NOT NULL,
   `showroom_id` bigint UNSIGNED DEFAULT NULL,
-  `agreement_file` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
-  `status` enum('pending','received','under_review','approved','rejected','in_progress','materials_wait','materials_prep','materials_done','on_hold','completed','cancelled') CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL DEFAULT 'pending',
-  `current_phase` varchar(155) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
-  `phase_status` varchar(155) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `agreement_file` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
+  `status` enum('pending','received','under_review','approved','rejected','in_progress','materials_wait','materials_prep','materials_done','on_hold','completed','cancelled') CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL DEFAULT 'pending',
+  `current_phase` varchar(155) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
+  `phase_status` varchar(155) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
   `current_owner_user_id` bigint DEFAULT NULL,
-  `current_owner_role` varchar(155) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `current_owner_role` varchar(155) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
   `sent_to_owner_at` datetime DEFAULT NULL,
   `received_by_owner_at` datetime DEFAULT NULL,
   `created_by` bigint UNSIGNED NOT NULL,
@@ -985,7 +1005,7 @@ CREATE TABLE IF NOT EXISTS `production_requests` (
   KEY `current_owner_role` (`current_owner_role`),
   KEY `sent_to_owner_at` (`sent_to_owner_at`),
   KEY `received_by_owner_at` (`received_by_owner_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `production_requests`
@@ -1007,13 +1027,13 @@ CREATE TABLE IF NOT EXISTS `production_request_files` (
   `production_request_id` bigint UNSIGNED NOT NULL,
   `department_id` bigint UNSIGNED NOT NULL,
   `estimated_cost` float(9,2) NOT NULL DEFAULT '0.00',
-  `file_path` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `file_path` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `production_request_id` (`production_request_id`),
   KEY `department_id` (`department_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `production_request_files`
@@ -1034,9 +1054,9 @@ DROP TABLE IF EXISTS `production_request_logs`;
 CREATE TABLE IF NOT EXISTS `production_request_logs` (
   `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
   `production_request_id` bigint UNSIGNED NOT NULL,
-  `type` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `type` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
   `data` json DEFAULT NULL,
-  `note` text CHARACTER SET utf8 COLLATE utf8_unicode_ci,
+  `note` text CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci,
   `causer_id` bigint UNSIGNED DEFAULT NULL,
   `happened_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
@@ -1044,7 +1064,7 @@ CREATE TABLE IF NOT EXISTS `production_request_logs` (
   PRIMARY KEY (`id`),
   KEY `production_tasks_log_causer_id_foreign` (`causer_id`),
   KEY `production_tasks_log_task_id_happened_at_index` (`production_request_id`,`happened_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=98 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=98 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `production_request_logs`
@@ -1159,22 +1179,22 @@ CREATE TABLE IF NOT EXISTS `production_tasks` (
   `project_id` bigint UNSIGNED NOT NULL,
   `department_id` int NOT NULL,
   `assigned_to_employee_id` int DEFAULT NULL,
-  `file_path` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `file_path` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
   `due_date` date DEFAULT NULL,
   `assigned_at` datetime DEFAULT NULL,
   `received_at` datetime DEFAULT NULL,
-  `status` enum('pending','assigned','received','under_review','approved','rejected','in_progress','materials_wait','materials_prep','materials_done','on_hold','completed','cancelled','waiting_production') CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL DEFAULT 'pending',
+  `status` enum('pending','assigned','received','under_review','approved','rejected','in_progress','materials_wait','materials_prep','materials_done','on_hold','completed','cancelled','waiting_production') CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL DEFAULT 'pending',
   `estimated_cost` float(9,2) DEFAULT '0.00',
   `current_owner_user_id` bigint DEFAULT NULL,
-  `current_owner_role` varchar(150) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `current_owner_role` varchar(150) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
   `sent_to_owner_at` datetime DEFAULT NULL,
   `received_by_owner_at` datetime DEFAULT NULL,
   `planned_start_at` datetime DEFAULT NULL,
   `planned_end_at` datetime DEFAULT NULL,
   `planned_install_at` datetime DEFAULT NULL,
-  `client_receipt` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `client_receipt` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
   `completed_at` timestamp NULL DEFAULT NULL,
-  `notes` text CHARACTER SET utf8 COLLATE utf8_unicode_ci,
+  `notes` text CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -1184,7 +1204,7 @@ CREATE TABLE IF NOT EXISTS `production_tasks` (
   KEY `idx_tasks_status` (`status`),
   KEY `idx_tasks_owner_role` (`current_owner_role`),
   KEY `idx_tasks_owner_user` (`current_owner_user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=34 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `production_tasks`
@@ -1193,7 +1213,8 @@ CREATE TABLE IF NOT EXISTS `production_tasks` (
 INSERT INTO `production_tasks` (`id`, `project_id`, `department_id`, `assigned_to_employee_id`, `file_path`, `due_date`, `assigned_at`, `received_at`, `status`, `estimated_cost`, `current_owner_user_id`, `current_owner_role`, `sent_to_owner_at`, `received_by_owner_at`, `planned_start_at`, `planned_end_at`, `planned_install_at`, `client_receipt`, `completed_at`, `notes`, `created_at`, `updated_at`) VALUES
 (30, 22, 13, 6, 'production_files/2025/08/01K3JME06FFGWS3D5CYM41MDW3.pdf', '2025-08-31', '2025-08-26 10:59:37', '2025-08-26 14:34:40', 'completed', 2500.00, NULL, NULL, '2025-08-26 16:25:39', NULL, '2025-09-05 00:00:00', NULL, '2025-09-25 00:00:00', 'client_receipts/2025/08/01K3K8WGWQHV6NPWCQKHGQVKG1.pdf', '2025-08-26 13:25:39', 'تم إنشاؤها تلقائيًا من ملف الطلب.', '2025-08-26 07:33:43', '2025-08-26 13:25:39'),
 (31, 22, 12, 7, 'production_files/2025/08/01K3JME06JVXAQH3088WBCRNYR.pdf', '2025-08-30', '2025-08-26 11:00:03', NULL, 'assigned', 1000.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'تم إنشاؤها تلقائيًا من ملف الطلب.', '2025-08-26 07:33:43', '2025-08-27 14:40:17'),
-(33, 25, 13, 6, 'production_files/2025/09/01K546QVCG0H1VGSKTWXG2HGVT.jpg', '2025-09-25', '2025-09-14 16:40:01', NULL, 'pending', 1000.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'تم إنشاؤها تلقائيًا من ملف الطلب.', '2025-09-14 13:31:31', '2025-09-14 13:40:01');
+(33, 25, 13, 6, NULL, '2025-09-25', '2025-09-14 16:40:01', NULL, 'pending', 1000.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'تم إنشاؤها تلقائيًا من ملف الطلب.', '2025-09-14 13:31:31', '2025-09-14 22:30:31'),
+(34, 25, 9, 6, 'projects/25/tasks/Screenshot 2025-07-27 164911.png', '2025-09-25', '2025-09-15 01:31:05', '2025-09-15 01:31:22', 'received', 1000.00, 9, 'department_manager', '2025-09-15 01:31:05', '2025-09-15 01:31:22', NULL, NULL, NULL, NULL, NULL, NULL, '2025-09-14 20:33:20', '2025-09-14 22:31:22');
 
 -- --------------------------------------------------------
 
@@ -1206,14 +1227,14 @@ CREATE TABLE IF NOT EXISTS `production_tasks_comments` (
   `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
   `task_id` bigint UNSIGNED NOT NULL,
   `user_id` bigint UNSIGNED NOT NULL,
-  `body` text CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `body` text CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
   `attachments` json DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `production_tasks_comments_task_id_foreign` (`task_id`),
   KEY `production_tasks_comments_user_id_foreign` (`user_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=7 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `production_tasks_comments`
@@ -1237,17 +1258,17 @@ DROP TABLE IF EXISTS `production_tasks_log`;
 CREATE TABLE IF NOT EXISTS `production_tasks_log` (
   `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
   `task_id` bigint UNSIGNED NOT NULL,
-  `type` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `type` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
   `data` json DEFAULT NULL,
   `causer_id` bigint UNSIGNED DEFAULT NULL,
   `happened_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  `note` text CHARACTER SET utf8 COLLATE utf8_unicode_ci,
+  `note` text CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci,
   PRIMARY KEY (`id`),
   KEY `production_tasks_log_causer_id_foreign` (`causer_id`),
   KEY `production_tasks_log_task_id_happened_at_index` (`task_id`,`happened_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=210 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=222 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `production_tasks_log`
@@ -1299,7 +1320,19 @@ INSERT INTO `production_tasks_log` (`id`, `task_id`, `type`, `data`, `causer_id`
 (43, 30, 'owner_changed', '{\"note\": \"إغلاق المهمة\", \"owner_role\": null, \"owner_user_id\": null}', 9, '2025-08-26 13:25:39', '2025-08-26 13:25:39', '2025-08-26 13:25:39', NULL),
 (44, 30, 'closed', '{\"to\": \"completed\", \"from\": \"under_review\", \"client_receipt\": \"client_receipts/2025/08/01K3K8WGWQHV6NPWCQKHGQVKG1.pdf\"}', 9, '2025-08-26 13:25:39', '2025-08-26 13:25:39', '2025-08-26 13:25:39', NULL),
 (208, 33, 'created', '{\"owner\": {\"role\": null, \"user\": null}, \"status\": \"pending\", \"department\": 13}', 9, '2025-09-14 13:31:31', '2025-09-14 13:31:31', '2025-09-14 13:31:31', NULL),
-(209, 33, 'assigned_changed', '{\"to\": \"6\", \"from\": \"6\"}', 9, '2025-09-14 13:40:01', '2025-09-14 13:40:01', '2025-09-14 13:40:01', NULL);
+(209, 33, 'assigned_changed', '{\"to\": \"6\", \"from\": \"6\"}', 9, '2025-09-14 13:40:01', '2025-09-14 13:40:01', '2025-09-14 13:40:01', NULL),
+(210, 34, 'created', '{\"owner\": {\"role\": null, \"user\": null}, \"status\": \"pending\", \"department\": \"9\"}', 1, '2025-09-14 20:33:24', '2025-09-14 20:33:24', '2025-09-14 20:33:24', NULL),
+(211, 34, 'status_changed', '{\"to\": \"received\", \"from\": \"pending\"}', 9, '2025-09-14 21:53:54', '2025-09-14 21:53:54', '2025-09-14 21:53:54', NULL),
+(212, 34, 'ownership_received', '{\"owner\": {\"role\": null, \"user\": null}, \"recv_at\": \"2025-09-14T21:53:54.000000Z\"}', 9, '2025-09-14 21:53:54', '2025-09-14 21:53:54', '2025-09-14 21:53:54', NULL),
+(213, 34, 'owner_received', '{\"note\": \"تأكيد استلام المهمة (مدير القسم)\", \"owner_role\": null, \"owner_user_id\": null}', 9, '2025-09-14 21:53:54', '2025-09-14 21:53:54', '2025-09-14 21:53:54', NULL),
+(214, 34, 'status_changed', '{\"to\": \"received\", \"from\": \"pending\"}', 9, '2025-09-14 21:53:54', '2025-09-14 21:53:54', '2025-09-14 21:53:54', NULL),
+(215, 34, 'assigned_changed', '{\"to\": \"7\", \"from\": \"7\"}', 9, '2025-09-14 22:20:03', '2025-09-14 22:20:03', '2025-09-14 22:20:03', NULL),
+(216, 34, 'assigned_changed', '{\"to\": \"6\", \"from\": \"6\"}', 9, '2025-09-14 22:31:05', '2025-09-14 22:31:05', '2025-09-14 22:31:05', NULL),
+(217, 34, 'ownership_changed', '{\"to\": {\"role\": \"department_manager\", \"user\": 9}, \"from\": {\"role\": \"department_manager\", \"user\": 9}}', 9, '2025-09-14 22:31:05', '2025-09-14 22:31:05', '2025-09-14 22:31:05', NULL),
+(218, 34, 'status_changed', '{\"to\": \"received\", \"from\": \"pending\"}', 9, '2025-09-14 22:31:22', '2025-09-14 22:31:22', '2025-09-14 22:31:22', NULL),
+(219, 34, 'ownership_received', '{\"owner\": {\"role\": \"department_manager\", \"user\": 9}, \"recv_at\": \"2025-09-14T22:31:22.000000Z\"}', 9, '2025-09-14 22:31:22', '2025-09-14 22:31:22', '2025-09-14 22:31:22', NULL),
+(220, 34, 'owner_received', '{\"note\": \"تأكيد استلام المهمة (مدير القسم)\", \"owner_role\": \"department_manager\", \"owner_user_id\": 9}', 9, '2025-09-14 22:31:22', '2025-09-14 22:31:22', '2025-09-14 22:31:22', NULL),
+(221, 34, 'status_changed', '{\"to\": \"received\", \"from\": \"pending\"}', 9, '2025-09-14 22:31:22', '2025-09-14 22:31:22', '2025-09-14 22:31:22', NULL);
 
 -- --------------------------------------------------------
 
@@ -1314,13 +1347,13 @@ CREATE TABLE IF NOT EXISTS `production_tasks_material_requests` (
   `department_id` bigint UNSIGNED DEFAULT NULL,
   `requested_by` bigint UNSIGNED DEFAULT NULL,
   `requested_at` timestamp NULL DEFAULT NULL,
-  `status` enum('requested','approved','fulfilled','cancelled') CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL DEFAULT 'requested',
+  `status` enum('requested','approved','fulfilled','cancelled') CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL DEFAULT 'requested',
   `estimated_cost` float(9,2) DEFAULT '0.00',
   `actual_cost` float(9,2) DEFAULT '0.00',
   `expected_delivery_at` datetime DEFAULT NULL,
-  `po_number` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
-  `po_file` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
-  `note` text CHARACTER SET utf8 COLLATE utf8_unicode_ci,
+  `po_number` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
+  `po_file` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
+  `note` text CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci,
   `provided_by` bigint UNSIGNED DEFAULT NULL,
   `provided_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
@@ -1328,7 +1361,7 @@ CREATE TABLE IF NOT EXISTS `production_tasks_material_requests` (
   PRIMARY KEY (`id`),
   KEY `production_tasks_material_requests_task_id_status_index` (`task_id`,`status`),
   KEY `production_tasks_material_requests_requested_at_index` (`requested_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `production_tasks_material_requests`
@@ -1354,13 +1387,13 @@ CREATE TABLE IF NOT EXISTS `production_tasks_time_entries` (
   `started_at` timestamp NOT NULL,
   `ended_at` timestamp NULL DEFAULT NULL,
   `duration_sec` int UNSIGNED DEFAULT NULL,
-  `reason` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `reason` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `production_tasks_time_entries_started_by_foreign` (`started_by`),
   KEY `production_tasks_time_entries_task_id_started_at_index` (`task_id`,`started_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `production_tasks_time_entries`
@@ -1387,11 +1420,11 @@ CREATE TABLE IF NOT EXISTS `projects` (
   `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
   `production_request_id` bigint UNSIGNED NOT NULL,
   `client_id` int NOT NULL,
-  `project_name` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
-  `description` text CHARACTER SET utf8 COLLATE utf8_unicode_ci,
+  `project_name` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `description` text CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci,
   `start_date` date DEFAULT NULL,
   `end_date` date DEFAULT NULL,
-  `status` enum('in_progress','completed','on_hold') CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL DEFAULT 'in_progress',
+  `status` enum('in_progress','completed','on_hold') CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL DEFAULT 'in_progress',
   `created_by` bigint UNSIGNED NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
@@ -1399,7 +1432,7 @@ CREATE TABLE IF NOT EXISTS `projects` (
   UNIQUE KEY `production_request_id` (`production_request_id`),
   KEY `projects_client_id_foreign` (`client_id`),
   KEY `projects_created_by_foreign` (`created_by`)
-) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `projects`
@@ -1421,9 +1454,9 @@ CREATE TABLE IF NOT EXISTS `project_delays` (
   `project_id` int NOT NULL,
   `phase_id` int DEFAULT NULL,
   `delay_days` int NOT NULL,
-  `delay_reason` text COLLATE utf8_unicode_ci NOT NULL,
-  `responsible_party` enum('internal','external','client') COLLATE utf8_unicode_ci NOT NULL,
-  `action_taken` text COLLATE utf8_unicode_ci,
+  `delay_reason` text CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `responsible_party` enum('internal','external','client') CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `action_taken` text CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci,
   `recorded_by` int NOT NULL,
   `record_date` datetime DEFAULT CURRENT_TIMESTAMP,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
@@ -1432,7 +1465,7 @@ CREATE TABLE IF NOT EXISTS `project_delays` (
   KEY `project_id` (`project_id`),
   KEY `phase_id` (`phase_id`),
   KEY `recorded_by` (`recorded_by`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -1445,14 +1478,14 @@ CREATE TABLE IF NOT EXISTS `project_files` (
   `file_id` int NOT NULL AUTO_INCREMENT,
   `project_id` bigint UNSIGNED NOT NULL,
   `department_id` int DEFAULT NULL,
-  `file_name` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
-  `file_path` varchar(512) COLLATE utf8_unicode_ci NOT NULL,
-  `file_type` varchar(50) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `file_name` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `file_path` varchar(512) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `file_type` varchar(50) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
   `file_size` int DEFAULT NULL,
   `uploaded_by` int DEFAULT NULL,
   `upload_date` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `description` text COLLATE utf8_unicode_ci,
-  `version` varchar(20) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `description` text CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci,
+  `version` varchar(20) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
   `estimated_cost` float(9,2) DEFAULT NULL,
   `is_current` tinyint(1) DEFAULT '1',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
@@ -1462,7 +1495,7 @@ CREATE TABLE IF NOT EXISTS `project_files` (
   KEY `idx_files_project` (`project_id`),
   KEY `idx_files_phase` (`department_id`),
   KEY `idx_files_type` (`file_type`)
-) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `project_files`
@@ -1484,16 +1517,16 @@ CREATE TABLE IF NOT EXISTS `project_images` (
   `image_id` int NOT NULL AUTO_INCREMENT,
   `project_id` int NOT NULL,
   `phase_id` int DEFAULT NULL,
-  `image_name` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
-  `image_path` varchar(512) COLLATE utf8_unicode_ci NOT NULL,
-  `thumbnail_path` varchar(512) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `image_type` enum('progress','issue','final','design','other') COLLATE utf8_unicode_ci NOT NULL,
+  `image_name` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `image_path` varchar(512) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `thumbnail_path` varchar(512) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
+  `image_type` enum('progress','issue','final','design','other') CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
   `taken_by` int DEFAULT NULL,
   `taken_date` datetime DEFAULT NULL,
   `uploaded_by` int NOT NULL,
   `upload_date` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `description` text COLLATE utf8_unicode_ci,
-  `location` varchar(100) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `description` text CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci,
+  `location` varchar(100) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
   `tags` json DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -1504,7 +1537,7 @@ CREATE TABLE IF NOT EXISTS `project_images` (
   KEY `idx_images_phase` (`phase_id`),
   KEY `idx_images_type` (`image_type`),
   KEY `idx_images_date` (`taken_date`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -1519,18 +1552,18 @@ CREATE TABLE IF NOT EXISTS `quality_checks` (
   `phase_id` int NOT NULL,
   `check_date` datetime DEFAULT CURRENT_TIMESTAMP,
   `inspector_id` int NOT NULL,
-  `check_type` enum('incoming','in_process','final') COLLATE utf8_unicode_ci NOT NULL,
-  `result` enum('passed','failed','conditional') COLLATE utf8_unicode_ci NOT NULL,
+  `check_type` enum('incoming','in_process','final') CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `result` enum('passed','failed','conditional') CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
   `defects_found` int DEFAULT '0',
-  `notes` text COLLATE utf8_unicode_ci,
-  `corrective_actions` text COLLATE utf8_unicode_ci,
+  `notes` text CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci,
+  `corrective_actions` text CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`check_id`),
   KEY `project_id` (`project_id`),
   KEY `phase_id` (`phase_id`),
   KEY `inspector_id` (`inspector_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -1541,12 +1574,12 @@ CREATE TABLE IF NOT EXISTS `quality_checks` (
 DROP TABLE IF EXISTS `roles`;
 CREATE TABLE IF NOT EXISTS `roles` (
   `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
-  `name` varchar(150) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
-  `guard_name` varchar(150) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `name` varchar(150) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `guard_name` varchar(150) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `roles`
@@ -1575,7 +1608,7 @@ CREATE TABLE IF NOT EXISTS `role_has_permissions` (
   `role_id` bigint UNSIGNED NOT NULL,
   PRIMARY KEY (`permission_id`,`role_id`),
   KEY `role_has_permissions_role_id_foreign` (`role_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `role_has_permissions`
@@ -1733,26 +1766,26 @@ INSERT INTO `role_has_permissions` (`permission_id`, `role_id`) VALUES
 
 DROP TABLE IF EXISTS `sessions`;
 CREATE TABLE IF NOT EXISTS `sessions` (
-  `id` varchar(190) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `id` varchar(190) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
   `user_id` bigint UNSIGNED DEFAULT NULL,
-  `ip_address` varchar(45) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
-  `user_agent` text CHARACTER SET utf8 COLLATE utf8_unicode_ci,
-  `payload` longtext CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `ip_address` varchar(45) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
+  `user_agent` text CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci,
+  `payload` longtext CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
   `last_activity` int NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `sessions_user_id_index` (`user_id`),
   KEY `sessions_last_activity_index` (`last_activity`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `sessions`
 --
 
 INSERT INTO `sessions` (`id`, `user_id`, `ip_address`, `user_agent`, `payload`, `last_activity`, `created_at`, `updated_at`) VALUES
-('UIQACGdy722iHMoZJTALWMUwOhEDlisUdjMc5Voi', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', 'YTo2OntzOjY6Il90b2tlbiI7czo0MDoiYnlFaWhvQ3phM2ZwOWg0d2w5WmlsRzVSTFRQWHFma2ZGcGpEQUIwNyI7czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319czo1MDoibG9naW5fd2ViXzU5YmEzNmFkZGMyYjJmOTQwMTU4MGYwMTRjN2Y1OGVhNGUzMDk4OWQiO2k6MTtzOjE3OiJwYXNzd29yZF9oYXNoX3dlYiI7czo2MDoiJDJ5JDEyJDE3bEVQOXloTWRqZmp6N3JnNmVkRy5uRG5LRU9vWGpsYXZWeWlFaWNCbWZUTnp3Q0NjRHZXIjtzOjk6Il9wcmV2aW91cyI7YToxOntzOjM6InVybCI7czozNzoiaHR0cDovLzEyNy4wLjAuMTo4MDAwL2FkbWluL2VtcGxveWVlcyI7fXM6ODoiZmlsYW1lbnQiO2E6MDp7fX0=', 1757857337, '2025-09-14 06:23:00', '2025-09-14 13:42:17'),
-('4R0i3HmKwqjiflnsfzGUp3IcsmUbVLDLBZ5pQjVO', 9, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0', 'YTo4OntzOjY6Il90b2tlbiI7czo0MDoicElhTjdtNUoxWU92TVpKU1loa1lTcmxWZGE0Y1BVcFYxNEpRUXk5NiI7czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319czozOiJ1cmwiO2E6MDp7fXM6OToiX3ByZXZpb3VzIjthOjE6e3M6MzoidXJsIjtzOjM2OiJodHRwOi8vMTI3LjAuMC4xOjgwMDAvYWRtaW4vdGFza3MvMzMiO31zOjUwOiJsb2dpbl93ZWJfNTliYTM2YWRkYzJiMmY5NDAxNTgwZjAxNGM3ZjU4ZWE0ZTMwOTg5ZCI7aTo5O3M6MTc6InBhc3N3b3JkX2hhc2hfd2ViIjtzOjYwOiIkMnkkMTIkYWlTTWRCNG44V1hRQzVuZkxqd0JjZW9pMzVvcGpqWTEuOVU4Ni83ZFFQbzdCNlNObEVqejYiO3M6ODoiZmlsYW1lbnQiO2E6MDp7fXM6NjoidGFibGVzIjthOjE6e3M6NDA6ImIxZDZmYzM0Mzk3OTFkYzc2MDhhZTEyM2FmMDQ4ZDVmX2ZpbHRlcnMiO2E6MTp7czoxMjoiaXNfY29tcGxldGVkIjthOjE6e3M6NToidmFsdWUiO2k6MDt9fX19', 1757857310, '2025-09-14 13:04:16', '2025-09-14 13:41:50');
+('czSP14LBp16ifKpjZv39fedkeydzupnTcUqs8KH4', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', 'YTo3OntzOjY6Il90b2tlbiI7czo0MDoibGF4UWpWSWVLbExETmVud1dCM3NGSFEwYUMxV3FEaWdzRmVwZE5CUyI7czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319czo1MDoibG9naW5fd2ViXzU5YmEzNmFkZGMyYjJmOTQwMTU4MGYwMTRjN2Y1OGVhNGUzMDk4OWQiO2k6MTtzOjE3OiJwYXNzd29yZF9oYXNoX3dlYiI7czo2MDoiJDJ5JDEyJDE3bEVQOXloTWRqZmp6N3JnNmVkRy5uRG5LRU9vWGpsYXZWeWlFaWNCbWZUTnp3Q0NjRHZXIjtzOjk6Il9wcmV2aW91cyI7YToxOntzOjM6InVybCI7czozMzoiaHR0cDovLzEyNy4wLjAuMTo4MDAwL2FkbWluL3JvbGVzIjt9czo2OiJ0YWJsZXMiO2E6MTp7czo0MDoiYjFkNmZjMzQzOTc5MWRjNzYwOGFlMTIzYWYwNDhkNWZfZmlsdGVycyI7YToxOntzOjEyOiJpc19jb21wbGV0ZWQiO2E6MTp7czo1OiJ2YWx1ZSI7aTowO319fXM6ODoiZmlsYW1lbnQiO2E6MDp7fX0=', 1757888459, '2025-09-14 17:37:43', '2025-09-14 22:20:59'),
+('iwioiAL1iyLHSt05U2Efs9Srri2XSuBwuSujD7jN', 9, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0', 'YTo4OntzOjY6Il90b2tlbiI7czo0MDoiRDB5YlB0eE5uSUx3akZaMVZlamhvZ240djF6bDY0TU5SRHFtQks4dSI7czozOiJ1cmwiO2E6MDp7fXM6OToiX3ByZXZpb3VzIjthOjE6e3M6MzoidXJsIjtzOjM2OiJodHRwOi8vMTI3LjAuMC4xOjgwMDAvYWRtaW4vdGFza3MvMzQiO31zOjY6Il9mbGFzaCI7YToyOntzOjM6Im9sZCI7YTowOnt9czozOiJuZXciO2E6MDp7fX1zOjUwOiJsb2dpbl93ZWJfNTliYTM2YWRkYzJiMmY5NDAxNTgwZjAxNGM3ZjU4ZWE0ZTMwOTg5ZCI7aTo5O3M6MTc6InBhc3N3b3JkX2hhc2hfd2ViIjtzOjYwOiIkMnkkMTIkYWlTTWRCNG44V1hRQzVuZkxqd0JjZW9pMzVvcGpqWTEuOVU4Ni83ZFFQbzdCNlNObEVqejYiO3M6ODoiZmlsYW1lbnQiO2E6MDp7fXM6NjoidGFibGVzIjthOjE6e3M6NDA6ImIxZDZmYzM0Mzk3OTFkYzc2MDhhZTEyM2FmMDQ4ZDVmX2ZpbHRlcnMiO2E6MTp7czoxMjoiaXNfY29tcGxldGVkIjthOjE6e3M6NToidmFsdWUiO2k6MDt9fX19', 1757889090, '2025-09-14 18:52:58', '2025-09-14 22:31:30');
 
 -- --------------------------------------------------------
 
@@ -1763,18 +1796,18 @@ INSERT INTO `sessions` (`id`, `user_id`, `ip_address`, `user_agent`, `payload`, 
 DROP TABLE IF EXISTS `showrooms`;
 CREATE TABLE IF NOT EXISTS `showrooms` (
   `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
-  `address` text CHARACTER SET utf8 COLLATE utf8_unicode_ci,
+  `name` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `address` text CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci,
   `city_id` bigint UNSIGNED DEFAULT NULL,
-  `phone` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
-  `email` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `phone` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
+  `email` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
   `manager_id` bigint UNSIGNED DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `showrooms_city_id_foreign` (`city_id`),
   KEY `showrooms_manager_id_foreign` (`manager_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `showrooms`
@@ -1793,13 +1826,13 @@ INSERT INTO `showrooms` (`id`, `name`, `address`, `city_id`, `phone`, `email`, `
 DROP TABLE IF EXISTS `system_logs`;
 CREATE TABLE IF NOT EXISTS `system_logs` (
   `log_id` int NOT NULL AUTO_INCREMENT,
-  `log_level` enum('info','warning','error','critical') COLLATE utf8_unicode_ci NOT NULL,
-  `message` text COLLATE utf8_unicode_ci NOT NULL,
+  `log_level` enum('info','warning','error','critical') CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `message` text CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
   `context` json DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `ip_address` varchar(45) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `ip_address` varchar(45) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`log_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -1810,23 +1843,23 @@ CREATE TABLE IF NOT EXISTS `system_logs` (
 DROP TABLE IF EXISTS `system_settings`;
 CREATE TABLE IF NOT EXISTS `system_settings` (
   `setting_id` int NOT NULL AUTO_INCREMENT,
-  `setting_key` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
-  `setting_value` text CHARACTER SET utf8 COLLATE utf8_unicode_ci,
+  `setting_key` varchar(50) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `setting_value` text CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci,
   `setting_options` json DEFAULT NULL,
   `is_sensitive` tinyint(1) NOT NULL DEFAULT '0',
-  `validation_rules` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `help_text` text COLLATE utf8_unicode_ci,
-  `setting_group` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `setting_type` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `validation_rules` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
+  `help_text` text CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci,
+  `setting_group` varchar(50) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
+  `setting_type` varchar(50) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
   `is_public` tinyint(1) DEFAULT '0',
-  `description` text COLLATE utf8_unicode_ci,
+  `description` text CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`setting_id`),
   UNIQUE KEY `setting_key` (`setting_key`),
   KEY `idx_settings_key` (`setting_key`),
   KEY `idx_settings_group` (`setting_group`)
-) ENGINE=InnoDB AUTO_INCREMENT=52 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=52 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `system_settings`
@@ -1893,15 +1926,15 @@ INSERT INTO `system_settings` (`setting_id`, `setting_key`, `setting_value`, `se
 DROP TABLE IF EXISTS `users`;
 CREATE TABLE IF NOT EXISTS `users` (
   `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
-  `name` varchar(190) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
-  `email` varchar(190) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `name` varchar(190) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `email` varchar(190) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
   `email_verified_at` timestamp NULL DEFAULT NULL,
-  `password` varchar(190) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
-  `remember_token` varchar(100) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `password` varchar(190) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `remember_token` varchar(100) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 --
 -- Dumping data for table `users`
