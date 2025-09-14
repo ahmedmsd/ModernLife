@@ -33,6 +33,8 @@ class ProductionRequest extends Model
         'received_by_owner_at' => 'datetime',
         'created_at'           => 'datetime',
         'updated_at'           => 'datetime',
+        'request_type'         => 'string'
+
     ];
 
     public function client(): BelongsTo

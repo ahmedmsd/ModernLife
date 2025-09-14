@@ -5,10 +5,27 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ZohoOauthController;
+use Filament\Facades\Filament;
+use Illuminate\Notifications\Notification as BaseNotif;
 
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::get('/test-notif', function () {
+    $user = Filament::auth()->user() ?? auth()->user();
+    abort_unless($user, 401);
+
+    Notification::send($user, new class extends BaseNotif {
+        public function via($n): array
+        { return ['database']; }
+        public function toDatabase($n): array
+        { return ['title'=>'تنبيه تجريبي','url'=>url('/')]; }
+    });
+
+    return 'OK';
+})->middleware('auth');
+
 Route::middleware(['auth'])->group(function () {
     Route::get('/files/legacy/{file}', [LegacyFileController::class, 'show'])
         ->name('legacy-files.show');

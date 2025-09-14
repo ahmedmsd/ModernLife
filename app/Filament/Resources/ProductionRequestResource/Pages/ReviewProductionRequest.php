@@ -41,12 +41,18 @@ class ReviewProductionRequest extends Page
             ->icon('heroicon-o-hand-thumb-up')
             ->modalHeading("تأكيد الاستلام — طلب #{$rid}")
             ->extraAttributes(['wire:key' => "confirm-receipt-{$rid}"])
-            ->visible(function () use ($normalizeRole) {
-                $ownerRole = $normalizeRole($this->record->current_owner_role);
-                return $ownerRole
-                    && auth()->check()
-                    && auth()->user()->hasRole($ownerRole)
-                    && $this->record->phase_status === S::Pending->value;
+            ->visible(function () {
+                if (! auth()->check()) return false;
+
+                if ($this->record->project) return false;
+
+                if ($this->record->phase_status !== S::Pending->value) return false;
+
+                return match ($this->record->current_phase) {
+                    Phase::ShowroomReview->value => auth()->user()->hasRole('showroom_manager'),
+                    Phase::FactoryIntake->value  => auth()->user()->hasRole('factory_manager'),
+                    default                      => false,
+                };
             })
             ->action(function () {
                 app(ProductionRequestWorkflow::class)->markReceived($this->record);

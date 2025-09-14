@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Showroom extends Model
 {
@@ -15,12 +16,12 @@ class Showroom extends Model
         'manager_id',
     ];
 
-    public function city()
+    public function city(): BelongsTo
     {
         return $this->belongsTo(\App\Models\City::class);
     }
 
-    public function manager()
+    public function manager(): BelongsTo
     {
         return $this->belongsTo(\App\Models\Employee::class, 'manager_id');
     }

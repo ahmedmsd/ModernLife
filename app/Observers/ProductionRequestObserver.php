@@ -4,13 +4,17 @@ namespace App\Observers;
 
 use App\Models\ProductionRequest;
 use App\Models\ProductionRequestLog;
+use App\Models\User;
+use App\Notifications\ProductionRequestCreated;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
-// استخدمه فقط إذا أردت تشغيل start() من هنا
 use App\Services\ProductionRequestWorkflow;
+use Illuminate\Support\Facades\Notification;
+use Filament\Notifications\Notification as FNotification;
+use Filament\Notifications\Actions\Action as FAction;
 
 class ProductionRequestObserver
 {
-    /** لوج إنشاء بسيط، بلا انتقالات */
     public function created(ProductionRequest $pr): void
     {
         ProductionRequestLog::create([
@@ -27,15 +31,37 @@ class ProductionRequestObserver
             'happened_at' => now(),
         ]);
 
-        // إن أردت التهيئة الأولية من هنا ولا تستدعي start() من أي مكان آخر:
-        // if (blank($pr->current_phase) || blank($pr->phase_status)) {
-        //     app(ProductionRequestWorkflow::class)->start($pr);
-        // }
+        $recipients = collect();
+
+        if ($pr->request_type === 'direct') {
+            $recipients = User::role('factory_manager')->get();
+        } else { // indirect
+            $manager = $pr->showroom?->manager;
+            if ($manager) {
+                $recipients = collect([$manager]);
+            }
+        }
+
+        if ($recipients instanceof Collection && $recipients->isNotEmpty()) {
+            $pr  = $pr ?? $pr;
+            $url = \App\Filament\Resources\ProductionRequestResource::getUrl('review', ['record' => $pr->getKey()]);
+            $title = $pr->request_type === 'direct' ? 'طلب تصنيع مباشر' : 'طلب تصنيع غير مباشر';
+            $body  = 'رقم الطلب: #' . $pr->id . ($pr->project_name ? ' • ' . $pr->project_name : '');
+
+            FNotification::make()
+                ->title($title)
+                ->body($body)
+                ->icon('heroicon-o-briefcase')
+                ->success()
+                ->actions([
+                    FAction::make('عرض الطلب')->button()->url($url),
+                ])
+                ->sendToDatabase($recipients);
+        }
     }
 
     public function updated(ProductionRequest $pr): void
     {
-        // 1) سجّل transition إن تغيرت حقول سير العمل (كما عندك مسبقًا)
         $workflowFields = [
             'current_phase', 'phase_status',
             'current_owner_role', 'current_owner_user_id',
@@ -79,38 +105,31 @@ class ProductionRequestObserver
             ]);
         }
 
-        // 2) لو تغيّرت حقول "المحتوى" الحقيقي للطلب → أعده للمراجعة
         $contentFields = [
             'client_id',
             'project_name',
             'request_type',
             'showroom_id',
             'agreement_file',
-            // أضف أي حقول وصفية أخرى تخص الطلب نفسه
             'project_description',
             'description',
-            // إن كان عندك تسعير/سقف ميزانية ضمن الطلب:
             'price',
             'budget_cap',
         ];
 
         $contentChanged = collect($contentFields)->some(fn ($f) => $pr->wasChanged($f));
 
-        // مهم: لا نعيد التوجيه إذا كان التغيير الوحيد ضمن حقول سير العمل أعلاه
         if ($contentChanged) {
-            // ملاحظة: routeForReReview نفسها ستسجّل لوج وتعمل move
             app(\App\Services\ProductionRequestWorkflow::class)->routeForReReview($pr);
-            return; // نخرج لتجنّب أي لوج إضافي هنا
+            return;
         }
 
-        // 3) حالتك السابقة الخاصة باعتماد المصنع وإنشاء مشروع (اتركها كما هي)
         $becameApprovedByFactory =
             $pr->wasChanged('phase_status')
             && ((string) $pr->phase_status === 'approved')
             && ((string) $pr->current_owner_role === 'factory_manager');
 
         if ($becameApprovedByFactory) {
-            // بناء المشروع + مهام + لوج
             app(\App\Services\ProductionRequestWorkflow::class)->approve($pr);
             return;
         }
