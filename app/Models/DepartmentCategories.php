@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class DepartmentCategories extends Model
 {
@@ -13,8 +14,8 @@ class DepartmentCategories extends Model
         'color_code',
         'icon'
     ];
-    
-    public function departments()
+
+    public function departments(): HasMany
     {
         return $this->hasMany(Department::class, 'dept_type');
     }
