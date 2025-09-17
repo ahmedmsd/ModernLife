@@ -30,7 +30,7 @@ class ProductionRequestResource extends Resource
     protected static ?string $label       = 'إدارة الطلبات';
     protected static ?string $pluralLabel = ' الطلبات';
     protected static ?string $modelLabel  = 'طلب تصنيع';
-
+    protected static bool $shouldRegisterNavigation = false;
     public static function getEloquentQuery(): Builder
     {
         return ProductionRequest::query()
@@ -64,7 +64,7 @@ class ProductionRequestResource extends Resource
                     if ($user?->hasAnyRole(['sales', 'factory_manager', 'admin', 'super-admin'])) {
                         $opts['direct'] = 'مباشر (من المبيعات للمصنع)';
                     }
-                    if ($user?->hasAnyRole(['showroom_manager', 'admin', 'super-admin'])) {
+                    if ($user?->hasAnyRole(['sales','showroom_manager', 'admin', 'super-admin'])) {
                         $opts['indirect'] = 'غير مباشر (عن طريق المعرض)';
                     }
 
@@ -213,10 +213,13 @@ class ProductionRequestResource extends Resource
                 Tables\Actions\EditAction::make(),
 
                 Action::make('review')
-                    ->label('مراجعة الطلب')
+                    ->label('مراجعة ')
                     ->icon('heroicon-o-check-circle')
                     ->url(fn ($record) => ProductionRequestResource::getUrl('review', ['record' => $record])),
-
+                Action::make('view')
+                    ->label('تفاصيل ')
+                    ->icon('heroicon-o-check-circle')
+                    ->url(fn ($record) => ProductionRequestResource::getUrl('view', ['record' => $record])),
                 Tables\Actions\DeleteAction::make(),
             ]);
     }

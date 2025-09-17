@@ -22,7 +22,7 @@ class RoleResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-shield-check';
     protected static ?string $navigationLabel = 'الأدوار';
     protected static ?string $navigationGroup = 'إدارة الصلاحيات';
-
+    protected static bool $shouldRegisterNavigation = false;
     public static function form(Form $form): Form
     {
         return $form

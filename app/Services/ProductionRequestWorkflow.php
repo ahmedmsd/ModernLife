@@ -60,9 +60,9 @@ class ProductionRequestWorkflow
                 $pr->received_by_owner_at = null;
             }
 
+            // مهم: حفظ عادي لتفعيل Observers
             $pr->save();
 
-            // ملاحظة عربية مع تسميات مفهومة
             $noteText = sprintf(
                 'انتقال من مرحلة %s (%s) إلى مرحلة %s (%s)%s',
                 $this->phaseLabel($from['phase'] ?? '—'),
@@ -80,7 +80,6 @@ class ProductionRequestWorkflow
                         'phase'        => $from['phase'],
                         'status'       => $from['status'],
                         'owner'        => $from['owner'],
-                        // تسميات عربية (اختياري):
                         'phase_label'  => $this->phaseLabel((string)($from['phase'] ?? '')),
                         'status_label' => $this->statusLabel((string)($from['status'] ?? '')),
                         'owner_label'  => $this->roleLabel((string)($from['owner'] ?? '')),
@@ -88,7 +87,6 @@ class ProductionRequestWorkflow
                     'to' => [
                         'phase'        => $toPhase->value,
                         'status'       => $toStatus->value,
-                        // تسميات عربية (اختياري):
                         'phase_label'  => $this->phaseLabel($toPhase->value),
                         'status_label' => $this->statusLabel($toStatus->value),
                     ],
@@ -136,7 +134,6 @@ class ProductionRequestWorkflow
         return $pr->refresh();
     }
 
-    /** اعتماد المصنع → إنشاء مشروع + الانتقال لتوزيع المهام */
     public function approve(ProductionRequest $pr): ProductionRequest
     {
         $currentPhase = Phase::tryFrom($pr->current_phase) ?? Phase::FactoryIntake;
@@ -145,11 +142,8 @@ class ProductionRequestWorkflow
 
         if ($currentPhase === Phase::FactoryIntake) {
             $this->bootstrapProjectFromRequest($pr);
-
             $pr = $this->move($pr, Phase::DepartmentAssignment, S::Pending, 'factory_manager', true);
         }
-
-
 
         return $pr;
     }
@@ -193,10 +187,10 @@ class ProductionRequestWorkflow
         ];
 
         if ($type === RequestType::Indirect->value) {
-            $toPhase = Phase::ShowroomReview; // مراجعة المعرض
+            $toPhase = Phase::ShowroomReview;
             $owner   = 'showroom_manager';
         } else {
-            $toPhase = Phase::FactoryIntake;  // مراجعة المصنع
+            $toPhase = Phase::FactoryIntake;
             $owner   = 'factory_manager';
         }
 
@@ -228,7 +222,6 @@ class ProductionRequestWorkflow
                         'status_label' => $this->statusLabel(S::Pending->value),
                         'owner_label'  => $this->roleLabel($owner),
                     ],
-                    // مهم لإظهاره أعلى المستوى في الـ timeline:
                     'owner_role'       => $owner,
                     'owner_role_label' => $this->roleLabel($owner),
                 ],
@@ -243,8 +236,7 @@ class ProductionRequestWorkflow
 
     protected function bootstrapProjectFromRequest(ProductionRequest $pr): void
     {
-
-        DB::transaction(function () use ( $pr) {
+        DB::transaction(function () use ($pr) {
             $project = Project::firstOrCreate(
                 ['production_request_id' => $pr->id],
                 [
@@ -267,7 +259,7 @@ class ProductionRequestWorkflow
                     ? Storage::disk('public')->size($filePath)
                     : 0;
 
-               $project->files()->updateOrCreate(
+                $project->files()->updateOrCreate(
                     [
                         'department_id' => $reqFile->department_id,
                         'file_path'     => $filePath,
@@ -298,17 +290,17 @@ class ProductionRequestWorkflow
                     ]
                 );
 
-                $dept = $task->department()->with(['manager', 'managerEmployee.user'])->first();
-                $managerUser = null;
+                // === اختيار مدير القسم كمستخدم (User) وليس Employee ===
+                $dept = $task->department()->with(['manager.user', 'managerEmployee.user'])->first();
+                $notifyUser = null;
 
-                if ($dept?->manager) {
-                    $managerUser = $dept->manager;
-                }
-                elseif ($dept?->managerEmployee?->user) {
-                    $managerUser = $dept->managerEmployee->user;
+                if ($dept?->manager?->user) {
+                    $notifyUser = $dept->manager->user;                  // Employee → User
+                } elseif ($dept?->managerEmployee?->user) {
+                    $notifyUser = $dept->managerEmployee->user;          // بديل
                 }
 
-                if ($managerUser) {
+                if ($notifyUser) {
                     $url = \App\Filament\Resources\ProjectResource::getUrl('view', ['record' => $project->id]);
 
                     FNotification::make()
@@ -319,10 +311,7 @@ class ProductionRequestWorkflow
                         ->actions([
                             FAction::make('عرض المشروع')->button()->url($url),
                         ])
-                        ->sendToDatabase($managerUser);
-
-                    // (اختياري) بريد — فعِّله إن رغبت
-                    // $managerUser->notify(new \App\Notifications\DepartmentTaskMail($task, 'created'));
+                        ->sendToDatabase($notifyUser); // يرسل إلى User فقط
                 }
             }
 
@@ -339,12 +328,12 @@ class ProductionRequestWorkflow
     /** يُستدعى عند اكتمال المشروع لإغلاق الطلب (مرحلة: closed، حالة: completed) */
     public function finalizeRequestAfterProjectDone(ProductionRequest $pr): ProductionRequest
     {
-        $pr->current_phase        = Phase::Closed->value;
-        $pr->phase_status         = S::Completed->value;
-        $pr->current_owner_role   = null;
-        $pr->current_owner_user_id= null;
-        $pr->sent_to_owner_at     = null;
-        $pr->received_by_owner_at = null;
+        $pr->current_phase         = Phase::Closed->value;
+        $pr->phase_status          = S::Completed->value;
+        $pr->current_owner_role    = null;
+        $pr->current_owner_user_id = null;
+        $pr->sent_to_owner_at      = null;
+        $pr->received_by_owner_at  = null;
         $pr->save();
 
         $pr->logs()->create([

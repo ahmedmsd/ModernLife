@@ -7,6 +7,7 @@ use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvid
 use Illuminate\Support\Facades\Gate;
 use App\Models\Project;
 
+
 class AuthServiceProvider extends ServiceProvider
 {
 
@@ -16,6 +17,9 @@ class AuthServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        Gate::before(function ($user, $ability) {
+            return (method_exists($user, 'hasRole') && $user->hasRole('super-admin')) ? true : null;
+        });
         $this->registerPolicies();
 
     }

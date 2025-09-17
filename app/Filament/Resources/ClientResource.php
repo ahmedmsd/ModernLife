@@ -21,7 +21,7 @@ class ClientResource extends Resource
     protected static ?string $label = 'إدارة العملاء';
     protected static ?string $pluralLabel = 'إدارة العملاء';
     protected static ?string $modelLabel = 'عميل';
-
+    protected static bool $shouldRegisterNavigation = false;
     public static function form(Forms\Form $form): Forms\Form
     {
         return $form->schema([

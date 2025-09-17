@@ -1,6 +1,5 @@
 <?php
 
-// app/Notifications/ProductionRequestCreated.php
 namespace App\Notifications;
 
 use App\Models\ProductionRequest;
@@ -36,27 +35,36 @@ class ProductionRequestCreated extends Notification implements ShouldQueue
         $pr   = $this->request;
         $url  = \App\Filament\Resources\ProductionRequestResource::getUrl('view', ['record' => $pr->getKey()]);
 
-        return (new MailMessage)
+        $mail = (new MailMessage)
             ->subject("تم إنشاء {$this->title()} #{$pr->id}")
             ->greeting('مرحبًا،')
-            ->line("تم إنشاء {$this->title()} برقم #{$pr->id}.")
-            ->lineIf(!empty($pr->project_name ?? ''), 'المشروع: ' . $pr->project_name)
-            ->action('عرض الطلب', $url);
+            ->line("تم إنشاء {$this->title()} برقم #{$pr->id}.");
+
+        if (!empty($pr->project_name ?? '')) {
+            $mail->line('المشروع: ' . $pr->project_name);
+        }
+
+        return $mail->action('عرض الطلب', $url);
     }
 
     public function toDatabase(object $notifiable): array
     {
-        $pr = $this->request;
+        $pr  = $this->request;
+        $url = \App\Filament\Resources\ProductionRequestResource::getUrl('view', ['record' => $pr->getKey()]);
 
         return [
+            'title'   => $this->title(),
+            'body'    => "تم إنشاء طلب رقم #{$pr->id}.",
+            'icon'    => 'heroicon-o-clipboard-document-list',
+            'actions' => [
+                ['label' => 'عرض الطلب', 'url' => $url, 'openUrlInNewTab' => false],
+            ],
             'type'                  => 'production_request_created',
-            'title'                 => $this->title(),
-            'production_request_id' => $pr->id,
+            'pr_id'                 => $pr->id,
             'project_name'          => $pr->project_name ?? null,
-            'request_type'          => $pr->request_type,        // direct | indirect
-            'url'                   => \App\Filament\Resources\ProductionRequestResource::getUrl('view', ['record' => $pr->getKey()]),
+            'request_type'          => $pr->request_type,
+            'url'                   => $url,
             'created_at'            => now()->toIso8601String(),
         ];
     }
 }
-

@@ -18,6 +18,7 @@ class ShowroomResource extends Resource
     protected static ?string $label = 'إدارة المعارض';
     protected static ?string $pluralLabel = ' المعارض';
     protected static ?string $modelLabel = 'معرض';
+    protected static bool $shouldRegisterNavigation = false;
     public static function form(Forms\Form $form): Forms\Form
     {
         return $form->schema([

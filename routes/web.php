@@ -7,10 +7,16 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ZohoOauthController;
 use Filament\Facades\Filament;
 use Illuminate\Notifications\Notification as BaseNotif;
+use Spatie\Permission\PermissionRegistrar;
 
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::get('/admin/perm-cache-reset', function () {
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
+    return 'Permission cache reset.';
+})->middleware(['auth']);
 
 Route::get('/test-notif', function () {
     $user = Filament::auth()->user() ?? auth()->user();

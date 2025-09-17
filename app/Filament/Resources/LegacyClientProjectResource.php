@@ -20,7 +20,7 @@ class LegacyClientProjectResource extends Resource
     protected static ?string $navigationGroup = 'العملاء';
     protected static ?string $navigationLabel = 'مشروعات العملاء القديمة';
     protected static ?string $pluralLabel = 'مشروعات العملاء القديمة';
-
+    protected static bool $shouldRegisterNavigation = false;
     public static function form(Form $form): Form
     {
         return $form->schema([

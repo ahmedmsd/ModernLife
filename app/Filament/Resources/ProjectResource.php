@@ -24,7 +24,7 @@ class ProjectResource extends Resource
     protected static ?string $navigationLabel = 'المشروعات';
     protected static ?string $pluralModelLabel = 'المشروعات';
     protected static ?string $modelLabel = 'مشروع';
-
+    protected static bool $shouldRegisterNavigation = false;
     public static function form(Form $form): Form
     {
         return $form->schema([

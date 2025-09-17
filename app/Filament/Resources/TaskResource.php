@@ -15,7 +15,7 @@ class TaskResource extends Resource
 {
     protected static ?string $model = ProductionTask::class;
     protected static ?string $navigationIcon = 'heroicon-m-clipboard-document-check';
-
+    protected static bool $shouldRegisterNavigation = false;
     public static function shouldRegisterNavigation(): bool
     {
         return true;

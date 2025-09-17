@@ -20,6 +20,7 @@ class CountryResource extends Resource
     protected static ?string $label = 'إدارة الدول';
     protected static ?string $pluralLabel = 'الدول';
     protected static ?string $modelLabel = 'دولة';
+    protected static bool $shouldRegisterNavigation = false;
 
     public static function form(Forms\Form $form): Forms\Form
     {

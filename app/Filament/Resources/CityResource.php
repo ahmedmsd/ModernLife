@@ -19,6 +19,9 @@ class CityResource extends Resource
     protected static ?string $label = 'إدارة المدن';
     protected static ?string $pluralLabel = 'المدن';
     protected static ?string $modelLabel = 'مدينة';
+
+    protected static bool $shouldRegisterNavigation = false;
+
     public static function form(Forms\Form $form): Forms\Form
     {
         return $form->schema([

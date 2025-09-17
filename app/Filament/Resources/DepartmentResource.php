@@ -20,6 +20,7 @@ class DepartmentResource extends Resource
     protected static ?string $pluralLabel = 'إدارة الأقسام';
     protected static ?string $navigationIcon = 'heroicon-o-building-office';
     protected static ?string $modelLabel = 'قسم';
+    protected static bool $shouldRegisterNavigation = false;
     public static function form(Form $form): Form
     {
         return $form

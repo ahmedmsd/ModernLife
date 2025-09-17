@@ -17,7 +17,7 @@ class EditEmployee extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            Actions\DeleteAction::make(), // Soft delete
         ];
     }
 
@@ -35,7 +35,7 @@ class EditEmployee extends EditRecord
             [
                 'user' => [
                     'email'             => $this->record->user?->email,
-                    'password'          => null,
+                    'password'          => null, // يُحدَّث فقط إذا أدخل المستخدم قيمة
                     'directPermissions' => $this->record->user?->directPermissions->pluck('id')->toArray(),
                 ],
                 'roles_ids' => $this->record->user?->roles()->pluck('id')->toArray(),
@@ -45,23 +45,32 @@ class EditEmployee extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-
         $userData = $data['user'] ?? null;
 
         if ($userData) {
             $user = $this->record->user;
 
+            $password = $userData['password'] ?? null;
+            if (is_string($password) && $password !== '') {
+                $info = password_get_info($password);
+                if (($info['algo'] ?? 0) === 0) {
+                    $password = Hash::make($password);
+                }
+            } else {
+                $password = null;
+            }
+
             if ($user) {
                 $payload = ['email' => $userData['email']];
-                if (!empty($userData['password'])) {
-                    $payload['password'] = Hash::make($userData['password']);
+                if ($password !== null) {
+                    $payload['password'] = $password;
                 }
                 $user->update($payload);
             } else {
                 $user = User::create([
-                    'name'     => $this->record->employee_name,
+                    'name'     => $this->record->employee_name ?? ($userData['email'] ?? 'User'),
                     'email'    => $userData['email'],
-                    'password' => Hash::make($userData['password']),
+                    'password' => $password ?? Hash::make(str()->random(16)),
                 ]);
                 $this->record->user()->associate($user)->save();
             }
@@ -76,26 +85,43 @@ class EditEmployee extends EditRecord
     {
         $employee = $this->record;
 
-        if (! $employee->user && ! empty($this->data['user'])) {
-            $employee->user()->create($this->data['user']);
+
+        $state = $this->form->getRawState();
+
+        if (! $employee->user && ! empty($state['user'])) {
+            $userData = $state['user'];
+
+            $password = $userData['password'] ?? null;
+            if (is_string($password) && $password !== '') {
+                $info = password_get_info($password);
+                if (($info['algo'] ?? 0) === 0) {
+                    $password = Hash::make($password);
+                }
+            } else {
+                $password = Hash::make(str()->random(16));
+            }
+
+            $employee->user()->create([
+                'name'     => $employee->employee_name ?? ($userData['email'] ?? 'User'),
+                'email'    => $userData['email'],
+                'password' => $password,
+            ]);
             $employee->refresh();
         }
 
         if ($employee->user) {
-            $state = $this->form->getRawState();
-
             $ids = $state['roles_ids'] ?? $state['roles'] ?? [];
             $ids = array_values(array_filter(array_map('intval', (array) $ids)));
 
-            $guard = $employee->user->guard_name ?? config('auth.defaults.guard', 'web');
+            $guard = config('auth.defaults.guard', 'web');
 
-            $validIds = Role::query()
+            $roleNames = Role::query()
                 ->where('guard_name', $guard)
                 ->whereIn('id', $ids)
-                ->pluck('id')
+                ->pluck('name')
                 ->all();
 
-            $employee->user->roles()->sync($validIds);
+            $employee->user->syncRoles($roleNames);
 
             app(PermissionRegistrar::class)->forgetCachedPermissions();
         }

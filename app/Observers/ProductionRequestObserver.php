@@ -6,12 +6,11 @@ use App\Models\ProductionRequest;
 use App\Models\ProductionRequestLog;
 use App\Models\User;
 use App\Notifications\ProductionRequestCreated;
+use App\Notifications\ProductionRequestStatusChanged;
+use App\Notifications\ProductionRequestUpdated;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
-use App\Services\ProductionRequestWorkflow;
 use Illuminate\Support\Facades\Notification;
-use Filament\Notifications\Notification as FNotification;
-use Filament\Notifications\Actions\Action as FAction;
 
 class ProductionRequestObserver
 {
@@ -31,46 +30,29 @@ class ProductionRequestObserver
             'happened_at' => now(),
         ]);
 
-        $recipients = collect();
+        $recipients = $this->recipientsOnCreate($pr);
 
-        if ($pr->request_type === 'direct') {
-            $recipients = User::role('factory_manager')->get();
-        } else { // indirect
-            $manager = $pr->showroom?->manager;
-            if ($manager) {
-                $recipients = collect([$manager]);
-            }
-        }
-
-        if ($recipients instanceof Collection && $recipients->isNotEmpty()) {
-            $pr  = $pr ?? $pr;
-            $url = \App\Filament\Resources\ProductionRequestResource::getUrl('review', ['record' => $pr->getKey()]);
-            $title = $pr->request_type === 'direct' ? 'طلب تصنيع مباشر' : 'طلب تصنيع غير مباشر';
-            $body  = 'رقم الطلب: #' . $pr->id . ($pr->project_name ? ' • ' . $pr->project_name : '');
-
-            FNotification::make()
-                ->title($title)
-                ->body($body)
-                ->icon('heroicon-o-briefcase')
-                ->success()
-                ->actions([
-                    FAction::make('عرض الطلب')->button()->url($url),
-                ])
-                ->sendToDatabase($recipients);
+        if ($recipients->isNotEmpty()) {
+            $this->send($recipients, new ProductionRequestCreated($pr));
         }
     }
 
     public function updated(ProductionRequest $pr): void
     {
         $workflowFields = [
-            'current_phase', 'phase_status',
-            'current_owner_role', 'current_owner_user_id',
-            'sent_to_owner_at', 'received_by_owner_at',
+            'current_phase',
+            'phase_status',
+            'current_owner_role',
+            'current_owner_user_id',
+            'sent_to_owner_at',
+            'received_by_owner_at',
         ];
 
         $hasTransition = collect($workflowFields)->some(fn ($f) => $pr->wasChanged($f));
+
         if ($hasTransition) {
-            \App\Models\ProductionRequestLog::create([
+            // لوج الانتقال
+            ProductionRequestLog::create([
                 'production_request_id' => $pr->id,
                 'type'        => 'transition',
                 'data'        => [
@@ -100,11 +82,43 @@ class ProductionRequestObserver
                     $pr->getOriginal('current_owner_role') ?? '—',
                     $pr->current_owner_role ?? '—',
                 ),
-                'causer_id'   => \Illuminate\Support\Facades\Auth::id(),
+                'causer_id'   => Auth::id(),
                 'happened_at' => now(),
             ]);
+
+            // إشعار تغيّر الحالة (يشمل الرفض مع السبب)
+            if ($pr->wasChanged('phase_status')) {
+                $from   = (string) $pr->getOriginal('phase_status');
+                $to     = (string) $pr->phase_status;
+                $reason = null;
+
+                if ($to === 'rejected') {
+                    $reason = $pr->rejection_reason
+                        ?? $pr->status_note
+                        ?? $pr->reject_reason
+                        ?? null;
+                }
+
+                $recipients = $this->recipientsForCurrentOwner($pr);
+                if ($recipients->isNotEmpty()) {
+                    $this->send($recipients, new ProductionRequestStatusChanged($pr, $from, $to, $reason));
+                }
+            }
+
+            // موافقة المصنع بعد الانتقال
+            $becameApprovedByFactory =
+                $pr->wasChanged('phase_status')
+                && ((string) $pr->phase_status === 'approved')
+                && ((string) $pr->current_owner_role === 'factory_manager');
+
+            if ($becameApprovedByFactory) {
+                app(\App\Services\ProductionRequestWorkflow::class)->approve($pr);
+            }
+
+            return; // انتهى فرع الانتقال
         }
 
+        // تعديل محتوى بدون انتقال
         $contentFields = [
             'client_id',
             'project_name',
@@ -116,36 +130,109 @@ class ProductionRequestObserver
             'price',
             'budget_cap',
         ];
+        $contentChanged = collect($contentFields)->filter(fn ($f) => $pr->wasChanged($f));
 
-        $contentChanged = collect($contentFields)->some(fn ($f) => $pr->wasChanged($f));
-
-        if ($contentChanged) {
+        if ($contentChanged->isNotEmpty()) {
             app(\App\Services\ProductionRequestWorkflow::class)->routeForReReview($pr);
-            return;
-        }
 
-        $becameApprovedByFactory =
-            $pr->wasChanged('phase_status')
-            && ((string) $pr->phase_status === 'approved')
-            && ((string) $pr->current_owner_role === 'factory_manager');
-
-        if ($becameApprovedByFactory) {
-            app(\App\Services\ProductionRequestWorkflow::class)->approve($pr);
-            return;
+            $recipients = $this->recipientsForCurrentOwner($pr->fresh());
+            if ($recipients->isNotEmpty()) {
+                $this->send($recipients, new ProductionRequestUpdated($pr->fresh(), $contentChanged->values()->all()));
+            }
         }
     }
 
-
-    /** لوج حذف */
-    public function deleting(\App\Models\ProductionRequest $pr): void
+    public function deleting(ProductionRequest $pr): void
     {
-        \App\Models\ProductionRequestLog::create([
+        ProductionRequestLog::create([
             'production_request_id' => $pr->id,
             'type'        => 'deleted',
             'data'        => null,
             'note'        => 'تم حذف الطلب',
-            'causer_id'   => \Illuminate\Support\Facades\Auth::id(),
+            'causer_id'   => Auth::id(),
             'happened_at' => now(),
         ]);
+    }
+
+    /* ---------------------- Recipients helpers ---------------------- */
+
+    protected function recipientsOnCreate(ProductionRequest $pr): Collection
+    {
+        if (($pr->request_type ?? null) === 'direct') {
+            return User::role('factory_manager')->get();
+        }
+
+        // مدير المعرض كـ User
+        if ($pr->showroom?->manager?->user) {
+            return collect([$pr->showroom->manager->user]);
+        }
+
+        if (method_exists(User::class, 'showrooms') && $pr->showroom_id) {
+            return User::role('showroom_manager')
+                ->whereHas('showrooms', fn ($q) => $q->whereKey($pr->showroom_id))
+                ->get();
+        }
+
+        return User::role('showroom_manager')->get();
+    }
+
+    protected function recipientsForCurrentOwner(ProductionRequest $pr): Collection
+    {
+        if ($pr->current_owner_user_id) {
+            $u = User::find($pr->current_owner_user_id);
+            return $u ? collect([$u]) : collect();
+        }
+
+        $role = (string) ($pr->current_owner_role ?? '');
+
+        if ($role === 'factory_manager') {
+            return User::role('factory_manager')->get();
+        }
+
+        if ($role === 'showroom_manager') {
+            if ($pr->showroom?->manager?->user) {
+                return collect([$pr->showroom->manager->user]); // Employee->user
+            }
+
+            if (method_exists(User::class, 'showrooms') && $pr->showroom_id) {
+                return User::role('showroom_manager')
+                    ->whereHas('showrooms', fn ($q) => $q->whereKey($pr->showroom_id))
+                    ->get();
+            }
+
+            return User::role('showroom_manager')->get();
+        }
+
+        return collect();
+    }
+
+    protected function normalizeRecipients(Collection $recipients): Collection
+    {
+        // يحوّل أي Employee إلى User مرتبط، ويحذف المكررات
+        return $recipients
+            ->map(function ($r) {
+                if ($r instanceof User) return $r;
+                if (is_object($r) && method_exists($r, 'user') && $r->user) {
+                    return $r->user;
+                }
+                return null;
+            })
+            ->filter()
+            ->unique('id')
+            ->values();
+    }
+
+    protected function send(Collection $recipients, \Illuminate\Notifications\Notification $notification): void
+    {
+        $actorId = Auth::id();
+        $recipients = $this->normalizeRecipients($recipients);
+
+        if ($actorId) {
+            $recipients = $recipients->where('id', '!=', $actorId);
+        }
+
+        if ($recipients->isNotEmpty()) {
+            Notification::send($recipients, $notification);
+        }
     }
 }
