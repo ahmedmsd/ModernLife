@@ -12,7 +12,7 @@ use App\Support\Settings;
 class ProductionRequestCreated extends Notification implements ShouldQueue
 {
     use Queueable;
-
+    public $afterCommit = true;
     public function __construct(public ProductionRequest $request) {}
 
     public function via(object $notifiable): array

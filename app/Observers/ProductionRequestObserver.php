@@ -16,6 +16,8 @@ class ProductionRequestObserver
 {
     public function created(ProductionRequest $pr): void
     {
+
+
         ProductionRequestLog::create([
             'production_request_id' => $pr->id,
             'type'        => 'created',
@@ -222,17 +224,29 @@ class ProductionRequestObserver
             ->values();
     }
 
-    protected function send(Collection $recipients, \Illuminate\Notifications\Notification $notification): void
-    {
-        $actorId = Auth::id();
-        $recipients = $this->normalizeRecipients($recipients);
+    protected function send(
+        \Illuminate\Support\Collection $recipients,
+        \Illuminate\Notifications\Notification $notification,
+        bool $allowSelf = true // ← السماح بإشعار الذات افتراضيًا
+    ): void {
+        $actorId = \Illuminate\Support\Facades\Auth::id();
 
-        if ($actorId) {
+        $recipients = $this->normalizeRecipients($recipients)
+            ->unique('id')
+            ->values();
+
+        if (! $allowSelf && $actorId) {
             $recipients = $recipients->where('id', '!=', $actorId);
         }
 
-        if ($recipients->isNotEmpty()) {
-            Notification::send($recipients, $notification);
+        if ($recipients->isEmpty()) {
+            \Log::debug('PR notify skipped: empty recipients', [
+                'notification' => class_basename($notification),
+                'actor' => $actorId,
+            ]);
+            return;
         }
+
+        \Illuminate\Support\Facades\Notification::send($recipients, $notification);
     }
 }

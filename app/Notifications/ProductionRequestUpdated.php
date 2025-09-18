@@ -12,6 +12,7 @@ use App\Support\Settings;
 class ProductionRequestUpdated extends Notification implements ShouldQueue
 {
     use Queueable;
+    public $afterCommit = true;
 
     public function __construct(
         public ProductionRequest $request,
