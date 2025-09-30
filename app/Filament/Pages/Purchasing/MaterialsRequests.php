@@ -136,7 +136,6 @@ class MaterialsRequests extends Page implements HasTable
                     ->label('اعتماد طلب الشراء')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
-                    // ✅ $record بدل $r
                     ->visible(fn (MaterialRequest $record) =>
                         auth()->user()?->hasAnyRole(['purchasing_manager', 'admin', 'super-admin'])
                         && $record->status === 'requested'
@@ -244,6 +243,12 @@ class MaterialsRequests extends Page implements HasTable
                             ->success()
                             ->send();
                     }),
+
+
+                Action::make('viewDetails')
+                    ->label('عرض ')
+                    ->icon('heroicon-o-eye')
+                    ->url(fn (MaterialRequest $record) => ViewMaterialRequest::getUrl(['record' => $record])),
             ])
             ->bulkActions([
                 Tables\Actions\BulkAction::make('bulkConfirm')

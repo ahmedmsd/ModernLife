@@ -149,9 +149,9 @@ class AdminPanelProvider extends PanelProvider
                                         || $hasRole(['admin','super-admin'])
                                     ),
 
-                                NavigationItem::make('مراجعة المهام')
-                                    ->url(\App\Filament\Pages\FactoryManagerTaskReview::getUrl())
-                                    ->visible(fn () => $canReviewTasks()),
+//                                NavigationItem::make('مراجعة المهام')
+//                                    ->url(\App\Filament\Pages\FactoryManagerTaskReview::getUrl())
+//                                    ->visible(fn () => $canReviewTasks()),
                             ])
                     )
 
@@ -166,6 +166,12 @@ class AdminPanelProvider extends PanelProvider
                                     ->url(\App\Filament\Pages\Purchasing\MaterialsRequests::getUrl())
                                     ->visible(fn () =>
                                         $can('view_material_requests')
+                                        || $hasRole(['purchasing_manager','admin','super-admin'])
+                                    ),
+                                NavigationItem::make('طلبات الخامات المُنجزة')
+                                    ->url(\App\Filament\Pages\Purchasing\MaterialsRequestsDone::getUrl())
+                                    ->visible(fn () =>
+                                        $can('view_material_requests_done')
                                         || $hasRole(['purchasing_manager','admin','super-admin'])
                                     ),
                             ])

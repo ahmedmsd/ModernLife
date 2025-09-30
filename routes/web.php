@@ -8,10 +8,20 @@ use App\Http\Controllers\ZohoOauthController;
 use Filament\Facades\Filament;
 use Illuminate\Notifications\Notification as BaseNotif;
 use Spatie\Permission\PermissionRegistrar;
+use Illuminate\Support\Facades\Storage;
+use App\Models\ProductionRequestFile;
 
 Route::get('/', function () {
     return view('welcome');
 });
+
+
+
+Route::get('/files/{file}', function (ProductionRequestFile $file) {
+    $path = ltrim($file->file_path, '/');
+    abort_unless(Storage::disk('public')->exists($path), 404);
+    return Storage::disk('public')->response($path);
+})->name('files.show');
 
 Route::get('/admin/perm-cache-reset', function () {
     app(PermissionRegistrar::class)->forgetCachedPermissions();

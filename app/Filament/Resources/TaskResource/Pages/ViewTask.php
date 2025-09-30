@@ -444,6 +444,46 @@ class ViewTask extends ViewRecord
                 TextEntry::make('received_by_owner_at')->label('مؤكد الاستلام')->dateTime()->placeholder('—'),
             ])->columns(2),
 
+            Section::make('ملفات المهمة')->schema([
+                // ملف الاتفاقية
+                TextEntry::make('agreement_file')
+                    ->label('ملف الاتفاقية')
+                    ->html()
+                    ->state(function (\App\Models\ProductionTask $record) {
+                        $pr = $record->project?->productionRequest;
+                        if (! $pr || blank($pr->agreement_file)) {
+                            return '<span style="opacity:.7">—</span>';
+                        }
+                        $url  = Storage::disk('public')->url($pr->agreement_file);
+                        $name = e(basename($pr->agreement_file));
+                        return '<a href="'.e($url).'" target="_blank"
+                        style="color:#2563eb; text-decoration:underline; font-weight:600;">
+                        '.$name.' ▸
+                    </a>';
+                    }),
+
+                // ملف التصنيع الخاص بالقسم
+                TextEntry::make('manufacturing_file')
+                    ->label('ملف التصنيع (للقسم)')
+                    ->html()
+                    ->state(function (\App\Models\ProductionTask $record) {
+                        $file = $record->project?->productionRequest?->files()
+                            ->where('department_id', $record->department_id)
+                            ->latest()->first();
+
+                        if (! $file || blank($file->file_path)) {
+                            return '<span style="opacity:.7">—</span>';
+                        }
+
+                        $url  = Storage::disk('public')->url($file->file_path);
+                        $name = e(basename($file->file_path));
+                        return '<a href="'.e($url).'" target="_blank"
+                        style="color:#16a34a; text-decoration:underline; font-weight:600;">
+                        '.$name.' ▸
+                    </a>';
+                    }),
+            ])->columns(1),
+            
             Section::make('التعليقات')
                 ->schema([
                     ViewEntry::make('comments_list')
