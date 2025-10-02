@@ -213,4 +213,21 @@
             الطلب سيظل مفتوحًا حتى اكتمال المشروع وجميع المهام المرتبطة به. عند اكتمالها، يُغلق الطلب تلقائيًا.
         </div>
     </x-filament::section>
+
+    @push('scripts')
+        <script>
+            document.addEventListener('livewire:init', () => {
+                Livewire.hook('morph.updated', ({ el, component }) => {
+                    // Close any open modals when component updates
+                    const modals = document.querySelectorAll('[x-data*="mountedActions"]');
+                    modals.forEach(modal => {
+                        if (modal.__x?.$data?.isOpen) {
+                            modal.__x.$data.isOpen = false;
+                        }
+                    });
+                });
+            });
+        </script>
+    @endpush
+
 </x-filament::page>

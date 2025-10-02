@@ -77,7 +77,16 @@
             <div class="border rounded-md p-4 mb-4 bg-white dark:bg-gray-900 shadow-sm">
                 <div class="flex justify-between text-sm">
                     <div>
-                        <strong>{{ $log->user->name ?? 'مجهول' }}</strong>
+                        @php
+                            // اسم المنفذ مع سلسلة سقوط مرتبة:
+                            $who = $log->causer->name
+                                ?? data_get($log->data, 'causer_name')                 // لو خزّنت الاسم داخل data
+                                ?? data_get($log->data, 'by')                          // بعض الأحداث تحفظ by
+                                ?? (data_get($log->data, 'owner_role_label') ?: data_get($log->data, 'owner_role'))
+                                ?? (data_get($log->data, 'from.owner_label') ?: data_get($log->data, 'from.owner'))
+                                ?? 'مجهول';
+                        @endphp
+                        <strong>{{ $who }}</strong>
                         <span>قام بـ:</span>
                         <span class="font-semibold text-primary-700">
                             {{ $logEnum?->label() ?? $log->action }}

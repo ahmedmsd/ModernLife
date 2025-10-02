@@ -4,6 +4,7 @@ namespace App\Filament\Pages\Purchasing;
 
 use App\Models\MaterialRequest;
 use App\Models\SystemSetting;
+use App\Models\ProductionTask;
 use App\Support\Filament\HasShieldAccess;
 use Filament\Forms;
 use Filament\Notifications\Notification;
@@ -14,14 +15,29 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
 
+/**
+ * صفحة معالجة طلبات الخامات من منظور المشتريات.
+ *
+ * منطق انتقال حالات المهمة (ProductionTask):
+ *  - اعتماد طلب الخامات  : status -> materials_wait  & المالك -> purchasing_manager
+ *  - تأكيد توفير الخامات : status -> materials_done  & المالك -> department_manager
+ *
+ * عند التوريد يتم أيضًا التقاط بيانات الفاتورة: actual_cost, invoice_date, invoice_no, invoice_file.
+ * نستخدم معاملات وقفل سجلات لحماية الاتساق عند تحديثات متوازية لنفس المهمة.
+ */
 class MaterialsRequests extends Page implements HasTable
 {
     use InteractsWithTable;
     use HasShieldAccess;
 
+    /** إعدادات الواجهة والتنقل */
     protected static ?string $navigationIcon  = 'heroicon-o-truck';
     protected static ?string $navigationLabel = 'طلبات الخامات';
     protected static ?string $title           = 'طلبات الخامات (المشتريات)';
@@ -31,12 +47,14 @@ class MaterialsRequests extends Page implements HasTable
 
     protected static string $view = 'filament.pages.purchasing.materials-requests';
 
+    /** إظهار الصفحة فقط للمشتريات أو صلاحيات أعلى */
     public static function shouldRegisterNavigation(): bool
     {
         $u = Auth::user();
         return $u && $u->hasAnyRole(['purchasing_manager', 'admin', 'super-admin']);
     }
 
+    /** شارة التنقل = عدد الطلبات غير المورّدة */
     public static function getNavigationBadge(): ?string
     {
         return (string) MaterialRequest::query()
@@ -45,6 +63,7 @@ class MaterialsRequests extends Page implements HasTable
             ->count();
     }
 
+    /** جدول عرض الطلبات قيد المعالجة */
     public function table(Table $table): Table
     {
         return $table
@@ -54,7 +73,7 @@ class MaterialsRequests extends Page implements HasTable
                     ->whereNull('provided_at')
                     ->whereIn('status', ['requested', 'approved'])
                     ->with([
-                        'task.project.productionRequest', // المشروع والطلب الأم
+                        'task.project.productionRequest',
                         'department',
                         'requestedBy',
                     ])
@@ -77,7 +96,6 @@ class MaterialsRequests extends Page implements HasTable
 
                 TextColumn::make('requester')
                     ->label('مقدّم الطلب')
-
                     ->state(fn (MaterialRequest $record) =>
                         ($record->requestedBy?->name)
                         ?? ($record->task?->employee?->employee_name)
@@ -101,9 +119,8 @@ class MaterialsRequests extends Page implements HasTable
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('status')
-                    ->label('الحالة')
+                    ->label('حالة طلب الخامات')
                     ->badge()
-                    // ✅ استخدم $state
                     ->formatStateUsing(fn (?string $state) => match ($state) {
                         'requested' => 'بانتظار اعتماد المشتريات',
                         'approved'  => 'بانتظار التوريد',
@@ -132,7 +149,11 @@ class MaterialsRequests extends Page implements HasTable
                     ]),
             ])
             ->actions([
-                // 1) اعتماد طلب الشراء (من requested -> approved)
+                /**
+                 * (1) اعتماد المشتريات:
+                 * - MaterialRequest: requested -> approved
+                 * - ProductionTask : status -> materials_wait, owner -> purchasing_manager
+                 */
                 Action::make('approvePurchasing')
                     ->label('اعتماد طلب الشراء')
                     ->icon('heroicon-o-check-circle')
@@ -156,16 +177,30 @@ class MaterialsRequests extends Page implements HasTable
                             ->rows(3),
                     ])
                     ->action(function (MaterialRequest $record, array $data) {
-                        $record->update([
-                            'status'               => 'approved',
-                            'estimated_cost'       => (float) $data['estimated_cost'],
-                            'expected_delivery_at' => $data['expected_delivery_at'],
-                            'approved_at'          => now(),
-                            'approved_by'          => auth()->id(),
-                            'note'                 => trim(($record->note ? $record->note . "\n\n" : '') . ($data['note'] ?? '')),
-                        ]);
+                        DB::transaction(function () use ($record, $data) {
+                            // 1) تحديث طلب الخامات إلى approved
+                            $record->update([
+                                'status'               => 'approved',
+                                'estimated_cost'       => (float) $data['estimated_cost'],
+                                'expected_delivery_at' => $data['expected_delivery_at'],
+                                'approved_at'          => now(),
+                                'approved_by'          => auth()->id(),
+                                'note'                 => trim(($record->note ? $record->note . "\n\n" : '') . ($data['note'] ?? '')),
+                            ]);
 
-                        // تحقق حدّ المشتريات من إعدادات النظام (نسبة)
+                            // 2) نقل المهمة إلى materials_wait + ملكية المشتريات
+                            /** @var ProductionTask|null $task */
+                            $task = $record->task()->lockForUpdate()->first();
+                            if ($task) {
+                                $this->updateTaskStateAndOwnership($task, [
+                                    'status'             => 'materials_wait',
+                                    'current_owner_role' => 'purchasing_manager',
+                                    'current_owner_user' => null,
+                                ]);
+                            }
+                        });
+
+                        // تنبيه تجاوز حدّ المشتريات (خارج الترانزاكشن)
                         $capPct  = (float) (SystemSetting::get('purchasing_budget_cap_pct', 0.50) ?? 0.50);
                         $task    = $record->task;
                         $pr      = $task?->project?->productionRequest;
@@ -182,9 +217,7 @@ class MaterialsRequests extends Page implements HasTable
                                             ->body("طلب #{$pr?->id}: التكلفة {$matCost} تخطّت " . ($capPct * 100) . "% من سعر الطلب {$order}.")
                                             ->sendToDatabase($user);
                                     }
-                                } catch (\Throwable $e) {
-                                    // تجاهل أي خطأ في الإشعارات
-                                }
+                                } catch (\Throwable $e) {}
                             }
 
                             Notification::make()
@@ -200,7 +233,12 @@ class MaterialsRequests extends Page implements HasTable
                         }
                     }),
 
-                // 2) تأكيد توفير الخامات (approved -> fulfilled)
+                /**
+                 * (2) تأكيد توفير الخامات:
+                 * - MaterialRequest: approved -> fulfilled + حفظ بيانات الفاتورة
+                 * - ProductionTask : status -> materials_done, owner -> department_manager
+                 *   (يعطي مدير القسم زر "تأكيد استلام الخامات" تمهيدًا لبدء التصنيع)
+                 */
                 Action::make('confirmMaterials')
                     ->label('تأكيد توفير الخامات')
                     ->icon('heroicon-o-check-badge')
@@ -211,46 +249,111 @@ class MaterialsRequests extends Page implements HasTable
                         && is_null($record->provided_at)
                     )
                     ->form([
-                        Forms\Components\TextInput::make('po_number')->label('رقم الطلب/مرجع (اختياري)'),
-                        Forms\Components\Textarea::make('note')->label('ملاحظة (اختياري)')->rows(3),
+                        Forms\Components\TextInput::make('po_number')
+                            ->label('رقم الطلب/مرجع (اختياري)'),
+
+                        Forms\Components\TextInput::make('invoice_no')
+                            ->label('رقم فاتورة الشراء')
+                            ->required(),
+
+                        Forms\Components\TextInput::make('actual_cost')
+                            ->label('مبلغ الفاتورة')
+                            ->numeric()
+                            ->required(),
+
+                        Forms\Components\DatePicker::make('invoice_date')
+                            ->label('تاريخ الفاتورة')
+                            ->displayFormat('Y-m-d')
+                            ->native(false)
+                            ->required(),
+
+                        Forms\Components\FileUpload::make('invoice_file')
+                            ->label('فاتورة الشراء (PDF/صورة)')
+                            ->disk('public')                       // استخدم قرص التخزين "public"
+                            ->directory('materials_invoices')      // مجلد الحفظ
+                            ->preserveFilenames()
+                            ->openable()
+                            ->downloadable()
+                            ->maxSize(10240)                       // 10MB
+                            ->acceptedFileTypes(['application/pdf','image/*'])
+                            ->helperText('ارفع صورة أو PDF بحد أقصى 10MB.'),
+
+                        Forms\Components\Textarea::make('note')
+                            ->label('ملاحظة (اختياري)')
+                            ->rows(3),
                     ])
                     ->requiresConfirmation()
                     ->action(function (MaterialRequest $record, array $data) {
-                        $record->update([
-                            'status'      => 'fulfilled',
-                            'po_number'   => $data['po_number'] ?: $record->po_number,
-                            'provided_by' => auth()->id(),
-                            'provided_at' => now(),
-                            'note'        => trim(($record->note ? $record->note . "\n\n" : '') . ($data['note'] ?? '')),
-                        ]);
-
-                        // إعادة المهمة للتنفيذ إن كانت متوقفة ولا توجد طلبات خامات مفتوحة أخرى
-                        $task = $record->task;
-
-                        if ($task && $task->status === 'blocked') {
-                            $hasOpen = $task->materialRequests()
-                                ->whereNull('provided_at')
-                                ->whereIn('status', ['requested', 'approved'])
-                                ->exists();
-
-                            if (! $hasOpen) {
-                                $task->update(['status' => 'in_progress']);
+                        DB::transaction(function () use ($record, $data) {
+                            // ــ حفظ ملف الفاتورة يدويًا عند استخدام Action form (غير Model form)
+                            $invoicePath = $record->invoice_file;
+                            if (! empty($data['invoice_file'])) {
+                                if ($data['invoice_file'] instanceof UploadedFile) {
+                                    $invoicePath = $data['invoice_file']->store('materials_invoices', 'public');
+                                } elseif (is_string($data['invoice_file'])) {
+                                    // في بعض الحالات قد يعود مسار جاهز من FileUpload
+                                    $invoicePath = $data['invoice_file'];
+                                }
                             }
-                        }
+
+                            // 1) تحديث طلب الخامات إلى fulfilled + بيانات الفاتورة
+                            $payload = [
+                                'status'       => 'fulfilled',
+                                'po_number'    => $data['po_number'] ?: $record->po_number,
+                                'provided_by'  => auth()->id(),
+                                'provided_at'  => now(),
+                                'note'         => trim(($record->note ? $record->note . "\n\n" : '') . ($data['note'] ?? '')),
+                            ];
+
+                            // نحدّث حقول الفاتورة فقط إذا كانت الأعمدة موجودة
+                            if (Schema::hasColumn($record->getTable(), 'actual_cost')) {
+                                $payload['actual_cost'] = (float) $data['actual_cost'];
+                            }
+                            if (Schema::hasColumn($record->getTable(), 'invoice_date')) {
+                                $payload['invoice_date'] = $data['invoice_date'];
+                            }
+                            if (Schema::hasColumn($record->getTable(), 'invoice_no')) {
+                                $payload['invoice_no'] = $data['invoice_no'];
+                            }
+                            if (Schema::hasColumn($record->getTable(), 'invoice_file')) {
+                                $payload['invoice_file'] = $invoicePath;
+                            }
+
+                            $record->update($payload);
+
+                            // 2) تحويل ملكية المهمة لمدير القسم + الحالة materials_done
+                            /** @var ProductionTask|null $task */
+                            $task = $record->task()->lockForUpdate()->first();
+                            if ($task && ! in_array($task->status, ['completed','cancelled'])) {
+                                $dept            = $task->department;
+                                $departmentOwner = $dept?->manager_user_id ?? $dept?->head_user_id ?? null;
+
+                                $this->updateTaskStateAndOwnership($task, [
+                                    'status'             => 'materials_done',
+                                    'current_owner_role' => 'department_manager',
+                                    'current_owner_user' => $departmentOwner,
+                                ]);
+                            }
+                        });
 
                         Notification::make()
-                            ->title('تم تأكيد توفير الخامات')
+                            ->title('تم تأكيد توفير الخامات وتسجيل بيانات الفاتورة')
                             ->success()
                             ->send();
                     }),
 
-
+                // عرض تفاصيل الطلب
                 Action::make('viewDetails')
                     ->label('عرض ')
                     ->icon('heroicon-o-eye')
                     ->url(fn (MaterialRequest $record) => ViewMaterialRequest::getUrl(['record' => $record])),
             ])
             ->bulkActions([
+                /**
+                 * تأكيد توفير مجمّع:
+                 * - لا يجمع بيانات الفاتورة (منطقيًا يحتاج إدخال يدوي لكل سجل).
+                 * - يحوّل المهام إلى materials_done وينقل الملكية لمدير القسم.
+                 */
                 Tables\Actions\BulkAction::make('bulkConfirm')
                     ->label('تأكيد توفير (مجمع)')
                     ->icon('heroicon-o-check')
@@ -259,28 +362,34 @@ class MaterialsRequests extends Page implements HasTable
                     ->action(function ($records) {
                         foreach ($records as $record) {
                             /** @var MaterialRequest $record */
-                            if ($record->status !== 'approved' || $record->provided_at) {
-                                continue;
-                            }
-
-                            $record->update([
-                                'status'      => 'fulfilled',
-                                'provided_by' => Auth::id(),
-                                'provided_at' => now(),
-                            ]);
-
-                            $task = $record->task;
-
-                            if ($task && $task->status === 'blocked') {
-                                $hasOpen = $task->materialRequests()
-                                    ->whereNull('provided_at')
-                                    ->whereIn('status', ['requested', 'approved'])
-                                    ->exists();
-
-                                if (! $hasOpen) {
-                                    $task->update(['status' => 'in_progress']);
+                            DB::transaction(function () use ($record) {
+                                if ($record->status !== 'approved' || $record->provided_at) {
+                                    return;
                                 }
-                            }
+
+                                // 1) Fulfill طلب الخامات (بدون بيانات فاتورة في المجمع)
+                                $record->update([
+                                    'status'      => 'fulfilled',
+                                    'provided_by' => Auth::id(),
+                                    'provided_at' => now(),
+                                ]);
+
+                                // 2) نقل المهمة إلى materials_done + ملكية مدير القسم
+                                /** @var ProductionTask|null $task */
+                                $task = $record->task()->lockForUpdate()->first();
+                                if (! $task || in_array($task->status, ['completed','cancelled'])) {
+                                    return;
+                                }
+
+                                $dept            = $task->department;
+                                $departmentOwner = $dept?->manager_user_id ?? $dept?->head_user_id ?? null;
+
+                                $this->updateTaskStateAndOwnership($task, [
+                                    'status'             => 'materials_done',
+                                    'current_owner_role' => 'department_manager',
+                                    'current_owner_user' => $departmentOwner,
+                                ]);
+                            });
                         }
 
                         Notification::make()
@@ -292,6 +401,44 @@ class MaterialsRequests extends Page implements HasTable
             ->emptyStateHeading('لا توجد طلبات خامات قيد المعالجة');
     }
 
+    /**
+     * تحديث حالة وملكية المهمة بشكل آمن (يتحقق من الأعمدة قبل التحديث).
+     *
+     * @param ProductionTask $task
+     * @param array{
+     *   status?: string,
+     *   current_owner_role?: string,
+     *   current_owner_user?: int|null
+     * } $values
+     */
+    protected function updateTaskStateAndOwnership(ProductionTask $task, array $values): void
+    {
+        $payload = [];
+
+        if (isset($values['status'])) {
+            $payload['status'] = $values['status'];
+        }
+
+        if (
+            isset($values['current_owner_role']) &&
+            Schema::hasColumn($task->getTable(), 'current_owner_role')
+        ) {
+            $payload['current_owner_role'] = $values['current_owner_role'];
+        }
+
+        if (
+            array_key_exists('current_owner_user', $values) &&
+            Schema::hasColumn($task->getTable(), 'current_owner_user_id')
+        ) {
+            $payload['current_owner_user_id'] = $values['current_owner_user'];
+        }
+
+        if (! empty($payload)) {
+            $task->update($payload);
+        }
+    }
+
+    /** إرسال تنبيه داخلي لدور معين (لا يوقف المعاملة عند الفشل) */
     protected function notifyRole(string $roleName, string $title, string $body): void
     {
         try {
@@ -303,7 +450,7 @@ class MaterialsRequests extends Page implements HasTable
                     ->sendToDatabase($user);
             }
         } catch (\Throwable $e) {
-
+            // مقصود: لا نوقف العملية إذا فشل الإشعار
         }
     }
 }

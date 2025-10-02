@@ -49,7 +49,6 @@ class ViewTask extends ViewRecord
     {
         parent::mount($record);
 
-        // تهيئة فورية (اختياري؛ الlazy init يكفي لوحده)
         $this->helper();
         $this->workflow();
 
@@ -106,10 +105,20 @@ class ViewTask extends ViewRecord
                 ->visible(fn() => $u?->hasAnyRole(['factory_manager','admin','super-admin']) && blank($this->record->assigned_to_employee_id))
                 ->form([
                     Forms\Components\Select::make('employee_id')->label('المسؤول')
-                        ->options(fn()=> \App\Models\Employee::query()
-                            ->whereHas('roles', fn($q)=>$q->where('name','department_manager'))
-                            ->orderBy('employee_name')->pluck('employee_name','employee_id'))
-                        ->searchable()->required(),
+                        ->options(function () {
+                            return \App\Models\Employee::query()
+                                ->whereHas('user', function ($q) {
+                                    $q->whereHas('roles', function ($r) {
+                                        $r->where('name', 'department_manager')
+                                            ->where('guard_name', 'web');
+                                    });
+                                })
+                                ->orderBy('employee_name')
+                                ->pluck('employee_name', 'employee_id')
+                                ->toArray();
+                        })
+                        ->searchable()
+                        ->required(),
                     Forms\Components\DateTimePicker::make('due_date')->label('تاريخ التسليم المتوقع')->required(),
                 ])
                 ->requiresConfirmation()
