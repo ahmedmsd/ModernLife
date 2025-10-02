@@ -483,7 +483,7 @@ class ViewTask extends ViewRecord
                     </a>';
                     }),
             ])->columns(1),
-            
+
             Section::make('التعليقات')
                 ->schema([
                     ViewEntry::make('comments_list')

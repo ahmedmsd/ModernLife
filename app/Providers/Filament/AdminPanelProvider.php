@@ -138,6 +138,9 @@ class AdminPanelProvider extends PanelProvider
                                 NavigationItem::make('طلبات الخامات')
                                     ->url(\App\Filament\Pages\Purchasing\MaterialsRequests::getUrl())
                                     ->visible(fn () => \App\Filament\Pages\Purchasing\MaterialsRequests::canAccess()),
+                                NavigationItem::make('طلبات الخامات المُنجزة')
+                                    ->url(\App\Filament\Pages\Purchasing\MaterialsRequestsDone::getUrl())
+                                    ->visible(fn () => \App\Filament\Pages\Purchasing\MaterialsRequestsDone::canAccess()),
                             ])
                     )
 

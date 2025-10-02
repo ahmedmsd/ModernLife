@@ -17,12 +17,17 @@ class AuthServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        Gate::before(function ($user, $ability) {
-            return (method_exists($user, 'hasRole') && $user->hasRole('super-admin')) ? true : null;
-        });
         $this->registerPolicies();
-        Gate::before(function ($user, $ability) {
-            return $user->hasRole(config('filament-shield.super_admin.role_name', 'super-admin')) ? true : null;
+
+        Gate::before(function ($user, string $ability) {
+            if (! method_exists($user, 'hasRole')) {
+                return null;
+            }
+            $superRole = (string) config('filament-shield.super_admin.role_name', 'super-admin');
+
+            return $user->hasRole($superRole, 'web') ? true : null;
+
+            // return $user->hasAnyRole(['super-admin','admin','owner'], 'web') ? true : null;
         });
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Filament\Panel;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -46,12 +47,10 @@ class User extends Authenticatable implements FilamentUser
         ];
     }
 
-    public function employee(): HasOne
+    public function employee(): HasOne|User
     {
-        return $this->hasOne(Employee::class, 'user_id');
+        return $this->hasOne(\App\Models\Employee::class, 'user_id', 'id');
     }
-
-
 
     public function directPermissions(): BelongsToMany
     {

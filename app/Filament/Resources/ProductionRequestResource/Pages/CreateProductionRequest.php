@@ -3,15 +3,9 @@
 namespace App\Filament\Resources\ProductionRequestResource\Pages;
 
 use App\Filament\Resources\ProductionRequestResource;
-use App\Models\ProductionRequest;
-use App\Models\User;
-use App\Services\ProductionRequestWorkflow;
 use Filament\Resources\Pages\CreateRecord;
-use Filament\Notifications\Notification as FilamentNotification;
-use Filament\Notifications\Actions\Action;
-use Illuminate\Support\Facades\Notification as LaravelNotification; // لإرسال بريد
-use App\Notifications\ProductionRequestCreated;
-use Illuminate\Support\Facades\Notification;
+
+// لإرسال بريد
 
 class CreateProductionRequest extends CreateRecord
 {
@@ -47,28 +41,13 @@ class CreateProductionRequest extends CreateRecord
     protected function afterCreate(): void
     {
 
-        $record = $this->record->fresh();
+//        \Filament\Notifications\Notification::make()
+//            ->title('تم إنشاء طلب التصنيع بنجاح')
+//            ->success()
+//            ->send();
 
-        app(\App\Services\ProductionRequestWorkflow::class)->start($record);
+        $this->redirect(\App\Filament\Resources\ProductionRequestResource::getUrl('index'));
 
-        $isDirect = $record->request_type === 'direct'; // عدّل حسب حقلك
-
-        if ($isDirect) {
-            $recipients = User::role('factory_manager')->get();
-        } else {
-            $showroomId = $record->showroom_id;
-
-            $recipients = User::role('showroom_manager')
-                ->where('showroom_id', $showroomId)
-                ->get();
-
-        }
-
-        if ($recipients->isNotEmpty()) {
-            Notification::send($recipients, new ProductionRequestCreated($record));
-        }
-
-        $this->redirect(ProductionRequestResource::getUrl('index'));
 //        $record = $this->record->fresh();
 //        app(ProductionRequestWorkflow::class)->start($record);
     }

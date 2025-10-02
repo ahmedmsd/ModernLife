@@ -51,16 +51,18 @@ class ProductionRequestWorkflow
                 'owner'  => $pr->current_owner_role,
             ];
 
-            $pr->current_phase      = $toPhase->value;
-            $pr->phase_status       = $toStatus->value;
-            $pr->current_owner_role = $role;
+            $pr->current_phase       = $toPhase->value;
+            $pr->phase_status        = $toStatus->value;
+            $pr->current_owner_role  = $role;
+
+            $pr->current_owner_user_id = $this->resolveOwnerUserId($pr, $role);
 
             if ($touchSent) {
                 $pr->sent_to_owner_at     = now();
                 $pr->received_by_owner_at = null;
             }
 
-            // مهم: حفظ عادي لتفعيل Observers
+            // حفظ عادي لتفعيل Observers/Events
             $pr->save();
 
             $noteText = sprintf(
@@ -80,6 +82,7 @@ class ProductionRequestWorkflow
                         'phase'        => $from['phase'],
                         'status'       => $from['status'],
                         'owner'        => $from['owner'],
+                        'actor_name' => optional(\Illuminate\Support\Facades\Auth::user())->name,
                         'phase_label'  => $this->phaseLabel((string)($from['phase'] ?? '')),
                         'status_label' => $this->statusLabel((string)($from['status'] ?? '')),
                         'owner_label'  => $this->roleLabel((string)($from['owner'] ?? '')),
@@ -96,6 +99,16 @@ class ProductionRequestWorkflow
                 'note'        => $noteText,
                 'happened_at' => now(),
             ]);
+            event(new \App\Events\ProductionRequestPhaseEvent(
+                type: 'transition',
+                pr: $pr->fresh(),     // أرسل نسخة محدّثة
+                context: [
+                    'from'        => $from,
+                    'to'          => ['phase' => $toPhase->value, 'status' => $toStatus->value],
+                    'owner_role'  => $role,
+                    'touch_sent'  => $touchSent,
+                ],
+            ));
 
             return $pr->refresh();
         });
@@ -111,6 +124,9 @@ class ProductionRequestWorkflow
 
         $pr->phase_status         = S::Received->value;
         $pr->received_by_owner_at = now();
+
+        // $pr->current_owner_user_id = Auth::id();
+
         $pr->save();
 
         $waitSeconds = ($sentAt) ? $sentAt->diffInSeconds(now()) : null;
@@ -125,11 +141,22 @@ class ProductionRequestWorkflow
                 'from_label'    => $this->statusLabel((string)$fromStatus),
                 'to_status'     => S::Received->value,
                 'to_label'      => $this->statusLabel(S::Received->value),
+                'actor_name' => optional(\Illuminate\Support\Facades\Auth::user())->name,
                 'wait_seconds'  => $waitSeconds,
             ],
             'note'        => 'تم تأكيد الاستلام في مرحلة '.$this->phaseLabel((string)$pr->current_phase),
             'happened_at' => now(),
         ]);
+        event(new \App\Events\ProductionRequestPhaseEvent(
+            type: 'received',
+            pr: $pr->fresh(),
+            context: [
+                'phase'         => $pr->current_phase,
+                'from_status'   => $fromStatus,
+                'to_status'     => S::Received->value,
+                'wait_seconds'  => $waitSeconds,
+            ],
+        ));
 
         return $pr->refresh();
     }
@@ -167,11 +194,22 @@ class ProductionRequestWorkflow
                 'from_status'  => $fromStatus,
                 'from_label'   => $this->statusLabel((string)$fromStatus),
                 'to_status'    => S::Rejected->value,
+                'actor_name' => optional(\Illuminate\Support\Facades\Auth::user())->name,
                 'to_label'     => $this->statusLabel(S::Rejected->value),
             ],
             'note'        => $noteText,
             'happened_at' => now(),
         ]);
+        event(new \App\Events\ProductionRequestPhaseEvent(
+            type: 'rejected',
+            pr: $pr->fresh(),
+            context: [
+                'phase'       => $pr->current_phase,
+                'from_status' => $fromStatus,
+                'to_status'   => S::Rejected->value,
+                'reason'      => $reason,
+            ],
+        ));
 
         return $pr->refresh();
     }
@@ -198,6 +236,7 @@ class ProductionRequestWorkflow
             $pr->current_phase        = $toPhase->value;
             $pr->phase_status         = S::Pending->value;
             $pr->current_owner_role   = $owner;
+            $pr->current_owner_user_id= $this->resolveOwnerUserId($pr, $owner);
             $pr->sent_to_owner_at     = now();
             $pr->received_by_owner_at = null;
             $pr->save();
@@ -223,6 +262,8 @@ class ProductionRequestWorkflow
                         'owner_label'  => $this->roleLabel($owner),
                     ],
                     'owner_role'       => $owner,
+                    'actor_name' => optional(\Illuminate\Support\Facades\Auth::user())->name,
+
                     'owner_role_label' => $this->roleLabel($owner),
                 ],
                 'note'        => $note ?? $defaultNote,
@@ -290,15 +331,9 @@ class ProductionRequestWorkflow
                     ]
                 );
 
-                // === اختيار مدير القسم كمستخدم (User) وليس Employee ===
+                // إخطار مدير القسم (User) إن وُجد
                 $dept = $task->department()->with(['manager.user', 'managerEmployee.user'])->first();
-                $notifyUser = null;
-
-                if ($dept?->manager?->user) {
-                    $notifyUser = $dept->manager->user;                  // Employee → User
-                } elseif ($dept?->managerEmployee?->user) {
-                    $notifyUser = $dept->managerEmployee->user;          // بديل
-                }
+                $notifyUser = $dept?->manager?->user ?? $dept?->managerEmployee?->user;
 
                 if ($notifyUser) {
                     $url = \App\Filament\Resources\ProjectResource::getUrl('view', ['record' => $project->id]);
@@ -311,7 +346,7 @@ class ProductionRequestWorkflow
                         ->actions([
                             FAction::make('عرض المشروع')->button()->url($url),
                         ])
-                        ->sendToDatabase($notifyUser); // يرسل إلى User فقط
+                        ->sendToDatabase($notifyUser);
                 }
             }
 
@@ -322,6 +357,15 @@ class ProductionRequestWorkflow
                 'causer_id'   => Auth::id(),
                 'happened_at' => now(),
             ]);
+            event(new \App\Events\ProductionRequestPhaseEvent(
+                type: 'project_bootstrap',
+                pr: $pr->fresh(),
+                context: [
+                    'project_id' => $project->id,
+                    // ممكن تضيف عدّادات الملفات/المهام لو تحب
+                ],
+            ));
+
         });
     }
 
@@ -361,7 +405,16 @@ class ProductionRequestWorkflow
         };
     }
 
-    /* ======================= Helpers: Arabic labels ======================= */
+    /* ======================= Helpers ======================= */
+
+    protected function resolveOwnerUserId(ProductionRequest $pr, ?string $role): ?int
+    {
+        if ($role === 'showroom_manager') {
+            return optional($pr->showroom?->manager?->user)->id;
+        }
+
+        return null;
+    }
 
     private function phaseLabel(string $phase): string
     {
@@ -410,7 +463,7 @@ class ProductionRequestWorkflow
             'quality_manager'       => 'مدير الجودة',
             'installation_manager'  => 'مدير التركيب',
             'manufacturing_manager' => 'مدير التصنيع',
-            'sales_manager'         => 'مدير المبيعات',
+            'sales'                 => ' المبيعات',
             default                 => $role,
         };
     }

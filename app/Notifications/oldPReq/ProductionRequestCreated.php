@@ -1,19 +1,18 @@
 <?php
 
-namespace App\Notifications;
+namespace App\Notifications\oldPReq;
 
 use App\Models\ProductionRequest;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use App\Support\Settings;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-use App\Support\Settings;
 
-class ProductionRequestCreated extends Notification implements ShouldQueue
+class ProductionRequestCreated extends Notification
 {
-    use Queueable;
-    public $afterCommit = true;
-    public function __construct(public ProductionRequest $request) {}
+//    use Queueable;
+    public function __construct(public ProductionRequest $request) {
+//        $this->afterCommit();
+    }
 
     public function via(object $notifiable): array
     {

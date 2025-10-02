@@ -23,13 +23,12 @@ class ViewProductionTimeline extends Page
     public ProductionRequest $record;
     public array $timeline = [];
 
-    /** قاموس تعريب بسيط للأدوار والمفاتيح الشائعة داخل data */
     protected array $i18n = [
         'roles' => [
             'factory_manager'      => 'مدير المصنع',
             'showroom_manager'     => 'مدير المعرض',
             'purchasing_manager'   => 'مدير المشتريات',
-            'sales_manager'        => 'مدير المبيعات',
+            'sales'        => 'مدير المبيعات',
             'quality_manager'      => 'مدير الجودة',
             'manufacturing_manager'=> 'مدير التصنيع',
             'installer'            => 'فني التركيب',
@@ -55,7 +54,6 @@ class ViewProductionTimeline extends Page
 
     public function mount(ProductionRequest $record): void
     {
-        // ✅ تعريب الوقت
         app()->setLocale('ar');
         Carbon::setLocale('ar');
 
@@ -99,7 +97,7 @@ class ViewProductionTimeline extends Page
             Action::make('confirmReceipt')
                 ->label('تأكيد استلامي')
                 ->icon('heroicon-o-hand-thumb-up')
-                ->visible(fn () => Auth::user()?->hasRole($this->record->current_owner_role))
+                ->visible(fn () => $this->userHasRole($this->record->current_owner_role))
                 ->action(function () {
                     app(ProductionRequestWorkflow::class)->markReceived($this->record);
                     Notification::make()->success()->title('تم تأكيد الاستلام')->send();
@@ -142,7 +140,6 @@ class ViewProductionTimeline extends Page
 
     private function mapLogToTimelineRow($log): array
     {
-        // وقت موحّد ومُعرّب
         $at = $log->happened_at ?? $log->created_at;
         $atC = $at instanceof Carbon ? $at : ($at ? Carbon::parse($at) : null);
         $atDate  = $atC?->isoFormat('YYYY-MM-DD HH:mm') ?? '—'; // يبقى شكل التاريخ نفسه
@@ -152,7 +149,9 @@ class ViewProductionTimeline extends Page
         $type  = (string) ($log->type ?? 'event');
         $data  = $this->asArray($log->data);
         $note  = $log->note;
-        $who   = $log->causer->name ?? 'مجهول';
+        $who = $log->causer?->name
+            ?? ($this->asArray($log->data)['actor_name'] ?? null)
+            ?? ($log->causer_id ? ('مستخدم #' . $log->causer_id) : 'النظام');
 
         $title   = '';
         $desc    = '';
@@ -308,12 +307,10 @@ class ViewProductionTimeline extends Page
         return $this->i18n['roles'][$role] ?? $role;
     }
 
-    /** وصف عربي مبسّط لمصفوفة data عند الأنواع غير المعروفة */
     private function describeData(array $data): string
     {
         if (empty($data)) return '—';
 
-        // معالجة from/to إن وجدت
         $parts = [];
         if (isset($data['from']) || isset($data['to'])) {
             $from = $data['from'] ?? null;
@@ -354,6 +351,13 @@ class ViewProductionTimeline extends Page
         }
 
         return $parts ? implode(' | ', $parts) : json_encode($data, JSON_UNESCAPED_UNICODE);
+    }
+
+    private function userHasRole(?string $role): bool
+    {
+        if (!$role) return false;
+        $u = Auth::user();
+        return $u && method_exists($u, 'hasRole') && $u->hasRole((string) $role, 'web');
     }
 
     private function phaseLabel(string $phase): string
