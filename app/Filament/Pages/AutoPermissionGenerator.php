@@ -6,9 +6,12 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\File;
 use Spatie\Permission\Models\Permission;
 use Filament\Notifications\Notification;
+use App\Support\Filament\HasShieldAccess;
 
 class AutoPermissionGenerator extends Page
 {
+    use HasShieldAccess;
+
     protected static ?string $navigationIcon = 'heroicon-o-lock-closed';
     protected static ?string $title = 'توليد صلاحيات تلقائيًا';
     protected static ?string $navigationLabel = 'توليد الصلاحيات من الصفحات';
@@ -51,7 +54,7 @@ class AutoPermissionGenerator extends Page
 
         Notification::make()
             ->title('✅ تم توليد الصلاحيات بنجاح')
-            ->body(count($created) > 0 
+            ->body(count($created) > 0
                 ? 'تم إنشاء الصلاحيات التالية: ' . implode(', ', $created)
                 : 'لم يتم إنشاء صلاحيات جديدة.')
             ->success()

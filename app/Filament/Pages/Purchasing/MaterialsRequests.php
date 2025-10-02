@@ -4,6 +4,7 @@ namespace App\Filament\Pages\Purchasing;
 
 use App\Models\MaterialRequest;
 use App\Models\SystemSetting;
+use App\Support\Filament\HasShieldAccess;
 use Filament\Forms;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -19,6 +20,7 @@ use Spatie\Permission\Models\Role;
 class MaterialsRequests extends Page implements HasTable
 {
     use InteractsWithTable;
+    use HasShieldAccess;
 
     protected static ?string $navigationIcon  = 'heroicon-o-truck';
     protected static ?string $navigationLabel = 'طلبات الخامات';
@@ -37,7 +39,6 @@ class MaterialsRequests extends Page implements HasTable
 
     public static function getNavigationBadge(): ?string
     {
-        // المطلوب اعتمادها أو توريدها
         return (string) MaterialRequest::query()
             ->whereNull('provided_at')
             ->whereIn('status', ['requested', 'approved'])
@@ -76,7 +77,7 @@ class MaterialsRequests extends Page implements HasTable
 
                 TextColumn::make('requester')
                     ->label('مقدّم الطلب')
-                    // ✅ استخدم $record
+
                     ->state(fn (MaterialRequest $record) =>
                         ($record->requestedBy?->name)
                         ?? ($record->task?->employee?->employee_name)
@@ -204,7 +205,6 @@ class MaterialsRequests extends Page implements HasTable
                     ->label('تأكيد توفير الخامات')
                     ->icon('heroicon-o-check-badge')
                     ->color('primary')
-                    // ✅ $record بدل $r
                     ->visible(fn (MaterialRequest $record) =>
                         auth()->user()?->hasAnyRole(['purchasing_manager', 'admin', 'super-admin'])
                         && $record->status === 'approved'
@@ -292,7 +292,6 @@ class MaterialsRequests extends Page implements HasTable
             ->emptyStateHeading('لا توجد طلبات خامات قيد المعالجة');
     }
 
-    /** إرسال إشعار لكل مستخدمي دور معيّن */
     protected function notifyRole(string $roleName, string $title, string $body): void
     {
         try {
@@ -304,7 +303,7 @@ class MaterialsRequests extends Page implements HasTable
                     ->sendToDatabase($user);
             }
         } catch (\Throwable $e) {
-            // تجاهل أي خطأ في الإشعارات
+
         }
     }
 }

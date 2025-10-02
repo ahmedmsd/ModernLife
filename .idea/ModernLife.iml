@@ -147,6 +147,8 @@
       <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/polyfill-php84" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/polyfill-php85" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/grazulex/laravel-devtoolbox" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/certs" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/bezhansalleh/filament-shield" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

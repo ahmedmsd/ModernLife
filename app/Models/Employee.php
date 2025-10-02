@@ -12,7 +12,11 @@ use Spatie\Permission\Models\Permission;
 
 class Employee extends Authenticatable
 {
+<<<<<<< Updated upstream
     use HasRoles, Notifiable, SoftDeletes;
+=======
+    use Notifiable, softDeletes;
+>>>>>>> Stashed changes
 
     /**
      * Filament / Spatie guard name

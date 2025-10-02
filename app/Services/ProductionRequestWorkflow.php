@@ -325,7 +325,6 @@ class ProductionRequestWorkflow
         });
     }
 
-    /** يُستدعى عند اكتمال المشروع لإغلاق الطلب (مرحلة: closed، حالة: completed) */
     public function finalizeRequestAfterProjectDone(ProductionRequest $pr): ProductionRequest
     {
         $pr->current_phase         = Phase::Closed->value;

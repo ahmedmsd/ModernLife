@@ -27,6 +27,9 @@ class User extends Authenticatable implements FilamentUser
         'remember_token',
     ];
 
+    protected $casts = [
+        'password' => 'hashed',
+    ];
     public function canAccessPanel(Panel $panel): bool
     {
         return $this->hasAnyRole(['super-admin','admin','sales','factory_manager','showroom_manager','installation_manager','department_manager','quality_manager','purchasing_manager']);

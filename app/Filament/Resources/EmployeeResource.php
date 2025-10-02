@@ -54,9 +54,13 @@ class EmployeeResource extends Resource
                             ->label('كلمة المرور')
                             ->password()
                             ->required(fn(string $operation): bool => $operation === 'create')
+<<<<<<< Updated upstream
                             ->statePath('user.password')
                             ->dehydrated(fn($state) => filled($state))
                             ->dehydrateStateUsing(fn($state) => Hash::make($state))
+=======
+                            ->dehydrated(fn($state) => filled($state))
+>>>>>>> Stashed changes
                             ->autocomplete('new-password'),
                     ])->columns(2),
 
@@ -133,9 +137,15 @@ class EmployeeResource extends Resource
                             ->multiple()
                             ->searchable()
                             ->preload()
+<<<<<<< Updated upstream
                             ->options(fn () => Role::where('guard_name', 'web')->pluck('name', 'id')->all())
                             ->dehydrated(false), // لا تُحفظ مباشرة في employees
                     ])->columns(1),
+=======
+                            ->options(fn () => \Spatie\Permission\Models\Role::where('guard_name', 'web')->pluck('name', 'id')->all())
+                            ->dehydrated(false)
+                    ])->columns(1)
+>>>>>>> Stashed changes
             ]);
     }
 

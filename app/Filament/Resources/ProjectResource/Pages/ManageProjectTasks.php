@@ -13,6 +13,7 @@ use Filament\Tables\Table;
 
 class ManageProjectTasks extends ManageRelatedRecords
 {
+
     protected static string $resource     = ProjectResource::class;
     protected static string $relationship = 'tasks';
 

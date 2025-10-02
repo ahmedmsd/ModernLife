@@ -12,10 +12,12 @@ use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use App\Support\Filament\HasShieldAccess;
 
 class AssignedTasks extends Page implements HasTable
 {
     use InteractsWithTable;
+    use HasShieldAccess;
 
     protected static ?string $navigationIcon  = 'heroicon-o-clipboard-document-check';
     protected static ?string $navigationLabel = 'مهامي';

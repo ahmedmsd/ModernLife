@@ -120,6 +120,8 @@ return array(
     'Brick\\Math\\' => array($vendorDir . '/brick/math/src'),
     'BladeUI\\Icons\\' => array($vendorDir . '/blade-ui-kit/blade-icons/src'),
     'BladeUI\\Heroicons\\' => array($vendorDir . '/blade-ui-kit/blade-heroicons/src'),
+    'BezhanSalleh\\FilamentShield\\Database\\Factories\\' => array($vendorDir . '/bezhansalleh/filament-shield/database/factories'),
+    'BezhanSalleh\\FilamentShield\\' => array($vendorDir . '/bezhansalleh/filament-shield/src'),
     'Awcodes\\Curator\\Tests\\Database\\Factories\\' => array($vendorDir . '/awcodes/filament-curator/tests/database/factories'),
     'Awcodes\\Curator\\Tests\\' => array($vendorDir . '/awcodes/filament-curator/tests/src'),
     'Awcodes\\Curator\\Database\\Factories\\' => array($vendorDir . '/awcodes/filament-curator/database/factories'),

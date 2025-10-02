@@ -11,10 +11,12 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Arr;
+use App\Support\Filament\HasShieldAccess;
 
 class SystemSettings extends Page implements Forms\Contracts\HasForms
 {
     use Forms\Concerns\InteractsWithForms;
+    use HasShieldAccess;
 
     protected static ?string $navigationIcon  = 'heroicon-o-cog-6-tooth';
     protected static ?string $title            = 'الإعدادات العامة';

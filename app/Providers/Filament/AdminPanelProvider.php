@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\SystemSettings;
+use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use App\Filament\Resources\CityResource;
 use App\Filament\Resources\ClientResource;
 use App\Filament\Resources\CountryResource;
@@ -74,12 +75,19 @@ class AdminPanelProvider extends PanelProvider
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
             ])
+<<<<<<< Updated upstream
             ->plugins([])
+=======
+            ->plugins([
+                FilamentShieldPlugin::make(),
+            ])
+>>>>>>> Stashed changes
             ->authMiddleware([
                 Authenticate::class,
             ])
 
             ->navigation(function (NavigationBuilder $builder): NavigationBuilder {
+<<<<<<< Updated upstream
                 $u = Auth::user();
                 $hasRole = fn(array $roles) => method_exists($u, 'hasAnyRole') ? ($u?->hasAnyRole($roles) ?? false) : false;
                 $can     = fn(string $perm) => $u?->can($perm) ?? false;
@@ -91,12 +99,15 @@ class AdminPanelProvider extends PanelProvider
 
                 $canManageSettings = fn (): bool => $can('manage_system_settings') || $hasRole(['admin','super-admin','owner','it_manager']);
 
+=======
+>>>>>>> Stashed changes
                 return $builder
                     ->items([
                         NavigationItem::make('الصفحة الرئيسية')
                             ->url('/admin')
                             ->icon('heroicon-o-home')
                             ->sort(-1000)
+<<<<<<< Updated upstream
                             ->isActiveWhen(fn () => request()->is('admin') || request()->is('admin/*')),
                     ])
 
@@ -115,13 +126,25 @@ class AdminPanelProvider extends PanelProvider
                     )
 
                     // المشروعات
+=======
+                            ->visible(fn () => \Filament\Pages\Dashboard::canAccess()),
+                    ])
+
                     ->group(
-                        NavigationGroup::make()
-                            ->label('المشروعات')
-                            ->icon('heroicon-o-briefcase')
-                            ->collapsed()
+                        NavigationGroup::make()->label('الطلبات')->icon('heroicon-o-rectangle-group')->collapsible()->collapsed()
+                            ->items([
+                                NavigationItem::make('إدارة طلبات التصنيع')
+                                    ->url(\App\Filament\Resources\ProductionRequestResource::getUrl())
+                                    ->visible(fn () => \App\Filament\Resources\ProductionRequestResource::canViewAny()),
+                            ])
+                    )
+
+>>>>>>> Stashed changes
+                    ->group(
+                        NavigationGroup::make()->label('المشروعات')->icon('heroicon-o-briefcase')->collapsed()
                             ->items([
                                 NavigationItem::make('المشروعات الحالية')
+<<<<<<< Updated upstream
                                     ->url(ProjectResource::getUrl('index') . '?tableFilters[is_completed][value]=false')
                                     ->badge(fn () => Project::query()->where('status', '!=', 'completed')->count())
                                     ->visible(fn () => $isSuper() || $can('view_project_resource')),
@@ -133,15 +156,30 @@ class AdminPanelProvider extends PanelProvider
                     )
 
                     // المهام
+=======
+                                    ->url(\App\Filament\Resources\ProjectResource::getUrl('index').'?tableFilters[is_completed][value]=false')
+                                    ->visible(fn () => \App\Filament\Resources\ProjectResource::canViewAny())
+                                    ->badge(fn () => \App\Filament\Resources\ProjectResource::canViewAny()
+                                        ? \App\Models\Project::where('status','!=','completed')->count()
+                                        : null
+                                    ),
+                                NavigationItem::make('المشروعات المكتملة')
+                                    ->url(\App\Filament\Resources\ProjectResource::getUrl('index').'?tableFilters[is_completed][value]=true')
+                                    ->visible(fn () => \App\Filament\Resources\ProjectResource::canViewAny())
+                                    ->badge(fn () => \App\Filament\Resources\ProjectResource::canViewAny()
+                                        ? \App\Models\Project::where('status','completed')->count()
+                                        : null
+                                    ),
+                            ])
+                    )
+
+>>>>>>> Stashed changes
                     ->group(
-                        NavigationGroup::make()
-                            ->label('المهام')
-                            ->collapsible()
-                            ->collapsed()
-                            ->icon('heroicon-o-briefcase')
+                        NavigationGroup::make()->label('المهام')->icon('heroicon-o-briefcase')->collapsible()->collapsed()
                             ->items([
                                 NavigationItem::make('المهام المسندة إليّ')
                                     ->url(\App\Filament\Pages\AssignedTasks::getUrl())
+<<<<<<< Updated upstream
                                     ->visible(fn () =>
                                         $hasEmployee()
                                         || $can('view_assigned_tasks')
@@ -178,14 +216,29 @@ class AdminPanelProvider extends PanelProvider
                     )
 
                     // الأقسام
+=======
+                                    ->visible(fn () => \App\Filament\Pages\AssignedTasks::canAccess()),
+                                NavigationItem::make('مراجعة المهام')
+                                    ->url(\App\Filament\Pages\FactoryManagerTaskReview::getUrl())
+                                    ->visible(fn () => \App\Filament\Pages\FactoryManagerTaskReview::canAccess()),
+                            ])
+                    )
+
                     ->group(
-                        NavigationGroup::make()
-                            ->label('الأقسام')
-                            ->collapsible()
-                            ->collapsed()
-                            ->icon('heroicon-o-rectangle-group')
+                        NavigationGroup::make()->label('المشتريات')->icon('heroicon-o-truck')->collapsed()
+                            ->items([
+                                NavigationItem::make('طلبات الخامات')
+                                    ->url(\App\Filament\Pages\Purchasing\MaterialsRequests::getUrl())
+                                    ->visible(fn () => \App\Filament\Pages\Purchasing\MaterialsRequests::canAccess()),
+                            ])
+                    )
+
+>>>>>>> Stashed changes
+                    ->group(
+                        NavigationGroup::make()->label('الأقسام')->icon('heroicon-o-rectangle-group')->collapsible()->collapsed()
                             ->items([
                                 NavigationItem::make('تصنيفات الأقسام')
+<<<<<<< Updated upstream
                                     ->url(DepartmentCategoriesResource::getUrl())
                                     ->visible(fn () => $isSuper() || $can('view_department_categories_resource')),
 
@@ -196,28 +249,39 @@ class AdminPanelProvider extends PanelProvider
                     )
 
                     // العملاء
+=======
+                                    ->url(\App\Filament\Resources\DepartmentCategoriesResource::getUrl())
+                                    ->visible(fn () => \App\Filament\Resources\DepartmentCategoriesResource::canViewAny()),
+                                NavigationItem::make('الأقسام')
+                                    ->url(\App\Filament\Resources\DepartmentResource::getUrl())
+                                    ->visible(fn () => \App\Filament\Resources\DepartmentResource::canViewAny()),
+                            ])
+                    )
+
+>>>>>>> Stashed changes
                     ->group(
-                        NavigationGroup::make()
-                            ->label('العملاء')
-                            ->collapsible()
-                            ->icon('heroicon-o-user-group')
-                            ->collapsed()
+                        NavigationGroup::make()->label('العملاء')->icon('heroicon-o-user-group')->collapsible()->collapsed()
                             ->items([
                                 NavigationItem::make('إدارة العملاء')
+<<<<<<< Updated upstream
                                     ->url(ClientResource::getUrl())
                                     ->visible(fn () => $isSuper() || $can('view_client_resource')),
                             ])
                     )
 
                     // الموظفون
+=======
+                                    ->url(\App\Filament\Resources\ClientResource::getUrl())
+                                    ->visible(fn () => \App\Filament\Resources\ClientResource::canViewAny()),
+                            ])
+                    )
+
+>>>>>>> Stashed changes
                     ->group(
-                        NavigationGroup::make()
-                            ->label('الموظفين')
-                            ->collapsible()
-                            ->icon('heroicon-o-user-group')
-                            ->collapsed()
+                        NavigationGroup::make()->label('الموظفين')->icon('heroicon-o-user-group')->collapsible()->collapsed()
                             ->items([
                                 NavigationItem::make('إدارة الموظفين')
+<<<<<<< Updated upstream
                                     ->url(EmployeeResource::getUrl())
                                     ->visible(fn () => $isSuper() || $can('view_employee_resource')),
                             ])
@@ -256,5 +320,43 @@ class AdminPanelProvider extends PanelProvider
                             ])
                     );
             });
+=======
+                                    ->url(\App\Filament\Resources\EmployeeResource::getUrl())
+                                    ->visible(fn () => \App\Filament\Resources\EmployeeResource::canViewAny()),
+                            ])
+                    )
+
+                    ->group(
+                        NavigationGroup::make()->label('الإعدادات ')->icon('heroicon-o-cog')->collapsible()->collapsed()
+                            ->items([
+                                NavigationItem::make('إعدادات النظام')
+                                    ->url(\App\Filament\Pages\SystemSettings::getUrl())
+                                    ->visible(fn () => \App\Filament\Pages\SystemSettings::canAccess()),
+
+                                NavigationItem::make('إدارة المعارض')
+                                    ->url(\App\Filament\Resources\ShowroomResource::getUrl())
+                                    ->visible(fn () => \App\Filament\Resources\ShowroomResource::canViewAny()),
+
+                                NavigationItem::make('إدارة الدول')
+                                    ->url(\App\Filament\Resources\CountryResource::getUrl())
+                                    ->visible(fn () => \App\Filament\Resources\CountryResource::canViewAny()),
+
+                                NavigationItem::make('إدارة المدن')
+                                    ->url(\App\Filament\Resources\CityResource::getUrl())
+                                    ->visible(fn () => \App\Filament\Resources\CityResource::canViewAny()),
+
+                                NavigationItem::make('إدارة الأدوار')
+                                    ->url(\App\Filament\Resources\RoleResource::getUrl())
+                                    ->visible(fn () => \App\Filament\Resources\RoleResource::canViewAny()),
+
+                                NavigationItem::make('إدارة الصلاحيات')
+                                    ->url(\App\Filament\Resources\PermissionResource::getUrl())
+                                    ->visible(fn () => \App\Filament\Resources\PermissionResource::canViewAny()),
+                            ])
+                    );
+            })
+            ;
+
+>>>>>>> Stashed changes
     }
 }

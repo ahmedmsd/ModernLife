@@ -13,10 +13,12 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Filament\Notifications\Notification;
+use App\Support\Filament\HasShieldAccess;
 
 class FactoryManagerTaskReview extends Page implements HasTable
 {
     use InteractsWithTable;
+    use HasShieldAccess;
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
     protected static ?string $navigationLabel = 'مراجعة المهام';
