@@ -23,9 +23,8 @@ class RoleResource extends Resource
     protected static ?string $navigationIcon  = 'heroicon-o-shield-check';
     protected static ?string $navigationLabel = 'الأدوار';
     protected static ?string $navigationGroup = 'إدارة الصلاحيات';
-<<<<<<< Updated upstream
     protected static bool $shouldRegisterNavigation = false;
-=======
+
 
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
@@ -37,7 +36,6 @@ class RoleResource extends Resource
         return auth()->user()?->can('view_any_role') ?? false;
     }
 
->>>>>>> Stashed changes
     public static function form(Form $form): Form
     {
         return $form->schema([
