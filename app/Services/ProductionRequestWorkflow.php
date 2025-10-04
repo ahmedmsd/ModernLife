@@ -220,7 +220,7 @@ class ProductionRequestWorkflow
 
         $from = [
             'phase'  => $pr->current_phase,
-            'status' => $pr->phase_status,
+            'status' => $pr->phase_status,   // ← نقرأ phase_status
             'owner'  => $pr->current_owner_role,
         ];
 
@@ -233,13 +233,14 @@ class ProductionRequestWorkflow
         }
 
         return DB::transaction(function () use ($pr, $toPhase, $owner, $from, $note) {
-            $pr->current_phase        = $toPhase->value;
-            $pr->phase_status         = S::Pending->value;
-            $pr->current_owner_role   = $owner;
-            $pr->current_owner_user_id= $this->resolveOwnerUserId($pr, $owner);
-            $pr->sent_to_owner_at     = now();
-            $pr->received_by_owner_at = null;
-            $pr->save();
+            $pr->current_phase          = $toPhase->value;
+            $pr->phase_status           = S::Pending->value;      // مثال: 'pending'
+            $pr->current_owner_role     = $owner;
+            $pr->current_owner_user_id  = $this->resolveOwnerUserId($pr, $owner);
+            $pr->sent_to_owner_at       = now();
+            $pr->received_by_owner_at   = null;
+
+            $pr->saveQuietly();
 
             $defaultNote = 'إعادة توجيه الطلب للمراجعة مرة أخرى بعد تحديث المحتوى.';
             $pr->logs()->create([
@@ -262,12 +263,11 @@ class ProductionRequestWorkflow
                         'owner_label'  => $this->roleLabel($owner),
                     ],
                     'owner_role'       => $owner,
-                    'actor_name' => optional(\Illuminate\Support\Facades\Auth::user())->name,
-
+                    'actor_name'       => optional(\Illuminate\Support\Facades\Auth::user())->name,
                     'owner_role_label' => $this->roleLabel($owner),
                 ],
                 'note'        => $note ?? $defaultNote,
-                'causer_id'   => Auth::id(),
+                'causer_id'   => \Illuminate\Support\Facades\Auth::id(),
                 'happened_at' => now(),
             ]);
 

@@ -11,7 +11,7 @@ class RequestsPerMonthChart extends ChartWidget
     protected static ?string $heading = 'تطور الطلبات (آخر 12 شهر)';
     protected static ?string $maxHeight = '320px';
     protected int|string|array $columnSpan = ['default' => 1, 'lg' => 1];
-    protected static ?int $sort = 7;
+    protected static ?int $sort = 70;
 
     protected function getData(): array
     {

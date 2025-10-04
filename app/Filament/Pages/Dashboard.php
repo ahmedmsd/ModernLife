@@ -19,22 +19,20 @@ class Dashboard extends BaseDashboard
 
             \App\Filament\Widgets\MainStats::class,
 
+            \App\Filament\Widgets\Sales\SalesInProgressRequests::class,
+            \App\Filament\Widgets\Showroom\ShowroomManagerNeedsResponse::class,
+            \App\Filament\Widgets\Factory\FactoryManagerCurrentRequests::class,
+            \App\Filament\Widgets\Factory\FactoryManagerCurrentTasks::class,
+            \App\Filament\Widgets\Department\DepartmentManagerCurrentTasks::class,
+            \App\Filament\Widgets\Purchasing\PurchasingOpenMaterialsRequests::class,
 
-
-            \App\Filament\Widgets\RequestsPerMonthChart::class,
-
-            \App\Filament\Widgets\ProjectsPerClientBar::class,
-
-            \App\Filament\Widgets\ClientsMonthlyChart::class,
-            \App\Filament\Widgets\EmployeesByDepartmentDonut::class,
-
-
-            \App\Filament\Widgets\RequestsByStatusChart::class,
-            \App\Filament\Widgets\TasksCompletionDoughnut::class,
-
-            \App\Filament\Widgets\DepartmentWorkloadBar::class,
-
-
+//            \App\Filament\Widgets\RequestsPerMonthChart::class,
+//            \App\Filament\Widgets\ProjectsPerClientBar::class,
+//            \App\Filament\Widgets\ClientsMonthlyChart::class,
+//            \App\Filament\Widgets\EmployeesByDepartmentDonut::class,
+//            \App\Filament\Widgets\RequestsByStatusChart::class,
+//            \App\Filament\Widgets\TasksCompletionDoughnut::class,
+//            \App\Filament\Widgets\DepartmentWorkloadBar::class,
         ];
     }
 

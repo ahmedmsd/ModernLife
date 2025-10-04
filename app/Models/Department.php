@@ -48,22 +48,6 @@ class Department extends Model
         return $this->belongsTo(Employee::class, 'manager_employee_id');
     }
 
-    public function managerUser(): ?User
-    {
-        if ($this->relationLoaded('manager') && $this->manager) {
-            return $this->manager;
-        }
-        if (isset($this->manager_id) && $this->manager_id) {
-            return User::find($this->manager_id);
-        }
-        if ($this->relationLoaded('managerEmployee') && $this->managerEmployee?->user) {
-            return $this->managerEmployee->user;
-        }
-        if (isset($this->manager_employee_id) && $this->manager_employee_id) {
-            return optional(Employee::with('user')->find($this->manager_employee_id))->user;
-        }
-        return null;
-    }
 
     public function manager(): BelongsTo
     {

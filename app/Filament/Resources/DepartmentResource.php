@@ -12,7 +12,6 @@ use Filament\Tables\Table;
 use Filament\Resources\Resource;
 use Illuminate\Database\Eloquent\Builder;
 
-
 class DepartmentResource extends Resource
 {
     protected static ?string $model = Department::class;
@@ -21,6 +20,7 @@ class DepartmentResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-building-office';
     protected static ?string $modelLabel = 'قسم';
     protected static bool $shouldRegisterNavigation = false;
+
     public static function form(Form $form): Form
     {
         return $form
@@ -33,7 +33,6 @@ class DepartmentResource extends Resource
                 Forms\Components\TextInput::make('dept_code')
                     ->label('كود القسم')
                     ->maxLength(20),
-
 
                 Forms\Components\Select::make('dept_type')
                     ->label('نوع القسم')
@@ -49,39 +48,9 @@ class DepartmentResource extends Resource
                 Forms\Components\Select::make('manager_id')
                     ->label('مدير القسم')
                     ->searchable()
-                    ->preload() // احذفها لو عندك آلاف السجلات
-                    ->options(function () {
-                        $guard = config('auth.defaults.guard', 'web');
-
-                        return Employee::query()
-                            ->join('model_has_roles', function ($j) {
-                                $j->on('model_has_roles.model_id', '=', 'employees.employee_id')
-                                    ->where('model_has_roles.model_type', '=', \App\Models\Employee::class);
-                            })
-                            ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
-                            ->where('roles.name', 'department_manager')
-                            ->where('roles.guard_name', $guard)
-                            ->orderBy('employees.employee_name')
-                            ->pluck('employees.employee_name', 'employees.employee_id')
-                            ->all();
-                    })
-                    ->getSearchResultsUsing(function (string $term) {
-                        $guard = config('auth.defaults.guard', 'web');
-
-                        return Employee::query()
-                            ->join('model_has_roles', function ($j) {
-                                $j->on('model_has_roles.model_id', '=', 'employees.employee_id')
-                                    ->where('model_has_roles.model_type', '=', \App\Models\Employee::class);
-                            })
-                            ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
-                            ->where('roles.name', 'department_manager')
-                            ->where('roles.guard_name', $guard)
-                            ->where('employees.employee_name', 'like', "%{$term}%")
-                            ->orderBy('employees.employee_name')
-                            ->limit(50)
-                            ->pluck('employees.employee_name', 'employees.employee_id')
-                            ->all();
-                    })
+                    ->preload() // احذفها إن كان عدد الموظفين ضخمًا
+                    ->options(fn () => static::departmentManagerOptions())
+                    ->getSearchResultsUsing(fn (string $term) => static::departmentManagerOptions($term))
                     ->getOptionLabelUsing(fn ($value) =>
                         Employee::query()->where('employee_id', $value)->value('employee_name') ?? '—'
                     )
@@ -118,7 +87,6 @@ class DepartmentResource extends Resource
                 Tables\Columns\TextColumn::make('dept_name')->label('اسم القسم')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('dept_code')->label('الكود')->sortable(),
                 Tables\Columns\TextColumn::make('category.category_name')->label('نوع القسم')->sortable()->searchable(),
-
                 Tables\Columns\TextColumn::make('parentDepartment.dept_name')->label('القسم التابع له')->sortable(),
                 Tables\Columns\TextColumn::make('manager.employee_name')
                     ->label('مدير القسم')
@@ -155,9 +123,31 @@ class DepartmentResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListDepartments::route('/'),
+            'index'  => Pages\ListDepartments::route('/'),
             'create' => Pages\CreateDepartment::route('/create'),
-            'edit' => Pages\EditDepartment::route('/{record}/edit'),
+            'edit'   => Pages\EditDepartment::route('/{record}/edit'),
         ];
+    }
+
+
+    protected static function departmentManagerOptions(?string $term = null): array
+    {
+        $guard = config('auth.defaults.guard', 'web');
+
+        return \App\Models\Employee::query()
+            ->select('employees.employee_id', 'employees.employee_name')
+            ->join('users', 'users.id', '=', 'employees.user_id')
+            ->join('model_has_roles', function ($j) {
+                $j->on('model_has_roles.model_id', '=', 'users.id')
+                    ->where('model_has_roles.model_type', '=', \App\Models\User::class); // ← الأدوار على User
+            })
+            ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
+            ->where('roles.name', 'department_manager')
+            ->where('roles.guard_name', $guard)
+            ->when($term, fn ($q) => $q->where('employees.employee_name', 'like', '%' . $term . '%'))
+            ->orderBy('employees.employee_name')
+            ->distinct()
+            ->pluck('employees.employee_name', 'employees.employee_id')
+            ->all();
     }
 }

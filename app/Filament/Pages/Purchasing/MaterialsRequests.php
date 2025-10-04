@@ -326,7 +326,7 @@ class MaterialsRequests extends Page implements HasTable
                             $task = $record->task()->lockForUpdate()->first();
                             if ($task && ! in_array($task->status, ['completed','cancelled'])) {
                                 $dept            = $task->department;
-                                $departmentOwner = $dept?->manager_user_id ?? $dept?->head_user_id ?? null;
+                                $departmentOwner = $dept?->manager_id ?? $dept?->head_user_id ?? null;
 
                                 $this->updateTaskStateAndOwnership($task, [
                                     'status'             => 'materials_done',
@@ -382,7 +382,7 @@ class MaterialsRequests extends Page implements HasTable
                                 }
 
                                 $dept            = $task->department;
-                                $departmentOwner = $dept?->manager_user_id ?? $dept?->head_user_id ?? null;
+                                $departmentOwner = $dept?->manager_id ?? $dept?->head_user_id ?? null;
 
                                 $this->updateTaskStateAndOwnership($task, [
                                     'status'             => 'materials_done',

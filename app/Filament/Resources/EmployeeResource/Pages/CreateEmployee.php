@@ -5,6 +5,7 @@ namespace App\Filament\Resources\EmployeeResource\Pages;
 use App\Filament\Resources\EmployeeResource;
 use App\Models\User;
 use Filament\Resources\Pages\CreateRecord;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
@@ -16,24 +17,28 @@ class CreateEmployee extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        if (!empty($data['user'])) {
-            $userData = $data['user'];
+        $userData = $data['user'] ?? null;
 
-            $password = $userData['password'] ?? null;
+        if (! empty($userData)) {
+            // استخدم data_get بدلاً من $userData['password']
+            $plainPassword = data_get($userData, 'password');
 
-            if (filled($password) && ! Str::startsWith($password, ['$2y$', '$argon2'])) {
-                $password = Hash::make($password);
+            $password = $plainPassword;
+            if (filled($plainPassword) && ! Str::startsWith($plainPassword, ['$2y$', '$argon2'])) {
+                $password = Hash::make($plainPassword);
             }
 
+            /** @var \App\Models\User $user */
             $user = User::create([
-                'name'     => $data['employee_name'] ?? ($userData['email'] ?? 'User'),
-                'email'    => $userData['email'],
+                'name'     => $data['employee_name'] ?? (data_get($userData, 'email') ?? 'User'),
+                'email'    => data_get($userData, 'email'),
                 'password' => $password,
             ]);
 
             $data['user_id'] = $user->id;
         }
 
+        // هذه الحقول لا تُكتب في جدول employees
         unset($data['user'], $data['roles_ids'], $data['roles']);
 
         return $data;
@@ -42,41 +47,52 @@ class CreateEmployee extends CreateRecord
     protected function afterCreate(): void
     {
         $employee = $this->record;
+        $state    = $this->form->getRawState();
 
-        $state = $this->form->getRawState();
+        DB::transaction(function () use ($employee, $state) {
+            // تأكيد وجود مستخدم
+            if (! $employee->user && ! empty($state['user'])) {
+                $userData      = $state['user'];
+                $plainPassword = data_get($userData, 'password');
 
-        if (! $employee->user && ! empty($state['user'])) {
-            $userData = $state['user'];
+                $password = $plainPassword;
+                if (filled($plainPassword) && ! Str::startsWith($plainPassword, ['$2y$', '$argon2'])) {
+                    $password = Hash::make($plainPassword);
+                }
 
-            $password = $userData['password'] ?? null;
-            if (filled($password) && ! Str::startsWith($password, ['$2y$', '$argon2'])) {
-                $password = Hash::make($password);
+                $employee->user()->create([
+                    'name'     => $employee->employee_name ?? (data_get($userData, 'email') ?? 'User'),
+                    'email'    => data_get($userData, 'email'),
+                    'password' => $password,
+                ]);
+
+                $employee->refresh();
             }
 
-            $employee->user()->create([
-                'name'     => $employee->employee_name ?? ($userData['email'] ?? 'User'),
-                'email'    => $userData['email'],
-                'password' => $password,
-            ]);
-            $employee->refresh();
-        }
+            // مزامنة الأدوار على User فقط
+            if ($employee->user) {
+                $ids = (array) ($state['roles_ids'] ?? $state['roles'] ?? []);
+                $ids = array_values(array_filter(array_map('intval', $ids)));
 
-        if ($employee->user) {
-            $ids = $state['roles_ids'] ?? $state['roles'] ?? [];
-            $ids = array_values(array_filter(array_map('intval', (array) $ids)));
+                $guard = config('auth.defaults.guard', 'web');
 
-            $guard = config('auth.defaults.guard', 'web');
+                $roleNames = Role::query()
+                    ->where('guard_name', $guard)
+                    ->whereIn('id', $ids)
+                    ->pluck('name')
+                    ->all();
 
-            $roleNames = Role::query()
-                ->where('guard_name', $guard)
-                ->whereIn('id', $ids)
-                ->pluck('name')
-                ->all();
+                $employee->user->syncRoles($roleNames);
+            }
 
-            $employee->user->syncRoles($roleNames);
+            // تنظيف أي بقايا لأدوار على موديل Employee (بيانات قديمة)
+            DB::table(config('permission.table_names.model_has_roles', 'model_has_roles'))
+                ->where('model_type', \App\Models\Employee::class)
+                ->where('model_id', $employee->getKey())
+                ->delete();
 
             app(PermissionRegistrar::class)->forgetCachedPermissions();
-        }
+        });
     }
 
     protected function getRedirectUrl(): string

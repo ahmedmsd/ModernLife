@@ -10,7 +10,7 @@ class TasksCompletionDoughnut extends ChartWidget
     protected static ?string $heading = 'نسبة إنجاز المهام';
     protected static ?string $maxHeight = '320px';
     protected int|string|array $columnSpan = ['default' => 1, 'lg' => 1];
-    protected static ?int $sort = 8;
+    protected static ?int $sort = 80;
 
     // حالات الإنجاز
     protected array $doneStatuses = ['completed','done','closed','approved'];

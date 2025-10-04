@@ -74,25 +74,25 @@ class ViewProductionTimeline extends Page
     public function getHeaderActions(): array
     {
         return [
-            Action::make('update_status')
-                ->label('تحديث حالة الطلب')
-                ->icon('heroicon-o-arrow-path')
-                ->form([
-                    Select::make('status')
-                        ->label('الحالة')
-                        ->options(ProductionRequestStatus::options())
-                        ->default(fn () => (string) $this->record->status)
-                        ->required()
-                        ->reactive(),
-                    Textarea::make('note')
-                        ->label('ملاحظة')
-                        ->nullable()
-                        ->helperText('اختياري، سيُحفظ في الحقلين note و data.note'),
-                ])
-                ->action(function (array $data): void {
-                    $this->updateStatus($data['status'], $data['note'] ?? null);
-                    Notification::make()->title('تم تحديث الحالة بنجاح')->success()->send();
-                }),
+//            Action::make('update_status')
+//                ->label('تحديث حالة الطلب')
+//                ->icon('heroicon-o-arrow-path')
+//                ->form([
+//                    Select::make('status')
+//                        ->label('الحالة')
+//                        ->options(ProductionRequestStatus::options())
+//                        ->default(fn () => (string) $this->record->status)
+//                        ->required()
+//                        ->reactive(),
+//                    Textarea::make('note')
+//                        ->label('ملاحظة')
+//                        ->nullable()
+//                        ->helperText('اختياري، سيُحفظ في الحقلين note و data.note'),
+//                ])
+//                ->action(function (array $data): void {
+//                    $this->updateStatus($data['status'], $data['note'] ?? null);
+//                    Notification::make()->title('تم تحديث الحالة بنجاح')->success()->send();
+//                }),
 
             Action::make('confirmReceipt')
                 ->label('تأكيد استلامي')

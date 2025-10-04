@@ -12,7 +12,7 @@ class ClientsMonthlyChart extends ChartWidget
     protected static ?string $maxHeight = '320px'; // نفس القيمة في جميع الودجت
     protected int|string|array $columnSpan = ['default' => 1, 'lg' => 1];
 
-    protected static ?int $sort = 2;
+    protected static ?int $sort = 40;
     protected function getData(): array
     {
         $start = Carbon::now()->startOfMonth()->subMonths(11);

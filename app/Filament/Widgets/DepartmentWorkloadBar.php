@@ -10,7 +10,7 @@ class DepartmentWorkloadBar extends ChartWidget
     protected static ?string $heading = 'حجم الأعمال على الأقسام (عدد المهام)';
     protected static ?string $maxHeight = '320px';
     protected int|string|array $columnSpan = ['default' => 1, 'lg' => 1];
-    protected static ?int $sort = 3;
+    protected static ?int $sort = 30;
 
     protected function getData(): array
     {

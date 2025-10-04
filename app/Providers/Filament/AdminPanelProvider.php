@@ -60,8 +60,17 @@ class AdminPanelProvider extends PanelProvider
 
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
-                // Widgets\AccountWidget::class,
-                // Widgets\FilamentInfoWidget::class,
+                // \App\Filament\Widgets\Stats\MyStatsOverview::class,
+
+                \App\Filament\Widgets\Sales\SalesInProgressRequests::class,
+                \App\Filament\Widgets\Showroom\ShowroomManagerNeedsResponse::class,
+                \App\Filament\Widgets\Factory\FactoryManagerCurrentRequests::class,
+                \App\Filament\Widgets\Factory\FactoryManagerCurrentTasks::class,
+                \App\Filament\Widgets\Department\DepartmentManagerCurrentTasks::class,
+                \App\Filament\Widgets\Purchasing\PurchasingOpenMaterialsRequests::class,
+
+                // \App\Filament\Widgets\Charts\ProductionTrendsChart::class,
+                // \App\Filament\Widgets\Charts\TasksByDeptChart::class,
             ])
 
             ->middleware([
@@ -195,11 +204,7 @@ class AdminPanelProvider extends PanelProvider
 
                                 NavigationItem::make('إدارة الأدوار')
                                     ->url(\App\Filament\Resources\RoleResource::getUrl())
-                                    ->visible(fn () => \App\Filament\Resources\RoleResource::canViewAny()),
-
-                                NavigationItem::make('إدارة الصلاحيات')
-                                    ->url(\App\Filament\Resources\PermissionResource::getUrl())
-                                    ->visible(fn () => \App\Filament\Resources\PermissionResource::canViewAny()),
+                                    ->visible(fn () => \App\Filament\Resources\RoleResource::canViewAny())
                             ])
                     );
             });

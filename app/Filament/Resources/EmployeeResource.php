@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\EmployeeResource\Pages;
 use App\Models\Employee;
+use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
@@ -12,10 +13,10 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Filters\TrashedFilter;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
+use Spatie\Permission\Models\Role;
 
 // Table actions (SoftDeletes)
 use Filament\Tables\Actions\RestoreAction;
@@ -23,6 +24,15 @@ use Filament\Tables\Actions\ForceDeleteAction;
 use Filament\Tables\Actions\RestoreBulkAction;
 use Filament\Tables\Actions\ForceDeleteBulkAction;
 
+/**
+ * Resource لإدارة الموظفين مع ربط الأدوار على المستخدم المرتبط فقط.
+ *
+ * ملاحظات تصميم:
+ * - الأدوار تُحفظ على User حصراً (لا نستخدم HasRoles على Employee).
+ * - عند الحفظ: ننشئ/نحدّث user ثم نعمل syncRoles() على user.
+ * - نمسح أي بقايا قديمة في model_has_roles للموديل Employee (تنظيف حذر).
+ * - نفرّغ كاش الصلاحيات بعد كل عملية.
+ */
 class EmployeeResource extends Resource
 {
     protected static ?string $model = Employee::class;
@@ -32,37 +42,38 @@ class EmployeeResource extends Resource
     protected static ?string $pluralModelLabel = 'الموظفين';
     protected static ?string $recordTitleAttribute = 'employee_name';
     protected static bool $shouldRegisterNavigation = false;
+
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
+                // -- حساب الدخول (User) --
                 Forms\Components\Section::make('معلومات الحساب')
                     ->schema([
                         Forms\Components\TextInput::make('user.email')
                             ->label('البريد الإلكتروني (للدخول)')
                             ->email()
                             ->required()
-                            ->default(fn($record) => $record?->user?->email)
                             ->statePath('user.email')
+                            // عند التعديل: املأ القيمة من علاقة الـ User
+                            ->formatStateUsing(fn ($state, ?\App\Models\Employee $record) =>
+                                $state ?? ($record?->user?->email)
+                            )
                             ->unique(
                                 table: 'users',
                                 column: 'email',
-                                ignorable: fn($record) => $record?->user, // تجاهل مستخدم السجل الحالي
+                                ignorable: fn ($record) => $record?->user   // تجاهل مستخدم السجل الحالي
                             ),
 
                         Forms\Components\TextInput::make('user.password')
                             ->label('كلمة المرور')
                             ->password()
-                            ->required(fn(string $operation): bool => $operation === 'create')
-
-                            ->statePath('user.password')
-                            ->dehydrated(fn($state) => filled($state))
-                            ->dehydrateStateUsing(fn($state) => Hash::make($state))
-
-                            ->dehydrated(fn($state) => filled($state))
-
-                            ->autocomplete('new-password'),
-                    ])->columns(2),
+                            ->formatStateUsing(fn () => '')
+                            ->dehydrated(fn ($state) => filled($state))
+                            ->dehydrateStateUsing(fn ($state) => \Illuminate\Support\Facades\Hash::make($state))
+                            ->required(fn (string $operation) => $operation === 'create')
+                            ->autocomplete('new-password')
+                            ])->columns(2),
 
                 Forms\Components\Section::make('البيانات الأساسية للموظف')
                     ->schema([
@@ -130,15 +141,27 @@ class EmployeeResource extends Resource
                             ->label('حالة الحساب (نشط)'),
                     ])->columns(2),
 
+                // -- الأدوار (على User فقط) --
                 Forms\Components\Section::make('مجموعات المستخدمين والصلاحيات')
                     ->schema([
                         Select::make('roles_ids')
-                            ->label('الأدوار')
+                            ->label('الأدوار (تُطبّق على حساب المستخدم)')
                             ->multiple()
                             ->searchable()
                             ->preload()
-                            ->options(fn () => Role::where('guard_name', 'web')->pluck('name', 'id')->all())
-                            ->dehydrated(false), // لا تُحفظ مباشرة في employees
+                            ->options(fn () => Role::where('guard_name', 'web')
+                                ->orderBy('name')
+                                ->pluck('name', 'id')
+                                ->all()
+                            )
+                            ->afterStateHydrated(function (Select $component, $state, ?Employee $record) {
+                                $ids = $record?->user?->roles()
+                                    ->pluck('id')
+                                    ->all() ?? [];
+                                $component->state($ids);
+                            })
+                            ->dehydrated(false) // لا تُحفظ مباشرة على employees
+                            ->helperText('الأدوار تُسند إلى المستخدم المرتبط بالموظف.'),
                     ])->columns(1),
             ]);
     }
@@ -170,6 +193,7 @@ class EmployeeResource extends Resource
                     ->label('رقم الجوال')
                     ->searchable(),
 
+                // نعرض أدوار المستخدم المرتبط
                 Tables\Columns\TagsColumn::make('user.roles.name')
                     ->label('الأدوار'),
 
@@ -195,15 +219,11 @@ class EmployeeResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
-
                 Tables\Actions\EditAction::make(),
-
                 Tables\Actions\DeleteAction::make()
                     ->visible(fn (Employee $record) => is_null($record->deleted_at)),
-
                 RestoreAction::make()
                     ->visible(fn (Employee $record) => ! is_null($record->deleted_at)),
-
                 ForceDeleteAction::make()
                     ->visible(fn (Employee $record) => ! is_null($record->deleted_at)),
             ])
@@ -216,30 +236,6 @@ class EmployeeResource extends Resource
             ]);
     }
 
-
-    public static function afterSave($record, $data): void
-    {
-        if (isset($data['roles_ids'])) {
-            // ids -> names
-            $roleNames = Role::whereIn('id', (array) $data['roles_ids'])
-                ->pluck('name')
-                ->all();
-
-            $record->syncRoles($roleNames);
-        }
-
-        if (isset($data['user'])) {
-            $userData = $data['user'];
-
-            if ($record->user) {
-                $record->user->update($userData);
-            } else {
-                $user = \App\Models\User::create($userData);
-                $record->user()->associate($user)->save();
-            }
-        }
-    }
-
     public static function getPages(): array
     {
         return [
@@ -249,5 +245,50 @@ class EmployeeResource extends Resource
         ];
     }
 
+    /**
+     * Hook عام لاستدعائه من صفحات الـ Resource بعد الحفظ.
+     * - ينشئ/يحدّث User المرتبط.
+     * - يزامن الأدوار على User فقط.
+     * - ينظف أي بقايا أدوار قديمة على Employee (model_has_roles).
+     */
+    public static function syncUserAndRoles(Employee $record, array $data): void
+    {
+        DB::transaction(function () use ($record, $data) {
+            // 1) المستخدم (إنشاء/تحديث)
+            if (isset($data['user'])) {
+                $userData = $data['user'];
 
+                if ($record->user) {
+                    // تحديث المستخدم المرتبط
+                    $record->user->update(array_filter($userData));
+                } else {
+                    // إنشاء مستخدم جديد وربط الموظف به
+                    /** @var User $user */
+                    $user = User::create($userData);
+                    $record->user()->associate($user)->save();
+                }
+            }
+
+            // 2) مزامنة الأدوار على User فقط
+            if (isset($data['roles_ids'])) {
+                $roleNames = Role::where('guard_name', 'web')
+                    ->whereIn('id', (array) $data['roles_ids'])
+                    ->pluck('name')
+                    ->all();
+
+                if ($record->user) {
+                    $record->user->syncRoles($roleNames);
+                }
+            }
+
+            // 3) تنظيف بقايا الأدوار على Employee (اختياري لكن مفيد لبيانات قديمة)
+            DB::table(config('permission.table_names.model_has_roles', 'model_has_roles'))
+                ->where('model_type', Employee::class)
+                ->where('model_id', $record->getKey())
+                ->delete();
+
+            // 4) تصفير الكاش
+            app(PermissionRegistrar::class)->forgetCachedPermissions();
+        });
+    }
 }

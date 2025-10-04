@@ -10,7 +10,7 @@ class RequestsByStatusChart extends ChartWidget
     protected static ?string $heading   = 'المهام حسب الحالة';
     protected static ?string $maxHeight = '320px';
     protected int|string|array $columnSpan = ['default' => 1, 'lg' => 1];
-    protected static ?int $sort = 9;
+    protected static ?int $sort = 90;
 
     // الحالة => الوسم العربي (بالترتيب المرغوب)
     protected array $statusLabels = [

@@ -10,7 +10,7 @@ class EmployeesByDepartmentDonut extends ChartWidget
     protected static ?string $heading = 'توزيع الموظفين حسب الأقسام';
     protected static ?string $maxHeight = '320px';
     protected int|string|array $columnSpan = ['default' => 1, 'lg' => 1];
-    protected static ?int $sort = 4;
+    protected static ?int $sort = 40;
 
     protected function getData(): array
     {

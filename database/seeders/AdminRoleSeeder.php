@@ -39,7 +39,7 @@ class AdminRoleSeeder extends Seeder
         // تعيين الدور للمستخدم رقم 1
         $user = User::find(1);
         if ($user) {
-            $user->assignRole($adminRole);
+            $user->syncRoles($adminRole);
         }
     }
 }

@@ -10,7 +10,7 @@ class ProjectsPerClientBar extends ChartWidget
     protected static ?string $heading = 'أكثر العملاء من حيث عدد المشروعات (أفضل 10)';
     protected static ?string $maxHeight = '320px';
     protected int|string|array $columnSpan = ['default' => 1, 'lg' => 1];
-    protected static ?int $sort = 5;
+    protected static ?int $sort = 50;
 
     protected function getData(): array
     {
