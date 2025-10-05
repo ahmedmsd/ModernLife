@@ -58,24 +58,23 @@
 @endphp
 
 <x-filament::page>
-    {{-- شارات --}}
-    <div class="mb-4 flex flex-wrap items-center gap-2">
-        <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium text-white bg-{{ $phaseColor }}-600">
-            المرحلة: {{ $phaseLabel }}
-        </span>
-        <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium text-white bg-{{ $statusColor }}-600">
-            الحالة: {{ $statusLabel }}
-        </span>
-        <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium text-white bg-slate-600">
-            نوع الطلب: {{ $reqType }}
-        </span>
-        <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium text-white bg-gray-600">
-            المالك الحالي: {{ $ownerRole }}
-        </span>
+    <div class="mb-4 flex flex-wrap items-center gap-2" wire:key="badges-{{ $actionRefreshKey ?? 0 }}">
+    <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-{{ $phaseColor }}-600">
+        المرحلة: {{ $phaseLabel }}
+    </span>
+        <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-{{ $statusColor }}-600">
+        الحالة: {{ $statusLabel }}
+    </span>
+        <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-slate-600">
+        نوع الطلب: {{ $reqType }}
+    </span>
+        <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-gray-600">
+        المالك الحالي: {{ $ownerRole }}
+    </span>
     </div>
 
     {{-- معلومات أساسية --}}
-    <x-filament::section>
+    <x-filament::section wire:key="info-section-{{ $actionRefreshKey ?? 0 }}">
         <x-slot name="heading">معلومات الطلب</x-slot>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
             <div><span class="text-gray-500 dark:text-gray-400">رقم الطلب:</span> <span class="font-semibold">{{ $record->id }}</span></div>
@@ -113,7 +112,7 @@
     </x-filament::section>
 
     {{-- ملفات الطلب + ملف الاتفاقية في جدول واحد --}}
-    <x-filament::section class="mt-6">
+    <x-filament::section class="mt-6" wire:key="files-section-{{ $actionRefreshKey ?? 0 }}">
         <x-slot name="heading">الملفات</x-slot>
 
         @php
@@ -214,20 +213,6 @@
         </div>
     </x-filament::section>
 
-    @push('scripts')
-        <script>
-            document.addEventListener('livewire:init', () => {
-                Livewire.hook('morph.updated', ({ el, component }) => {
-                    // Close any open modals when component updates
-                    const modals = document.querySelectorAll('[x-data*="mountedActions"]');
-                    modals.forEach(modal => {
-                        if (modal.__x?.$data?.isOpen) {
-                            modal.__x.$data.isOpen = false;
-                        }
-                    });
-                });
-            });
-        </script>
-    @endpush
+    {{-- JavaScript removed - using full page reloads instead --}}
 
 </x-filament::page>

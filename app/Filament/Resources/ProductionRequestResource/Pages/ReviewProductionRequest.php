@@ -13,9 +13,10 @@ use Filament\Resources\Pages\Page;
 class ReviewProductionRequest extends Page
 {
     protected static string $resource = ProductionRequestResource::class;
-    protected static string $view = 'filament.resources.production-request-resource.pages.review-request';
-    protected static ?string $title = 'مراجعة طلب التصنيع';
+    protected static string $view     = 'filament.resources.production-request-resource.pages.review-request';
+    protected static ?string $title   = 'مراجعة طلب التصنيع';
 
+    /** @var ProductionRequest */
     public ProductionRequest $record;
 
     public function mount(ProductionRequest $record): void
@@ -28,12 +29,16 @@ class ReviewProductionRequest extends Page
         $rid = (string) $this->record->getKey();
         $actions = [];
 
-        // ==== 1) تأكيد الاستلام (pending للمالك الحالي) ====
+        // 1) تأكيد الاستلام
         $actions[] = Action::make('confirmReceiptAction')
             ->label('تأكيد استلامي')
             ->icon('heroicon-o-hand-thumb-up')
             ->modalHeading("تأكيد الاستلام — طلب #{$rid}")
-            ->extraAttributes(['wire:key' => "confirm-receipt-{$rid}"])
+            ->modalDescription('هل أنت متأكد من تأكيد استلام هذا الطلب؟')
+            ->requiresConfirmation()
+            ->modalSubmitActionLabel('تأكيد')
+            ->modalCancelActionLabel('إلغاء')
+            ->closeModalByClickingAway(false)
             ->visible(function () {
                 if (! auth()->check()) return false;
                 if ($this->record->project) return false;
@@ -48,20 +53,20 @@ class ReviewProductionRequest extends Page
             ->action(function () {
                 app(ProductionRequestWorkflow::class)->markReceived($this->record);
                 Notification::make()->success()->title('تم تأكيد الاستلام')->send();
-            })
-            ->after(function () {
-                $this->refreshRecord();
-                $this->dispatch('close-modal', id: 'filament.actions.modal');
-                $this->js('$wire.$refresh()');
+                $this->record->refresh()->load(['client', 'project', 'logs', 'productionRequestFiles', 'files']);
             });
 
-        // ==== 2) بدء مراجعة المعرض ====
+        // 2) بدء مراجعة المعرض
         $actions[] = Action::make('startShowroomReviewAction')
             ->label('بدء مراجعة المعرض')
             ->icon('heroicon-o-play-circle')
             ->color('info')
             ->modalHeading("بدء مراجعة المعرض — طلب #{$rid}")
-            ->extraAttributes(['wire:key' => "start-showroom-review-{$rid}"])
+            ->modalDescription('سيتم بدء عملية المراجعة للمعرض.')
+            ->requiresConfirmation()
+            ->modalSubmitActionLabel('بدء المراجعة')
+            ->modalCancelActionLabel('إلغاء')
+            ->closeModalByClickingAway(false)
             ->visible(fn () =>
                 auth()->check()
                 && auth()->user()->hasRole('showroom_manager')
@@ -73,44 +78,59 @@ class ReviewProductionRequest extends Page
                     $this->record, Phase::ShowroomReview, S::UnderReview, 'showroom_manager', false
                 );
                 Notification::make()->success()->title('تم بدء مراجعة المعرض')->send();
-                $this->refreshRecord();
-            })
-            ->after(fn () => [
-                $this->dispatch('close-modal', id: 'filament.actions.modal'),
-                $this->resetErrorBag(),
-                $this->resetValidation(),
-            ]);
+                $this->record->refresh()->load(['client', 'project', 'logs', 'productionRequestFiles', 'files']);
+            });
 
-        // ==== 3) تحديد تكاليف الملفات ====
+        // 3) تحديد تكاليف الملفات
         $actions[] = Action::make('setFilesCostsAction')
             ->label('تحديد تكاليف الملفات')
             ->icon('heroicon-o-currency-dollar')
             ->color('warning')
             ->modalHeading("تكاليف الملفات — طلب #{$rid}")
             ->modalWidth('3xl')
-            ->extraAttributes(['wire:key' => "set-files-costs-{$rid}"])
+            ->modalSubmitActionLabel('حفظ التكاليف')
+            ->modalCancelActionLabel('إلغاء')
+            ->closeModalByClickingAway(false)
             ->visible(fn () =>
                 auth()->check()
                 && auth()->user()->hasRole('showroom_manager')
                 && $this->record->current_phase === Phase::ShowroomReview->value
                 && $this->record->phase_status === S::UnderReview->value
             )
+            ->mountUsing(function () {
+                // إعادة تحميل البيانات في كل مرة
+                $this->record->refresh()->load(['files.department']);
+                return null;
+            })
             ->form(function () {
                 $schema = [];
+                // إعادة تحميل الملفات في كل مرة
                 $files = $this->record->files()->with('department')->get();
+
                 foreach ($files as $f) {
-                    $schema[] = \Filament\Forms\Components\Fieldset::make("ملف: " . ($f->file_name ?? basename($f->file_path)))
+                    $schema[] = \Filament\Forms\Components\Fieldset::make("file_fieldset_{$f->id}")
+                        ->label("ملف: " . ($f->file_name ?? basename($f->file_path)))
                         ->schema([
                             \Filament\Forms\Components\TextInput::make("cost_{$f->id}")
-                                ->label('التكلفة التقديرية')->numeric()->minValue(0)->prefix('SAR')
-                                ->default($f->estimated_cost)->required(),
+                                ->label('التكلفة التقديرية')
+                                ->numeric()
+                                ->minValue(0)
+                                ->prefix('SAR')
+                                ->default($f->estimated_cost)
+                                ->required()
+                                ->key("cost_{$f->id}_" . time()), // مفتاح فريد لكل مرة
                             \Filament\Forms\Components\Placeholder::make("dept_{$f->id}")
-                                ->label('القسم')->content($f->department->dept_name ?? '—'),
+                                ->label('القسم')
+                                ->content($f->department->dept_name ?? '—'),
                         ])->columns(2);
                 }
-                return $schema ?: [\Filament\Forms\Components\Placeholder::make('no_files')->content('لا توجد ملفات.')];
+
+                return $schema ?: [
+                    \Filament\Forms\Components\Placeholder::make('no_files')->content('لا توجد ملفات.')
+                ];
             })
             ->action(function (array $data) {
+                $this->record->refresh()->load(['files']);
                 foreach ($this->record->files as $f) {
                     $k = "cost_{$f->id}";
                     if (array_key_exists($k, $data)) {
@@ -118,21 +138,20 @@ class ReviewProductionRequest extends Page
                     }
                 }
                 Notification::make()->success()->title('تم حفظ تكاليف الملفات')->send();
-                $this->refreshRecord();
-            })
-            ->after(fn () => [
-                $this->dispatch('close-modal', id: 'filament.actions.modal'),
-                $this->resetErrorBag(),
-                $this->resetValidation(),
-            ]);
+                $this->record->refresh()->load(['client', 'project', 'logs', 'productionRequestFiles', 'files']);
+            });
 
-        // ==== 4) اعتماد المعرض والإرسال للمصنع ====
+        // 4) اعتماد المعرض → إرسال للمصنع
         $actions[] = Action::make('approveShowroomAndSendAction')
             ->label('اعتماد وإرسال للمصنع')
             ->icon('heroicon-o-paper-airplane')
             ->color('success')
             ->modalHeading("اعتماد المعرض — طلب #{$rid}")
-            ->extraAttributes(['wire:key' => "approve-showroom-send-{$rid}"])
+            ->modalDescription('سيتم اعتماد المراجعة وإرسال الطلب للمصنع.')
+            ->requiresConfirmation()
+            ->modalSubmitActionLabel('اعتماد وإرسال')
+            ->modalCancelActionLabel('إلغاء')
+            ->closeModalByClickingAway(false)
             ->visible(fn () =>
                 auth()->check()
                 && auth()->user()->hasRole('showroom_manager')
@@ -143,32 +162,38 @@ class ReviewProductionRequest extends Page
                 if ($this->record->request_type === 'indirect') {
                     $missing = $this->record->files()->whereNull('estimated_cost')->count();
                     if ($missing > 0) {
-                        Notification::make()->danger()
-                            ->title('غير مكتمل')->body("حدد تكلفة جميع الملفات. ناقص: {$missing}")->send();
-                        return;
+                        Notification::make()
+                            ->danger()
+                            ->title('غير مكتمل')
+                            ->body("حدد تكلفة جميع الملفات. ناقص: {$missing}")
+                            ->send();
+                        $this->halt();
                     }
                 }
+
                 app(ProductionRequestWorkflow::class)->move(
                     $this->record, Phase::FactoryIntake, S::Pending, 'factory_manager', true
                 );
-                Notification::make()->success()->title('تم الإرسال للمصنع')->send();
-                $this->refreshRecord();
-            })
-            ->after(fn () => [
-                $this->dispatch('close-modal', id: 'filament.actions.modal'),
-                $this->resetErrorBag(),
-                $this->resetValidation(),
-            ]);
 
-        // ==== 5) رفض من المعرض ====
+                Notification::make()->success()->title('تم الإرسال للمصنع')->send();
+                $this->record->refresh()->load(['client', 'project', 'logs', 'productionRequestFiles', 'files']);
+            });
+
+        // 5) رفض من المعرض
         $actions[] = Action::make('rejectByShowroomAction')
             ->label('رفض')
-            ->icon('heroicon-o-x-circle')->color('danger')
+            ->icon('heroicon-o-x-circle')
+            ->color('danger')
             ->modalHeading("رفض الطلب — #{$rid}")
-            ->extraAttributes(['wire:key' => "reject-showroom-{$rid}"])
+            ->modalSubmitActionLabel('رفض الطلب')
+            ->modalCancelActionLabel('إلغاء')
+            ->closeModalByClickingAway(false)
             ->form([
                 \Filament\Forms\Components\Textarea::make('reason_showroom')
-                    ->label('سبب الرفض')->required()->rows(3),
+                    ->label('سبب الرفض')
+                    ->required()
+                    ->rows(3)
+                    ->key('reason_showroom_' . time()), // مفتاح فريد
             ])
             ->visible(fn () =>
                 auth()->check()
@@ -180,20 +205,20 @@ class ReviewProductionRequest extends Page
                 $reason = $data['reason_showroom'] ?? null;
                 app(ProductionRequestWorkflow::class)->reject($this->record, $reason);
                 Notification::make()->warning()->title('تم الرفض')->send();
-                $this->refreshRecord();
-            })
-            ->after(fn () => [
-                $this->dispatch('close-modal', id: 'filament.actions.modal'),
-                $this->resetErrorBag(),
-                $this->resetValidation(),
-            ]);
+                $this->record->refresh()->load(['client', 'project', 'logs', 'productionRequestFiles', 'files']);
+            });
 
-        // ==== 6) بدء مراجعة المصنع ====
+        // 6) بدء مراجعة المصنع
         $actions[] = Action::make('startFactoryReviewAction')
             ->label('بدء مراجعة المصنع')
-            ->icon('heroicon-o-play-circle')->color('info')
+            ->icon('heroicon-o-play-circle')
+            ->color('info')
             ->modalHeading("بدء مراجعة المصنع — طلب #{$rid}")
-            ->extraAttributes(['wire:key' => "start-factory-review-{$rid}"])
+            ->modalDescription('سيتم بدء عملية المراجعة للمصنع.')
+            ->requiresConfirmation()
+            ->modalSubmitActionLabel('بدء المراجعة')
+            ->modalCancelActionLabel('إلغاء')
+            ->closeModalByClickingAway(false)
             ->visible(fn () =>
                 auth()->check()
                 && auth()->user()->hasRole('factory_manager')
@@ -205,21 +230,20 @@ class ReviewProductionRequest extends Page
                     $this->record, Phase::FactoryIntake, S::UnderReview, 'factory_manager', false
                 );
                 Notification::make()->success()->title('تم بدء مراجعة المصنع')->send();
-                $this->refreshRecord();
-            })
-            ->after(fn () => [
-                $this->dispatch('close-modal', id: 'filament.actions.modal'),
-                $this->resetErrorBag(),
-                $this->resetValidation(),
-            ]);
+                $this->record->refresh()->load(['client', 'project', 'logs', 'productionRequestFiles', 'files']);
+            });
 
-        // ==== 7) اعتماد المصنع وإنشاء المشروع ====
+        // 7) اعتماد المصنع (إنشاء مشروع ومهام)
         $actions[] = Action::make('approveFactoryAction')
             ->label('اعتماد وإنشاء project & tasks')
-            ->icon('heroicon-o-check-circle')->color('primary')
-            ->requiresConfirmation()
+            ->icon('heroicon-o-check-circle')
+            ->color('primary')
             ->modalHeading("اعتماد المصنع — طلب #{$rid}")
-            ->extraAttributes(['wire:key' => "approve-factory-{$rid}"])
+            ->modalDescription('سيتم إنشاء المشروع والمهام المرتبطة.')
+            ->requiresConfirmation()
+            ->modalSubmitActionLabel('اعتماد وإنشاء')
+            ->modalCancelActionLabel('إلغاء')
+            ->closeModalByClickingAway(false)
             ->visible(fn () =>
                 auth()->check()
                 && auth()->user()->hasRole('factory_manager')
@@ -229,29 +253,35 @@ class ReviewProductionRequest extends Page
             ->action(function () {
                 $missing = $this->record->files()->whereNull('estimated_cost')->count();
                 if ($missing > 0) {
-                    Notification::make()->danger()
-                        ->title('لا يمكن الإنشاء')->body("يوجد {$missing} ملف بدون تكلفة.")->send();
-                    return;
+                    Notification::make()
+                        ->danger()
+                        ->title('لا يمكن الإنشاء')
+                        ->body("يوجد {$missing} ملف بدون تكلفة.")
+                        ->send();
+                    $this->halt();
                 }
-                app(ProductionRequestWorkflow::class)->approve($this->record);
-                Notification::make()->success()->title('تم إنشاء المشروع والمهام')->send();
-                $this->refreshRecord();
-            })
-            ->after(fn () => [
-                $this->dispatch('close-modal', id: 'filament.actions.modal'),
-                $this->resetErrorBag(),
-                $this->resetValidation(),
-            ]);
 
-        // ==== 8) رفض المصنع ====
+                app(ProductionRequestWorkflow::class)->approve($this->record);
+
+                Notification::make()->success()->title('تم إنشاء المشروع والمهام')->send();
+                $this->record->refresh()->load(['client', 'project', 'logs', 'productionRequestFiles', 'files']);
+            });
+
+        // 8) رفض المصنع
         $actions[] = Action::make('rejectByFactoryAction')
             ->label('رفض')
-            ->icon('heroicon-o-x-circle')->color('danger')
+            ->icon('heroicon-o-x-circle')
+            ->color('danger')
             ->modalHeading("رفض الطلب — #{$rid}")
-            ->extraAttributes(['wire:key' => "reject-factory-{$rid}"])
+            ->modalSubmitActionLabel('رفض الطلب')
+            ->modalCancelActionLabel('إلغاء')
+            ->closeModalByClickingAway(false)
             ->form([
                 \Filament\Forms\Components\Textarea::make('reason_factory')
-                    ->label('سبب الرفض')->required()->rows(3),
+                    ->label('سبب الرفض')
+                    ->required()
+                    ->rows(3)
+                    ->key('reason_factory_' . time()), // مفتاح فريد
             ])
             ->visible(fn () =>
                 auth()->check()
@@ -263,19 +293,9 @@ class ReviewProductionRequest extends Page
                 $reason = $data['reason_factory'] ?? null;
                 app(ProductionRequestWorkflow::class)->reject($this->record, $reason);
                 Notification::make()->warning()->title('تم الرفض')->send();
-                $this->refreshRecord();
-            })
-            ->after(fn () => [
-                $this->dispatch('close-modal', id: 'filament.actions.modal'),
-                $this->resetErrorBag(),
-                $this->resetValidation(),
-            ]);
+                $this->record->refresh()->load(['client', 'project', 'logs', 'productionRequestFiles', 'files']);
+            });
 
         return $actions;
-    }
-
-    private function refreshRecord(): void
-    {
-        $this->record->refresh()->load(['client', 'project', 'logs', 'productionRequestFiles', 'files']);
     }
 }

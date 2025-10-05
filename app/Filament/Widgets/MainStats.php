@@ -23,8 +23,9 @@ class MainStats extends BaseWidget
         $u   = auth()->user();
         $uid = $u?->id;
 
-        $terminalReqStatuses = ['completed','cancelled','rejected','approved_final'];
-        $activeTaskStatuses  = ['pending','in_progress','materials_prep','materials_done','waiting_production','under_review'];
+        $terminalReqStatuses = ['completed','cancelled','rejected','approved_final','on_hold'];
+        $activeTaskStatuses  = ['pending','assigned','received','under_review','approved','rejected',
+            'in_progress','materials_wait','materials_prep','materials_done','waiting_production'];
 
         $stats = [];
 

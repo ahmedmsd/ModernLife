@@ -20,27 +20,32 @@ class ProductionRequestWorkflow
         $type = $pr->request_type ?? RequestType::Direct->value;
 
         if ($type === RequestType::Direct->value) {
-            return $this->move($pr, Phase::FactoryIntake, S::Pending, 'factory_manager', true);
+            return $this->move($pr, Phase::FactoryIntake, S::Pending, 'factory_manager', null, true);
         }
 
-        return $this->move($pr, Phase::ShowroomReview, S::Pending, 'showroom_manager', true);
+        return $this->move($pr, Phase::ShowroomReview, S::Pending, 'showroom_manager', null, true);
     }
 
+    /**
+     * نقل عام مع إمكانية تثبيت مالك مستخدم محدد.
+     */
     public function move(
         ProductionRequest $pr,
         Phase $toPhase,
         S $toStatus,
         ?string $ownerRole = null,
+        ?int $ownerUserId = null,
         bool $touchSent = false
     ): ProductionRequest {
-        return DB::transaction(function () use ($pr, $toPhase, $toStatus, $ownerRole, $touchSent) {
+        return DB::transaction(function () use ($pr, $toPhase, $toStatus, $ownerRole, $ownerUserId, $touchSent) {
             $role = $ownerRole ?? $this->defaultOwnerRole($toPhase);
 
             $noChange =
                 $pr->current_phase      === $toPhase->value &&
                 $pr->phase_status       === $toStatus->value &&
                 $pr->current_owner_role === $role &&
-                ! $touchSent;
+                ! $touchSent &&
+                ($ownerUserId === null); // لا نتجاهل الحركة إذا طلبنا تثبيت مستخدم جديد
 
             if ($noChange) {
                 return $pr->refresh();
@@ -56,14 +61,18 @@ class ProductionRequestWorkflow
             $pr->phase_status        = $toStatus->value;
             $pr->current_owner_role  = $role;
 
-            $pr->current_owner_user_id = $this->resolveOwnerUserId($pr, $role);
+            // إن تم تمرير مالك مستخدم صريح نستخدمه، وإلا نستنتجه من الدور/العلاقات
+            if ($ownerUserId !== null) {
+                $pr->current_owner_user_id = $ownerUserId;
+            } else {
+                $pr->current_owner_user_id = $this->resolveOwnerUserId($pr, $role);
+            }
 
             if ($touchSent) {
                 $pr->sent_to_owner_at     = now();
                 $pr->received_by_owner_at = null;
             }
 
-            // حفظ عادي لتفعيل Observers/Events
             $pr->save();
 
             $noteText = sprintf(
@@ -83,7 +92,7 @@ class ProductionRequestWorkflow
                         'phase'        => $from['phase'],
                         'status'       => $from['status'],
                         'owner'        => $from['owner'],
-                        'actor_name' => optional(\Illuminate\Support\Facades\Auth::user())->name,
+                        'actor_name'   => optional(Auth::user())->name,
                         'phase_label'  => $this->phaseLabel((string)($from['phase'] ?? '')),
                         'status_label' => $this->statusLabel((string)($from['status'] ?? '')),
                         'owner_label'  => $this->roleLabel((string)($from['owner'] ?? '')),
@@ -96,17 +105,20 @@ class ProductionRequestWorkflow
                     ],
                     'owner_role'       => $role,
                     'owner_role_label' => $this->roleLabel($role),
+                    'owner_user_id'    => $pr->current_owner_user_id,
                 ],
                 'note'        => $noteText,
                 'happened_at' => now(),
             ]);
+
             event(new \App\Events\ProductionRequestPhaseEvent(
                 type: 'transition',
-                pr: $pr->fresh(),     // أرسل نسخة محدّثة
+                pr: $pr->fresh(),
                 context: [
                     'from'        => $from,
                     'to'          => ['phase' => $toPhase->value, 'status' => $toStatus->value],
                     'owner_role'  => $role,
+                    'owner_user_id' => $pr->current_owner_user_id,
                     'touch_sent'  => $touchSent,
                 ],
             ));
@@ -124,9 +136,7 @@ class ProductionRequestWorkflow
 
         $pr->phase_status         = S::Received->value;
         $pr->received_by_owner_at = now();
-
         $pr->current_owner_user_id = Auth::id();
-
         $pr->save();
 
         $waitSeconds = ($sentAt) ? $sentAt->diffInSeconds(now()) : null;
@@ -141,12 +151,13 @@ class ProductionRequestWorkflow
                 'from_label'    => $this->statusLabel((string)$fromStatus),
                 'to_status'     => S::Received->value,
                 'to_label'      => $this->statusLabel(S::Received->value),
-                'actor_name' => optional(\Illuminate\Support\Facades\Auth::user())->name,
+                'actor_name'    => optional(Auth::user())->name,
                 'wait_seconds'  => $waitSeconds,
             ],
             'note'        => 'تم تأكيد الاستلام في مرحلة '.$this->phaseLabel((string)$pr->current_phase),
             'happened_at' => now(),
         ]);
+
         event(new \App\Events\ProductionRequestPhaseEvent(
             type: 'received',
             pr: $pr->fresh(),
@@ -165,15 +176,15 @@ class ProductionRequestWorkflow
     {
         $currentPhase = Phase::tryFrom($pr->current_phase) ?? Phase::FactoryIntake;
 
-        $pr = $this->move($pr, $currentPhase, S::Approved, $pr->current_owner_role, false);
+        $pr = $this->move($pr, $currentPhase, S::Approved, $pr->current_owner_role, null, false);
 
         if ($currentPhase === Phase::ShowroomReview) {
-            return $this->move($pr, Phase::FactoryIntake, S::Pending, 'factory_manager', true);
+            return $this->move($pr, Phase::FactoryIntake, S::Pending, 'factory_manager', null, true);
         }
 
         if ($currentPhase === Phase::FactoryIntake) {
             $this->bootstrapProjectFromRequest($pr);
-            return $this->move($pr, Phase::DepartmentAssignment, S::Pending, 'factory_manager', true);
+            return $this->move($pr, Phase::DepartmentAssignment, S::Pending, 'factory_manager', null, true);
         }
 
         return $pr;
@@ -181,37 +192,88 @@ class ProductionRequestWorkflow
 
     public function reject(ProductionRequest $pr, ?string $reason = null): ProductionRequest
     {
+        // لو كان الرفض من مدير المصنع، نفّذ مسار factoryReject الكامل (تغيير المرحلة + المالك + sent_at)
+        if (($pr->current_phase ?? null) === \App\Enums\ProductionRequestPhase::FactoryIntake->value) {
+            return $this->factoryReject($pr, $reason);
+        }
+
+        // خلاف ذلك (رفض في أي مرحلة أخرى): نحفظ الرفض مع بقية البيانات كما كان
         $fromStatus = $pr->phase_status;
 
-        $pr->phase_status = S::Rejected->value;
+        $pr->phase_status = \App\Enums\PhaseStatus::Rejected->value;
         $pr->save();
 
-        $baseNote = 'تم رفض الطلب في مرحلة '.$this->phaseLabel((string)$pr->current_phase);
+        $baseNote = 'تم رفض الطلب في مرحلة ' . $this->phaseLabel((string) $pr->current_phase);
         $noteText = $reason ? "{$baseNote} — السبب: {$reason}" : $baseNote;
 
         $pr->logs()->create([
-            'causer_id'   => Auth::id(),
+            'causer_id'   => \Illuminate\Support\Facades\Auth::id(),
             'type'        => 'rejected',
             'data'        => [
                 'phase'        => $pr->current_phase,
-                'phase_label'  => $this->phaseLabel((string)$pr->current_phase),
+                'phase_label'  => $this->phaseLabel((string) $pr->current_phase),
                 'from_status'  => $fromStatus,
-                'from_label'   => $this->statusLabel((string)$fromStatus),
-                'to_status'    => S::Rejected->value,
-                'actor_name' => optional(\Illuminate\Support\Facades\Auth::user())->name,
-                'to_label'     => $this->statusLabel(S::Rejected->value),
+                'from_label'   => $this->statusLabel((string) $fromStatus),
+                'to_status'    => \App\Enums\PhaseStatus::Rejected->value,
+                'actor_name'   => optional(\Illuminate\Support\Facades\Auth::user())->name,
+                'to_label'     => $this->statusLabel(\App\Enums\PhaseStatus::Rejected->value),
             ],
             'note'        => $noteText,
             'happened_at' => now(),
         ]);
+
         event(new \App\Events\ProductionRequestPhaseEvent(
             type: 'rejected',
             pr: $pr->fresh(),
             context: [
                 'phase'       => $pr->current_phase,
                 'from_status' => $fromStatus,
-                'to_status'   => S::Rejected->value,
+                'to_status'   => \App\Enums\PhaseStatus::Rejected->value,
                 'reason'      => $reason,
+            ],
+        ));
+
+        return $pr->refresh();
+    }
+
+    public function factoryReject(ProductionRequest $pr, ?string $reason = null): ProductionRequest
+    {
+        if ($pr->current_phase !== Phase::FactoryIntake->value) {
+            throw new \LogicException('Cannot factoryReject() unless current phase is FactoryIntake.');
+        }
+
+        $isDirect = ($pr->request_type ?? RequestType::Direct->value) === RequestType::Direct->value;
+
+        $toPhase   = $isDirect ? Phase::SalesIntake     : Phase::ShowroomReview;
+        $ownerRole = $isDirect ? 'sales_manager'        : 'showroom_manager';
+        $ownerUser = $this->resolveReturnOwnerUserId($pr, $isDirect); // << النقطة الأهم
+
+        // نثبت حالة Pending لبدء إعادة المراجعة عند الجهة المستهدفة
+        $pr = $this->move($pr, $toPhase, S::Pending, $ownerRole, $ownerUser, true);
+
+        // لوج واضح لرفض المصنع
+        $pr->logs()->create([
+            'causer_id'   => Auth::id(),
+            'type'        => 'factory_rejected',
+            'data'        => [
+                'from_phase'     => Phase::FactoryIntake->value,
+                'to_phase'       => $toPhase->value,
+                'owner_role'     => $ownerRole,
+                'owner_user_id'  => $ownerUser,
+                'reason'         => $reason,
+            ],
+            'note'        => 'رفض مدير المصنع الطلب وإعادته إلى '.($isDirect ? 'المبيعات' : 'مدير المعرض'),
+            'happened_at' => now(),
+        ]);
+
+        event(new \App\Events\ProductionRequestPhaseEvent(
+            type: 'factory_rejected',
+            pr: $pr->fresh(),
+            context: [
+                'to_phase'      => $toPhase->value,
+                'owner_role'    => $ownerRole,
+                'owner_user_id' => $ownerUser,
+                'reason'        => $reason,
             ],
         ));
 
@@ -238,7 +300,7 @@ class ProductionRequestWorkflow
 
         return DB::transaction(function () use ($pr, $toPhase, $owner, $from, $note) {
             $pr->current_phase          = $toPhase->value;
-            $pr->phase_status           = S::Pending->value;      // مثال: 'pending'
+            $pr->phase_status           = S::Pending->value;
             $pr->current_owner_role     = $owner;
             $pr->current_owner_user_id  = $this->resolveOwnerUserId($pr, $owner);
             $pr->sent_to_owner_at       = now();
@@ -267,11 +329,11 @@ class ProductionRequestWorkflow
                         'owner_label'  => $this->roleLabel($owner),
                     ],
                     'owner_role'       => $owner,
-                    'actor_name'       => optional(\Illuminate\Support\Facades\Auth::user())->name,
+                    'actor_name'       => optional(Auth::user())->name,
                     'owner_role_label' => $this->roleLabel($owner),
                 ],
                 'note'        => $note ?? $defaultNote,
-                'causer_id'   => \Illuminate\Support\Facades\Auth::id(),
+                'causer_id'   => Auth::id(),
                 'happened_at' => now(),
             ]);
 
@@ -335,7 +397,6 @@ class ProductionRequestWorkflow
                     ]
                 );
 
-                // إخطار مدير القسم (User) إن وُجد
                 $dept = $task->department()->with(['manager.user', 'managerEmployee.user'])->first();
                 $notifyUser = $dept?->manager?->user ?? $dept?->managerEmployee?->user;
 
@@ -361,15 +422,14 @@ class ProductionRequestWorkflow
                 'causer_id'   => Auth::id(),
                 'happened_at' => now(),
             ]);
+
             event(new \App\Events\ProductionRequestPhaseEvent(
                 type: 'project_bootstrap',
                 pr: $pr->fresh(),
                 context: [
                     'project_id' => $project->id,
-                    // ممكن تضيف عدّادات الملفات/المهام لو تحب
                 ],
             ));
-
         });
     }
 
@@ -406,11 +466,15 @@ class ProductionRequestWorkflow
             Phase::Installation             => 'installation_manager',
             Phase::QualityAfterInstallation => 'quality_manager',
             Phase::Closed                   => null,
+            // ملاحظة: SalesIntake ليس له دور افتراضي هنا لأننا نحدده صراحة عند الرفض المباشر
         };
     }
 
     /* ======================= Helpers ======================= */
 
+    /**
+     * للمسارات العامة حسب الدور/العلاقات.
+     */
     protected function resolveOwnerUserId(ProductionRequest $pr, ?string $role): ?int
     {
         if (! $role) {
@@ -424,6 +488,7 @@ class ProductionRequestWorkflow
             'department_manager'    => null,
             'quality_manager'       => null,
             'installation_manager'  => null,
+            'sales_manager'         => null, // لا علاقة مباشرة هنا عادة
             default                 => null,
         };
 
@@ -431,16 +496,69 @@ class ProductionRequestWorkflow
             return $byRelation;
         }
 
+        // البحث عبر الأدوار
         return match ($role) {
             'factory_manager'       => User::role('factory_manager')->value('id'),
             'purchasing_manager'    => User::role('purchasing_manager')->value('id'),
             'quality_manager'       => User::role('quality_manager')->value('id'),
             'installation_manager'  => User::role('installation_manager')->value('id'),
             'showroom_manager'      => User::role('showroom_manager')->value('id'),
+            'sales_manager'         => User::role('sales_manager')->value('id'),
             default                 => null,
         };
     }
 
+    /**
+     * تحديد المستخدم المستلم عند رفض المصنع:
+     * - مباشر: منشئ/مقدّم الطلب.
+     * - غير مباشر: آخر showroom_manager مرّر الطلب للمصنع.
+     */
+    protected function resolveReturnOwnerUserId(ProductionRequest $pr, bool $isDirect): ?int
+    {
+        if ($isDirect) {
+            // أفضلية: أعمدة صريحة
+            if (!empty($pr->created_by))   return (int) $pr->created_by;
+            if (!empty($pr->submitted_by)) return (int) $pr->submitted_by;
+
+            // استنباط من لوج الإنشاء
+            $created = $pr->logs()
+                ->where('type', 'created')
+                ->orderByDesc('happened_at')
+                ->first();
+            if ($created && $created->causer_id) {
+                return (int) $created->causer_id;
+            }
+
+            return null;
+        }
+
+        // غير مباشر: نبحث عن آخر انتقال إلى FactoryIntake كان صاحبه showroom_manager
+        $logs = $pr->logs()
+            ->orderByDesc('happened_at')
+            ->limit(50)
+            ->get();
+
+        foreach ($logs as $log) {
+            $data = $log->data ?? [];
+            $ownerRole = data_get($data, 'owner_role');
+            $toPhase   = data_get($data, 'to.phase') ?? data_get($data, 'to_phase');
+            $fromPhase = data_get($data, 'from.phase') ?? data_get($data, 'from_phase');
+
+            $wentToFactory = ($toPhase === Phase::FactoryIntake->value)
+                || ($fromPhase === Phase::ShowroomReview->value);
+
+            if ($ownerRole === 'showroom_manager' && $wentToFactory) {
+                return $log->causer_id ?: null;
+            }
+        }
+
+        // fallback لو خزّنت آخر مدير معرض تعامل مع الطلب
+        if (!empty($pr->last_showroom_manager_id)) {
+            return (int) $pr->last_showroom_manager_id;
+        }
+
+        return null;
+    }
 
     private function phaseLabel(string $phase): string
     {
@@ -489,7 +607,8 @@ class ProductionRequestWorkflow
             'quality_manager'       => 'مدير الجودة',
             'installation_manager'  => 'مدير التركيب',
             'manufacturing_manager' => 'مدير التصنيع',
-            'sales'                 => ' المبيعات',
+            'sales_manager'         => 'مدير المبيعات',
+            'sales'                 => 'المبيعات',
             default                 => $role,
         };
     }

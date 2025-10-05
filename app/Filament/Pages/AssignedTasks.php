@@ -109,9 +109,6 @@ class AssignedTasks extends Page implements HasTable
                     ->icon('heroicon-m-eye')
                     ->url(fn($record) => route('filament.admin.resources.tasks.view', $record)),
 
-                Action::make('open_project')->label('فتح المشروع')->icon('heroicon-o-arrow-top-right-on-square')
-                    ->url(fn (ProductionTask $r) => url("/admin/projects/{$r->project_id}/manage-tasks"))
-                    ->openUrlInNewTab(),
             ])
             ->emptyStateHeading('لا توجد مهام مسندة حالياً')
             ->emptyStateDescription('عند إسناد مهام جديدة ستظهر هنا.');

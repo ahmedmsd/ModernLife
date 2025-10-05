@@ -2,16 +2,15 @@
 
 namespace App\Observers;
 
-use App\Models\ProductionTask;
 use App\Models\Employee;
+use App\Models\ProductionTask;
 use App\Notifications\TaskAssignedInAppNotification;
 use App\Notifications\TaskAssignedNotification;
-use App\Services\TaskTimerService;
-use App\Support\Notify;
+use App\Services\Tasks\TaskTimerService;
+use Filament\Notifications\Actions\Action as FAction;
+use Filament\Notifications\Notification as FNotification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
-use Filament\Notifications\Notification as FNotification;
-use Filament\Notifications\Actions\Action as FAction;
 
 class ProductionTaskObserver
 {

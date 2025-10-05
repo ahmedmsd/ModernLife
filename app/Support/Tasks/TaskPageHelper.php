@@ -152,15 +152,16 @@ class TaskPageHelper
         $mr = $t->materialRequests()->whereNull('provided_at')->latest()->first();
         return $mr && ($mr->status === 'requested' || $mr->status === null);
     }
-
     public function canMaterialsProvided(ProductionTask $t, ?Authenticatable $u): bool
     {
-        if (!$this->userHasAnyRole($u, ['purchasing_manager','admin','super-admin'])) return false;
-        if ($this->statusVal($t) !== 'materials_prep') return false;
-        if (!$this->ownerIs($t, 'purchasing_manager')) return false;
+        if (! $this->userHasAnyRole($u, ['purchasing_manager','admin','super-admin'])) return false;
+        if ($this->statusVal($t) !== 'materials_wait') return false;
+        if (! $this->ownerIs($t, 'purchasing_manager')) return false;
 
-        $mr = $t->materialRequests()->whereNull('provided_at')->latest()->first();
-        return $mr && $mr->status === 'approved';
+        return $t->materialRequests()
+            ->whereNull('provided_at')
+            ->where('status', 'approved')
+            ->exists();
     }
 
     public function canMaterialsReceivedOk(ProductionTask $t, ?Authenticatable $u): bool
@@ -170,32 +171,32 @@ class TaskPageHelper
             && $this->ownerIs($t, 'department_manager');
     }
 
+
     public function canProductionAcknowledge(ProductionTask $t, ?Authenticatable $u): bool
     {
-        return $this->userHasAnyRole($u, ['factory_manager','department_manager','admin','super-admin'])
-            && $this->statusVal($t) === 'waiting_production'
-            && $this->ownerIs($t, 'factory_manager')
-            && !$this->hasLog($t, 'prod_ack_initial');
+        return false;
     }
+
 
     public function canStartProduction(ProductionTask $t, ?Authenticatable $u): bool
     {
-        return $this->userHasAnyRole($u, ['factory_manager','department_manager','admin','super-admin'])
+        return $this->userHasAnyRole($u, ['department_manager','admin','super-admin'])
             && $this->statusVal($t) === 'waiting_production'
-            && $this->ownerIs($t, 'factory_manager')
-            && $this->hasLog($t, 'prod_ack_initial')
-            && !$this->hasLog($t, 'manufacturing_started');
+            && $this->ownerIs($t, 'department_manager')
+            && ! $this->hasLog($t, 'manufacturing_started');
     }
-
     public function canFinishManufacturing(ProductionTask $t, ?Authenticatable $u): bool
     {
-        if ($this->isClosedOrCompleted($t)) return false;
-        return $this->ownerIs($t, 'factory_manager')
-            && $this->hasLog($t, 'prod_ack_initial')
+        if ($this->isClosedOrCompleted($t)) {
+            return false;
+        }
+
+        return $this->userHasAnyRole($u, ['department_manager','admin','super-admin'])
+            && $this->ownerIs($t, 'department_manager')
+            && $this->statusVal($t) === 'in_progress'
             && $this->hasLog($t, 'manufacturing_started')
-            && !$this->hasLog($t, 'manufacturing_sent_to_qa')
-            && !$this->hasOpenMaterialsRequest($t)
-            && !in_array($this->statusVal($t), ['on_hold','cancelled','closed','completed'], true);
+            && ! $this->hasLog($t, 'manufacturing_sent_to_qa')
+            && ! $this->hasOpenMaterialsRequest($t);
     }
 
     /* ===== Logs / Requests helpers ===== */

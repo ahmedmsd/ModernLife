@@ -146,7 +146,7 @@ class ViewTask extends ViewRecord
                 ->form([
                     Forms\Components\Textarea::make('note')->label('تفاصيل المطلوب')->rows(3)->required(),
                     Forms\Components\FileUpload::make('po_file')
-                        ->label('ملف أمر الشراء (PO)')->disk('public')
+                        ->label('ملف أمر الشراء (PO) المُعتمد من مدير المصنع')->disk('public')
                         ->directory('purchase_orders/' . now()->format('Y/m'))
                         ->acceptedFileTypes(['application/pdf','image/*'])->maxSize(20_480)
                         ->openable()->downloadable()->moveFiles()->visibility('public')->required(),
@@ -190,59 +190,86 @@ class ViewTask extends ViewRecord
                     $this->redirect($this->getRedirectUrl());
                 }),
 
-            /* تأكيد استلام الخامات + التخطيط */
             Action::make('materials_received_ok')
-                ->label('تأكيد استلام الخامات (مدير القسم)')->icon('heroicon-o-hand-thumb-up')->color('success')
-                ->visible(fn()=> $this->helper()->canMaterialsReceivedOk($this->record, Auth::user()))
-                ->form([
-                    Forms\Components\DatePicker::make('planned_start')->label('بداية التصنيع (متوقعة)')->native(false)->required(),
-                    Forms\Components\DatePicker::make('planned_end')->label('نهاية التصنيع (متوقعة)')->native(false)->required(),
-                    Forms\Components\DatePicker::make('planned_install')->label('موعد التركيب (متوقع)')->native(false)->required(),
-                ])
+                ->label('تأكيد استلام الخامات (مدير القسم)')
+                ->icon('heroicon-o-hand-thumb-up')
+                ->color('success')
+                ->visible(fn () => $this->helper()->canMaterialsReceivedOk($this->record, Auth::user()))
+                // لم نعد نطلب مواعيد هنا؛ تصبح جاهز لبدء التصنيع فقط
                 ->requiresConfirmation()
-                ->action(function(array $data){
-                    $start = Carbon::parse($data['planned_start']); $end = Carbon::parse($data['planned_end']); $ins = Carbon::parse($data['planned_install']);
-                    if ($end->lt($start) || $ins->lt($end)) {
-                        Notification::make()->danger()->title('تسلسل التواريخ غير صحيح')->send(); return;
-                    }
-                    $this->workflow()->materialsReceivedOk($this->record, $data['planned_start'], $data['planned_end'], $data['planned_install']);
-                    Notification::make()->success()->title('تم تحديد المواعيد وتحويل المهمة للتصنيع')->send();
+                ->action(function () {
+                    // تحويل المهمة إلى waiting_production + المالك مدير القسم
+                    $this->workflow()->materialsReceivedOk($this->record, null, null, null);
+
+                    Notification::make()
+                        ->success()
+                        ->title('تم تأكيد استلام الخامات — المهمة بانتظار بدء التصنيع')
+                        ->send();
+
                     $this->redirect($this->getRedirectUrl());
                 }),
 
-            /* التصنيع يؤكد استلامه */
-            Action::make('productionAcknowledge')
-                ->label('تأكيد استلام التصنيع')->icon('heroicon-o-clipboard-document-check')->color('primary')
-                ->visible(fn()=> $this->helper()->canProductionAcknowledge($this->record, Auth::user()))
-                ->requiresConfirmation()
-                ->action(function(){
-                    $this->workflow()->productionAcknowledge($this->record);
-                    Notification::make()->success()->title('تم تأكيد استلام التصنيع')->send();
-                }),
-
-            /* بدء التصنيع */
+            /* بدء التصنيع (مدير القسم يحدد المواعيد المتوقعة) */
+            /* بدء التصنيع (تاريخ البدء الفعلي فقط) */
             Action::make('start_production')
-                ->label('بدء التصنيع')->icon('heroicon-o-play-circle')->color('primary')
-                ->visible(fn()=> $this->helper()->canStartProduction($this->record, Auth::user()))
+                ->label('بدء التصنيع')
+                ->icon('heroicon-o-play-circle')
+                ->color('primary')
+                ->visible(fn () => $this->helper()->canStartProduction($this->record, Auth::user()))
                 ->form([
-                    Forms\Components\DateTimePicker::make('started_at')->label('تاريخ/وقت البدء')->default(now())->required(),
-                    Forms\Components\Textarea::make('note')->label('ملاحظة (اختياري)')->rows(3),
+                    Forms\Components\DateTimePicker::make('started_at')
+                        ->label('البدء الفعلي للتصنيع')
+                        ->native(false)
+
+                        ->default(now())
+                        ->required(),
+
+                    Forms\Components\Textarea::make('note')
+                        ->label('ملاحظة (اختياري)')
+                        ->rows(3),
                 ])
                 ->requiresConfirmation()
-                ->action(function(array $data){
-                    $this->workflow()->startProduction($this->record, $data['started_at'], $data['note'] ?? null);
-                    Notification::make()->success()->title('بدأ التصنيع')->send();
-                }),
+                ->action(function (array $data) {
+                    $this->workflow()->startProduction(
+                        $this->record,
+                        $data['started_at'],
+                        $data['note'] ?? null
+                    );
 
-            /* إنهاء التصنيع وإرسال للجودة */
-            Action::make('finishManufacturing')
-                ->label('إنهاء التصنيع وإرسال للجودة')->icon('heroicon-o-paper-airplane')->color('warning')
-                ->visible(fn()=> $this->helper()->canFinishManufacturing($this->record, Auth::user()))
-                ->form([ Forms\Components\Textarea::make('note')->label('ملاحظة (اختياري)')->rows(3), ])
+                    Notification::make()->success()->title('بدأ التصنيع (تاريخ فعلي)')->send();
+        $this->redirect($this->getRedirectUrl());
+    }),
+
+
+        /* إنهاء التصنيع وإرسال للجودة */
+            Action::make('finish_manufacturing_send_to_qa')
+                ->label('إنهاء التصنيع وإرسال للجودة')
+                ->icon('heroicon-o-check-badge')
+                ->color('success')
+                ->visible(fn () => $this->helper()->canFinishManufacturing($this->record, Auth::user()))
+                ->form([
+                    Forms\Components\DateTimePicker::make('actual_finished_at')
+                        ->label('تاريخ/وقت الانتهاء الفعلي')
+                        ->native(false)
+                        ->default(now())
+                        ->required(),
+                    Forms\Components\Textarea::make('note')
+                        ->label('ملاحظة (اختياري)')
+                        ->rows(3),
+                ])
                 ->requiresConfirmation()
-                ->action(function(array $data){
-                    $this->workflow()->finishManufacturingToQA($this->record, $data['note'] ?? null);
-                    Notification::make()->success()->title('تم إرسال التصنيع للجودة')->send();
+                ->action(function (array $data) {
+                    $this->workflow()->finishManufacturingAndSendToQA(
+                        $this->record,
+                        $data['actual_finished_at'],
+                        $data['note'] ?? null,
+                    );
+
+                    Notification::make()
+                        ->success()
+                        ->title('تم إنهاء التصنيع وإرسال المهمة للجودة')
+                        ->send();
+
                     $this->redirect($this->getRedirectUrl());
                 }),
 
@@ -399,19 +426,50 @@ class ViewTask extends ViewRecord
 
             /* سند استلام العميل → اكتمال */
             Action::make('uploadClientReceipt')
-                ->label('رفع سند استلام العميل وإكمال المهمة')->icon('heroicon-o-arrow-up-on-square')->color('success')
-                ->visible(fn()=> !$this->helper()->isClosedOrCompleted($this->record)
-                    && $this->helper()->hasLog($this->record,'qa_approved_installation')
-                    && empty($this->record->client_receipt))
+                ->label('رفع سند استلام العميل وإكمال المهمة')
+                ->icon('heroicon-o-arrow-up-on-square')
+                ->color('success')
+                ->visible(fn () =>
+                    !$this->helper()->isClosedOrCompleted($this->record)
+                    && $this->helper()->hasLog($this->record, 'qa_approved_installation')
+                    && empty($this->record->client_receipt)
+                )
                 ->form([
-                    Forms\Components\FileUpload::make('client_receipt')->label('سند استلام العميل')
-                        ->disk('public')->directory(fn()=> 'client-receipts/' . now()->format('Y/m'))
-                        ->preserveFilenames()->downloadable()->openable()->required(),
+                    Forms\Components\FileUpload::make('client_receipt')
+                        ->label('سند استلام العميل')
+                        ->disk('public')
+                        ->directory(fn () => 'client-receipts/' . now()->format('Y/m'))
+                        ->preserveFilenames()
+                        ->downloadable()
+                        ->openable()
+                        ->acceptedFileTypes(['application/pdf', 'image/*'])
+                        ->maxSize(10240) // 10 MB
+                        ->required(),
+
+                    Forms\Components\DateTimePicker::make('actual_finished_at')
+                        ->label('تاريخ/وقت الانتهاء الفعلي للمهمة')
+                        ->native(false)
+                        ->default(now())
+                        ->required(),
+
+                    Forms\Components\Textarea::make('note')
+                        ->label('ملاحظة (اختياري)')
+                        ->rows(3),
                 ])
                 ->requiresConfirmation()
-                ->action(function(array $data){
-                    $this->workflow()->uploadClientReceiptAndComplete($this->record, Arr::get($data,'client_receipt'));
-                    Notification::make()->success()->title('اكتملت المهمة')->send();
+                ->action(function (array $data) {
+                    $this->workflow()->uploadClientReceiptAndComplete(
+                        $this->record,
+                        Arr::get($data, 'client_receipt'),
+                        Arr::get($data, 'actual_finished_at'),
+                        Arr::get($data, 'note')
+                    );
+
+                    Notification::make()
+                        ->success()
+                        ->title('اكتملت المهمة')
+                        ->send();
+
                     $this->redirect($this->getRedirectUrl());
                 }),
         ];

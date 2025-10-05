@@ -11,7 +11,7 @@ use Filament\Widgets\TableWidget;
 class DepartmentManagerCurrentTasks extends TableWidget
 {
     protected static ?string $heading = 'مهامي كمدير قسم';
-    protected static ?int $sort = 24;
+    protected static ?int $sort = 20;
     protected int|string|array $columnSpan = 'full';
 
     public static function canView(): bool
@@ -30,7 +30,7 @@ class DepartmentManagerCurrentTasks extends TableWidget
                     ->with(['project','department'])
                     ->where('current_owner_user_id', $uid)
                     ->whereIn('status', [
-                        'pending', 'in_progress','materials_done','waiting_production','under_review'
+                        'pending', 'received','in_progress','materials_done','waiting_production','under_review'
                     ])
                     ->latest('id')
             )

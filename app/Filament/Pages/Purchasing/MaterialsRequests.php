@@ -442,7 +442,6 @@ class MaterialsRequests extends Page implements HasTable
                     ->sendToDatabase($user);
             }
         } catch (\Throwable $e) {
-            // مقصود: لا نوقف العملية إذا فشل الإشعار
         }
     }
 }

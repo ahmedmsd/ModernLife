@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Tasks;
 
-use App\Models\{ProductionRequest, Project, ProductionTask, Department, TaskLog};
+use App\Models\{Department, ProductionRequest, ProductionTask, Project, TaskLog};
 use Illuminate\Support\Facades\DB;
 
 class CreateTasksFromRequest

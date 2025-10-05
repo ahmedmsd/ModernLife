@@ -7,6 +7,7 @@ use App\Models\ProductionTask;
 use Filament\Infolists\Infolist;
 use Filament\Infolists\Contracts\HasInfolists;
 use Filament\Infolists\Concerns\InteractsWithInfolists;
+use Illuminate\Support\Carbon;
 use Filament\Infolists\Components\{Section, Grid, TextEntry, IconEntry};
 use Filament\Pages\Page;
 
@@ -245,7 +246,108 @@ class ViewMaterialRequest extends Page implements HasInfolists
                             ->formatStateUsing(fn ($state) => $this->statusLabel($state)),
                         TextEntry::make('note')->label('المطلوبات/ملاحظات')->columnSpanFull()->markdown(),
                     ]),
+                Section::make('إحصائيات زمنية')
+                    ->columns(4)
+                    ->schema([
+                        // 1) التواريخ الأساسية
+                        TextEntry::make('expected_delivery_at')
+                            ->label('التاريخ المتوقع للتوريد')
+                            ->dateTime('Y-m-d H:i')
+                            ->placeholder('—'),
 
+                        TextEntry::make('provided_at')
+                            ->label('التاريخ الفعلي للتوريد')
+                            ->dateTime('Y-m-d H:i')
+                            ->placeholder('—'),
+
+                        // 2) الفرق بين المتوقع والفعلي (أبكر/في الموعد/متأخر)
+                        TextEntry::make('expected_vs_actual_delta')
+                            ->label('الفرق بين المتوقع والفعلي')
+                            ->state(function ($record) {
+                                if (!$record->expected_delivery_at || !$record->provided_at) {
+                                    return '—';
+                                }
+
+                                $exp = Carbon::parse($record->expected_delivery_at);
+                                $act = Carbon::parse($record->provided_at);
+
+                                // احسب الفرق بالدقائق ثم حوله لأيام/ساعات/دقائق
+                                $mins = $exp->diffInMinutes($act, false); // سالب = قبل الموعد
+                                if ($mins === 0) {
+                                    return 'في الموعد تمامًا';
+                                }
+
+                                $abs = abs($mins);
+                                $days  = intdiv($abs, 60 * 24);
+                                $hours = intdiv($abs % (60 * 24), 60);
+                                $m     = $abs % 60;
+
+                                $parts = [];
+                                if ($days)  $parts[] = $days.' يوم';
+                                if ($hours) $parts[] = $hours.' ساعة';
+                                if ($m || (!$days && !$hours)) $parts[] = $m.' دقيقة';
+
+                                return $mins < 0
+                                    ? 'قبل الموعد بـ ' . implode(' و ', $parts)
+                                    : 'متأخر عن الموعد بـ ' . implode(' و ', $parts);
+                            })
+                            ->badge()
+                            ->color(function ($record) {
+                                if (!$record->expected_delivery_at || !$record->provided_at) {
+                                    return 'gray';
+                                }
+                                $exp = Carbon::parse($record->expected_delivery_at);
+                                $act = Carbon::parse($record->provided_at);
+                                $mins = $exp->diffInMinutes($act, false);
+                                if ($mins === 0)   return 'success'; // في الموعد
+                                if ($mins < 0)     return 'info';    // أبكر من الموعد
+                                return 'danger';                     // متأخر
+                            }),
+
+                        // 3) المدة من إنشاء الطلب حتى التوريد
+                        TextEntry::make('requested_to_provided_duration')
+                            ->label('المدة من إنشاء الطلب حتى التوريد')
+                            ->state(function ($record) {
+                                if (!$record->requested_at || !$record->provided_at) {
+                                    return '—';
+                                }
+                                $start = Carbon::parse($record->requested_at);
+                                $end   = Carbon::parse($record->provided_at);
+                                $total = $start->diffInMinutes($end);
+                                $days  = intdiv($total, 1440);
+                                $hours = intdiv($total % 1440, 60);
+                                $mins  = $total % 60;
+
+                                $parts = [];
+                                if ($days)  $parts[] = $days.' يوم';
+                                if ($hours) $parts[] = $hours.' ساعة';
+                                if ($mins || (!$days && !$hours)) $parts[] = $mins.' دقيقة';
+                                return implode(' و ', $parts);
+                            })
+                            ->placeholder('—'),
+
+                        // 4) المدة من اعتماد المشتريات حتى التوريد
+                        TextEntry::make('approved_to_provided_duration')
+                            ->label('المدة من اعتماد المشتريات حتى التوريد')
+                            ->state(function ($record) {
+                                if (!$record->approved_at || !$record->provided_at) {
+                                    return '—';
+                                }
+                                $start = Carbon::parse($record->approved_at);
+                                $end   = Carbon::parse($record->provided_at);
+                                $total = $start->diffInMinutes($end);
+                                $days  = intdiv($total, 1440);
+                                $hours = intdiv($total % 1440, 60);
+                                $mins  = $total % 60;
+
+                                $parts = [];
+                                if ($days)  $parts[] = $days.' يوم';
+                                if ($hours) $parts[] = $hours.' ساعة';
+                                if ($mins || (!$days && !$hours)) $parts[] = $mins.' دقيقة';
+                                return implode(' و ', $parts);
+                            })
+                            ->placeholder('—'),
+                    ]),
                 Section::make('المشتريات')
                     ->columns(4)
                     ->schema([
@@ -256,7 +358,7 @@ class ViewMaterialRequest extends Page implements HasInfolists
                             ->formatStateUsing(fn ($state) => $state ? 'تنزيل' : '—')
                             ->url(fn ($state) => $state ? \Storage::url($state) : null, true)
                             ->icon(fn ($state) => $state ? 'heroicon-o-arrow-down-tray' : null),
-                        TextEntry::make('provided_by.name')->label('مُنَفِّذ التوريد')->placeholder('—'),
+                        TextEntry::make('providedBy.name')->label('مُنَفِّذ التوريد')->placeholder('—'),
                         TextEntry::make('provided_at')->label('تاريخ التوريد')->dateTime('Y-m-d H:i'),
                         TextEntry::make('created_at')->label('أُنشئ في')->dateTime('Y-m-d H:i'),
                         TextEntry::make('updated_at')->label('آخر تعديل')->dateTime('Y-m-d H:i'),
