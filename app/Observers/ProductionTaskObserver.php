@@ -20,24 +20,16 @@ class ProductionTaskObserver
         return $s instanceof \BackedEnum ? $s->value : ($s === null ? null : (string) $s);
     }
 
-    /**
-     * قبل الحفظ: عند تغيير الإسناد نضبط الملكية الحالية للقسم تلقائيًا.
-     * هذا يضمن أن updated() سيرصد تغيّر current_owner_* ويُسجل اللوجات ويُحدث الطوابع.
-     */
     public function updating(ProductionTask $task): void
     {
         if ($task->isDirty('assigned_to_employee_id')) {
-            // مالك المهمة يصبح مدير القسم، والمستخدم هو المستخدم المرتبط بالموظف المُسند إليه (إن وُجد)
             $ownerUserId = null;
             if ($task->assigned_to_employee_id) {
                 $emp = Employee::with('user:id')->find($task->assigned_to_employee_id);
                 $ownerUserId = $emp?->user?->id;
             }
-
             $task->current_owner_role    = 'department_manager';
             $task->current_owner_user_id = $ownerUserId;
-
-            // لا نلمس sent_to_owner_at/received_by_owner_at هنا؛ سيتم ضبطها في updated() عند رصد التغيير.
         }
     }
 
@@ -56,7 +48,6 @@ class ProductionTaskObserver
                 $user->notify(new TaskAssignedInAppNotification($task, false));
             }
 
-            // ⚙️ كتحوّط: إذا أُنشئت المهمة مُسندة ولم تُحدد الملكية، اضبطها لمدير القسم.
             if (blank($task->current_owner_role)) {
                 $ownerUserId = $task->employee?->user?->id;
                 $task->forceFill([
@@ -70,7 +61,6 @@ class ProductionTaskObserver
 
         $statusNow = $this->normStatus($task->status);
 
-        // لوج الإنشاء
         $task->logs()->create([
             'type'        => 'created',
             'data'        => [
@@ -86,7 +76,6 @@ class ProductionTaskObserver
             'happened_at' => now(),
         ]);
 
-        // تشغيل المؤقّت إن كانت في حالة عمل
         if ($statusNow === 'in_progress') {
             TaskTimerService::start($task, 'auto_on_create');
         }
@@ -96,7 +85,6 @@ class ProductionTaskObserver
     {
         /*** 1) تغيّر الإسناد ***/
         if ($task->wasChanged('assigned_to_employee_id')) {
-            // حدّث assigned_at بهدوء
             $task->forceFill(['assigned_at' => now()])->saveQuietly();
 
             if ($task->assigned_to_employee_id && $task->employee?->routeNotificationForMail(null)) {
@@ -128,7 +116,6 @@ class ProductionTaskObserver
                 'user' => $task->current_owner_user_id,
             ];
 
-            // إرسال للمالك الجديد => حدّث sent_to_owner_at وافرِغ received_by_owner_at
             $task->forceFill([
                 'sent_to_owner_at'     => now(),
                 'received_by_owner_at' => null,
@@ -146,16 +133,26 @@ class ProductionTaskObserver
                 !empty($task->current_owner_user_id);
 
             if ($isDeptManagerOwnership) {
-                // إن لم يكن المالك هو نفس الموظف المُسند إليه، أرسل إشعارًا لمدير القسم
                 if (!$task->employee || $task->employee->user_id !== $task->current_owner_user_id) {
                     $tmp = clone $task;
                     $tmp->setRelation('department', $task->department()->first());
-                    Notify::departmentManager($tmp, 'ownership');
+                    // 🔧 تمرير User فعلي لتفادي الخطأ السابق
+                    $dept = $task->department()->with(['managerUser'])->first();
+                    $targets = collect([$dept?->managerUser])->filter();
+                    if ($targets->isNotEmpty()) {
+                        foreach ($targets as $user) {
+                            FNotification::make()
+                                ->title('تم نقل ملكية مهمة إلى قسمك')
+                                ->body("تم تعيين المهمة #{$task->id} كمسؤولية قسمك.")
+                                ->success()
+                                ->sendToDatabase($user);
+                        }
+                    }
                 }
             }
         }
 
-        /*** 3) تأكيد استلام المالك (received_by_owner_at) ***/
+        /*** 3) تأكيد استلام المالك ***/
         if ($task->wasChanged('received_by_owner_at')) {
             $task->logs()->create([
                 'type'        => 'ownership_received',
@@ -183,7 +180,6 @@ class ProductionTaskObserver
                 'happened_at' => now(),
             ]);
 
-            // إدارة المؤقّت (الحالات الجديدة)
             $stopOnLeaveInProgress = [
                 'materials_wait','materials_prep','materials_done',
                 'on_hold','under_review','approved','rejected',
@@ -198,7 +194,6 @@ class ProductionTaskObserver
                 TaskTimerService::stop($task, "status_to_{$to}");
             }
 
-            // طوابع زمنية
             if ($to === 'received' && Schema::hasColumn('production_tasks', 'received_at') && blank($task->received_at)) {
                 $task->forceFill(['received_at' => now()])->saveQuietly();
             }
@@ -223,7 +218,7 @@ class ProductionTaskObserver
             ]);
         }
 
-        /*** 6) تغيّر المواعيد المخططة (اختياري إن كانت الأعمدة موجودة) ***/
+        /*** 6) تغيّر المواعيد المخططة ***/
         if (Schema::hasColumn('production_tasks', 'planned_start_at')) {
             if ($task->wasChanged('planned_start_at') || $task->wasChanged('planned_end_at') || $task->wasChanged('planned_install_at')) {
                 $task->logs()->create([
@@ -241,22 +236,22 @@ class ProductionTaskObserver
 
         /*** 7) تغيّر القسم ***/
         if ($task->wasChanged('department_id')) {
-            $dept = $task->department()->with(['manager', 'managerEmployee.user'])->first();
-            $managerUser = $dept?->manager ?: ($dept?->managerEmployee?->user);
+            $dept = $task->department()->with(['managerUser', 'headUser'])->first();
+            $targets = collect([$dept?->managerUser, $dept?->headUser])->filter();
 
-            if ($managerUser) {
+            if ($targets->isNotEmpty()) {
                 $url = \App\Filament\Resources\ProjectResource::getUrl('view', ['record' => $task->project_id]);
-
-                FNotification::make()
-                    ->title('مهمة انتقلت إلى قسمك')
-                    ->body("المهمة (#{$task->id}) على المشروع #{$task->project_id}")
-                    ->icon('heroicon-o-arrow-right')
-                    ->info()
-                    ->actions([ FAction::make('عرض المشروع')->button()->url($url) ])
-                    ->sendToDatabase($managerUser);
-
-                // (اختياري) بريد:
-                // $managerUser->notify(new \App\Notifications\DepartmentTaskMail($task, 'reassigned'));
+                foreach ($targets as $user) {
+                    FNotification::make()
+                        ->title('مهمة انتقلت إلى قسمك')
+                        ->body("المهمة (#{$task->id}) على المشروع #{$task->project_id}")
+                        ->icon('heroicon-o-arrow-right')
+                        ->info()
+                        ->actions([
+                            FAction::make('عرض المشروع')->button()->url($url),
+                        ])
+                        ->sendToDatabase($user);
+                }
             }
 
             $task->logs()->create([

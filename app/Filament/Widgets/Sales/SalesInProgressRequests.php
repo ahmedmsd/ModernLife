@@ -16,7 +16,8 @@ class SalesInProgressRequests extends TableWidget
 
     public static function canView(): bool
     {
-        return auth()->check();
+        return auth()->check()
+            && auth()->user()->hasRole('sales', 'web');
     }
 
     public function table(Table $table): Table
@@ -46,7 +47,7 @@ class SalesInProgressRequests extends TableWidget
                     ->label('عرض')
                     ->icon('heroicon-o-eye')
                     ->url(fn (ProductionRequest $record): string =>
-                    ProductionRequestResource::getUrl('view', ['record' => $record])
+                    ProductionRequestResource::getUrl('review', ['record' => $record])
                     ),
             ])
             ->emptyStateHeading('لا توجد طلبات تخصّك حالياً.');

@@ -248,15 +248,24 @@ class ViewTask extends ViewRecord
 
             /* QA (بعد التصنيع) */
             Action::make('qaAcknowledgeManufacturing')
-                ->label('تأكيد استلام الجودة (بعد التصنيع)')->icon('heroicon-o-inbox-arrow-down')->color('primary')
-                ->visible(fn()=> !$this->helper()->isClosedOrCompleted($this->record)
-                    && $this->helper()->ownerIs($this->record,'quality_manager')
-                    && $this->helper()->hasLog($this->record,'manufacturing_sent_to_qa')
-                    && !$this->helper()->hasLog($this->record,'qa_ack_manufacturing'))
+                ->label('تأكيد استلام الجودة (بعد التصنيع)')
+                ->icon('heroicon-o-inbox-arrow-down')
+                ->color('primary')
+                ->visible(fn () =>
+                    auth()->check()
+                    && auth()->user()->hasRole('quality_manager', 'web')                  // ← تحقق الدور
+                    && $this->helper()->ownerIs($this->record, 'quality_manager')
+                    && $this->helper()->hasLog($this->record, 'manufacturing_sent_to_qa')
+                    && ! $this->helper()->hasLog($this->record, 'qa_ack_manufacturing'),
+                )
                 ->requiresConfirmation()
-                ->action(function(){
+                ->action(function () {
                     $this->workflow()->qaAcknowledgeManufacturing($this->record);
-                    Notification::make()->success()->title('تم تأكيد استلام الجودة')->send();
+                    \Filament\Notifications\Notification::make()
+                        ->success()->title('تم تأكيد استلام الجودة')->send();
+                    $this->record->refresh();
+                    $this->dispatch('close-modal', id: 'filament.actions.modal');
+                    $this->js('$wire.$refresh()');
                 }),
 
             Action::make('approveManufacturingQA')

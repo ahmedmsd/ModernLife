@@ -29,10 +29,14 @@ class MaterialsRequestsDone extends Page implements HasTable
 
     protected static string $view = 'filament.pages.purchasing.materials-requests-done';
 
+    public static function canAccess(): bool
+    {
+        return auth()->check() && auth()->user()->hasAnyRole(['purchasing_manager','admin','super-admin']);
+    }
+
     public static function shouldRegisterNavigation(): bool
     {
-        $u = Auth::user();
-        return $u && $u->hasAnyRole(['purchasing_manager', 'admin', 'super-admin']);
+        return static::canAccess();
     }
 
     public static function getNavigationBadge(): ?string

@@ -50,7 +50,8 @@ class TaskResource extends Resource
                     TextEntry::make('project.project_name')->label('المشروع')->placeholder('—'),
                     TextEntry::make('department.dept_name')->label('القسم')->placeholder('—'),
                     TextEntry::make('employee.employee_name')->label('الموظف المسؤول')->placeholder('—'),
-                    TextEntry::make('estimated_cost')->label('الميزانية المتوقعة ')->placeholder('—'),
+                    TextEntry::make('estimated_cost')->label('الميزانية المتوقعة ')->placeholder('—')
+                        ->visible(fn () => ! auth()->user()?->hasRole('department_manager')),
                     TextEntry::make('status')->label('الحالة')->placeholder('—'),
                     TextEntry::make('due_date')->label('تاريخ التسليم')->date()->placeholder('—'),
                     TextEntry::make('assigned_at')->label('تاريخ الإسناد')->dateTime()->placeholder('—'),

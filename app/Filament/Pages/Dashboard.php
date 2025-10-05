@@ -25,6 +25,7 @@ class Dashboard extends BaseDashboard
             \App\Filament\Widgets\Factory\FactoryManagerCurrentTasks::class,
             \App\Filament\Widgets\Department\DepartmentManagerCurrentTasks::class,
             \App\Filament\Widgets\Purchasing\PurchasingOpenMaterialsRequests::class,
+            \App\Filament\Widgets\Quality\QualityManagerCurrentTasks::class,
 
 //            \App\Filament\Widgets\RequestsPerMonthChart::class,
 //            \App\Filament\Widgets\ProjectsPerClientBar::class,

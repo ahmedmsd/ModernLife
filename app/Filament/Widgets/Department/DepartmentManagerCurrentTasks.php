@@ -16,7 +16,8 @@ class DepartmentManagerCurrentTasks extends TableWidget
 
     public static function canView(): bool
     {
-        return auth()->check();
+        return auth()->check()
+            && auth()->user()->hasRole('department_manager', 'web');
     }
 
     public function table(Table $table): Table
@@ -29,7 +30,7 @@ class DepartmentManagerCurrentTasks extends TableWidget
                     ->with(['project','department'])
                     ->where('current_owner_user_id', $uid)
                     ->whereIn('status', [
-                        'in_progress','materials_done','waiting_production','under_review'
+                        'pending', 'in_progress','materials_done','waiting_production','under_review'
                     ])
                     ->latest('id')
             )

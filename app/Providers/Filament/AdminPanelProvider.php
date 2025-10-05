@@ -58,9 +58,9 @@ class AdminPanelProvider extends PanelProvider
             ->databaseNotifications()
             ->databaseNotificationsPolling('10s')
 
-            ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
+//            ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
-                // \App\Filament\Widgets\Stats\MyStatsOverview::class,
+                 \App\Filament\Widgets\MainStats::class,
 
                 \App\Filament\Widgets\Sales\SalesInProgressRequests::class,
                 \App\Filament\Widgets\Showroom\ShowroomManagerNeedsResponse::class,
@@ -135,9 +135,7 @@ class AdminPanelProvider extends PanelProvider
                                 NavigationItem::make('المهام المسندة إليّ')
                                     ->url(\App\Filament\Pages\AssignedTasks::getUrl())
                                     ->visible(fn () => \App\Filament\Pages\AssignedTasks::canAccess()),
-                                NavigationItem::make('مراجعة المهام')
-                                    ->url(\App\Filament\Pages\FactoryManagerTaskReview::getUrl())
-                                    ->visible(fn () => \App\Filament\Pages\FactoryManagerTaskReview::canAccess()),
+
                             ])
                     )
 

@@ -48,13 +48,12 @@ class ReviewProductionRequest extends Page
             ->action(function () {
                 app(ProductionRequestWorkflow::class)->markReceived($this->record);
                 Notification::make()->success()->title('تم تأكيد الاستلام')->send();
-                $this->refreshRecord();
             })
-            ->after(fn () => [
-                $this->dispatch('close-modal', id: 'filament.actions.modal'),
-                $this->resetErrorBag(),
-                $this->resetValidation(),
-            ]);
+            ->after(function () {
+                $this->refreshRecord();
+                $this->dispatch('close-modal', id: 'filament.actions.modal');
+                $this->js('$wire.$refresh()');
+            });
 
         // ==== 2) بدء مراجعة المعرض ====
         $actions[] = Action::make('startShowroomReviewAction')

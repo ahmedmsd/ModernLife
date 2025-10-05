@@ -22,20 +22,11 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
 
-/**
- * صفحة معالجة طلبات الخامات من منظور المشتريات.
- *
- * منطق انتقال حالات المهمة (ProductionTask):
- *  - اعتماد طلب الخامات  : status -> materials_wait  & المالك -> purchasing_manager
- *  - تأكيد توفير الخامات : status -> materials_done  & المالك -> department_manager
- *
- * عند التوريد يتم أيضًا التقاط بيانات الفاتورة: actual_cost, invoice_date, invoice_no, invoice_file.
- * نستخدم معاملات وقفل سجلات لحماية الاتساق عند تحديثات متوازية لنفس المهمة.
- */
+
 class MaterialsRequests extends Page implements HasTable
 {
     use InteractsWithTable;
-    use HasShieldAccess;
+//    use HasShieldAccess;
 
     /** إعدادات الواجهة والتنقل */
     protected static ?string $navigationIcon  = 'heroicon-o-truck';
@@ -47,14 +38,16 @@ class MaterialsRequests extends Page implements HasTable
 
     protected static string $view = 'filament.pages.purchasing.materials-requests';
 
-    /** إظهار الصفحة فقط للمشتريات أو صلاحيات أعلى */
-    public static function shouldRegisterNavigation(): bool
+    public static function canAccess(): bool
     {
-        $u = Auth::user();
-        return $u && $u->hasAnyRole(['purchasing_manager', 'admin', 'super-admin']);
+        return auth()->check() && auth()->user()->hasAnyRole(['purchasing_manager','admin','super-admin']);
     }
 
-    /** شارة التنقل = عدد الطلبات غير المورّدة */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
+    }
+
     public static function getNavigationBadge(): ?string
     {
         return (string) MaterialRequest::query()
@@ -63,7 +56,6 @@ class MaterialsRequests extends Page implements HasTable
             ->count();
     }
 
-    /** جدول عرض الطلبات قيد المعالجة */
     public function table(Table $table): Table
     {
         return $table

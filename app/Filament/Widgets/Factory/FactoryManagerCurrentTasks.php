@@ -19,7 +19,8 @@ class FactoryManagerCurrentTasks extends TableWidget
 
     public static function canView(): bool
     {
-        return auth()->check();
+        return auth()->check()
+            && (auth()->user()->hasAnyRole(['factory_manager','department_manager'], 'web'));
     }
 
     public function table(Table $table): Table

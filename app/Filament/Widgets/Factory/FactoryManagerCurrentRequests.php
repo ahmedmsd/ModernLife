@@ -17,7 +17,8 @@ class FactoryManagerCurrentRequests extends TableWidget
 
     public static function canView(): bool
     {
-        return auth()->check();
+        return auth()->check()
+            && (auth()->user()->hasAnyRole(['factory_manager'], 'web'));
     }
 
     public function table(Table $table): Table
@@ -44,7 +45,7 @@ class FactoryManagerCurrentRequests extends TableWidget
                     ->label('عرض')
                     ->icon('heroicon-o-eye')
                     ->url(fn ($record) =>
-                    \App\Filament\Resources\ProductionRequestResource::getUrl('view', ['record' => $record])
+                    \App\Filament\Resources\ProductionRequestResource::getUrl('review', ['record' => $record])
                     ),
             ])
             ->emptyStateHeading('لا توجد طلبات تخصّك.');

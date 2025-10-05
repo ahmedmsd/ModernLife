@@ -74,61 +74,15 @@ class ViewProductionTimeline extends Page
     public function getHeaderActions(): array
     {
         return [
-//            Action::make('update_status')
-//                ->label('تحديث حالة الطلب')
-//                ->icon('heroicon-o-arrow-path')
-//                ->form([
-//                    Select::make('status')
-//                        ->label('الحالة')
-//                        ->options(ProductionRequestStatus::options())
-//                        ->default(fn () => (string) $this->record->status)
-//                        ->required()
-//                        ->reactive(),
-//                    Textarea::make('note')
-//                        ->label('ملاحظة')
-//                        ->nullable()
-//                        ->helperText('اختياري، سيُحفظ في الحقلين note و data.note'),
-//                ])
-//                ->action(function (array $data): void {
-//                    $this->updateStatus($data['status'], $data['note'] ?? null);
-//                    Notification::make()->title('تم تحديث الحالة بنجاح')->success()->send();
-//                }),
-
-            Action::make('confirmReceipt')
-                ->label('تأكيد استلامي')
-                ->icon('heroicon-o-hand-thumb-up')
-                ->visible(fn () => $this->userHasRole($this->record->current_owner_role))
-                ->action(function () {
-                    app(ProductionRequestWorkflow::class)->markReceived($this->record);
-                    Notification::make()->success()->title('تم تأكيد الاستلام')->send();
-                    $this->refreshRecord();
-                }),
+            Action::make('openReview')
+                ->label('فتح صفحة المراجعة')
+                ->icon('heroicon-o-arrow-top-right-on-square')
+                ->color('primary')
+                ->url(ProductionRequestResource::getUrl('review', ['record' => $this->record])),
         ];
     }
 
-    protected function updateStatus(string $newValue, ?string $note): void
-    {
-        $current = (string) $this->record->status;
 
-        if ($current !== $newValue) {
-            $this->record->update(['status' => $newValue]);
-
-            $this->record->logs()->create([
-                'type'        => 'status_changed',
-                'data'        => [
-                    'from' => $current,
-                    'to'   => $newValue,
-                    'note' => $note,
-                ],
-                'note'        => $note
-                    ?? 'تم تغيير الحالة إلى: ' . (ProductionRequestStatus::tryFrom($newValue)?->label() ?? $newValue),
-                'causer_id'   => Auth::id(),
-                'happened_at' => now(),
-            ]);
-
-            $this->refreshRecord();
-        }
-    }
 
     private function refreshRecord(): void
     {

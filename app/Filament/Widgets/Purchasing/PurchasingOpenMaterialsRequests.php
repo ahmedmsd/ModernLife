@@ -2,55 +2,60 @@
 
 namespace App\Filament\Widgets\Purchasing;
 
-use App\Filament\Resources\TaskResource;
+use App\Filament\Pages\Purchasing\MaterialsRequests;
 use App\Models\MaterialRequest;
-use App\Models\ProductionTask;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
 
 class PurchasingOpenMaterialsRequests extends TableWidget
 {
-    protected static ?string $heading = 'طلباتي في المشتريات';
+    protected static ?string $heading = 'طلبات خامات قيد المعالجة';
     protected static ?int $sort = 25;
     protected int|string|array $columnSpan = 'full';
 
     public static function canView(): bool
     {
-        return auth()->check();
+        return auth()->check() && auth()->user()->hasRole('purchasing_manager', 'web');
     }
 
     public function table(Table $table): Table
     {
-        $uid = auth()->id();
-
         return $table
             ->query(
                 MaterialRequest::query()
-                    ->with(['task.project','department','requestedBy'])
+                    ->with(['task.project', 'department', 'requestedBy'])
                     ->whereNull('provided_at')
-                    ->whereIn('status', ['requested','approved'])
-                    ->where(function ($q) use ($uid) {
-                        $q->where('requested_by', $uid)
-                            ->orWhere('provided_by', $uid)
-                            ->orWhereHas('task', fn ($t) => $t->where('current_owner_user_id', $uid));
-                    })
+                    ->whereIn('status', ['requested', 'approved'])
                     ->latest('id')
             )
             ->columns([
-                Tables\Columns\TextColumn::make('id')->label('#'),
-                Tables\Columns\TextColumn::make('task.id')->label('المهمة'),
+                Tables\Columns\TextColumn::make('id')->label('#')->sortable(),
+                Tables\Columns\TextColumn::make('task.id')->label('المهمة')->sortable(),
                 Tables\Columns\TextColumn::make('department.dept_name')->label('القسم'),
-                Tables\Columns\TextColumn::make('status')->label('الحالة')->badge(),
+                Tables\Columns\TextColumn::make('requestedBy.name')->label('مقدّم الطلب')->placeholder('—'),
+                Tables\Columns\TextColumn::make('status')
+                    ->label('الحالة')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state) => match ($state) {
+                        'requested' => 'بانتظار اعتماد المشتريات',
+                        'approved'  => 'بانتظار التوريد',
+                        default     => '—',
+                    })
+                    ->color(fn (?string $state) => match ($state) {
+                        'requested' => 'warning',
+                        'approved'  => 'info',
+                        default     => 'secondary',
+                    }),
             ])
             ->actions([
-                Tables\Actions\Action::make('view')
-                    ->label('عرض')
+                Tables\Actions\Action::make('review')
+                    ->label('مراجعة الطلب')
                     ->icon('heroicon-o-eye')
                     ->url(fn (MaterialRequest $record): string =>
-                    route('filament.admin.pages.purchasing.materials-requests')
-                    )
+                    \App\Filament\Pages\Purchasing\ViewMaterialRequest::getUrl(['record' => $record])
+                    ),
             ])
-            ->emptyStateHeading('لا توجد طلبات تخصّك.');
+            ->emptyStateHeading('لا توجد طلبات خامات حالية.');
     }
 }

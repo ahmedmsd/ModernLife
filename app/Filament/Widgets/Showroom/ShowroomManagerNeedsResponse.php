@@ -16,7 +16,8 @@ class ShowroomManagerNeedsResponse extends TableWidget
 
     public static function canView(): bool
     {
-        return auth()->check();
+        return auth()->check()
+            && auth()->user()->hasRole('showroom_manager', 'web');
     }
 
     public function table(Table $table): Table

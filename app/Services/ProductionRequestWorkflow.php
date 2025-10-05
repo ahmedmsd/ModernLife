@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\User;
 use App\Enums\{ProductionRequestPhase as Phase, PhaseStatus as S, RequestType};
 use App\Models\ProductionRequest;
 use App\Models\Project;
@@ -117,15 +118,14 @@ class ProductionRequestWorkflow
     public function markReceived(ProductionRequest $pr): ProductionRequest
     {
         $fromStatus = $pr->phase_status;
-        $sentAt     = $pr->sent_to_owner_at;
-        if ($sentAt && ! $sentAt instanceof Carbon) {
-            $sentAt = Carbon::parse($sentAt);
-        }
+        $sentAt     = $pr->sent_to_owner_at instanceof \Carbon\Carbon
+            ? $pr->sent_to_owner_at
+            : ($pr->sent_to_owner_at ? \Carbon\Carbon::parse($pr->sent_to_owner_at) : null);
 
         $pr->phase_status         = S::Received->value;
         $pr->received_by_owner_at = now();
 
-        // $pr->current_owner_user_id = Auth::id();
+        $pr->current_owner_user_id = Auth::id();
 
         $pr->save();
 
@@ -167,9 +167,13 @@ class ProductionRequestWorkflow
 
         $pr = $this->move($pr, $currentPhase, S::Approved, $pr->current_owner_role, false);
 
+        if ($currentPhase === Phase::ShowroomReview) {
+            return $this->move($pr, Phase::FactoryIntake, S::Pending, 'factory_manager', true);
+        }
+
         if ($currentPhase === Phase::FactoryIntake) {
             $this->bootstrapProjectFromRequest($pr);
-            $pr = $this->move($pr, Phase::DepartmentAssignment, S::Pending, 'factory_manager', true);
+            return $this->move($pr, Phase::DepartmentAssignment, S::Pending, 'factory_manager', true);
         }
 
         return $pr;
@@ -220,7 +224,7 @@ class ProductionRequestWorkflow
 
         $from = [
             'phase'  => $pr->current_phase,
-            'status' => $pr->phase_status,   // ← نقرأ phase_status
+            'status' => $pr->phase_status,
             'owner'  => $pr->current_owner_role,
         ];
 
@@ -409,12 +413,34 @@ class ProductionRequestWorkflow
 
     protected function resolveOwnerUserId(ProductionRequest $pr, ?string $role): ?int
     {
-        if ($role === 'showroom_manager') {
-            return optional($pr->showroom?->manager?->user)->id;
+        if (! $role) {
+            return null;
         }
 
-        return null;
+        $byRelation = match ($role) {
+            'showroom_manager'      => optional($pr->showroom?->manager?->user)->id,
+            'factory_manager'       => optional($pr->factory?->manager?->user)->id ?? null,
+            'purchasing_manager'    => optional($pr->purchasingDepartment?->manager?->user)->id ?? null,
+            'department_manager'    => null,
+            'quality_manager'       => null,
+            'installation_manager'  => null,
+            default                 => null,
+        };
+
+        if ($byRelation) {
+            return $byRelation;
+        }
+
+        return match ($role) {
+            'factory_manager'       => User::role('factory_manager')->value('id'),
+            'purchasing_manager'    => User::role('purchasing_manager')->value('id'),
+            'quality_manager'       => User::role('quality_manager')->value('id'),
+            'installation_manager'  => User::role('installation_manager')->value('id'),
+            'showroom_manager'      => User::role('showroom_manager')->value('id'),
+            default                 => null,
+        };
     }
+
 
     private function phaseLabel(string $phase): string
     {

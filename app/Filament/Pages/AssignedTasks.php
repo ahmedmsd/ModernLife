@@ -84,7 +84,7 @@ class AssignedTasks extends Page implements HasTable
                 Tables\Columns\TextColumn::make('assigned_at')->label('تاريخ الإسناد')->dateTime('Y-m-d H:i')->sortable()->placeholder('—'),
                 Tables\Columns\TextColumn::make('received_at')->label('تاريخ تأكيد الاستلام')->dateTime('Y-m-d H:i')->sortable()->placeholder('—'),
                 Tables\Columns\TextColumn::make('due_date')->label('تاريخ التسليم المتوقع')->date()->placeholder('—'),
-                Tables\Columns\TextColumn::make('estimated_cost')->label('الميزانية')->money('SAR')->placeholder('—'),
+                Tables\Columns\TextColumn::make('estimated_cost')->label('الميزانية')->money('SAR')->placeholder('—')->visible(fn () => ! auth()->user()?->hasRole('department_manager')),
                 Tables\Columns\TextColumn::make('notes')->label('ملاحظات')->limit(50)->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
