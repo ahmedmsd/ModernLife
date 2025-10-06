@@ -195,22 +195,60 @@ class ViewTask extends ViewRecord
                 ->icon('heroicon-o-hand-thumb-up')
                 ->color('success')
                 ->visible(fn () => $this->helper()->canMaterialsReceivedOk($this->record, Auth::user()))
-                // لم نعد نطلب مواعيد هنا؛ تصبح جاهز لبدء التصنيع فقط
+                ->form([
+                    Forms\Components\DatePicker::make('planned_start')
+                        ->label('بداية التصنيع (متوقعة)')
+                        ->native(false)
+                        ->required(),
+
+                    Forms\Components\DatePicker::make('planned_end')
+                        ->label('نهاية التصنيع (متوقعة)')
+                        ->native(false)
+                        ->required(),
+
+                    Forms\Components\DatePicker::make('planned_install')
+                        ->label('موعد التركيب (متوقع)')
+                        ->native(false)
+                        ->required(),
+
+                    Forms\Components\Textarea::make('note')
+                        ->label('ملاحظات (اختياري)')
+                        ->rows(3)
+                        ->maxLength(1000),
+                ])
                 ->requiresConfirmation()
-                ->action(function () {
-                    // تحويل المهمة إلى waiting_production + المالك مدير القسم
-                    $this->workflow()->materialsReceivedOk($this->record, null, null, null);
+                ->action(function (array $data) {
+                    $start = Carbon::parse($data['planned_start']);
+                    $end   = Carbon::parse($data['planned_end']);
+                    $ins   = Carbon::parse($data['planned_install']);
+
+                    if ($end->lt($start) || $ins->lt($end)) {
+                        Notification::make()
+                            ->danger()
+                            ->title('تسلسل التواريخ غير صحيح')
+                            ->body('يجب أن تكون نهاية التصنيع بعد بدايته، وموعد التركيب بعد نهاية التصنيع.')
+                            ->send();
+                        return;
+                    }
+
+                    // تمرير التواريخ + الملاحظة للخدمة
+                    $this->workflow()->materialsReceivedOk(
+                        $this->record,
+                        $data['planned_start'],
+                        $data['planned_end'],
+                        $data['planned_install'],
+                        $data['note'] ?? null
+                    );
 
                     Notification::make()
                         ->success()
-                        ->title('تم تأكيد استلام الخامات — المهمة بانتظار بدء التصنيع')
+                        ->title('تم تأكيد استلام الخامات وتحديد المواعيد — المهمة بانتظار بدء التصنيع')
                         ->send();
 
                     $this->redirect($this->getRedirectUrl());
                 }),
 
-            /* بدء التصنيع (مدير القسم يحدد المواعيد المتوقعة) */
-            /* بدء التصنيع (تاريخ البدء الفعلي فقط) */
+
             Action::make('start_production')
                 ->label('بدء التصنيع')
                 ->icon('heroicon-o-play-circle')

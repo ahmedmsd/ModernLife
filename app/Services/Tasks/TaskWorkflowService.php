@@ -187,23 +187,28 @@ class TaskWorkflowService
     }
 
     /** استلام القسم للخامات (اختياري: تحديد مخطط) وتحويل المهمة لانتظار بدء التصنيع */
-    public function materialsReceivedOk(ProductionTask $task, ?string $start = null, ?string $end = null, ?string $install = null): void
-    {
-        DB::transaction(function () use ($task, $start, $end, $install) {
+    public function materialsReceivedOk(
+        ProductionTask $task,
+        ?string $start = null,
+        ?string $end = null,
+        ?string $install = null,
+        ?string $note = null // ✅ جديد: ملاحظة اختيارية من مدير القسم
+    ): void {
+        DB::transaction(function () use ($task, $start, $end, $install, $note) {
             $fromStatus = $task->status;
 
-            // بناء الحقول المحدثة (مخطط)
             $payload = ['status' => 'waiting_production'];
             if ($start)   { $payload['planned_start_at']   = Carbon::parse($start); }
             if ($end)     { $payload['planned_end_at']     = Carbon::parse($end); }
             if ($install) { $payload['planned_install_at'] = Carbon::parse($install); }
-
             $task->update($payload);
 
-            // توثيق استلام القسم
-            $this->markOwnerReceived($task, 'استلام الخامات — جاهز لبدء التصنيع');
+            $msg = 'استلام الخامات — جاهز لبدء التصنيع';
+            if ($note && trim($note) !== '') {
+                $msg .= ' — ' . trim($note);
+            }
+            $this->markOwnerReceived($task, $msg);
 
-            // الإبقاء على المالك مدير القسم (يسجل sent_to_department إن تغيّر من قبل)
             $deptManagerId = $task->department?->manager_user_id
                 ?? $task->department?->head_user_id
                 ?? Auth::id();
@@ -221,13 +226,16 @@ class TaskWorkflowService
                 'to'   => 'waiting_production',
             ]);
 
+            // لوج تلميح التخطيط — نحفظ الملاحظة أيضًا (إن وُجدت)
             $this->log($task, 'planning_hint_set', [
                 'planned_start_at'   => optional($task->planned_start_at)->toDateTimeString(),
                 'planned_end_at'     => optional($task->planned_end_at)->toDateTimeString(),
                 'planned_install_at' => optional($task->planned_install_at)->toDateTimeString(),
+                'note'               => $note ? trim($note) : null,
                 'by'                 => Auth::id(),
             ]);
 
+            // إشعار تنفيذي مختصر
             $this->notifier->notifyActor(
                 'تم استلام الخامات — المهمة بانتظار بدء التصنيع',
                 "المهمة #{$task->id}",

@@ -68,7 +68,7 @@ class AdminPanelProvider extends PanelProvider
                 \App\Filament\Widgets\Factory\FactoryManagerCurrentTasks::class,
                 \App\Filament\Widgets\Department\DepartmentManagerCurrentTasks::class,
                 \App\Filament\Widgets\Purchasing\PurchasingOpenMaterialsRequests::class,
-
+                \App\Filament\Widgets\Quality\QualityManagerCurrentTasks::class,
                 // \App\Filament\Widgets\Charts\ProductionTrendsChart::class,
                 // \App\Filament\Widgets\Charts\TasksByDeptChart::class,
             ])
@@ -151,6 +151,14 @@ class AdminPanelProvider extends PanelProvider
                             ])
                     )
 
+                    ->group(
+                        NavigationGroup::make()->label('التركيب')->icon('heroicon-o-truck')->collapsed()
+                            ->items([
+                                NavigationItem::make('تقويم التركيب ')
+                                    ->url(\App\Filament\Pages\InstallationCalendar::getUrl())
+                                    ->visible(fn () => \App\Filament\Pages\InstallationCalendar::canAccess()),
+                            ])
+                    )
                     ->group(
                         NavigationGroup::make()->label('الأقسام')->icon('heroicon-o-rectangle-group')->collapsible()->collapsed()
                             ->items([

@@ -16,14 +16,8 @@ class QualityManagerCurrentTasks extends TableWidget
 
     public static function canView(): bool
     {
-        $u = auth()->user();
-        if (! $u) return false;
-
-        if (method_exists($u, 'can') && $u->can('view_widget_quality_manager_current_tasks')) {
-            return true;
-        }
-
-        return $u->hasAnyRole(['quality_manager','admin','super-admin']);
+        return auth()->check()
+            && auth()->user()->hasRole('quality_manager', 'web');
     }
 
     public function table(Table $table): Table
