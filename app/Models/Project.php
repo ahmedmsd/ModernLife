@@ -71,12 +71,12 @@ class Project extends Model
     public function materialRequests(): HasManyThrough
     {
         return $this->hasManyThrough(
-            MaterialRequest::class,   // الهدف
-            ProductionTask::class,    // الوسيط
-            'project_id',             // FK في جدول المهام يشير للمشروع
-            'task_id',                // FK في جدول طلبات الخامات يشير للمهام
-            'id',                     // PK في المشاريع
-            'id'                      // PK في المهام
+            MaterialRequest::class,
+            ProductionTask::class,
+            'project_id',
+            'task_id',
+            'id',
+            'id'
         );
     }
 

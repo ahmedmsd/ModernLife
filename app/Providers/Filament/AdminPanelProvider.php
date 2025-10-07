@@ -160,6 +160,15 @@ class AdminPanelProvider extends PanelProvider
                             ])
                     )
                     ->group(
+                        NavigationGroup::make()->label('الصيانة')->icon('heroicon-o-wrench-screwdriver')->collapsed()
+                            ->items([
+                                NavigationItem::make('طلبات الصيانة ')
+                                    ->url(\App\Filament\Resources\MaintenanceRequestResource::getUrl())
+                                    ->visible(fn () => \App\Filament\Resources\MaintenanceRequestResource::canViewAny()),
+                            ])
+                    )
+
+                    ->group(
                         NavigationGroup::make()->label('الأقسام')->icon('heroicon-o-rectangle-group')->collapsible()->collapsed()
                             ->items([
                                 NavigationItem::make('تصنيفات الأقسام')
