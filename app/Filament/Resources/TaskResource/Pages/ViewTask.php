@@ -30,11 +30,9 @@ class ViewTask extends ViewRecord
 
     protected static string $resource = TaskResource::class;
 
-    /** اجعلها nullable مع قيمة ابتدائية لتفادي Access قبل التهيئة */
     protected ?TaskPageHelper $helper = null;
     protected ?TaskWorkflowService $workflow = null;
 
-    /** مُهيئات كسولة */
     private function helper(): TaskPageHelper
     {
         return $this->helper ??= app(TaskPageHelper::class);

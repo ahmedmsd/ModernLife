@@ -135,7 +135,12 @@ class AdminPanelProvider extends PanelProvider
                                 NavigationItem::make('المهام المسندة إليّ')
                                     ->url(\App\Filament\Pages\AssignedTasks::getUrl())
                                     ->visible(fn () => \App\Filament\Pages\AssignedTasks::canAccess()),
-
+                                NavigationItem::make('عرض المهام (الجارية)')
+                                    ->url(\App\Filament\Resources\TaskResource::getUrl('active'))
+                                    ->visible(fn () => \App\Filament\Resources\TaskResource\Pages\ActiveTasks::canAccess()),
+                                NavigationItem::make('المهام المنجزة')
+                                    ->url(\App\Filament\Resources\TaskResource::getUrl('completed'))
+                                    ->visible(fn () => \App\Filament\Resources\TaskResource\Pages\CompletedTasks::canAccess()),
                             ])
                     )
 

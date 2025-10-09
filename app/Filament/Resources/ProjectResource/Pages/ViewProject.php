@@ -3,8 +3,10 @@
 namespace App\Filament\Resources\ProjectResource\Pages;
 
 use App\Filament\Resources\ProjectResource;
+use App\Filament\Resources\TaskResource;
 use App\Models\ProductionTask;
-use App\Models\MaterialRequest; // جدول production_tasks_material_requests
+use App\Models\MaterialRequest;
+use App\Models\Project;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Infolists\Infolist;
 use Filament\Infolists\Components\{Section, TextEntry, Tabs};
@@ -13,19 +15,15 @@ use Filament\Support\Enums\MaxWidth;
 use Filament\Actions\Action;
 use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use ZipArchive;
 
 class ViewProject extends ViewRecord
 {
     protected static string $resource = ProjectResource::class;
     protected static ?string $title   = 'عرض المشروع';
-
-    /** اجعل الصفحة بعرض كامل */
-    public function getMaxContentWidth(): MaxWidth|string|null
-    {
-        return MaxWidth::Full;
-    }
-
-    /* -------------------- Filters (query string) -------------------- */
 
     public ?string $filterStatus = null;
     public ?int    $filterDeptId = null;
@@ -37,7 +35,11 @@ class ViewProject extends ViewRecord
         'filterEmpId'  => ['except' => ''],
     ];
 
-    /** إجراء لتغيير الفلاتر من رأس الصفحة */
+    public function getMaxContentWidth(): MaxWidth|string|null
+    {
+        return MaxWidth::Full;
+    }
+
     protected function getHeaderActions(): array
     {
         return [
@@ -45,25 +47,17 @@ class ViewProject extends ViewRecord
                 ->label('تصفية المهام')
                 ->icon('heroicon-o-funnel')
                 ->form([
-                    \Filament\Forms\Components\Select::make('status')
-                        ->label('الحالة')
-                        ->options([
-                            'pending' => 'قيد الإنشاء','assigned'=>'مُسندة','acknowledged'=>'تأكيد الاستلام',
-                            'in_progress'=>'قيد التنفيذ','blocked'=>'متوقفة','under_review'=>'قيد المراجعة',
-                            'rework'=>'إعادة عمل','completed'=>'مكتملة','closed'=>'مغلقة','cancelled'=>'ملغاة','draft'=>'مسودة',
-                        ])
-                        ->searchable()
-                        ->placeholder('الكل'),
-                    \Filament\Forms\Components\Select::make('dept_id')
-                        ->label('القسم')
-                        ->options(fn () => \App\Models\Department::orderBy('dept_name')->pluck('dept_name','dept_id'))
-                        ->searchable()
-                        ->placeholder('الكل'),
-                    \Filament\Forms\Components\Select::make('emp_id')
-                        ->label('المسؤول')
-                        ->options(fn () => \App\Models\Employee::orderBy('employee_name')->pluck('employee_name','employee_id'))
-                        ->searchable()
-                        ->placeholder('الكل'),
+                    \Filament\Forms\Components\Select::make('status')->label('الحالة')->options([
+                        'pending'=>'قيد الإنشاء','assigned'=>'مُسندة','acknowledged'=>'تأكيد الاستلام',
+                        'in_progress'=>'قيد التنفيذ','blocked'=>'متوقفة','under_review'=>'قيد المراجعة',
+                        'rework'=>'إعادة عمل','completed'=>'مكتملة','closed'=>'مغلقة','cancelled'=>'ملغاة','draft'=>'مسودة',
+                    ])->searchable()->placeholder('الكل'),
+                    \Filament\Forms\Components\Select::make('dept_id')->label('القسم')
+                        ->options(fn()=> \App\Models\Department::orderBy('dept_name')->pluck('dept_name','dept_id')->all())
+                        ->searchable()->placeholder('الكل'),
+                    \Filament\Forms\Components\Select::make('emp_id')->label('المسؤول')
+                        ->options(fn()=> \App\Models\Employee::orderBy('employee_name')->pluck('employee_name','employee_id')->all())
+                        ->searchable()->placeholder('الكل'),
                 ])
                 ->action(function (array $data) {
                     $this->filterStatus = $data['status'] ?? null;
@@ -98,26 +92,52 @@ class ViewProject extends ViewRecord
                         fclose($out);
                     }, "project-{$this->record->id}-tasks.csv");
                 }),
+
+            Action::make('downloadAllFiles')
+                ->label('تنزيل كل ملفات المشروع (Zip)')
+                ->icon('heroicon-o-archive-box-arrow-down')
+                ->action(function () {
+                    $files = $this->collectProjectFiles($this->getRecord());
+                    if (empty($files)) {
+                        \Filament\Notifications\Notification::make()->warning()->title('لا توجد ملفات للتنزيل')->send();
+                        return;
+                    }
+                    $zipName = "project-{$this->record->id}-files.zip";
+                    $zipPath = storage_path("app/tmp/{$zipName}");
+                    @mkdir(dirname($zipPath), 0777, true);
+
+                    $zip = new ZipArchive();
+                    if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+                        \Filament\Notifications\Notification::make()->danger()->title('فشل إنشاء ملف مضغوط')->send();
+                        return;
+                    }
+
+                    foreach ($files as $f) {
+                        $path = $f['path'];
+                        $display = $f['display'] ?? basename((string)$path);
+                        $storagePath = $this->resolveStorageAbsolutePath($path);
+                        if ($storagePath && is_file($storagePath)) {
+                            $zip->addFile($storagePath, $display);
+                        }
+                    }
+                    $zip->close();
+
+                    return response()->download($zipPath)->deleteFileAfterSend(true);
+                }),
         ];
     }
 
-    /* -------------------- Helpers (labels + colors) -------------------- */
+    /* ============================ Helpers ============================ */
 
-      private function normalizeStatus(string|array|null $v): ?string
+    private function normalizeStatus(string|array|null $v): ?string
     {
         if (is_array($v)) {
-            // جرّب أكثر المفاتيح شيوعًا
             $v = $v['status'] ?? $v['to'] ?? $v['value'] ?? array_values($v)[0] ?? null;
-            // لو ما زالت مصفوفة، خذ أول عنصر
-            if (is_array($v)) {
-                $v = array_values($v)[0] ?? null;
-            }
+            if (is_array($v)) $v = array_values($v)[0] ?? null;
         }
-        if ($v === null) return null;
-        return (string) $v;
+        return $v === null ? null : (string) $v;
     }
 
-    /** ترجمة عربية للحالة بعد تطبيعها */
     private function statusAr(string|array|null $v): ?string
     {
         $v = $this->normalizeStatus($v);
@@ -130,7 +150,6 @@ class ViewProject extends ViewRecord
         return $map[$v] ?? $v;
     }
 
-    /** لون الحالة — يقبل مصفوفة أيضًا تحسّبًا */
     private function statusHex(string|array|null $status): string
     {
         $status = $this->normalizeStatus($status);
@@ -151,12 +170,19 @@ class ViewProject extends ViewRecord
         return Carbon::now()->subSeconds(max(0,$sec))->diffForHumans(null,true);
     }
 
-    /* -------------------- Data builders -------------------- */
+    private function parseDate($v): ?Carbon
+    {
+        if ($v instanceof Carbon) return $v;
+        if (empty($v)) return null;
+        return Carbon::parse($v);
+    }
+
+    /* ============================ Data ============================ */
 
     private function filteredTasksQuery(): Builder
     {
         return ProductionTask::query()
-            ->where('project_id', $this->record->id)   // اربط بالمشروع الحالي
+            ->where('project_id', $this->record->id)
             ->when($this->filterStatus, fn ($q, $v) => $q->where('status', $v))
             ->when($this->filterDeptId, fn ($q, $v) => $q->where('department_id', $v))
             ->when($this->filterEmpId,  fn ($q, $v) => $q->where('assigned_to_employee_id', $v))
@@ -164,27 +190,29 @@ class ViewProject extends ViewRecord
                 'department:dept_id,dept_name',
                 'employee:employee_id,employee_name',
                 'logs' => fn ($q) => $q->orderBy('happened_at')
-                    ->select('id', 'task_id', 'type', 'data', 'happened_at', 'created_at'),
+                    ->select('id','task_id','type','data','happened_at','created_at'),
+                'materialRequests' => fn ($q) => $q->select([
+                    'id','task_id','po_file','invoice_file','estimated_cost','actual_cost',
+                    'status','provided_at','expected_delivery_at'
+                ]),
             ]);
     }
 
     private function taskCycleSeconds(ProductionTask $t): int
     {
-        $start = $t->created_at ? Carbon::parse($t->created_at) : now();
-        $end   = $t->closed_at  ? Carbon::parse($t->closed_at)  : now();
+        $start = $this->parseDate($t->created_at) ?: now();
+        $end   = $this->parseDate($t->closed_at)  ?: now();
         return max(0, $start->diffInSeconds($end));
     }
 
-    /** احسب الفترة التي قضتها مهمة في حالة معيّنة (مثل blocked) */
     private function taskStageSeconds(ProductionTask $t, string $stage): int
     {
         $logs = $t->logs;
         if (!$logs || $logs->isEmpty()) return 0;
 
-        $start = $t->created_at ? Carbon::parse($t->created_at)
-            : ($logs->first()?->happened_at ? Carbon::parse($logs->first()->happened_at) : now());
-        $end   = $t->closed_at ?? $logs->last()?->happened_at ?? now();
-        $end   = $end instanceof Carbon ? $end : Carbon::parse($end);
+        $start = $this->parseDate($t->created_at)
+            ?: ($logs->first()?->happened_at ? Carbon::parse($logs->first()->happened_at) : now());
+        $end   = $this->parseDate($t->closed_at) ?: $this->parseDate($logs->last()?->happened_at) ?: now();
 
         $firstChange = $logs->firstWhere('type','status_changed');
         $current = is_array($firstChange?->data ?? null) ? ($firstChange->data['from'] ?? 'pending') : ($t->status ?? 'pending');
@@ -193,9 +221,8 @@ class ViewProject extends ViewRecord
         $seconds = 0;
 
         foreach ($logs as $log) {
-            $tAt = $log->happened_at ?? $log->created_at;
+            $tAt = $this->parseDate($log->happened_at ?? $log->created_at);
             if (!$tAt) continue;
-            $tAt = $tAt instanceof Carbon ? $tAt : Carbon::parse($tAt);
 
             if ($current === $stage) $seconds += max(0, $cursor->diffInSeconds($tAt));
             $cursor = $tAt->clone();
@@ -210,10 +237,11 @@ class ViewProject extends ViewRecord
         return $seconds;
     }
 
-    /** الإحصائيات الرئيسية + الجداول + السلا */
     private function computeProjectStats(): array
     {
-        $tasks = $this->filteredTasksQuery()->get();
+        /** @var Project $project */
+        $project = $this->getRecord();
+        $tasks   = $this->filteredTasksQuery()->get();
 
         $now = now();
         $completedLike = ['completed','closed'];
@@ -223,36 +251,38 @@ class ViewProject extends ViewRecord
         $completed = $tasks->whereIn('status',$completedLike)->count();
         $active    = $tasks->whereIn('status',$activeLike)->count();
         $blocked   = $tasks->where('status','blocked')->count();
-        $overdue   = $tasks->filter(fn($t)=>$t->due_date && $now->gt($t->due_date) && !in_array($t->status,$completedLike))->count();
 
-        // SLA: نسبة الانتهاء قبل الموعد
+        $overdue   = $tasks->filter(function ($t) {
+            $due = $this->parseDate($t->due_date);
+            return $due && now()->gt($due) && !in_array($t->status, ['completed','closed'], true);
+        })->count();
+
         $onTime = $tasks->filter(function ($t) {
-            return $t->due_date && in_array($t->status,['completed','closed']) && $t->closed_at && $t->closed_at <= $t->due_date->endOfDay();
+            $due = $this->parseDate($t->due_date);
+            $closed = $this->parseDate($t->closed_at);
+            return $due && $closed && $closed->lte($due->copy()->endOfDay());
         })->count();
         $slaRate = $total ? round($onTime * 100 / $total, 1) : 0.0;
 
-        // طلبات الخامات المفتوحة للمشروع
         $openMr = MaterialRequest::whereIn('task_id', $tasks->pluck('id'))
             ->whereNull('provided_at')->count();
 
-        // دورات إكمال (للمنجزة/المغلقة)
-        $cycleSecs = $tasks->filter(fn($t)=>in_array($t->status,$completedLike))
-            ->map(fn($t)=>$this->taskCycleSeconds($t))
-            ->values();
+        $cycleSecs = $tasks->whereIn('status',$completedLike)
+            ->map(fn($t)=>$this->taskCycleSeconds($t))->values();
 
         $avgCycle = $cycleSecs->count() ? intval($cycleSecs->avg()) : 0;
         $medCycle = $cycleSecs->count() ? $cycleSecs->sort()->values()->get(intval(($cycleSecs->count()-1)/2)) : 0;
-
-        // متوسط زمن الحجب لكل مهمة
         $avgBlocked = $tasks->count()
             ? intval($tasks->map(fn($t)=>$this->taskStageSeconds($t,'blocked'))->avg() ?? 0)
             : 0;
 
         $countsByStatus = $tasks->groupBy('status')->map->count()->all();
 
-        // صفوف جدول المهام
         $rows = $tasks->map(function($t){
             $sec = $this->taskCycleSeconds($t);
+            $viewUrl = class_exists(ProductionTaskResource::class)
+                ? ProductionTaskResource::getUrl('view', ['record' => $t])
+                : '#';
             return [
                 'id'        => $t->id,
                 'dept'      => $t->department->dept_name ?? '—',
@@ -263,31 +293,19 @@ class ViewProject extends ViewRecord
                 'human'     => $this->humanFromSeconds($sec),
                 'created'   => optional($t->created_at)?->format('Y-m-d H:i') ?? '—',
                 'closed'    => optional($t->closed_at)?->format('Y-m-d H:i') ?? '—',
+                'url'       => $viewUrl,
             ];
         })->sortByDesc('sec')->values()->all();
 
-        // ملفات (من المهام – عدّل لو لديك علاقة مباشرة بالمشروع)
-        $files = $tasks->map(fn($t)=>[
-            'task_id'=>$t->id, 'dept'=>$t->department->dept_name ?? '—', 'file'=>$t->file_path ?? null,
-        ])->filter(fn($f)=>!empty($f['file']))->values()->all();
+        $files = $this->collectProjectFiles($project, $tasks->all());
 
-        // آخر نشاط
         $activity = $tasks->flatMap(fn($t)=>$t->logs)
-            ->sortByDesc('happened_at')
-            ->take(30)
-            ->values()
+            ->sortByDesc('happened_at')->take(50)->values()
             ->map(function($log){
-                $at = $log->happened_at ?? $log->created_at;
-                $at = $at ? Carbon::parse($at) : null;
-
-                // لو كانت data مصفوفة مع انتقال حالة، التقط القيمة الصحيحة
+                $at = $this->parseDate($log->happened_at ?? $log->created_at);
                 $raw = $log->data ?? null;
-                $act = is_array($raw)
-                    ? ($raw['to'] ?? $raw['status'] ?? $raw['action'] ?? $log->type)
-                    : ($log->type ?? '—');
-
+                $act = is_array($raw) ? ($raw['to'] ?? $raw['status'] ?? $raw['action'] ?? $log->type) : ($log->type ?? '—');
                 $actNorm = $this->normalizeStatus($act);
-
                 return [
                     'at'   => $at?->format('Y-m-d H:i') ?? '—',
                     'when' => $at?->diffForHumans() ?? '—',
@@ -297,22 +315,117 @@ class ViewProject extends ViewRecord
                 ];
             })->all();
 
-        // الإنجاز اليومي (آخر 14 يوم)
-        $days = 14;
-        $series = [];
+        $days = 14; $series = [];
         for ($i=$days-1; $i>=0; $i--) $series[now()->copy()->subDays($i)->format('Y-m-d')] = 0;
         foreach ($tasks as $t) {
             $d = optional($t->closed_at)?->format('Y-m-d');
             if ($d && array_key_exists($d,$series)) $series[$d] += 1;
         }
 
+        // تأخيرات بارزة
+        $delays = $tasks->filter(fn($t)=> $t->due_date && !in_array($t->status,['completed','closed'],true))
+            ->map(function($t){
+                $due = $this->parseDate($t->due_date);
+                $daysLate = $due ? max(0, $due->diffInDays(now(), false)) : 0;
+                return [
+                    'id' => $t->id,
+                    'dept' => $t->department->dept_name ?? '—',
+                    'emp' => $t->employee->employee_name ?? '—',
+                    'days_late' => $daysLate,
+                ];
+            })
+            ->sortByDesc('days_late')->take(10)->values()->all();
+
         return compact(
             'total','completed','active','blocked','overdue','onTime','slaRate',
-            'countsByStatus','avgCycle','medCycle','avgBlocked','rows','files','activity','series','openMr'
+            'countsByStatus','avgCycle','medCycle','avgBlocked','rows','files','activity','series','openMr','delays'
         );
     }
 
-    /* -------------------- Renderers (HTML/SVG) -------------------- */
+    /**
+     * يجمع الملفات من: ملفات المشروع (إن وُجدت علاقة files)، ملفات المهام (حقول شائعة)،
+     * وطلبات الخامات (po_file, invoice_file).
+     */
+    private function collectProjectFiles(Project $project, array $tasks = []): array
+    {
+        $out = [];
+
+        if (method_exists($project, 'files')) {
+            foreach ($project->files as $pf) {
+                $path = $pf->file_path ?? null;
+                if ($path) $out[] = [
+                    'source'  => 'project',
+                    'ref'     => $project->id,
+                    'label'   => $pf->file_name ?? basename($path),
+                    'path'    => $path,
+                    'display' => "project/{$project->id}/".($pf->file_name ?? basename($path)),
+                ];
+            }
+        }
+
+        $knownTaskFileCols = [
+            'attachment','file_path','drawing_file','design_file','manufacturing_file','install_file','client_receipt'
+        ];
+
+        /** @var ProductionTask $t */
+        foreach ($tasks as $t) {
+            foreach ($knownTaskFileCols as $col) {
+                $path = $t->getAttribute($col);
+                if ($path) {
+                    $out[] = [
+                        'source'  => 'task',
+                        'ref'     => $t->id,
+                        'label'   => "{$col} (#{$t->id})",
+                        'path'    => $path,
+                        'display' => "tasks/{$t->id}/{$col}-".basename((string)$path),
+                    ];
+                }
+            }
+
+            foreach ($t->materialRequests ?? [] as $mr) {
+                foreach (['po_file','invoice_file'] as $mcol) {
+                    $mpath = $mr->{$mcol} ?? null;
+                    if ($mpath) {
+                        $out[] = [
+                            'source'  => 'material_request',
+                            'ref'     => $mr->id,
+                            'label'   => "{$mcol} (MR #{$mr->id})",
+                            'path'    => $mpath,
+                            'display' => "mr/{$mr->id}/{$mcol}-".basename((string)$mpath),
+                        ];
+                    }
+                }
+            }
+        }
+
+        // حذف المكررات
+        $seen = [];
+        $final = [];
+        foreach ($out as $row) {
+            $key = md5(($row['path'] ?? '') . '|' . ($row['display'] ?? ''));
+            if (!isset($seen[$key])) {
+                $seen[$key] = true;
+                $final[] = $row;
+            }
+        }
+        return $final;
+    }
+
+    private function resolveStorageAbsolutePath(string $path): ?string
+    {
+        if (Str::startsWith($path, ['http://', 'https://'])) return null;
+        if (Str::startsWith($path, ['/storage/'])) {
+            $rel = Str::after($path, '/storage/');
+            return storage_path('app/public/' . $rel);
+        }
+        if (Storage::disk('public')->exists($path)) {
+            return Storage::disk('public')->path($path);
+        }
+        $abs = public_path(ltrim($path, '/'));
+        return is_file($abs) ? $abs : null;
+    }
+
+    /* ============================ Renderers ============================ */
 
     private function renderCardsHtml(array $s): string
     {
@@ -331,12 +444,22 @@ class ViewProject extends ViewRecord
         $html .= $card('SLA قبل الموعد', $s['slaRate'].'%', '#10b981');
         $html .= '</div>';
 
-        // دورات
         $html .= '<div class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-3 w-full">';
         $html .= $card('متوسط دورة الإكمال', $this->humanFromSeconds($s['avgCycle']), '#2563eb');
         $html .= $card('الوسيط لدورة الإكمال', $this->humanFromSeconds($s['medCycle']), '#7c3aed');
         $html .= $card('متوسط زمن الحجب/مهمة', $this->humanFromSeconds($s['avgBlocked']), '#a855f7');
         $html .= '</div>';
+
+        // قائمة مختصرة لأكثر المهام تأخرًا
+        if (!empty($s['delays'])) {
+            $html .= '<div class="mt-4 rounded-xl border bg-white/80 dark:bg-gray-900/70 p-4 shadow-sm">';
+            $html .= '<div class="text-sm text-gray-500 dark:text-gray-400 mb-2">أكثر المهام تأخرًا</div>';
+            $html .= '<ul class="text-sm space-y-1">';
+            foreach ($s['delays'] as $d) {
+                $html .= '<li>مهمة #'.$d['id'].' — '.$d['dept'].' — '.$d['emp'].' • متأخرة '.$d['days_late'].' يوم</li>';
+            }
+            $html .= '</ul></div>';
+        }
 
         return $html;
     }
@@ -344,6 +467,9 @@ class ViewProject extends ViewRecord
     private function renderStatusDistributionChart(array $counts): string
     {
         if (empty($counts)) return '<div class="text-sm text-gray-500">لا توجد مهام.</div>';
+
+        $order = ['pending','assigned','acknowledged','in_progress','blocked','under_review','rework','completed','closed','cancelled','draft'];
+        $counts = collect($counts)->sortBy(function($v,$k) use ($order){ $idx = array_search($k,$order,true); return $idx===false?999:$idx; })->all();
 
         $max = max($counts);
         $bar = function ($label, $value, $hex) use ($max) {
@@ -411,7 +537,7 @@ class ViewProject extends ViewRecord
                             <th class="px-3 py-2 font-semibold">المدة</th>
                             <th class="px-3 py-2 font-semibold">من</th>
                             <th class="px-3 py-2 font-semibold">إلى</th>
-                            <th class="px-3 py-2 font-semibold">مؤشر</th>
+                            <th class="px-3 py-2 font-semibold">رابط</th>
                         </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-gray-800 text-gray-800 dark:text-gray-200">
@@ -427,10 +553,10 @@ class ViewProject extends ViewRecord
                                 <td class="px-3 py-2"><?= e($r['human']) ?></td>
                                 <td class="px-3 py-2"><?= e($r['created']) ?></td>
                                 <td class="px-3 py-2"><?= e($r['closed']) ?></td>
-                                <td class="px-3 py-2 w-48">
-                                    <div class="w-full h-2 rounded bg-gray-200 dark:bg-gray-700 overflow-hidden">
-                                        <div class="h-2" style="width: 100%; background: <?= e($hex) ?>;"></div>
-                                    </div>
+                                <td class="px-3 py-2">
+                                    <?php if (!empty($r['url']) && $r['url'] !== '#'): ?>
+                                        <a class="text-primary-600 underline" href="<?= e($r['url']) ?>" target="_blank">عرض</a>
+                                    <?php else: ?>—<?php endif; ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -455,26 +581,32 @@ class ViewProject extends ViewRecord
         ob_start(); ?>
         <div class="rounded-xl border bg-white/80 dark:bg-gray-900/70 shadow-sm overflow-hidden w-full">
             <div class="px-4 py-3 border-b bg-gray-100 !text-gray-900 dark:bg-gray-900 dark:!text-gray-100">
-                <div class="text-sm font-semibold">ملفات المشروع</div>
+                <div class="text-sm font-semibold">ملفات المشروع عبر دورة الحياة</div>
             </div>
             <div class="p-4">
                 <div class="overflow-x-auto">
                     <table class="w-full table-auto text-sm rtl:text-right">
                         <thead class="bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
                         <tr>
-                            <th class="px-3 py-2 font-semibold"># المهمة</th>
-                            <th class="px-3 py-2 font-semibold">القسم</th>
-                            <th class="px-3 py-2 font-semibold">الملف</th>
+                            <th class="px-3 py-2 font-semibold">المصدر</th>
+                            <th class="px-3 py-2 font-semibold">المرجع</th>
+                            <th class="px-3 py-2 font-semibold">الاسم</th>
+                            <th class="px-3 py-2 font-semibold">تحميل</th>
                         </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-gray-800 text-gray-800 dark:text-gray-200">
-                        <?php foreach ($files as $f): ?>
+                        <?php foreach ($files as $f):
+                            $path = $f['path'] ?? null;
+                            $url  = $path ? (Str::startsWith($path, ['http://','https://']) ? $path : Storage::disk('public')->url($path)) : null;
+                            ?>
                             <tr class="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-900 dark:even:bg-gray-800">
-                                <td class="px-3 py-2"><?= e($f['task_id']) ?></td>
-                                <td class="px-3 py-2"><?= e($f['dept']) ?></td>
+                                <td class="px-3 py-2"><?= e($f['source']) ?></td>
+                                <td class="px-3 py-2"><?= e((string)($f['ref'] ?? '—')) ?></td>
+                                <td class="px-3 py-2"><?= e($f['label'] ?? basename((string)$path)) ?></td>
                                 <td class="px-3 py-2">
-                                    <a class="text-primary-600 underline" target="_blank"
-                                       href="<?= e(\Storage::disk('public')->url($f['file'])) ?>">تحميل</a>
+                                    <?php if ($url): ?>
+                                        <a class="text-primary-600 underline" target="_blank" href="<?= e($url) ?>">تحميل</a>
+                                    <?php else: ?>—<?php endif; ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -525,7 +657,7 @@ class ViewProject extends ViewRecord
         <?php return (string) ob_get_clean();
     }
 
-    /* -------------------- Infolist with Tabs -------------------- */
+    /* ============================ Infolist ============================ */
 
     public function infolist(Infolist $infolist): Infolist
     {
@@ -534,74 +666,60 @@ class ViewProject extends ViewRecord
         return $infolist
             ->columns(12)
             ->schema([
-                Tabs::make('projectTabs')
-                    ->columnSpan(12)
-                    ->tabs([
-                        Tab::make('معلومات المشروع')
-                            ->schema([
-                                Section::make()->columns(3)->schema([
-                                    TextEntry::make('project_name')->label('اسم المشروع')
-                                        ->state(fn()=> $this->record->project_name ?? $this->record->name ?? '—'),
-                                    TextEntry::make('client')->label('العميل')
-                                        ->state(fn()=> $this->record->client->client_name ?? '—'),
-                                    TextEntry::make('showroom')->label('المعرض')
-                                        ->state(fn()=> $this->record->showroom->name ?? '—'),
-                                    TextEntry::make('start_date')->label('تاريخ البدء')
-                                        ->state(fn()=> optional($this->record->start_date)?->format('Y-m-d') ?? '—'),
-                                    TextEntry::make('due_date')->label('تاريخ التسليم')
-                                        ->state(fn()=> optional($this->record->end_date)?->format('Y-m-d') ?? '—'),
-                                    TextEntry::make('description')->label('الوصف')->columnSpanFull()
-                                        ->state(fn()=> $this->record->description ?? $this->record->project_description ?? '—'),
-                                ]),
-                            ]),
-
-                        Tab::make('ملخص')
-                            ->schema([
-                                Section::make()->columns(1)->schema([
-                                    TextEntry::make('cards')->label('المؤشرات')->html()
-                                        ->state(fn()=> $this->renderCardsHtml($stats))
-                                        ->columnSpanFull(),
-
-                                    Section::make('مخططات')->columns(2)->schema([
-                                        TextEntry::make('status_chart')->label('توزيع الحالات')->html()
-                                            ->state(fn()=> $this->renderStatusDistributionChart($stats['countsByStatus'])),
-                                        TextEntry::make('daily_chart')->label('الإنجاز اليومي')->html()
-                                            ->state(fn()=> $this->renderDailyCompletionChart($stats['series'])),
-                                    ])->columnSpanFull(),
-                                ]),
-                            ]),
-
-                        Tab::make('مهام')
-                            ->schema([
-                                Section::make()->columns(1)->schema([
-                                    TextEntry::make('tasks_table')->label('الوقت المستغرق لكل مهمة')->html()
-                                        ->state(fn()=> $this->renderTasksTableHtml($stats['rows']))
-                                        ->columnSpanFull(),
-                                ]),
-                            ]),
-
-                        Tab::make('ملفات')
-                            ->schema([
-                                Section::make()->columns(1)->schema([
-                                    TextEntry::make('files_table')->label('ملفات المشروع')->html()
-                                        ->state(fn()=> $this->renderFilesTableHtml($stats['files']))
-                                        ->columnSpanFull(),
-                                ]),
-                            ]),
-
-                        Tab::make('نشاط')
-                            ->schema([
-                                Section::make()->columns(1)->schema([
-                                    TextEntry::make('activity')->label('آخر النشاط')->html()
-                                        ->state(fn()=> $this->renderActivityHtml($stats['activity']))
-                                        ->columnSpanFull(),
-                                ]),
-                            ]),
+                Tabs::make('projectTabs')->columnSpan(12)->tabs([
+                    Tab::make('معلومات المشروع')->schema([
+                        Section::make()->columns(3)->schema([
+                            TextEntry::make('project_name')->label('اسم المشروع')
+                                ->state(fn()=> $this->record->project_name ?? $this->record->name ?? '—'),
+                            TextEntry::make('client')->label('العميل')
+                                ->state(fn()=> $this->record->client->client_name ?? '—'),
+                            TextEntry::make('showroom')->label('المعرض')
+                                ->state(fn()=> $this->record->showroom->name ?? '—'),
+                            TextEntry::make('start_date')->label('تاريخ البدء')
+                                ->state(fn()=> optional($this->record->start_date)?->format('Y-m-d') ?? '—'),
+                            TextEntry::make('due_date')->label('تاريخ التسليم')
+                                ->state(fn()=> optional($this->record->end_date)?->format('Y-m-d') ?? '—'),
+                            TextEntry::make('description')->label('الوصف')->columnSpanFull()
+                                ->state(fn()=> $this->record->description ?? $this->record->project_description ?? '—'),
+                        ]),
                     ]),
+
+                    Tab::make('ملخص')->schema([
+                        Section::make()->columns(1)->schema([
+                            TextEntry::make('cards')->label('المؤشرات')->html()
+                                ->state(fn()=> $this->renderCardsHtml($stats))->columnSpanFull(),
+                            Section::make('مخططات')->columns(2)->schema([
+                                TextEntry::make('status_chart')->label('توزيع الحالات')->html()
+                                    ->state(fn()=> $this->renderStatusDistributionChart($stats['countsByStatus'])),
+                                TextEntry::make('daily_chart')->label('الإنجاز اليومي')->html()
+                                    ->state(fn()=> $this->renderDailyCompletionChart($stats['series'])),
+                            ])->columnSpanFull(),
+                        ]),
+                    ]),
+
+                    Tab::make('مهام')->schema([
+                        Section::make()->columns(1)->schema([
+                            TextEntry::make('tasks_table')->label('الوقت المستغرق لكل مهمة')->html()
+                                ->state(fn()=> $this->renderTasksTableHtml($stats['rows']))->columnSpanFull(),
+                        ]),
+                    ]),
+
+                    Tab::make('ملفات')->schema([
+                        Section::make()->columns(1)->schema([
+                            TextEntry::make('files_table')->label('ملفات المشروع')->html()
+                                ->state(fn()=> $this->renderFilesTableHtml($stats['files']))->columnSpanFull(),
+                        ]),
+                    ]),
+
+                    Tab::make('نشاط')->schema([
+                        Section::make()->columns(1)->schema([
+                            TextEntry::make('activity')->label('آخر النشاط')->html()
+                                ->state(fn()=> $this->renderActivityHtml($stats['activity']))->columnSpanFull(),
+                        ]),
+                    ]),
+                ]),
             ]);
     }
-
-    /* -------------------- Breadcrumbs / Redirect -------------------- */
 
     protected function getRedirectUrl(): string
     {
