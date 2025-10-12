@@ -24,7 +24,6 @@ class TaskResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        // احذف أي علاقة غير موجودة (مثل comments لو مش معرّفة)
         return parent::getEloquentQuery()
             ->with(['project','department','employee','logs']);
     }
@@ -75,10 +74,11 @@ class TaskResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'     => Pages\ListTasks::route('/'),
-            'view'      => Pages\ViewTask::route('/{record}'),
             'active'    => Pages\ActiveTasks::route('/active'),
             'completed' => Pages\CompletedTasks::route('/completed'),
+            'index'     => Pages\ListTasks::route('/'),
+            'view'      => Pages\ViewTask::route('/{record}'),
+
         ];
     }
 }

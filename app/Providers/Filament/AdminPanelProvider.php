@@ -204,6 +204,19 @@ class AdminPanelProvider extends PanelProvider
                     )
 
                     ->group(
+                        \Filament\Navigation\NavigationGroup::make()
+                            ->label('التقارير')
+                            ->icon('heroicon-o-chart-bar-square')
+                            ->collapsible()
+                            ->collapsed()
+                            ->items([
+                                \Filament\Navigation\NavigationItem::make('لوحة التقارير')
+//                                    ->icon('heroicon-o-chart-bar-square')
+                                    ->url(\App\Filament\Pages\Reports\PerformanceDashboard::getUrl(/* panel: 'admin' */)),
+                            ])
+                    )
+
+                    ->group(
                         NavigationGroup::make()->label('الإعدادات ')->icon('heroicon-o-cog')->collapsible()->collapsed()
                             ->items([
                                 NavigationItem::make('إعدادات النظام')
