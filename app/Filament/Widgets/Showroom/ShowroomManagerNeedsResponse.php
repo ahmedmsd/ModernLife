@@ -34,7 +34,7 @@ class ShowroomManagerNeedsResponse extends TableWidget
             )
             ->columns([
                 Tables\Columns\TextColumn::make('id')->label('#'),
-                Tables\Columns\TextColumn::make('project.project_name')->label('المشروع'),
+                Tables\Columns\TextColumn::make('project_name')->label('المشروع'),
                 Tables\Columns\TextColumn::make('client.client_name')->label('العميل'),
                 Tables\Columns\TextColumn::make('phase_status')->label('الحالة')->badge(),
             ])

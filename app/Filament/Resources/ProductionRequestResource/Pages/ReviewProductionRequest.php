@@ -21,7 +21,53 @@ class ReviewProductionRequest extends Page
 
     public function mount(ProductionRequest $record): void
     {
-        $this->record = $record->load(['client', 'project', 'logs', 'productionRequestFiles', 'files']);
+        $this->record = $record->load(['client', 'project', 'logs','logs.causer', 'productionRequestFiles', 'files']);
+    }
+
+    public function logTitle($log): string
+    {
+        $t = (string) $log->type;
+        $phase  = data_get($log->data, 'phase');
+        $status = data_get($log->data, 'status');
+        $ownerR = data_get($log->data, 'owner_role');
+
+        return match ($t) {
+            'created'      => "تم إنشاء الطلب",
+            'received'     => "تأكيد الاستلام ({$ownerR})",
+            'under_review' => "بدء المراجعة ({$ownerR})",
+            'moved'        => "نقل الطلب إلى {$ownerR} — {$phase} / {$status}",
+            'approved'     => "تم الاعتماد — {$phase} / {$status}",
+            'rejected'     => "تم الرفض — {$phase} / {$status}",
+            default        => "عملية: {$t}",
+        };
+    }
+
+
+    public function logIcon($log): string
+    {
+        return match ((string) $log->type) {
+            'created'      => 'heroicon-o-plus-circle',
+            'received'     => 'heroicon-o-inbox-arrow-down',
+            'under_review' => 'heroicon-o-eye',
+            'moved'        => 'heroicon-o-arrow-right-circle',
+            'approved'     => 'heroicon-o-check-circle',
+            'rejected'     => 'heroicon-o-x-circle',
+            default        => 'heroicon-o-information-circle',
+        };
+    }
+
+
+    public function logColor($log): string
+    {
+        return match ((string) $log->type) {
+            'approved'     => 'success',
+            'rejected'     => 'danger',
+            'moved'        => 'info',
+            'received'     => 'primary',
+            'under_review' => 'warning',
+            'created'      => 'gray',
+            default        => 'gray',
+        };
     }
 
     public function getHeaderActions(): array
@@ -56,7 +102,6 @@ class ReviewProductionRequest extends Page
                 $this->record->refresh()->load(['client', 'project', 'logs', 'productionRequestFiles', 'files']);
             });
 
-        // 2) بدء مراجعة المعرض
         $actions[] = Action::make('startShowroomReviewAction')
             ->label('بدء مراجعة المعرض')
             ->icon('heroicon-o-play-circle')

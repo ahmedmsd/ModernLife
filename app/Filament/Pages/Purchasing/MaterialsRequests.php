@@ -99,7 +99,8 @@ class MaterialsRequests extends Page implements HasTable
                     ->label('المطلوبات')
                     ->wrap()
                     ->limit(120),
-
+                TextColumn::make('estimated_cost')
+                    ->label('الميزانية '),
                 TextColumn::make('requested_at')
                     ->label('تاريخ الطلب')
                     ->dateTime('Y-m-d H:i')
@@ -192,7 +193,6 @@ class MaterialsRequests extends Page implements HasTable
                             }
                         });
 
-                        // تنبيه تجاوز حدّ المشتريات (خارج الترانزاكشن)
                         $capPct  = (float) (SystemSetting::get('purchasing_budget_cap_pct', 0.50) ?? 0.50);
                         $task    = $record->task;
                         $pr      = $task?->project?->productionRequest;
@@ -225,12 +225,7 @@ class MaterialsRequests extends Page implements HasTable
                         }
                     }),
 
-                /**
-                 * (2) تأكيد توفير الخامات:
-                 * - MaterialRequest: approved -> fulfilled + حفظ بيانات الفاتورة
-                 * - ProductionTask : status -> materials_done, owner -> department_manager
-                 *   (يعطي مدير القسم زر "تأكيد استلام الخامات" تمهيدًا لبدء التصنيع)
-                 */
+
                 Action::make('confirmMaterials')
                     ->label('تأكيد توفير الخامات')
                     ->icon('heroicon-o-check-badge')

@@ -31,12 +31,13 @@ class FactoryManagerCurrentRequests extends TableWidget
                 ProductionRequest::query()
                     ->with(['project','client'])
                     ->whereNotIn('phase_status', $terminal)
-                    ->where('current_owner_user_id', $uid)
+//                    ->where('current_owner_user_id', $uid)
+                    ->where('current_owner_role', 'factory_manager')
                     ->latest('id')
             )
             ->columns([
                 Tables\Columns\TextColumn::make('id')->label('#'),
-                Tables\Columns\TextColumn::make('project.project_name')->label('المشروع'),
+                Tables\Columns\TextColumn::make('project_name')->label('المشروع'),
                 Tables\Columns\TextColumn::make('client.client_name')->label('العميل'),
                 Tables\Columns\TextColumn::make('phase_status')->label('الحالة')->badge(),
             ])

@@ -164,6 +164,7 @@ class ViewMaterialRequest extends Page implements HasInfolists
                 }),
 
             // 3) إلغاء/رفض الطلب
+            // 3) إلغاء/رفض الطلب — محدث ليرجعها لمدير القسم
             Action::make('cancelRequest')
                 ->label('رفض الطلب')
                 ->icon('heroicon-o-x-circle')
@@ -177,12 +178,70 @@ class ViewMaterialRequest extends Page implements HasInfolists
                 ])
                 ->requiresConfirmation()
                 ->action(function (array $data) {
-                    $this->record->update([
-                        'status' => 'cancelled',
-                        'note'   => trim(($this->record->note ? $this->record->note."\n\n" : '').'[إلغاء]: '.$data['reason']),
-                    ]);
+                    DB::transaction(function () use ($data) {
+                        $reason = trim((string)($data['reason'] ?? ''));
 
-                    Notification::make()->warning()->title('تم رفض الطلب')->send();
+                        // (1) حدّث طلب الخامات
+                        $mrPayload = [
+                            'status' => 'cancelled',
+                            'note'   => trim(($this->record->note ? $this->record->note."\n\n" : '') . '[رفض المشتريات]: ' . $reason),
+                        ];
+                        if (\Illuminate\Support\Facades\Schema::hasColumn($this->record->getTable(), 'cancelled_at')) {
+                            $mrPayload['cancelled_at'] = now();
+                        }
+                        if (\Illuminate\Support\Facades\Schema::hasColumn($this->record->getTable(), 'cancelled_by')) {
+                            $mrPayload['cancelled_by'] = auth()->id();
+                        }
+                        $this->record->update($mrPayload);
+
+                        // (2) أعد المهمة لمدير القسم بحالة on_hold
+                        /** @var ProductionTask|null $task */
+                        $task = $this->record->task()->lockForUpdate()->first();
+                        if ($task && ! in_array($task->status, ['completed','closed','cancelled'], true)) {
+                            $dept    = $task->department;
+                            $ownerId = $dept?->manager_id ?? $dept?->head_user_id ?? null;
+
+                            $taskPayload = [
+                                'status' => 'on_hold', // ← حالة موجودة بالـ ENUM
+                            ];
+                            if (\Illuminate\Support\Facades\Schema::hasColumn($task->getTable(), 'current_owner_role')) {
+                                $taskPayload['current_owner_role'] = 'department_manager';
+                            }
+                            if (\Illuminate\Support\Facades\Schema::hasColumn($task->getTable(), 'current_owner_user_id')) {
+                                $taskPayload['current_owner_user_id'] = $ownerId;
+                            }
+                            // أوقات خطية مفيدة
+                            if (\Illuminate\Support\Facades\Schema::hasColumn($task->getTable(), 'received_by_owner_at')) {
+                                $taskPayload['received_by_owner_at'] = null;
+                            }
+                            if (\Illuminate\Support\Facades\Schema::hasColumn($task->getTable(), 'sent_to_owner_at')) {
+                                $taskPayload['sent_to_owner_at'] = now();
+                            }
+
+                            $task->update($taskPayload);
+
+                            if (method_exists($task, 'logs')) {
+                                $task->logs()->create([
+                                    'type'        => 'materials_request_rejected', // اسم دالّ
+                                    'data'        => [
+                                        'mr_id'  => $this->record->id,
+                                        'by'     => auth()->id(),
+                                        'role'   => 'purchasing_manager',
+                                        'to_role'=> 'department_manager',
+                                        'new_status' => 'on_hold',
+                                        'reason' => $reason,
+                                    ],
+                                    'happened_at' => now(),
+                                ]);
+                            }
+                        }
+                    });
+
+                    Notification::make()
+                        ->warning()
+                        ->title('تم رفض الطلب وإرجاع المهمة لمدير القسم (حالة: موقوفة مؤقتًا)')
+                        ->send();
+
                     $this->refreshRecord();
                 }),
         ];
@@ -240,6 +299,7 @@ class ViewMaterialRequest extends Page implements HasInfolists
                         TextEntry::make('requestedBy.name')->label('مقدّم الطلب')
                             ->getStateUsing(fn () => ($r->requestedBy?->name) ?? ($r->task?->employee?->employee_name) ?? '—'),
                         TextEntry::make('requested_at')->label('تاريخ الطلب')->dateTime('Y-m-d H:i'),
+                        TextEntry::make('task.estimated_cost')->label('الميزانية'),
                         TextEntry::make('expected_delivery_at')->label('موعد التوريد (متوقّع)')->dateTime('Y-m-d H:i'),
                         TextEntry::make('status')->label('الحالة')->badge()
                             ->color(fn ($state) => $this->statusColor($state))

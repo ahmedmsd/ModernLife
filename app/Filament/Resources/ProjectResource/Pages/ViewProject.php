@@ -411,6 +411,59 @@ class ViewProject extends ViewRecord
         return $final;
     }
 
+    private function encodeUrlPath(string $url): string
+    {
+        $parts = parse_url($url);
+        $scheme = $parts['scheme'] ?? null;
+        $host   = $parts['host']   ?? null;
+        $port   = isset($parts['port']) ? ':' . $parts['port'] : '';
+        $path   = $parts['path']   ?? '';
+        $query  = isset($parts['query']) ? '?' . $parts['query'] : '';
+        $frag   = isset($parts['fragment']) ? '#' . $parts['fragment'] : '';
+
+        $segments = array_map(fn ($s) => rawurlencode(urldecode($s)), explode('/', ltrim($path, '/')));
+        $encodedPath = '/' . implode('/', $segments);
+
+        if ($scheme && $host) {
+            return "{$scheme}://{$host}{$port}{$encodedPath}{$query}{$frag}";
+        }
+
+        // Relative URL
+        return "{$encodedPath}{$query}{$frag}";
+    }
+
+    private function getFileUrl(string $path): ?string
+    {
+        if (\Illuminate\Support\Str::startsWith($path, ['http://', 'https://'])) {
+            return $this->encodeUrlPath($path);
+        }
+
+        if (\Illuminate\Support\Str::startsWith($path, ['/storage/'])) {
+            return $this->encodeUrlPath(url($path));
+        }
+
+        try {
+            if (\Storage::exists($path)) {
+                return $this->encodeUrlPath(\Storage::url($path));
+            }
+        } catch (\Throwable $e) {}
+
+        try {
+            if (\Storage::disk('public')->exists($path)) {
+                return $this->encodeUrlPath(\Storage::disk('public')->url($path));
+            }
+        } catch (\Throwable $e) {}
+
+        $abs = public_path(ltrim($path, '/'));
+        if (is_file($abs)) {
+            return $this->encodeUrlPath(url('/' . ltrim($path, '/')));
+        }
+
+        return null;
+    }
+
+
+
     private function resolveStorageAbsolutePath(string $path): ?string
     {
         if (Str::startsWith($path, ['http://', 'https://'])) return null;
@@ -597,7 +650,7 @@ class ViewProject extends ViewRecord
                         <tbody class="divide-y divide-gray-100 dark:divide-gray-800 text-gray-800 dark:text-gray-200">
                         <?php foreach ($files as $f):
                             $path = $f['path'] ?? null;
-                            $url  = $path ? (Str::startsWith($path, ['http://','https://']) ? $path : Storage::disk('public')->url($path)) : null;
+                            $url = $path ? $this->getFileUrl($path) : null;
                             ?>
                             <tr class="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-900 dark:even:bg-gray-800">
                                 <td class="px-3 py-2"><?= e($f['source']) ?></td>

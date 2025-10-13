@@ -40,6 +40,7 @@
     };
 
     $clientName   = $record->client->client_name ?? '—';
+    $projectName   = $record->project_name ?? '—';
     $showroomName = $record->showroom->name ?? 'غير مرتبط';
     $ownerRole    = $record->current_owner_role ?? '—';
     $reqType      = $record->request_type === 'indirect' ? 'غير مباشر' : 'مباشر';
@@ -83,12 +84,7 @@
 
             <div>
                 <span class="text-gray-500 dark:text-gray-400">المشروع:</span>
-                @if ($project)
-                    <a href="{{ \App\Filament\Resources\ProjectResource::getUrl('view', ['record' => $project]) }}"
-                       class="text-primary-600 underline">#{{ $project->id }} — {{ $project->project_name }}</a>
-                @else
-                    <span class="font-semibold">—</span>
-                @endif
+                <span class="font-semibold">{{ $projectName }}</span>
             </div>
 
             <div><span class="text-gray-500 dark:text-gray-400">أُرسل للمالك:</span> <span class="font-semibold">{{ $sentAt }}</span></div>
@@ -110,6 +106,108 @@
             </div>
         </div>
     </x-filament::section>
+
+    {{-- سيكشن الحركات الأساسية (Filament v3) --}}
+    <x-filament::section
+        heading="العمليات / الحركات الأساسية"
+        icon="heroicon-o-queue-list"
+        collapsible
+    >
+        @php
+            $logs = $this->record->logs()
+                ->orderByDesc('happened_at')
+                ->orderByDesc('id')
+                ->get();
+        @endphp
+
+        @if ($logs->isEmpty())
+            <div class="rounded-xl border border-gray-200 dark:border-gray-700 p-6 text-center">
+                <div class="mx-auto mb-2 h-10 w-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
+                    <x-filament::icon icon="heroicon-o-queue-list" class="h-6 w-6 text-gray-500" />
+                </div>
+                <div class="text-base font-medium text-gray-900 dark:text-gray-100">لا توجد حركات بعد</div>
+                <div class="mt-1 text-sm text-gray-500">
+                    سيظهر هنا أي استلام/بدء مراجعة/نقل/اعتماد/رفض يتم على الطلب.
+                </div>
+            </div>
+        @else
+            <div class="space-y-4">
+                @foreach ($logs as $log)
+                    <div class="relative pl-5">
+                        <div class="absolute left-0 top-2 h-[6px] w-[6px] rounded-full bg-gray-300 dark:bg-gray-600"></div>
+
+                        <div class="flex items-start gap-2.5">
+
+                            <span class="mt-[2px] flex h-4 w-4 items-center justify-center">
+                                <x-filament::icon
+                                    :icon="$this->logIcon($log)"
+                                    class="!w-4 !h-4 shrink-0"
+                                    :class="\Illuminate\Support\Arr::toCssClasses([
+                                        'text-gray-500' => $this->logColor($log) === 'gray',
+                                        'text-primary-600' => $this->logColor($log) === 'primary',
+                                        'text-success-600' => $this->logColor($log) === 'success',
+                                        'text-danger-600' => $this->logColor($log) === 'danger',
+                                        'text-info-600' => $this->logColor($log) === 'info',
+                                        'text-warning-600' => $this->logColor($log) === 'warning',
+                                    ])"
+                                />
+                            </span>
+
+                            <div class="grow">
+                                <div class="text-sm font-medium">
+                                    {{ $this->logTitle($log) }}
+                                </div>
+
+                                <div class="mt-0.5 text-xs text-gray-500">
+                                    {{ optional($log->happened_at)->format('Y-m-d H:i') }}
+                                    @if ($log->causer)
+                                        — بواسطة: {{ $log->causer->name }}
+                                    @endif
+                                </div>
+
+                                @if (!empty($log->note))
+                                    <div class="mt-1 text-sm">
+                                        {{ $log->note }}
+                                    </div>
+                                @endif
+
+                                @php
+                                    $reason = data_get($log->data, 'reason')
+                                        ?? data_get($log->data, 'reason_factory')
+                                        ?? data_get($log->data, 'reason_showroom');
+                                    $phase  = data_get($log->data, 'phase');
+                                    $status = data_get($log->data, 'status');
+                                    $ownerR = data_get($log->data, 'owner_role');
+                                @endphp
+
+                                <div class="mt-2 flex flex-wrap gap-1.5">
+                                    @if ($phase)
+                                        <x-filament::badge size="sm" color="gray">المرحلة: {{ $phase }}</x-filament::badge>
+                                    @endif
+                                    @if ($status)
+                                        <x-filament::badge size="sm" color="gray">الحالة: {{ $status }}</x-filament::badge>
+                                    @endif
+                                    @if ($ownerR)
+                                        <x-filament::badge size="sm" color="gray">المالك: {{ $ownerR }}</x-filament::badge>
+                                    @endif
+                                </div>
+
+                                @if ($reason)
+                                    <div class="mt-2 rounded-md border border-red-200/60 dark:border-red-900/40 bg-red-50 dark:bg-red-900/20 p-2.5">
+                                        <div class="text-xs font-semibold text-red-700 dark:text-red-300">سبب الرفض</div>
+                                        <div class="mt-0.5 text-sm text-red-800 dark:text-red-200 leading-relaxed">
+                                            {!! nl2br(e($reason)) !!}
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+    </x-filament::section>
+
 
     {{-- ملفات الطلب + ملف الاتفاقية في جدول واحد --}}
     <x-filament::section class="mt-6" wire:key="files-section-{{ $actionRefreshKey ?? 0 }}">

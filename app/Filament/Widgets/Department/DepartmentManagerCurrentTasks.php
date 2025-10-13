@@ -30,7 +30,7 @@ class DepartmentManagerCurrentTasks extends TableWidget
                     ->with(['project','department'])
                     ->where('current_owner_user_id', $uid)
                     ->whereIn('status', [
-                        'pending', 'received','in_progress','materials_done','waiting_production','under_review'
+                        'pending','on_hold', 'received','in_progress','materials_done','waiting_production','under_review'
                     ])
                     ->latest('id')
             )

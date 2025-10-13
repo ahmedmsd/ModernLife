@@ -61,7 +61,7 @@ class ProductionRequestResource extends Resource
                     $user = auth()->user();
                     $opts = [];
 
-                    if ($user?->hasAnyRole(['sales', 'factory_manager', 'admin', 'super-admin'])) {
+                    if ($user?->hasAnyRole(['sales', 'showroom_manager', 'admin', 'super-admin'])) {
                         $opts['direct'] = 'مباشر (من المبيعات للمصنع)';
                     }
                     if ($user?->hasAnyRole(['sales','showroom_manager', 'admin', 'super-admin'])) {
