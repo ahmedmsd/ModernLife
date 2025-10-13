@@ -27,15 +27,12 @@ class MaintenanceRequestResource extends Resource
     protected static ?string $modelLabel       = 'طلب صيانة';
     protected static ?int    $navigationSort   = 50;
 
-    // تعطيل تفويض السياسات داخل Filament لمنع منعٍ صامت للإنشاء/الحفظ
     protected static bool $shouldAuthorizeResource = false;
-
-    public static function shouldRegisterNavigation(): bool
+    public static function canAccess(): bool
     {
-        $u = Auth::user();
-        return $u && $u->hasAnyRole(['sales','showroom_manager','factory_manager','admin','super-admin']);
+        return auth()->check()
+            && auth()->user()->hasAnyRole(['sales','showroom_manager','factory_manager','admin','super-admin']);
     }
-
     public static function canCreate(): bool
     {
         $u = Auth::user();

@@ -280,8 +280,8 @@ class ViewProject extends ViewRecord
 
         $rows = $tasks->map(function($t){
             $sec = $this->taskCycleSeconds($t);
-            $viewUrl = class_exists(ProductionTaskResource::class)
-                ? ProductionTaskResource::getUrl('view', ['record' => $t])
+            $viewUrl = class_exists(TaskResource::class)
+                ? TaskResource::getUrl('view', ['record' => $t])
                 : '#';
             return [
                 'id'        => $t->id,
@@ -342,10 +342,7 @@ class ViewProject extends ViewRecord
         );
     }
 
-    /**
-     * يجمع الملفات من: ملفات المشروع (إن وُجدت علاقة files)، ملفات المهام (حقول شائعة)،
-     * وطلبات الخامات (po_file, invoice_file).
-     */
+
     private function collectProjectFiles(Project $project, array $tasks = []): array
     {
         $out = [];
@@ -726,8 +723,13 @@ class ViewProject extends ViewRecord
                                 ->state(fn()=> $this->record->project_name ?? $this->record->name ?? '—'),
                             TextEntry::make('client')->label('العميل')
                                 ->state(fn()=> $this->record->client->client_name ?? '—'),
-                            TextEntry::make('showroom')->label('المعرض')
-                                ->state(fn()=> $this->record->showroom->name ?? '—'),
+                            TextEntry::make('showroom')
+                                ->label('المعرض')
+                                ->state(fn () =>
+                                    $this->record->showroom?->name
+                                    ?? $this->record->productionRequest?->showroom?->name
+                                    ?? '—'
+                                ),
                             TextEntry::make('start_date')->label('تاريخ البدء')
                                 ->state(fn()=> optional($this->record->start_date)?->format('Y-m-d') ?? '—'),
                             TextEntry::make('due_date')->label('تاريخ التسليم')

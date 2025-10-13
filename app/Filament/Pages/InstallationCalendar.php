@@ -18,21 +18,11 @@ class InstallationCalendar extends Page
 
     protected static string $view = 'filament.pages.installation-calendar';
 
-    /** إظهار الصفحة فقط للأدوار ذات الصلة */
-    public static function shouldRegisterNavigation(): bool
+    public static function canAccess(): bool
     {
-        $u = Auth::user();
-        return $u && $u->hasAnyRole([
-                'installation_manager',
-                'showroom_manager',
-                'quality_manager',
-                'factory_manager',
-                'department_manager',
-                'admin', 'super-admin',
-            ]);
+        return auth()->check()
+            && auth()->user()->hasAnyRole(['admin','super-admin','showroom_manager', 'factory_manager']);
     }
-
-    // خصائص للنافذة الجانبية
     public bool $showDetail = false;
     public array $detail = [];
 

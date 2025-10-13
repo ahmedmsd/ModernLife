@@ -229,7 +229,6 @@ class ViewTask extends ViewRecord
                         return;
                     }
 
-                    // تمرير التواريخ + الملاحظة للخدمة
                     $this->workflow()->materialsReceivedOk(
                         $this->record,
                         $data['planned_start'],

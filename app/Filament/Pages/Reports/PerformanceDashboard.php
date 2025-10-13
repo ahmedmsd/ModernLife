@@ -27,6 +27,11 @@ class PerformanceDashboard extends Page implements Forms\Contracts\HasForms
     protected static string $view = 'filament.pages.reports.performance-dashboard';
     protected static ?string $title = 'لوحة التقارير';
 
+    public static function canAccess(): bool
+    {
+        return auth()->check()
+            && auth()->user()->hasAnyRole(['admin','super-admin']);
+    }
     public array $filters = [];
 
     public ?string $date_from = null;

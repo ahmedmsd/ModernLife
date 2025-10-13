@@ -138,7 +138,7 @@ class TaskPageHelper
     public function canRequestMaterials(ProductionTask $t, ?Authenticatable $u): bool
     {
         return $this->userHasAnyRole($u, ['department_manager','admin','super-admin'])
-            && $this->statusVal($t) === 'received'
+            && ($this->statusVal($t) === 'received' || $this->statusVal($t) === 'on_hold')
             && !$this->hasOpenMaterialsRequest($t)
             && $this->ownerIs($t, 'department_manager');
     }

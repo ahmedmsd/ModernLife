@@ -211,8 +211,8 @@ class AdminPanelProvider extends PanelProvider
                             ->collapsed()
                             ->items([
                                 \Filament\Navigation\NavigationItem::make('لوحة التقارير')
-//                                    ->icon('heroicon-o-chart-bar-square')
-                                    ->url(\App\Filament\Pages\Reports\PerformanceDashboard::getUrl(/* panel: 'admin' */)),
+                                ->url(\App\Filament\Pages\Reports\PerformanceDashboard::getUrl())
+                                ->visible(fn () => \App\Filament\Pages\Reports\PerformanceDashboard::canAccess()),
                             ])
                     )
 

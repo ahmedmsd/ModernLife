@@ -94,6 +94,7 @@ class MainStats extends BaseWidget
         if ($u?->hasRole('showroom_manager')) {
             $showroomRequests = ProductionRequest::query()
                 ->where('current_owner_role', 'showroom_manager')
+                ->where('current_owner_user_id', $uid)
                 ->whereNotIn('phase_status', $terminalReqStatuses)
                 ->count();
 
