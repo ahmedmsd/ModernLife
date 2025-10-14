@@ -52,6 +52,41 @@ class ViewMaterialRequest extends Page implements HasInfolists
         return "طلب خامات #{$this->record->id}";
     }
 
+    private function encodeUrlPath(string $url): string
+    {
+        $parts = parse_url($url);
+        $scheme = $parts['scheme'] ?? null;
+        $host   = $parts['host']   ?? null;
+        $port   = isset($parts['port']) ? ':' . $parts['port'] : '';
+        $path   = $parts['path']   ?? '';
+        $query  = isset($parts['query']) ? '?' . $parts['query'] : '';
+        $frag   = isset($parts['fragment']) ? '#' . $parts['fragment'] : '';
+
+        $segments = array_map(fn ($s) => rawurlencode(urldecode($s)), explode('/', ltrim($path, '/')));
+        $encodedPath = '/' . implode('/', $segments);
+
+        return $scheme && $host
+            ? "{$scheme}://{$host}{$port}{$encodedPath}{$query}{$frag}"
+            : "{$encodedPath}{$query}{$frag}";
+    }
+
+    private function fileUrl(string $path): ?string
+    {
+        if (\Illuminate\Support\Str::startsWith($path, ['http://', 'https://'])) {
+            return $this->encodeUrlPath($path);
+        }
+        try {
+            if (\Storage::disk('public')->exists($path)) {
+                return $this->encodeUrlPath(\Storage::disk('public')->url($path));
+            }
+            if (\Storage::exists($path)) {
+                return $this->encodeUrlPath(\Storage::url($path));
+            }
+        } catch (\Throwable $e) {}
+        return null;
+    }
+
+
     public function getHeaderActions(): array
     {
         return [
@@ -164,7 +199,6 @@ class ViewMaterialRequest extends Page implements HasInfolists
                 }),
 
             // 3) إلغاء/رفض الطلب
-            // 3) إلغاء/رفض الطلب — محدث ليرجعها لمدير القسم
             Action::make('cancelRequest')
                 ->label('رفض الطلب')
                 ->icon('heroicon-o-x-circle')
@@ -306,6 +340,40 @@ class ViewMaterialRequest extends Page implements HasInfolists
                             ->formatStateUsing(fn ($state) => $this->statusLabel($state)),
                         TextEntry::make('note')->label('المطلوبات/ملاحظات')->columnSpanFull()->markdown(),
                     ]),
+                Section::make('ملفات الطلب')
+                    ->columns(2)
+                    ->schema([
+                        TextEntry::make('agreement_file_link')
+                            ->label('ملف الاتفاقية')
+                            ->html()
+                            ->state(function (MaterialRequest $r) {
+                                $path = $r->task?->project?->productionRequest?->agreement_file;
+                                if (blank($path)) return '<span style="opacity:.7">—</span>';
+                                $url = $this->fileUrl($path);
+                                if (!$url) return '<span style="opacity:.7">—</span>';
+                                $name = e(basename($path));
+                                return '<a href="'.e($url).'" target="_blank" style="color:#2563eb;text-decoration:underline;font-weight:600;">'.$name.' ▸</a>';
+                            }),
+
+                        TextEntry::make('manufacturing_file_link')
+                            ->label('ملف التصنيع (للقسم)')
+                            ->html()
+                            ->state(function (MaterialRequest $r) {
+                                $task = $r->task;
+                                $pr   = $task?->project?->productionRequest;
+                                if (!$task || !$pr) return '<span style="opacity:.7">—</span>';
+
+                                $file = $pr->files()->where('department_id', $task->department_id)->latest()->first();
+                                if (!$file || blank($file->file_path)) return '<span style="opacity:.7">—</span>';
+
+                                $url  = $this->fileUrl($file->file_path);
+                                if (!$url) return '<span style="opacity:.7">—</span>';
+
+                                $name = e($file->file_name ?? basename($file->file_path));
+                                return '<a href="'.e($url).'" target="_blank" style="color:#16a34a;text-decoration:underline;font-weight:600;">'.$name.' ▸</a>';
+                            }),
+                    ]),
+
                 Section::make('إحصائيات زمنية')
                     ->columns(4)
                     ->schema([
@@ -408,6 +476,7 @@ class ViewMaterialRequest extends Page implements HasInfolists
                             })
                             ->placeholder('—'),
                     ]),
+
                 Section::make('المشتريات')
                     ->columns(4)
                     ->schema([

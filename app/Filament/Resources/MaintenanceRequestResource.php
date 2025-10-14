@@ -33,6 +33,7 @@ class MaintenanceRequestResource extends Resource
         return auth()->check()
             && auth()->user()->hasAnyRole(['sales','showroom_manager','factory_manager','admin','super-admin']);
     }
+
     public static function canCreate(): bool
     {
         $u = Auth::user();

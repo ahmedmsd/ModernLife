@@ -22,16 +22,17 @@ class PerformanceDashboard extends Page implements Forms\Contracts\HasForms
     use Forms\Concerns\InteractsWithForms;
 
     protected static ?string $navigationGroup = 'التقارير';
-//    protected static ?string $navigationIcon = 'heroicon-o-chart-bar-square';
     protected static ?string $navigationLabel = 'لوحة التقارير';
-    protected static string $view = 'filament.pages.reports.performance-dashboard';
     protected static ?string $title = 'لوحة التقارير';
+
+    protected static string $view = 'filament.pages.reports.performance-dashboard';
 
     public static function canAccess(): bool
     {
         return auth()->check()
             && auth()->user()->hasAnyRole(['admin','super-admin']);
     }
+
     public array $filters = [];
 
     public ?string $date_from = null;
@@ -52,7 +53,6 @@ class PerformanceDashboard extends Page implements Forms\Contracts\HasForms
 
     public function mount(): void
     {
-        // عبّي الفورم من الـ query string
         $this->form->fill([
             'date_from'   => $this->date_from,
             'date_to'     => $this->date_to,
@@ -103,33 +103,37 @@ class PerformanceDashboard extends Page implements Forms\Contracts\HasForms
                 Forms\Components\Actions::make([
                     Action::make('apply')->label('تطبيق الفلاتر')->icon('heroicon-o-funnel')
                         ->action(function () {
+                            // اقرأ حالة الفورم
                             $state = $this->form->getState();
+
+                            // حدّث خصائص الصفحة
                             foreach ($state as $k => $v) $this->{$k} = $v ?: null;
-                            Notification::make()->title('تم تطبيق الفلاتر')->success()->send();
+
+                            // أعد التوجيه لنفس الصفحة مع Query String
+                            $params = array_filter([
+                                'date_from'   => $this->date_from,
+                                'date_to'     => $this->date_to,
+                                'branch_id'   => $this->branch_id,
+                                'dept_id'     => $this->dept_id,
+                                'employee_id' => $this->employee_id,
+                                'status'      => $this->status,
+                            ], fn($v) => !is_null($v) && $v !== '');
+
+                            $this->redirect(static::getUrl($params));
                         }),
                     Action::make('reset')->label('إعادة التعيين')->icon('heroicon-o-arrow-path')->color('gray')
                         ->action(function () {
                             $this->reset(['date_from','date_to','branch_id','dept_id','employee_id','status']);
                             $this->form->fill([]);
-                            Notification::make()->title('تم إعادة تعيين الفلاتر')->success()->send();
+                            // أعد التوجيه بدون أي باراميتر
+                            $this->redirect(static::getUrl());
                         }),
                 ])->alignCenter(),
             ])->columnSpanFull(),
         ])->statePath('filters');
     }
-    protected function applyFilters(): void
-    {
-        $state = $this->form->getState(); // هذا يرجع contents of $this->filters
-        $this->date_from   = $state['date_from']   ?? null;
-        $this->date_to     = $state['date_to']     ?? null;
-        $this->branch_id   = $state['branch_id']   ?? null;
-        $this->dept_id     = $state['dept_id']     ?? null;
-        $this->employee_id = $state['employee_id'] ?? null;
-        $this->status      = $state['status']      ?? null;
 
-        \Filament\Notifications\Notification::make()->title('تم تطبيق الفلاتر')->success()->send();
-    }
-    protected function getHeaderWidgets(): array
+    protected function getWidgets(): array
     {
         return [
             KPICards::class,
@@ -139,5 +143,4 @@ class PerformanceDashboard extends Page implements Forms\Contracts\HasForms
             TopEmployeesBarChart::class,
         ];
     }
-
 }
