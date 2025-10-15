@@ -50,13 +50,12 @@ class ViewTask extends ViewRecord
         $this->helper();
         $this->workflow();
 
-        // تحميل علاقات خفيفة
         $this->record->load([
-            'project:id,project_name,production_request_id',
-            'project.productionRequest:id',
-            'department:dept_id,dept_name',
-            'employee:employee_id,employee_name,user_id',
-            'logs','materialRequests',
+            'project.productionRequest.showroom',
+            'department',
+            'employee',
+            'logs',
+            'materialRequests',
         ]);
     }
 
@@ -538,6 +537,12 @@ class ViewTask extends ViewRecord
                 TextEntry::make('project.project_name')->label('المشروع')->placeholder('—'),
                 TextEntry::make('department.dept_name')->label('القسم')->placeholder('—'),
                 TextEntry::make('employee.employee_name')->label('المسؤول')->placeholder('—'),
+                TextEntry::make('showroom_name')
+                    ->label('المعرض')
+                    ->getStateUsing(fn (\App\Models\ProductionTask $record) =>
+                    $record->project?->productionRequest?->showroom?->name ?: '—'
+                    )
+                    ->placeholder('—'),
                 TextEntry::make('status')->label('الحالة')
                     ->formatStateUsing(fn ($state) => $h->statusAr($state instanceof \BackedEnum ? $state->value : $h->normalizeStatus((string) $state)))
                     ->badge()
