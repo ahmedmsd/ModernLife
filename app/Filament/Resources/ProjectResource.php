@@ -5,6 +5,8 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\ProjectResource\Pages;
 use App\Filament\Resources\ProjectResource\RelationManagers\TasksRelationManager;
 use App\Models\Project;
+use App\Support\Tenancy\RoleScope;
+use App\Support\Tenancy\ShowroomFilter;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -15,6 +17,7 @@ use Filament\Tables\Columns\TextColumn;
 use Illuminate\Support\Facades\Auth;
 use Filament\Tables\Actions\Action;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
+use Illuminate\Database\Eloquent\Builder;
 
 class ProjectResource extends Resource
 {
@@ -25,6 +28,41 @@ class ProjectResource extends Resource
     protected static ?string $pluralModelLabel = 'المشروعات';
     protected static ?string $modelLabel = 'مشروع';
     protected static bool $shouldRegisterNavigation = false;
+
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        $q = parent::getEloquentQuery()
+            ->with(['productionRequest.showroom', 'client'])
+            ->latest('id');
+
+        $user = auth()->user();
+
+        // أدوار تشوف كل شيء
+        $isSuper = $user && method_exists($user, 'hasAnyRole')
+            && $user->hasAnyRole(['admin','super-admin','owner']);
+
+        if (! $isSuper) {
+            $isShowroomManager = $user && method_exists($user, 'hasRole') && $user->hasRole('showroom_manager');
+            $employeeId = $user?->employee?->getKey();
+
+            if ($isShowroomManager) {
+                if (! $employeeId) {
+                    return $q->whereRaw('1 = 0');
+                }
+
+                $q->whereExists(function ($sub) use ($employeeId) {
+                    $sub->from('production_requests as pr')
+                        ->join('showrooms as s', 's.id', '=', 'pr.showroom_id')
+                        // projects.production_request_id = pr.id
+                        ->whereColumn('pr.id', 'projects.production_request_id')
+                        ->where('s.manager_id', $employeeId);
+                });
+            }
+        }
+
+        return $q;
+    }
+
     public static function form(Form $form): Form
     {
         return $form->schema([

@@ -4,29 +4,43 @@ namespace App\Support\Reports;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
+use Illuminate\Database\Query\Builder;
+use App\Enums\TaskStatus;
 
 class ReportService
 {
     public function __construct(protected ReportFilters $f) {}
 
-    protected function baseTasks()
+    /** الحالات المنتهية/غير عاملة */
+    protected array $DONE = ['completed','closed','cancelled'];
+
+    protected function baseTasks(): Builder
     {
         return DB::table('production_tasks as t')
-            ->when($this->f->dateFrom, fn($q) => $q->whereDate('t.created_at', '>=', $this->f->dateFrom))
-            ->when($this->f->dateTo,   fn($q) => $q->whereDate('t.created_at', '<=', $this->f->dateTo))
-            ->when($this->f->deptId,   fn($q) => $q->where('t.department_id', $this->f->deptId))
+            ->when($this->f->dateFrom,   fn($q) => $q->whereDate('t.created_at', '>=', $this->f->dateFrom))
+            ->when($this->f->dateTo,     fn($q) => $q->whereDate('t.created_at', '<=', $this->f->dateTo))
+            ->when($this->f->deptId,     fn($q) => $q->where('t.department_id', $this->f->deptId))
             ->when($this->f->employeeId, fn($q) => $q->where('t.assigned_to_employee_id', $this->f->employeeId))
-            ->when($this->f->status,   fn($q) => $q->where('t.status', $this->f->status));
+            ->when($this->f->status,     fn($q) => $q->where('t.status', $this->f->status));
     }
 
     public function kpis(): array
     {
-        $total = (clone $this->baseTasks())->count();
+        $base = $this->baseTasks();
 
-        $completed = (clone $this->baseTasks())
-            ->where('t.status', 'completed')->count();
+        $total = (clone $base)->count();
 
-        $delayed = (clone $this->baseTasks())
+        $completed = (clone $base)
+            ->where('t.status', 'completed')
+            ->count();
+
+        // WIP = كل ما ليس (completed/closed/cancelled)
+        $wip = (clone $base)
+            ->whereNotIn('t.status', $this->DONE)
+            ->count();
+
+        // متأخر: كما في كودك الأصلي (مقارنة بـ planned_end_at)
+        $delayed = (clone $base)
             ->whereNotNull('t.planned_end_at')
             ->where(function($q) {
                 $q->where(function($qq){
@@ -36,19 +50,40 @@ class ReportService
                     $qq->whereNull('t.completed_at')
                         ->whereRaw('NOW() > t.planned_end_at');
                 });
-            })->count();
+            })
+            ->count();
 
-        $avgHours = (clone $this->baseTasks())
+        // متوسط المدة بالساعات من الإسناد حتى الإكمال
+        $avgHours = (clone $base)
             ->whereNotNull('t.assigned_at')
             ->whereNotNull('t.completed_at')
             ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, t.assigned_at, t.completed_at)) as h')
             ->value('h');
+
+        // SLA: نسبة الإغلاق في/قبل due_date (بين المهام المكتملة التي لها due_date)
+        $completedWithDue = (clone $base)
+            ->where('t.status', 'completed')
+            ->whereNotNull('t.due_date')
+            ->count();
+
+        $onTimeCompleted = (clone $base)
+            ->where('t.status', 'completed')
+            ->whereNotNull('t.due_date')
+            // اعتبرنا "في الموعد" = completed_at <= نهاية يوم due_date
+            ->whereRaw("t.completed_at <= DATE_ADD(DATE(t.due_date), INTERVAL 1 DAY) - INTERVAL 1 SECOND")
+            ->count();
+
+        $slaRate = $completedWithDue
+            ? round(($onTimeCompleted / $completedWithDue) * 100, 1)
+            : 0.0;
 
         return [
             'total'        => $total,
             'completion'   => $total ? round(($completed / $total) * 100, 1) : 0,
             'avg_duration' => $avgHours ? round($avgHours, 1) : 0,
             'delay_rate'   => $total ? round(($delayed / $total) * 100, 1) : 0,
+            'wip'          => $wip,
+            'sla_rate'     => $slaRate,
         ];
     }
 
@@ -91,7 +126,6 @@ class ReportService
             ->groupBy('t.status')
             ->orderByDesc('c')
             ->get();
-
         return [
             'labels' => $rows->pluck('status')->map(fn($s) => $s ?: 'غير محدد')->all(),
             'data'   => $rows->pluck('c')->all(),

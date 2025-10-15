@@ -16,7 +16,7 @@ class KPICards extends BaseWidget
     protected function getStats(): array
     {
         $svc  = new ReportService(ReportFilters::fromArray($this->filters));
-        $kpis = $svc->kpis(); // تأكّد أن الخدمة تُرجع المفاتيح المستخدمة أدناه
+        $kpis = $svc->kpis();
 
         return [
             Stat::make('إجمالي المهام', number_format($kpis['total'] ?? 0))
@@ -44,7 +44,7 @@ class KPICards extends BaseWidget
                 ->description('نسبة الإغلاق في/قبل الاستحقاق')
                 ->icon('heroicon-o-chart-bar'),
 
-            Stat::make('وسيط زمن الإنجاز', ($kpis['median_duration_h'] ?? $kpis['median_duration'] ?? 0).' ساعة')
+            Stat::make('متوسط زمن الإنجاز', ($kpis['median_duration_h'] ?? $kpis['median_duration'] ?? 0).' ساعة')
                 ->description('أقل حساسية للتطَرّفات')
                 ->icon('heroicon-o-chart-pie'),
         ];

@@ -114,18 +114,18 @@ class AdminPanelProvider extends PanelProvider
                             ->items([
                                 NavigationItem::make('المشروعات الحالية')
                                     ->url(\App\Filament\Resources\ProjectResource::getUrl('index').'?tableFilters[is_completed][value]=false')
-                                    ->visible(fn () => \App\Filament\Resources\ProjectResource::canViewAny())
-                                    ->badge(fn () => \App\Filament\Resources\ProjectResource::canViewAny()
-                                        ? \App\Models\Project::where('status','!=','completed')->count()
-                                        : null
-                                    ),
+                                    ->visible(fn () => \App\Filament\Resources\ProjectResource::canViewAny()),
+//                                    ->badge(fn () => \App\Filament\Resources\ProjectResource::canViewAny()
+//                                        ? \App\Models\Project::where('status','!=','completed')->count()
+//                                        : null
+//                                    ),
                                 NavigationItem::make('المشروعات المكتملة')
                                     ->url(\App\Filament\Resources\ProjectResource::getUrl('index').'?tableFilters[is_completed][value]=true')
-                                    ->visible(fn () => \App\Filament\Resources\ProjectResource::canViewAny())
-                                    ->badge(fn () => \App\Filament\Resources\ProjectResource::canViewAny()
-                                        ? \App\Models\Project::where('status','completed')->count()
-                                        : null
-                                    ),
+                                    ->visible(fn () => \App\Filament\Resources\ProjectResource::canViewAny()),
+//                                    ->badge(fn () => \App\Filament\Resources\ProjectResource::canViewAny()
+//                                        ? \App\Models\Project::where('status','completed')->count()
+//                                        : null
+//                                    ),
                             ])
                     )
 

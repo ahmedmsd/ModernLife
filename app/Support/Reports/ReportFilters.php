@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ReportFilters
 {
-    /** كل الفلاتر بعد التنقية/التطبيع */
     public array $data = [];
 
     public function __construct(array $data = [])
@@ -16,13 +15,11 @@ class ReportFilters
         $this->data = $this->sanitize($data);
     }
 
-    /** إنشاء من مصفوفة (حتى لو كانت فارغة) */
     public static function fromArray(array $data = []): self
     {
         return new self($data);
     }
 
-    /** إنشاء من الريكوست (Query String / Livewire) */
     public static function fromRequest(?Request $request = null): self
     {
         $r = $request ?: request();
@@ -45,18 +42,27 @@ class ReportFilters
         return $this->data;
     }
 
-    /** تطبيق الفلاتر على كويري المهام */
     public function apply(Builder $query, string $tasksTable = 'production_tasks'): Builder
     {
         $d = $this->data;
 
+        if (! empty($d['date_from']) && ! empty($d['date_to'])) {
+            $query->whereBetween($tasksTable . '.created_at', [
+                $d['date_from']->toDateTimeString(),
+                $d['date_to']->toDateTimeString(),
+            ]);
+        } else {
+            $query
+                ->when($d['date_from'] ?? null, fn ($q, $v) => $q->where($tasksTable . '.created_at', '>=', $v->toDateTimeString()))
+                ->when($d['date_to'] ?? null,   fn ($q, $v) => $q->where($tasksTable . '.created_at', '<=', $v->toDateTimeString()));
+        }
+
+
         return $query
-            ->when($d['date_from'] ?? null,   fn ($q, $v) => $q->where($tasksTable . '.created_at', '>=', $v))
-            ->when($d['date_to'] ?? null,     fn ($q, $v) => $q->where($tasksTable . '.created_at', '<=', $v))
-            ->when($d['branch_id'] ?? null,   fn ($q, $v) => $q->where('showroom_id', $v))
-            ->when($d['dept_id'] ?? null,     fn ($q, $v) => $q->where('department_id', $v))
+            ->when($d['branch_id']   ?? null, fn ($q, $v) => $q->where('showroom_id', $v))
+            ->when($d['dept_id']     ?? null, fn ($q, $v) => $q->where('department_id', $v))
             ->when($d['employee_id'] ?? null, fn ($q, $v) => $q->where('assigned_to_employee_id', $v))
-            ->when($d['status'] ?? null,      fn ($q, $v) => $q->where($tasksTable . '.status', $v));
+            ->when($d['status']      ?? null, fn ($q, $v) => $q->where($tasksTable . '.status', $v));
     }
 
     /* ===================== Helpers ===================== */

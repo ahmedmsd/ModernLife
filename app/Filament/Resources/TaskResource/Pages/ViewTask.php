@@ -375,10 +375,15 @@ class ViewTask extends ViewRecord
 
             Action::make('startInstallation')
                 ->label('بدء التركيب')->icon('heroicon-o-wrench-screwdriver')->color('primary')
-                ->visible(fn()=> !$this->helper()->isClosedOrCompleted($this->record)
-                    && $this->helper()->ownerIs($this->record,'installation_manager')
-                    && ($this->helper()->hasLog($this->record,'install_acknowledged') || $this->helper()->hasLog($this->record,'install_ack_rework'))
-                    && !$this->helper()->hasLog($this->record,'installation_started'))
+                ->visible(fn () =>
+                    !$this->helper()->isClosedOrCompleted($this->record)
+                    && $u?->hasRole('installation_manager', 'web')
+                    && ($this->record->current_owner_role ?? null) === 'installation_manager'
+                    && (blank($this->record->current_owner_user_id) || $this->record->current_owner_user_id === $u->id)
+                    && ($this->helper()->hasLog($this->record, 'install_acknowledged')
+                        || $this->helper()->hasLog($this->record, 'install_ack_rework'))
+                    && ! $this->helper()->hasLog($this->record, 'installation_started')
+                )
                 ->form([
                     Forms\Components\DateTimePicker::make('started_at')->label('تاريخ/وقت البدء')->default(now())->required(),
                     Forms\Components\Textarea::make('note')->label('ملاحظة (اختياري)')->rows(3),
@@ -391,10 +396,14 @@ class ViewTask extends ViewRecord
 
             Action::make('finishInstallationAndSendQA')
                 ->label('إنهاء التركيب وإرسال للجودة')->icon('heroicon-o-paper-airplane')->color('warning')
-                ->visible(fn()=> !$this->helper()->isClosedOrCompleted($this->record)
-                    && $this->helper()->ownerIs($this->record,'installation_manager')
-                    && $this->helper()->hasLog($this->record,'installation_started')
-                    && !$this->helper()->hasLog($this->record,'installation_sent_to_qa'))
+                ->visible(fn () =>
+                    !$this->helper()->isClosedOrCompleted($this->record)
+                    && $u?->hasRole('installation_manager', 'web')
+                    && ($this->record->current_owner_role ?? null) === 'installation_manager'
+                    && (blank($this->record->current_owner_user_id) || $this->record->current_owner_user_id === $u->id)
+                    && $this->helper()->hasLog($this->record, 'installation_started')
+                    && ! $this->helper()->hasLog($this->record, 'installation_sent_to_qa')
+                )
                 ->form([
                     Forms\Components\DateTimePicker::make('finished_at')->label('تاريخ/وقت الإنهاء')->default(now())->required(),
                     Forms\Components\Textarea::make('note')->label('ملاحظة (اختياري)')->rows(3),
@@ -420,11 +429,15 @@ class ViewTask extends ViewRecord
 
             Action::make('approveInstallationQA')
                 ->label('اعتماد الجودة (بعد التركيب)')->icon('heroicon-o-check-badge')->color('success')
-                ->visible(fn()=> !$this->helper()->isClosedOrCompleted($this->record)
-                    && $this->helper()->ownerIs($this->record,'quality_manager')
-                    && $this->helper()->hasLog($this->record,'qa_ack_installation')
-                    && !$this->helper()->hasLog($this->record,'qa_approved_installation')
-                    && !$this->helper()->hasLog($this->record,'qa_rejected_installation'))
+                ->visible(fn () =>
+                    ! $this->helper()->isClosedOrCompleted($this->record)
+                    && $u?->hasRole('quality_manager', 'web')
+                    && ($this->record->current_owner_role ?? null) === 'quality_manager'
+                    && (blank($this->record->current_owner_user_id) || $this->record->current_owner_user_id === $u->id)
+                    && $this->helper()->hasLog($this->record, 'qa_ack_installation')
+                    && ! $this->helper()->hasLog($this->record, 'qa_approved_installation')
+                    && ! $this->helper()->hasLog($this->record, 'qa_rejected_installation')
+                )
                 ->form([ Forms\Components\Textarea::make('note')->label('ملاحظة (اختياري)')->rows(3), ])
                 ->requiresConfirmation()
                 ->action(function(array $data){
@@ -434,11 +447,15 @@ class ViewTask extends ViewRecord
 
             Action::make('rejectInstallationQA')
                 ->label('رفض الجودة (التركيب)')->icon('heroicon-o-x-circle')->color('danger')
-                ->visible(fn()=> !$this->helper()->isClosedOrCompleted($this->record)
-                    && $this->helper()->ownerIs($this->record,'quality_manager')
-                    && $this->helper()->hasLog($this->record,'qa_ack_installation')
-                    && !$this->helper()->hasLog($this->record,'qa_approved_installation')
-                    && !$this->helper()->hasLog($this->record,'qa_rejected_installation'))
+                ->visible(fn () =>
+                    ! $this->helper()->isClosedOrCompleted($this->record)
+                    && $u?->hasRole('quality_manager', 'web')
+                    && ($this->record->current_owner_role ?? null) === 'quality_manager'
+                    && (blank($this->record->current_owner_user_id) || $this->record->current_owner_user_id === $u->id)
+                    && $this->helper()->hasLog($this->record, 'qa_ack_installation')
+                    && ! $this->helper()->hasLog($this->record, 'qa_approved_installation')
+                    && ! $this->helper()->hasLog($this->record, 'qa_rejected_installation')
+                )
                 ->form([ Forms\Components\Textarea::make('reason')->label('سبب الرفض')->rows(3)->required(), ])
                 ->requiresConfirmation()
                 ->action(function(array $data){
@@ -521,7 +538,6 @@ class ViewTask extends ViewRecord
                 TextEntry::make('project.project_name')->label('المشروع')->placeholder('—'),
                 TextEntry::make('department.dept_name')->label('القسم')->placeholder('—'),
                 TextEntry::make('employee.employee_name')->label('المسؤول')->placeholder('—'),
-
                 TextEntry::make('status')->label('الحالة')
                     ->formatStateUsing(fn ($state) => $h->statusAr($state instanceof \BackedEnum ? $state->value : $h->normalizeStatus((string) $state)))
                     ->badge()
@@ -555,7 +571,21 @@ class ViewTask extends ViewRecord
                 TextEntry::make('received_by_owner_at')->label('مؤكد الاستلام')->dateTime()->placeholder('—'),
             ])->columns(2),
 
-            Section::make('ملفات المهمة')->schema([
+            Section::make('ملفات المهمة')
+                ->visible(fn () =>
+                    auth()->check() &&
+                    auth()->user()->hasAnyRole([
+                        'admin',
+                        'super-admin',
+                        'super_admin',
+                        'factory_manager',
+                        'department_manager',
+                        'purchasing_manager',
+                        'sales_manager',
+                        'showroom_manager',
+                    ], 'web')
+                )
+                ->schema([
                 // ملف الاتفاقية
                 TextEntry::make('agreement_file')
                     ->label('ملف الاتفاقية')

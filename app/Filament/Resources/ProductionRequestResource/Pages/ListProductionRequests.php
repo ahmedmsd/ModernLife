@@ -26,7 +26,7 @@ class ListProductionRequests extends ListRecords
                 ->color('success')
                 ->url(fn () => ProductionRequestResource::getUrl('create', ['request_type' => 'direct']))
                 ->visible(fn () => auth()->user()?->hasAnyRole([
-                    'sales','factory_manager','admin','super-admin',
+                    'showroom_manager','sales','factory_manager','admin','super-admin',
                 ])),
 
             Actions\Action::make('createIndirect')
@@ -35,7 +35,7 @@ class ListProductionRequests extends ListRecords
                 ->color('info')
                 ->url(fn () => ProductionRequestResource::getUrl('create', ['request_type' => 'indirect']))
                 ->visible(fn () => auth()->user()?->hasAnyRole([
-                    'showroom_manager','admin','super-admin','sales',
+                    'showroom_manager','factory_manager','admin','super-admin','sales',
                 ])),
 
 //            Actions\CreateAction::make()

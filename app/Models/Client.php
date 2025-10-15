@@ -25,6 +25,7 @@ class Client extends Model
         'is_active',
         'credit_limit',
         'payment_terms',
+        'created_by',
         'notes',
     ];
 

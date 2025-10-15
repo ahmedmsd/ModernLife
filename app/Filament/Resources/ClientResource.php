@@ -22,6 +22,25 @@ class ClientResource extends Resource
     protected static ?string $pluralLabel = 'إدارة العملاء';
     protected static ?string $modelLabel = 'عميل';
     protected static bool $shouldRegisterNavigation = false;
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        $q = parent::getEloquentQuery()
+            ->with(['city'])
+            ->withCount(['contacts']);
+
+        $user = auth()->user();
+        if (! $user) {
+            return $q->whereRaw('1=0');
+        }
+
+        if (method_exists($user, 'hasAnyRole') && $user->hasAnyRole(['admin','super-admin','owner'])) {
+            return $q;
+        }
+
+        return $q->where('clients.created_by', $user->id);
+    }
+
+
     public static function form(Forms\Form $form): Forms\Form
     {
         return $form->schema([
@@ -149,10 +168,7 @@ class ClientResource extends Resource
             \App\Filament\Resources\ClientResource\RelationManagers\ClientContactsRelationManager::class,
         ];
     }
-    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
-    {
-        return parent::getEloquentQuery()->withCount('contacts');
-    }
+
     public static function getPages(): array
     {
         return [

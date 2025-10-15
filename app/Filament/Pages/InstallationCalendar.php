@@ -3,9 +3,10 @@
 namespace App\Filament\Pages;
 
 use App\Models\ProductionTask;
+use App\Models\Showroom;
 use Filament\Pages\Page;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Auth;
 
 class InstallationCalendar extends Page
 {
@@ -13,7 +14,6 @@ class InstallationCalendar extends Page
     protected static ?string $navigationLabel = 'تقويم التركيب';
     protected static ?string $title           = 'تقويم مواعيد التركيب (متوقعة)';
     protected static ?string $slug            = 'installation-calendar';
-//    protected static ?string $navigationGroup = 'إدارة المشاريع';
     protected static ?int    $navigationSort  = 40;
 
     protected static string $view = 'filament.pages.installation-calendar';
@@ -21,8 +21,12 @@ class InstallationCalendar extends Page
     public static function canAccess(): bool
     {
         return auth()->check()
-            && auth()->user()->hasAnyRole(['admin','super-admin','showroom_manager', 'factory_manager']);
+            && auth()->user()->hasAnyRole([
+                'admin','super-admin','factory_manager','showroom_manager','department_manager',
+                // أضف أدواراً أخرى لو لزم
+            ]);
     }
+
     public bool $showDetail = false;
     public array $detail = [];
 
@@ -31,48 +35,51 @@ class InstallationCalendar extends Page
         $startAt = Carbon::parse($start)->startOfDay();
         $endAt   = Carbon::parse($end)->endOfDay();
 
-        $tasks = ProductionTask::query()
-            ->with(['project.client', 'department'])
+        $query = ProductionTask::query()
+            ->with([
+                'project.client',
+                'project.productionRequest.showroom', // مهم للتحمـيل الصحيح للمعرض
+                'department',
+            ])
             ->whereNotNull('planned_install_at')
             ->whereBetween('planned_install_at', [$startAt, $endAt])
-            ->whereNotIn('status', ['cancelled']) // استبعد الملغاة فقط
-            ->get();
+            ->whereNotIn('status', ['cancelled']);
+
+        // تطبيق تصفية حسب الدور
+        $query = $this->applyRoleScope($query, 'production_tasks');
+
+        $tasks = $query->get();
 
         $statusColor = function (?string $s): string {
             return match ($s) {
-                'pending'            => '#71717a', // zinc
-                'under_review'       => '#f59e0b', // amber
-                'approved'           => '#10b981', // emerald/green
-                'materials_prep'     => '#8b5cf6', // violet
-                'materials_done'     => '#34d399', // emerald
-                'waiting_production' => '#f59e0b', // amber
-                'in_progress'        => '#0ea5e9', // sky
-                'on_hold'            => '#eab308', // yellow
-                'rework'             => '#ef4444', // red
-                'completed'          => '#22c55e', // green
-                default              => '#64748b', // slate
+                'pending'            => '#71717a',
+                'under_review'       => '#f59e0b',
+                'approved'           => '#10b981',
+                'materials_prep'     => '#8b5cf6',
+                'materials_done'     => '#34d399',
+                'waiting_production' => '#f59e0b',
+                'in_progress'        => '#0ea5e9',
+                'on_hold'            => '#eab308',
+                'rework'             => '#ef4444',
+                'completed'          => '#22c55e',
+                default              => '#64748b',
             };
         };
 
         return $tasks->map(function ($t) use ($statusColor) {
-            $date = Carbon::parse($t->planned_install_at);
-
-            $titleParts = [];
-            $titleParts[] = $t->project?->project_name ?: "مهمة #{$t->id}";
-            if ($t->project?->client?->client_name) {
-                $titleParts[] = $t->project->client->client_name;
-            }
-            if ($t->department?->dept_name) {
-                $titleParts[] = "قسم: {$t->department->dept_name}";
-            }
-            $title = implode(' — ', $titleParts);
+            $date  = Carbon::parse($t->planned_install_at);
+            $title = implode(' — ', array_values(array_filter([
+                $t->project?->project_name ?: "مهمة #{$t->id}",
+                $t->project?->client?->client_name,
+                $t->department?->dept_name ? ('قسم: '.$t->department->dept_name) : null,
+            ])));
 
             $color = $statusColor($t->status);
 
             return [
                 'id'              => (string) $t->id,
                 'title'           => $title,
-                'start'           => $date->toDateString(),   // حدث يوم كامل
+                'start'           => $date->toDateString(),
                 'allDay'          => true,
                 'backgroundColor' => $color,
                 'borderColor'     => $color,
@@ -86,13 +93,13 @@ class InstallationCalendar extends Page
     }
 
     /**
-     * تحميل تفاصيل مهمة عند الضغط على الحدث لعرضها في النافذة الجانبية
+     * تحميل تفاصيل مهمة عند الضغط على الحدث
      */
     public function loadTaskDetails(int $taskId): void
     {
         $t = ProductionTask::with([
             'project.client',
-            'project.productionRequest',
+            'project.productionRequest.showroom',
             'department',
             'materialRequests' => fn($q) => $q->latest(),
         ])->findOrFail($taskId);
@@ -126,6 +133,7 @@ class InstallationCalendar extends Page
             'client_name'        => $t->project?->client?->client_name,
             'production_request' => $t->project?->productionRequest?->id,
             'department'         => $t->department?->dept_name,
+            'showroom'           => $t->project?->productionRequest?->showroom?->name, // null-safe
             'owner_role'         => $t->current_owner_role,
             'owner_user_id'      => $t->current_owner_user_id,
             'links'              => [
@@ -152,5 +160,49 @@ class InstallationCalendar extends Page
         ];
 
         $this->dispatch('open-modal', id: 'task-detail');
+    }
+
+    /**
+     * يطبّق نطاق الرؤية حسب الدور
+     */
+    protected function applyRoleScope(Builder $q, string $tasksTable = 'production_tasks'): Builder
+    {
+        $u = auth()->user();
+        if (! $u) {
+            return $q->whereRaw('1=0');
+        }
+
+        // Admins & Factory manager: يرون الكل
+        if ($u->hasAnyRole(['admin','super-admin','factory_manager'])) {
+            return $q;
+        }
+
+        // مدير القسم: يرى مهام قسمه فقط
+        if ($u->hasRole('department_manager') && $u->employee?->department_id) {
+            return $q->where($tasksTable.'.department_id', $u->employee->department_id);
+        }
+
+        // مدير المعرض: يرى فقط ما يخص معرضه (عبر production_requests.showroom_id)
+        if ($u->hasRole('showroom_manager')) {
+            $employeeId = $u->employee?->getKey();
+            if (! $employeeId) {
+                return $q->whereRaw('1=0');
+            }
+
+            $showroomIds = Showroom::query()
+                ->where('manager_id', $employeeId)
+                ->pluck('id');
+
+            if ($showroomIds->isEmpty()) {
+                return $q->whereRaw('1=0');
+            }
+
+            return $q->whereHas('project.productionRequest', function (Builder $qq) use ($showroomIds) {
+                $qq->whereIn('showroom_id', $showroomIds);
+            });
+        }
+
+        // أدوار أخرى (لو وُجدت) -> لا شيء
+        return $q;
     }
 }

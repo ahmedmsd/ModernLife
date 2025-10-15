@@ -4,6 +4,8 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\TaskResource\Pages;
 use App\Models\ProductionTask;
+use App\Support\Tenancy\RoleScope;
+use App\Support\Tenancy\ShowroomFilter;
 use Filament\Resources\Resource;
 use Filament\Forms\Form;
 use Filament\Infolists\Infolist;
@@ -22,11 +24,45 @@ class TaskResource extends Resource
         return true;
     }
 
-    public static function getEloquentQuery(): Builder
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        return parent::getEloquentQuery()
-            ->with(['project','department','employee','logs']);
+        $q = parent::getEloquentQuery()
+            ->with(['project.productionRequest.showroom', 'department', 'employee'])
+            ->latest('id');
+
+        $user = auth()->user();
+
+        // أدوار تشوف كل شيء
+        $isSuper = $user && method_exists($user, 'hasAnyRole')
+            && $user->hasAnyRole(['admin','super-admin','owner']);
+
+        if (! $isSuper) {
+            $isShowroomManager = $user && method_exists($user, 'hasRole') && $user->hasRole('showroom_manager');
+            $employeeId = $user?->employee?->getKey();
+
+            if ($isShowroomManager) {
+                if (! $employeeId) {
+                    // عنده role مدير معرض بدون Employee مربوط → لا نتائج
+                    return $q->whereRaw('1 = 0');
+                }
+
+                // قيّد المهام بمشروعات تنتمي لمعارض هذا المدير:
+                // production_tasks.project_id -> projects.id
+                // projects.production_request_id -> production_requests.id
+                // production_requests.showroom_id -> showrooms.id (manager_id = employee_id)
+                $q->whereExists(function ($sub) use ($employeeId) {
+                    $sub->from('projects as p')
+                        ->join('production_requests as pr', 'pr.id', '=', 'p.production_request_id')
+                        ->join('showrooms as s', 's.id', '=', 'pr.showroom_id')
+                        ->whereColumn('p.id', 'production_tasks.project_id')
+                        ->where('s.manager_id', $employeeId);
+                });
+            }
+        }
+
+        return $q;
     }
+
 
     public static function form(Form $form): Form
     {

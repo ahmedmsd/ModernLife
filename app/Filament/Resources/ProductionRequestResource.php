@@ -4,6 +4,8 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProductionRequestResource\Pages;
 use App\Models\ProductionRequest;
+use App\Support\Tenancy\RoleScope;
+use App\Support\Tenancy\ShowroomFilter;
 use Filament\Forms;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Grid;
@@ -31,12 +33,52 @@ class ProductionRequestResource extends Resource
     protected static ?string $pluralLabel = ' الطلبات';
     protected static ?string $modelLabel  = 'طلب تصنيع';
     protected static bool $shouldRegisterNavigation = false;
-    public static function getEloquentQuery(): Builder
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        return ProductionRequest::query()
-            ->withoutGlobalScopes()
+        $q = parent::getEloquentQuery()
+            ->with(['showroom','project','client'])
             ->latest('id');
+
+        $user = auth()->user();
+        if (! $user) {
+            return $q->whereRaw('1 = 0');
+        }
+
+        // Admins / owners يرون الكل
+        if (method_exists($user, 'hasAnyRole') && $user->hasAnyRole(['admin','super-admin','owner'])) {
+            return $q;
+        }
+
+        // Sales: يرى ما أنشأه فقط
+        if (method_exists($user, 'hasRole') && $user->hasRole('sales')) {
+            return $q->where('production_requests.created_by', $user->id);
+        }
+
+        // Showroom Manager: يرى طلبات معارضه فقط (بحسب علاقة manager_id -> employees.employee_id)
+        if ($user->hasRole('showroom_manager')) {
+            $employeeId = $user->employee?->getKey();
+
+            if (! $employeeId) {
+                return $q->whereRaw('1 = 0');
+            }
+
+            $showroomIds = \App\Models\Showroom::query()
+                ->where('manager_id', $employeeId)
+                ->pluck('id');
+
+            if ($showroomIds->isEmpty()) {
+                return $q->whereRaw('1 = 0');
+            }
+
+            return $q->where(function ($qq) use ($showroomIds, $user) {
+                $qq->whereIn('production_requests.showroom_id', $showroomIds)
+                    ->orWhere('production_requests.created_by', $user->id);
+            });
+        }
+
+        return $q;
     }
+
 
     public static function form(Forms\Form $form): Forms\Form
     {
@@ -74,7 +116,6 @@ class ProductionRequestResource extends Resource
                 ->required()
                 ->live(),
 
-            // المعرض (يظهر فقط للطلب غير المباشر)
             Select::make('showroom_id')
                 ->label('المعرض')
                 ->options(\App\Models\Showroom::pluck('name', 'id'))

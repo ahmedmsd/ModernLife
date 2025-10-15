@@ -19,7 +19,7 @@ class CreateProductionRequest extends CreateRecord
         $type = $data['request_type'] ?? 'direct';
 
         $user = auth()->user();
-        $canDirect   = $user?->hasAnyRole(['sales','factory_manager','admin','super-admin']);
+        $canDirect   = $user?->hasAnyRole(['showroom_manager','sales','factory_manager','admin','super-admin']);
         $canIndirect = $user?->hasAnyRole(['showroom_manager','admin','super-admin','sales']);
 
         if ($type === 'direct' && ! $canDirect) {

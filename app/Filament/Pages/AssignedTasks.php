@@ -2,10 +2,13 @@
 
 namespace App\Filament\Pages;
 
+use App\Enums\TaskStatus;
 use App\Models\ProductionTask;
 use Filament\Forms;
 use Filament\Pages\Page;
 use Filament\Tables;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Contracts\HasTable;
@@ -44,22 +47,6 @@ class AssignedTasks extends Page implements HasTable
         return Auth::user()?->employee?->getKey();
     }
 
-    private function statusColor(string $state): string
-    {
-        return match ($state) {
-            'completed'    => 'success',
-            'closed'       => 'success',
-            'in_progress'  => 'warning',
-            'blocked'      => 'danger',
-            'cancelled'    => 'danger',
-            'under_review' => 'purple',
-            'rework'       => 'pink',
-            'acknowledged' => 'info',
-            'assigned'     => 'primary',
-            default        => 'gray',
-        };
-    }
-
     public function table(Table $table): Table
     {
         $employeeId = $this->getEmployeeId();
@@ -71,7 +58,6 @@ class AssignedTasks extends Page implements HasTable
                 ->when($employeeId, fn ($q) => $q->where('assigned_to_employee_id', $employeeId))
                 ->latest('assigned_at')
             )
-            // 👇 يجعل الصف قابلاً للنقر لفتح صفحة عرض المهمة
             ->recordUrl(fn (ProductionTask $r) => route('filament.admin.resources.tasks.view', $r))
             ->recordAction(null)
             ->columns([
@@ -80,7 +66,9 @@ class AssignedTasks extends Page implements HasTable
                 Tables\Columns\TextColumn::make('status')
                     ->label('الحالة')
                     ->badge()
-                    ->color(fn (string $state): string => $this->statusColor($state)),
+                    ->formatStateUsing(fn($state) => TaskStatus::fromScalar($state)?->ar() ?? '—')
+                    ->color(fn($state) => TaskStatus::fromScalar($state)?->color() ?? 'gray'),
+
                 Tables\Columns\TextColumn::make('assigned_at')->label('تاريخ الإسناد')->dateTime('Y-m-d H:i')->sortable()->placeholder('—'),
                 Tables\Columns\TextColumn::make('received_at')->label('تاريخ تأكيد الاستلام')->dateTime('Y-m-d H:i')->sortable()->placeholder('—'),
                 Tables\Columns\TextColumn::make('due_date')->label('تاريخ التسليم المتوقع')->date()->placeholder('—'),
@@ -88,19 +76,23 @@ class AssignedTasks extends Page implements HasTable
                 Tables\Columns\TextColumn::make('notes')->label('ملاحظات')->limit(50)->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('status')->label('الحالة')->options([
-                    'pending'      => 'قيد الإنشاء',
-                    'assigned'     => 'مُسندة',
-                    'acknowledged' => 'تأكيد الاستلام',
-                    'in_progress'  => 'قيد التنفيذ',
-                    'blocked'      => 'متوقفة مؤقتًا',
-                    'under_review' => 'قيد المراجعة',
-                    'rework'       => 'إعادة عمل',
-                    'completed'    => 'مكتملة',
-                    'closed'       => 'مغلقة',
-                    'cancelled'    => 'ملغاة',
+                SelectFilter::make('status')->label('الحالة')->options([
+                    'pending'            => 'قيد الإنشاء',
+                    'assigned'           => 'مُسندة',
+                    'received'           => 'مستلمة',
+                    'under_review'       => 'قيد المراجعة',
+                    'approved'           => 'معتمدة',
+                    'rejected'           => 'مرفوضة',
+                    'in_progress'        => 'قيد التنفيذ',
+                    'materials_wait'     => 'انتظار خامات',
+                    'materials_prep'     => 'تحضير خامات',
+                    'materials_done'     => 'خامات مكتملة',
+                    'on_hold'            => 'موقوفة مؤقتًا',
+                    'completed'          => 'مكتملة',
+                    'cancelled'          => 'ملغاة',
+                    'waiting_production' => 'بانتظار التصنيع',
                 ]),
-                Tables\Filters\Filter::make('due_soon')->label('تسليم خلال 7 أيام')
+                Filter::make('due_soon')->label('تسليم خلال 7 أيام')
                     ->query(fn (Builder $q) => $q->whereDate('due_date', '<=', now()->addDays(7))),
             ])
             ->actions([

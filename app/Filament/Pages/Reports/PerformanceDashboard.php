@@ -125,7 +125,6 @@ class PerformanceDashboard extends Page implements Forms\Contracts\HasForms
                         ->action(function () {
                             $this->reset(['date_from','date_to','branch_id','dept_id','employee_id','status']);
                             $this->form->fill([]);
-                            // أعد التوجيه بدون أي باراميتر
                             $this->redirect(static::getUrl());
                         }),
                 ])->alignCenter(),

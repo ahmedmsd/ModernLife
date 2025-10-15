@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\TaskResource\Pages;
 
+use App\Enums\TaskStatus;
 use App\Filament\Resources\TaskResource;
 use App\Models\ProductionTask;
 use Filament\Resources\Pages\Page;
@@ -18,48 +19,61 @@ class ActiveTasks extends Page implements HasTable
     use InteractsWithTable;
 
     protected static string $resource = TaskResource::class;
-    protected static ?string $title   = 'عرض المهام الجارية';
-    protected static string $view     = 'filament.pages.blank';
+    protected static ?string $title = 'عرض المهام الجارية';
+    protected static string $view = 'filament.pages.blank';
 
     public static function canAccess(array $parameters = []): bool
     {
         return auth()->check();
     }
 
+    protected function isFactoryManager(): bool
+    {
+        $u = auth()->user();
+        return (bool)$u?->hasAnyRole(['factory_manager', 'admin', 'super-admin']);
+    }
+
+    protected function isDepartmentManager(): bool
+    {
+        $u = auth()->user();
+        return (bool)$u?->hasRole('department_manager');
+    }
+
     public function table(Table $table): Table
     {
-        $statusAr = fn (?string $state) => [
-            'pending' => 'قيد الإنشاء',
-            'assigned' => 'مُسندة',
-            'acknowledged' => 'تأكيد الاستلام',
-            'in_progress' => 'قيد التنفيذ',
-            'blocked' => 'متوقفة',
-            'under_review' => 'قيد المراجعة',
-            'rework' => 'إعادة عمل',
-            'completed' => 'مكتملة',
-            'closed' => 'مغلقة',
-            'cancelled' => 'ملغاة',
-            'draft' => 'مسودة',
-        ][$state] ?? ($state ?? '—');
-
-        $statusColor = fn (?string $state) => match ($state) {
-            'pending', 'draft'         => 'gray',
-            'assigned', 'acknowledged' => 'warning',
-            'in_progress'              => 'info',
-            'blocked', 'rework'        => 'purple',
-            'under_review'             => 'cyan',
-            'completed', 'closed'      => 'success',
-            'cancelled'                => 'danger',
-            default                    => 'secondary',
-        };
+        $user = auth()->user();
+        $emp = $user?->employee;
+        $deptId = $emp?->department_id;
 
         return $table
-            ->heading('كل المهام الجارية')
-            ->query(
-                ProductionTask::query()
-                    ->whereNotIn('status', ['completed','closed','cancelled'])
-                    ->with(['project:id,project_name','department:dept_id,dept_name','employee:employee_id,employee_name'])
+            ->heading(
+                $this->isFactoryManager()
+                    ? 'كل المهام الجارية'
+                    : ($this->isDepartmentManager() ? 'المهام الجارية لقسمي' : 'المهام الجارية')
             )
+            ->query(function () use ($deptId, $user): Builder {
+                $q = ProductionTask::query()
+                    ->whereNotIn('status', ['completed', 'closed', 'cancelled'])
+                    ->with([
+                        'project:id,project_name',
+                        'department:dept_id,dept_name',
+                        'employee:employee_id,employee_name',
+                    ])
+                    ->latest('created_at');
+
+                // مدير المصنع / أدمن: يرى كل شيء
+                if ($this->isFactoryManager()) {
+                    return $q;
+                }
+
+                // مدير القسم: قسمه فقط
+                if ($this->isDepartmentManager()) {
+                    return $deptId ? $q->where('department_id', $deptId) : $q->whereRaw('1=0');
+                }
+
+                // باقي الأدوار: نتركها كما هي (كل المهام الجارية)
+                return $q;
+            })
             ->defaultSort('created_at', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('id')->label('#')->sortable(),
@@ -68,17 +82,22 @@ class ActiveTasks extends Page implements HasTable
                 Tables\Columns\TextColumn::make('employee.employee_name')->label('المسؤول')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('status')
                     ->label('الحالة')->badge()
-                    ->formatStateUsing($statusAr)
-                    ->color($statusColor),
-                Tables\Columns\TextColumn::make('due_date')->label('تاريخ التسليم')->date()->sortable(),
+                    ->formatStateUsing(fn($state) => TaskStatus::fromScalar($state)?->ar() ?? '—')
+                    ->color(fn($state) => TaskStatus::fromScalar($state)?->color() ?? 'gray'),
+                Tables\Columns\TextColumn::make('due_date')->label('تاريخ التسليم')->date()->sortable()->placeholder('—'),
                 Tables\Columns\TextColumn::make('created_at')->label('أُنشئت')->since()->sortable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->label('الحالة')
                     ->options([
-                        'pending'=>'قيد الإنشاء','assigned'=>'مُسندة','acknowledged'=>'تأكيد الاستلام',
-                        'in_progress'=>'قيد التنفيذ','blocked'=>'متوقفة','under_review'=>'قيد المراجعة','rework'=>'إعادة عمل',
+                        'pending' => 'قيد الإنشاء',
+                        'assigned' => 'مُسندة',
+                        'acknowledged' => 'تأكيد الاستلام',
+                        'in_progress' => 'قيد التنفيذ',
+                        'blocked' => 'متوقفة',
+                        'under_review' => 'قيد المراجعة',
+                        'rework' => 'إعادة عمل',
                     ]),
                 Tables\Filters\SelectFilter::make('department_id')
                     ->label('القسم')
@@ -95,16 +114,16 @@ class ActiveTasks extends Page implements HasTable
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         $from = $data['from'] ?? null;
-                        $to   = $data['to'] ?? null;
+                        $to = $data['to'] ?? null;
                         return $query
-                            ->when($from, fn (Builder $q) => $q->whereDate('created_at', '>=', $from))
-                            ->when($to,   fn (Builder $q) => $q->whereDate('created_at', '<=', $to));
+                            ->when($from, fn(Builder $q) => $q->whereDate('created_at', '>=', $from))
+                            ->when($to, fn(Builder $q) => $q->whereDate('created_at', '<=', $to));
                     }),
             ])
-            ->recordUrl(fn (ProductionTask $record) => TaskResource::getUrl('view', ['record' => $record]))
+            ->recordUrl(fn(ProductionTask $record) => TaskResource::getUrl('view', ['record' => $record]))
             ->actions([
                 Tables\Actions\Action::make('view')->label('عرض')->icon('heroicon-o-eye')
-                    ->url(fn (ProductionTask $record) => TaskResource::getUrl('view', ['record' => $record])),
+                    ->url(fn(ProductionTask $record) => TaskResource::getUrl('view', ['record' => $record])),
             ])
             ->paginated([25, 50, 100])
             ->emptyStateHeading('لا توجد مهام جارية حالياً');

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -117,6 +118,11 @@ class Employee extends Authenticatable
     public function getNameAttribute(): ?string
     {
         return $this->attributes['employee_name'] ?? ($this->user->name ?? null);
+    }
+
+    public function managedShowrooms(): HasMany
+    {
+        return $this->hasMany(\App\Models\Showroom::class, 'manager_id', 'employee_id');
     }
 
     // ---------------------------

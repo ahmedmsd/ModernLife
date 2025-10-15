@@ -5,7 +5,6 @@ namespace App\Filament\Widgets\Reports;
 use Filament\Widgets\ChartWidget;
 use App\Support\Reports\{ReportFilters, ReportService};
 use App\Filament\Widgets\Reports\Concerns\UsesPerformanceFilters;
-
 class StatusDistributionChart extends ChartWidget
 {
     use UsesPerformanceFilters;

@@ -78,6 +78,7 @@
                         {{ $detail['task_title'] ?? '—' }}
                         <span class="text-gray-500">(#{{ $detail['task_id'] ?? '—' }})</span>
                     </div>
+
                     <div class="text-gray-500">
                         الحالة:
                         <span class="font-semibold">{{ $detail['status'] ?? '—' }}</span>
@@ -104,7 +105,9 @@
                     <div class="md:col-span-2">
                         <span class="text-gray-500">اسم المشروع:</span> <span class="font-semibold">{{ $detail['project_name'] ?? '—' }}</span>
                     </div>
+                    <div><span class="text-gray-500">المعرض:</span> <span class="font-semibold">{{ $detail['showroom'] ?? '—' }}</span></div>
                     <div><span class="text-gray-500">العميل:</span> <span class="font-semibold">{{ $detail['client_name'] ?? '—' }}</span></div>
+
                     <div><span class="text-gray-500">القسم:</span> <span class="font-semibold">{{ $detail['department'] ?? '—' }}</span></div>
                     <div><span class="text-gray-500">المالك الحالي:</span> <span class="font-semibold">{{ $detail['owner_role'] ?? '—' }}</span></div>
                 </dl>
