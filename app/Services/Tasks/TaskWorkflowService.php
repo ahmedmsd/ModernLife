@@ -248,7 +248,6 @@ class TaskWorkflowService
         });
     }
 
-    /** إنهاء التصنيع وإرساله للجودة */
     public function finishManufacturingAndSendToQA(ProductionTask $task, string $actualFinishedAt, ?string $note = null): void
     {
         DB::transaction(function () use ($task, $actualFinishedAt, $note) {
@@ -291,9 +290,18 @@ class TaskWorkflowService
     public function qaAcknowledgeManufacturing(ProductionTask $task): void
     {
         DB::transaction(function () use ($task) {
-            // فقط تحديث حقل الاستلام؛ الـ Observer يسجّل ownership_received
-            $task->update(['received_by_owner_at' => now()]);
-            $this->notifier->notifyActor('تم تأكيد استلام الجودة (بعد التصنيع)', "المهمة #{$task->id}", $task);
+            $this->markOwnerReceived($task, 'تأكيد استلام الجودة (بعد التصنيع)');
+
+            $this->log($task, 'qa_ack_manufacturing', [
+                'by'   => Auth::id(),
+                'role' => 'quality_manager',
+            ]);
+
+            $this->notifier->notifyActor(
+                'تم تأكيد استلام الجودة (بعد التصنيع)',
+                "المهمة #{$task->id}",
+                $task
+            );
         });
     }
 
@@ -301,7 +309,6 @@ class TaskWorkflowService
     public function approveManufacturingQA(ProductionTask $task, ?string $note = null): void
     {
         DB::transaction(function () use ($task, $note) {
-            // لوج دوميني لاعتماد الجودة
             $this->log($task, 'qa_approved_manufacturing', [
                 'by'   => Auth::id(),
                 'note' => trim((string) ($note ?? '')),
@@ -360,11 +367,23 @@ class TaskWorkflowService
     /** التركيب يؤكد الاستلام */
     public function installationAcknowledge(ProductionTask $task): void
     {
+
         DB::transaction(function () use ($task) {
-            // لا لوج هنا؛ فقط تأكيد الاستلام — الـ Observer سيسجّل ownership_received
             $task->update(['received_by_owner_at' => now()]);
-            $this->notifier->notifyActor('تم تأكيد استلام قسم التركيب', "المهمة #{$task->id}", $task);
+            $this->markOwnerReceived($task, 'تأكيد استلام التركيب)');
+
+            $this->log($task, 'install_acknowledged', [
+                'by'   => Auth::id(),
+                'role' => 'installation_manager',
+            ]);
+
+            $this->notifier->notifyActor(
+                'تم تأكيد استلام التركيب',
+                "المهمة #{$task->id}",
+                $task
+            );
         });
+
     }
 
     /** بدء التركيب */
@@ -388,7 +407,7 @@ class TaskWorkflowService
     {
         DB::transaction(function () use ($task, $finishedAt, $note) {
             // لوج دوميني (نحتفظ به فقط)
-            $this->log($task, 'installation_finished', [
+            $this->log($task, 'installation_sent_to_qa', [
                 'by'          => Auth::id(),
                 'finished_at' => $finishedAt,
                 'note'        => trim((string) ($note ?? '')),
@@ -402,7 +421,6 @@ class TaskWorkflowService
                 'received_by_owner_at'  => null,
             ]);
 
-            // لا نسجل installation_sent_to_qa هنا — الـ Observer سيصدر sent_to_quality
             $this->notifier->handoffToOwner(
                 $task,
                 toRole: 'quality_manager',
@@ -418,6 +436,10 @@ class TaskWorkflowService
     /** الجودة تؤكد الاستلام بعد التركيب */
     public function qaAcknowledgeInstallation(ProductionTask $task): void
     {
+        $this->log($task, 'qa_ack_installation', [
+            'by'          => Auth::id(),
+            'note'        => trim((string) ($note ?? '')),
+        ]);
         DB::transaction(function () use ($task) {
             $task->update(['received_by_owner_at' => now()]);
             $this->notifier->notifyActor('تم تأكيد استلام الجودة (بعد التركيب)', "المهمة #{$task->id}", $task);

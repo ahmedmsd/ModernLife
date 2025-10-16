@@ -100,7 +100,7 @@ class ViewTask extends ViewRecord
             /* إسناد لمدير القسم */
             Action::make('assign_to_dept_manager')
                 ->label('إسناد لمدير القسم')->icon('heroicon-o-user-plus')
-                ->visible(fn() => $u?->hasAnyRole(['factory_manager','admin','super-admin']) && blank($this->record->assigned_to_employee_id))
+                ->visible(fn () => $u?->hasAnyRole(['factory_manager','admin','super-admin']) && blank($this->record->assigned_to_employee_id))
                 ->form([
                     Forms\Components\Select::make('employee_id')->label('المسؤول')
                         ->options(function () {
@@ -120,8 +120,8 @@ class ViewTask extends ViewRecord
                     Forms\Components\DatePicker::make('due_date')->label('تاريخ التسليم المتوقع')->required(),
                 ])
                 ->requiresConfirmation()
-                ->action(function(array $data){
-                    $this->workflow()->assignToDeptManager($this->record, (int)$data['employee_id'], $data['due_date']);
+                ->action(function (array $data) {
+                    $this->workflow()->assignToDeptManager($this->record, (int) $data['employee_id'], $data['due_date']);
                     Notification::make()->success()->title('تم الإسناد')->send();
                     $this->redirect($this->getRedirectUrl());
                 }),
@@ -129,9 +129,9 @@ class ViewTask extends ViewRecord
             /* مدير القسم يؤكد الاستلام */
             Action::make('acknowledge')
                 ->label('تأكيد استلام المهمة (مدير القسم)')->icon('heroicon-o-hand-thumb-up')->color('success')
-                ->visible(fn()=> $this->helper()->canDeptAcknowledge($this->record, Auth::user()))
+                ->visible(fn () => $this->helper()->canDeptAcknowledge($this->record, Auth::user()))
                 ->requiresConfirmation()
-                ->action(function(){
+                ->action(function () {
                     $this->workflow()->deptAcknowledge($this->record);
                     Notification::make()->success()->title('تم تأكيد الاستلام')->send();
                     $this->redirect($this->getRedirectUrl());
@@ -140,7 +140,7 @@ class ViewTask extends ViewRecord
             /* طلب خامات */
             Action::make('request_materials')
                 ->label('طلب خامات')->icon('heroicon-o-truck')->color('warning')
-                ->visible(fn()=> $this->helper()->canRequestMaterials($this->record, Auth::user()))
+                ->visible(fn () => $this->helper()->canRequestMaterials($this->record, Auth::user()))
                 ->form([
                     Forms\Components\Textarea::make('note')->label('تفاصيل المطلوب')->rows(3)->required(),
                     Forms\Components\FileUpload::make('po_file')
@@ -150,7 +150,7 @@ class ViewTask extends ViewRecord
                         ->openable()->downloadable()->moveFiles()->visibility('public')->required(),
                 ])
                 ->requiresConfirmation()
-                ->action(function(array $data){
+                ->action(function (array $data) {
                     $this->workflow()->requestMaterials($this->record, $data['note'], $data['po_file']);
                     Notification::make()->success()->title('تم إرسال طلب الخامات')->send();
                     $this->redirect($this->getRedirectUrl());
@@ -159,7 +159,7 @@ class ViewTask extends ViewRecord
             /* المشتريات تؤكد الاستلام */
             Action::make('purchasing_receive')
                 ->label('تأكيد استلام طلب الخامات (المشتريات)')->icon('heroicon-o-check-badge')->color('primary')
-                ->visible(fn()=> $this->helper()->canPurchasingReceive($this->record, Auth::user()))
+                ->visible(fn () => $this->helper()->canPurchasingReceive($this->record, Auth::user()))
                 ->form([
                     Forms\Components\TextInput::make('po_number')->label('رقم الطلب/المرجع'),
                     Forms\Components\DateTimePicker::make('expected_delivery_at')->label('موعد التوريد المتوقع')->required(),
@@ -167,7 +167,7 @@ class ViewTask extends ViewRecord
                     Forms\Components\Textarea::make('note')->label('ملاحظة')->rows(2),
                 ])
                 ->requiresConfirmation()
-                ->action(function(array $data){
+                ->action(function (array $data) {
                     $this->workflow()->purchasingReceive($this->record, $data);
                     Notification::make()->success()->title('تم تسجيل استلام طلب الخامات')->send();
                     $this->redirect($this->getRedirectUrl());
@@ -176,14 +176,14 @@ class ViewTask extends ViewRecord
             /* المشتريات تؤكد التوريد */
             Action::make('materials_provided')
                 ->label('تأكيد توفر الخامات')->icon('heroicon-o-archive-box')->color('success')
-                ->visible(fn()=> $this->helper()->canMaterialsProvided($this->record, Auth::user()))
+                ->visible(fn () => $this->helper()->canMaterialsProvided($this->record, Auth::user()))
                 ->form([
                     Forms\Components\TextInput::make('actual_cost')->label('قيمة الشراء الفعلية')->numeric()->required(),
                     Forms\Components\Textarea::make('note')->label('ملاحظة')->rows(2),
                 ])
                 ->requiresConfirmation()
-                ->action(function(array $data){
-                    $this->workflow()->materialsProvided($this->record, (float)$data['actual_cost'], $data['note'] ?? null);
+                ->action(function (array $data) {
+                    $this->workflow()->materialsProvided($this->record, (float) $data['actual_cost'], $data['note'] ?? null);
                     Notification::make()->success()->title('تم توفير الخامات')->send();
                     $this->redirect($this->getRedirectUrl());
                 }),
@@ -194,25 +194,10 @@ class ViewTask extends ViewRecord
                 ->color('success')
                 ->visible(fn () => $this->helper()->canMaterialsReceivedOk($this->record, Auth::user()))
                 ->form([
-                    Forms\Components\DatePicker::make('planned_start')
-                        ->label('بداية التصنيع (متوقعة)')
-                        ->native(false)
-                        ->required(),
-
-                    Forms\Components\DatePicker::make('planned_end')
-                        ->label('نهاية التصنيع (متوقعة)')
-                        ->native(false)
-                        ->required(),
-
-                    Forms\Components\DatePicker::make('planned_install')
-                        ->label('موعد التركيب (متوقع)')
-                        ->native(false)
-                        ->required(),
-
-                    Forms\Components\Textarea::make('note')
-                        ->label('ملاحظات (اختياري)')
-                        ->rows(3)
-                        ->maxLength(1000),
+                    Forms\Components\DatePicker::make('planned_start')->label('بداية التصنيع (متوقعة)')->native(false)->required(),
+                    Forms\Components\DatePicker::make('planned_end')->label('نهاية التصنيع (متوقعة)')->native(false)->required(),
+                    Forms\Components\DatePicker::make('planned_install')->label('موعد التركيب (متوقع)')->native(false)->required(),
+                    Forms\Components\Textarea::make('note')->label('ملاحظات (اختياري)')->rows(3)->maxLength(1000),
                 ])
                 ->requiresConfirmation()
                 ->action(function (array $data) {
@@ -245,66 +230,36 @@ class ViewTask extends ViewRecord
                     $this->redirect($this->getRedirectUrl());
                 }),
 
-
             Action::make('start_production')
                 ->label('بدء التصنيع')
                 ->icon('heroicon-o-play-circle')
                 ->color('primary')
                 ->visible(fn () => $this->helper()->canStartProduction($this->record, Auth::user()))
                 ->form([
-                    Forms\Components\DateTimePicker::make('started_at')
-                        ->label('البدء الفعلي للتصنيع')
-                        ->native(false)
-
-                        ->default(now())
-                        ->required(),
-
-                    Forms\Components\Textarea::make('note')
-                        ->label('ملاحظة (اختياري)')
-                        ->rows(3),
+                    Forms\Components\DateTimePicker::make('started_at')->label('البدء الفعلي للتصنيع')->native(false)->default(now())->required(),
+                    Forms\Components\Textarea::make('note')->label('ملاحظة (اختياري)')->rows(3),
                 ])
                 ->requiresConfirmation()
                 ->action(function (array $data) {
-                    $this->workflow()->startProduction(
-                        $this->record,
-                        $data['started_at'],
-                        $data['note'] ?? null
-                    );
-
+                    $this->workflow()->startProduction($this->record, $data['started_at'], $data['note'] ?? null);
                     Notification::make()->success()->title('بدأ التصنيع (تاريخ فعلي)')->send();
-        $this->redirect($this->getRedirectUrl());
-    }),
+                    $this->redirect($this->getRedirectUrl());
+                }),
 
-
-        /* إنهاء التصنيع وإرسال للجودة */
+            /* إنهاء التصنيع وإرسال للجودة */
             Action::make('finish_manufacturing_send_to_qa')
                 ->label('إنهاء التصنيع وإرسال للجودة')
                 ->icon('heroicon-o-check-badge')
                 ->color('success')
                 ->visible(fn () => $this->helper()->canFinishManufacturing($this->record, Auth::user()))
                 ->form([
-                    Forms\Components\DateTimePicker::make('actual_finished_at')
-                        ->label('تاريخ/وقت الانتهاء الفعلي')
-                        ->native(false)
-                        ->default(now())
-                        ->required(),
-                    Forms\Components\Textarea::make('note')
-                        ->label('ملاحظة (اختياري)')
-                        ->rows(3),
+                    Forms\Components\DateTimePicker::make('actual_finished_at')->label('تاريخ/وقت الانتهاء الفعلي')->native(false)->default(now())->required(),
+                    Forms\Components\Textarea::make('note')->label('ملاحظة (اختياري)')->rows(3),
                 ])
                 ->requiresConfirmation()
                 ->action(function (array $data) {
-                    $this->workflow()->finishManufacturingAndSendToQA(
-                        $this->record,
-                        $data['actual_finished_at'],
-                        $data['note'] ?? null,
-                    );
-
-                    Notification::make()
-                        ->success()
-                        ->title('تم إنهاء التصنيع وإرسال المهمة للجودة')
-                        ->send();
-
+                    $this->workflow()->finishManufacturingAndSendToQA($this->record, $data['actual_finished_at'], $data['note'] ?? null);
+                    Notification::make()->success()->title('تم إنهاء التصنيع وإرسال المهمة للجودة')->send();
                     $this->redirect($this->getRedirectUrl());
                 }),
 
@@ -313,70 +268,137 @@ class ViewTask extends ViewRecord
                 ->label('تأكيد استلام الجودة (بعد التصنيع)')
                 ->icon('heroicon-o-inbox-arrow-down')
                 ->color('primary')
-                ->visible(fn () =>
-                    auth()->check()
-                    && auth()->user()->hasRole('quality_manager', 'web')                  // ← تحقق الدور
-                    && $this->helper()->ownerIs($this->record, 'quality_manager')
-                    && $this->helper()->hasLog($this->record, 'manufacturing_sent_to_qa')
-                    && ! $this->helper()->hasLog($this->record, 'qa_ack_manufacturing'),
-                )
+                ->visible(function () {
+                    $u = auth()->user();
+//                    if (! $u || ! $u->hasRole('quality_manager','web')) return false;
+                    if (! $this->helper()->ownerIs($this->record,'quality_manager')) return false;
+                    if ($this->helper()->hasLog($this->record,'qa_ack_manufacturing')) return false;
+
+                    // احضر آخر handoff للجودة (تصنيع/تركيب/عام)
+                    $last = \App\Models\TaskLog::query()
+                        ->where('task_id', $this->record->id)
+                        ->whereIn('type', ['manufacturing_sent_to_qa','manufacturing_finished'])
+                        ->orderByRaw('COALESCE(happened_at, created_at) DESC')
+                        ->first();
+
+                    // يظهر فقط إذا كان آخر handoff من التصنيع
+                    return $last && $last->type !== 'installation_sent_to_qa';
+                })
                 ->requiresConfirmation()
                 ->action(function () {
                     $this->workflow()->qaAcknowledgeManufacturing($this->record);
-                    \Filament\Notifications\Notification::make()
-                        ->success()->title('تم تأكيد استلام الجودة')->send();
+                    \Filament\Notifications\Notification::make()->success()->title('تم تأكيد استلام الجودة')->send();
                     $this->record->refresh();
                     $this->dispatch('close-modal', id: 'filament.actions.modal');
                     $this->js('$wire.$refresh()');
                 }),
 
+
+
             Action::make('approveManufacturingQA')
                 ->label('اعتماد الجودة (بعد التصنيع)')->icon('heroicon-o-check-badge')->color('success')
-                ->visible(fn()=> !$this->helper()->isClosedOrCompleted($this->record)
+                ->visible(fn () =>
+                    ! $this->helper()->isClosedOrCompleted($this->record)
                     && $this->helper()->ownerIs($this->record,'quality_manager')
                     && $this->helper()->hasLog($this->record,'qa_ack_manufacturing')
-                    && !$this->helper()->hasLog($this->record,'qa_approved_manufacturing')
-                    && !$this->helper()->hasLog($this->record,'qa_rejected_manufacturing'))
+                    && ! $this->helper()->hasLog($this->record,'qa_approved_manufacturing')
+                    && ! $this->helper()->hasLog($this->record,'qa_rejected_manufacturing')
+                )
                 ->form([ Forms\Components\Textarea::make('note')->label('ملاحظة (اختياري)')->rows(3), ])
                 ->requiresConfirmation()
-                ->action(function(array $data){
+                ->action(function (array $data) {
                     $this->workflow()->approveManufacturingQA($this->record, $data['note'] ?? null);
                     Notification::make()->success()->title('تم اعتماد الجودة وتحويل المهمة للتركيب')->send();
                     $this->redirect($this->getRedirectUrl());
                 }),
 
             Action::make('rejectManufacturingQA')
-                ->label('رفض الجودة (بعد التصنيع)')->icon('heroicon-o-x-circle')->color('danger')
-                ->visible(fn()=> !$this->helper()->isClosedOrCompleted($this->record)
-                    && $this->helper()->ownerIs($this->record,'quality_manager')
-                    && $this->helper()->hasLog($this->record,'qa_ack_manufacturing')
-                    && !$this->helper()->hasLog($this->record,'qa_approved_manufacturing')
-                    && !$this->helper()->hasLog($this->record,'qa_rejected_manufacturing'))
-                ->form([ Forms\Components\Textarea::make('reason')->label('سبب الرفض')->rows(3)->required(), ])
+                ->label('رفض الجودة (بعد التصنيع)')
+                ->icon('heroicon-o-x-circle')
+                ->color('danger')
+                ->visible(function () {
+                    $u = auth()->user();
+                    if (! $u || ! $u->hasRole('quality_manager','web')) return false;
+                    if (! $this->helper()->ownerIs($this->record,'quality_manager')) return false;
+
+                    if (! $this->helper()->hasLog($this->record,'qa_ack_manufacturing')) return false;
+
+                    if ($this->helper()->hasLog($this->record,'qa_approved_manufacturing')
+                        || $this->helper()->hasLog($this->record,'qa_rejected_manufacturing')) return false;
+
+                    $last = \App\Models\TaskLog::query()
+                        ->where('task_id', $this->record->id)
+                        ->whereIn('type', ['manufacturing_sent_to_qa','installation_sent_to_qa','qa_ack_manufacturing'])
+                        ->orderByRaw('COALESCE(happened_at, created_at) DESC')
+                        ->first();
+
+                    return $last && $last->type !== 'installation_sent_to_qa';
+                })
+                ->form([
+                    \Filament\Forms\Components\Textarea::make('reason')->label('سبب الرفض')->rows(3)->required(),
+                ])
                 ->requiresConfirmation()
                 ->action(function(array $data){
                     $this->workflow()->rejectManufacturingQA($this->record, $data['reason']);
-                    Notification::make()->warning()->title('تم رفض الجودة وأعيدت للتصنيع')->send();
+                    \Filament\Notifications\Notification::make()
+                        ->warning()->title('تم رفض الجودة وأعيدت للتصنيع')->send();
                     $this->redirect($this->getRedirectUrl());
                 }),
 
-            /* تدفقات التركيب + QA بعد التركيب */
-            Action::make('installationAcknowledge')
-                ->label('تأكيد استلام التركيب')->icon('heroicon-o-clipboard-document-check')->color('primary')
-                ->visible(fn()=> !$this->helper()->isClosedOrCompleted($this->record)
-                    && $this->helper()->ownerIs($this->record,'installation_manager')
-                    && $this->helper()->hasLog($this->record,'sent_to_install')
-                    && !$this->helper()->hasLog($this->record,'install_acknowledged'))
+
+            Action::make('installationAcknowledgeAfterQAApprove')
+                ->label('تأكيد استلام التركيب (بعد اعتماد جودة التصنيع)')
+                ->icon('heroicon-o-clipboard-document-check')
+                ->color('primary')
+                ->visible(function () {
+                    $u = auth()->user();
+//                    if (! $u || ! $u->hasRole('installation_manager', 'web')) {
+//                        return false;
+//                    }
+
+                    // المهمة بملكية قسم التركيب الآن
+                    if (($this->record->current_owner_role ?? null) !== 'installation_manager') {
+                        return false;
+                    }
+
+                    // لو فيه مالك مستخدم محدد لازم يطابق المستخدم الحالي
+//                    if (! blank($this->record->current_owner_user_id)
+//                        && (int) $this->record->current_owner_user_id !== (int) $u->id) {
+//                        return false;
+//                    }
+                    if ($this->helper()->hasLog($this->record, 'install_acknowledged')) {
+                        return false;
+                    }
+                    // لم يتم التأكيد مسبقًا
+                    if ($this->helper()->hasLog($this->record, 'qa_approved_manufacturing')) {
+                        return true;
+                    }
+
+                    // آخر handoff يجب أن يكون تحويلًا إلى قسم التركيب
+                    $lastHandoff = \App\Models\TaskLog::query()
+                        ->where('task_id', $this->record->id)
+                        ->whereIn('type', ['qa_approved_manufacturing'])
+                        ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
+                        ->first();
+
+                    return $lastHandoff && $lastHandoff->type === 'qa_approved_manufacturing';
+                })
                 ->requiresConfirmation()
-                ->action(function(){
+                ->action(function () {
+                    // نفس خدمة التدفق الحالية لتأكيد استلام التركيب
                     $this->workflow()->installationAcknowledge($this->record);
-                    Notification::make()->success()->title('تم تأكيد استلام التركيب')->send();
+
+                    \Filament\Notifications\Notification::make()
+                        ->success()
+                        ->title('تم تأكيد استلام قسم التركيب')
+                        ->send();
                 }),
+
 
             Action::make('startInstallation')
                 ->label('بدء التركيب')->icon('heroicon-o-wrench-screwdriver')->color('primary')
                 ->visible(fn () =>
-                    !$this->helper()->isClosedOrCompleted($this->record)
+                    ! $this->helper()->isClosedOrCompleted($this->record)
                     && $u?->hasRole('installation_manager', 'web')
                     && ($this->record->current_owner_role ?? null) === 'installation_manager'
                     && (blank($this->record->current_owner_user_id) || $this->record->current_owner_user_id === $u->id)
@@ -389,7 +411,7 @@ class ViewTask extends ViewRecord
                     Forms\Components\Textarea::make('note')->label('ملاحظة (اختياري)')->rows(3),
                 ])
                 ->requiresConfirmation()
-                ->action(function(array $data){
+                ->action(function (array $data) {
                     $this->workflow()->startInstallation($this->record, $data['started_at'], $data['note'] ?? null);
                     Notification::make()->success()->title('تم بدء التركيب')->send();
                 }),
@@ -397,7 +419,7 @@ class ViewTask extends ViewRecord
             Action::make('finishInstallationAndSendQA')
                 ->label('إنهاء التركيب وإرسال للجودة')->icon('heroicon-o-paper-airplane')->color('warning')
                 ->visible(fn () =>
-                    !$this->helper()->isClosedOrCompleted($this->record)
+                    ! $this->helper()->isClosedOrCompleted($this->record)
                     && $u?->hasRole('installation_manager', 'web')
                     && ($this->record->current_owner_role ?? null) === 'installation_manager'
                     && (blank($this->record->current_owner_user_id) || $this->record->current_owner_user_id === $u->id)
@@ -409,7 +431,7 @@ class ViewTask extends ViewRecord
                     Forms\Components\Textarea::make('note')->label('ملاحظة (اختياري)')->rows(3),
                 ])
                 ->requiresConfirmation()
-                ->action(function(array $data){
+                ->action(function (array $data) {
                     $this->workflow()->finishInstallationToQA($this->record, $data['finished_at'], $data['note'] ?? null);
                     Notification::make()->success()->title('تم إرسال التركيب للجودة')->send();
                     $this->redirect($this->getRedirectUrl());
@@ -417,12 +439,17 @@ class ViewTask extends ViewRecord
 
             Action::make('qaAcknowledgeInstallation')
                 ->label('تأكيد استلام الجودة (التركيب)')->icon('heroicon-o-inbox-arrow-down')->color('primary')
-                ->visible(fn()=> !$this->helper()->isClosedOrCompleted($this->record)
+                ->visible(fn () =>
+                    ! $this->helper()->isClosedOrCompleted($this->record)
                     && $this->helper()->ownerIs($this->record,'quality_manager')
-                    && $this->helper()->hasLog($this->record,'installation_sent_to_qa')
-                    && !$this->helper()->hasLog($this->record,'qa_ack_installation'))
+                    && (
+                        $this->helper()->hasLog($this->record,'installation_sent_to_qa')
+                        || $this->helper()->hasLog($this->record,'sent_to_quality')
+                    )
+                    && ! $this->helper()->hasLog($this->record,'qa_ack_installation')
+                )
                 ->requiresConfirmation()
-                ->action(function(){
+                ->action(function () {
                     $this->workflow()->qaAcknowledgeInstallation($this->record);
                     Notification::make()->success()->title('تم تأكيد استلام الجودة للتركيب')->send();
                 }),
@@ -440,38 +467,58 @@ class ViewTask extends ViewRecord
                 )
                 ->form([ Forms\Components\Textarea::make('note')->label('ملاحظة (اختياري)')->rows(3), ])
                 ->requiresConfirmation()
-                ->action(function(array $data){
+                ->action(function (array $data) {
                     $this->workflow()->approveInstallationQA($this->record, $data['note'] ?? null);
                     Notification::make()->success()->title('تم اعتماد الجودة لما بعد التركيب')->send();
                 }),
 
             Action::make('rejectInstallationQA')
-                ->label('رفض الجودة (التركيب)')->icon('heroicon-o-x-circle')->color('danger')
-                ->visible(fn () =>
-                    ! $this->helper()->isClosedOrCompleted($this->record)
-                    && $u?->hasRole('quality_manager', 'web')
-                    && ($this->record->current_owner_role ?? null) === 'quality_manager'
-                    && (blank($this->record->current_owner_user_id) || $this->record->current_owner_user_id === $u->id)
-                    && $this->helper()->hasLog($this->record, 'qa_ack_installation')
-                    && ! $this->helper()->hasLog($this->record, 'qa_approved_installation')
-                    && ! $this->helper()->hasLog($this->record, 'qa_rejected_installation')
-                )
-                ->form([ Forms\Components\Textarea::make('reason')->label('سبب الرفض')->rows(3)->required(), ])
+                ->label('رفض الجودة (التركيب)')
+                ->icon('heroicon-o-x-circle')
+                ->color('danger')
+                ->visible(function () {
+                    $u = auth()->user();
+                    if (! $u || ! $u->hasRole('quality_manager','web')) return false;
+                    if (! $this->helper()->ownerIs($this->record,'quality_manager')) return false;
+
+                    // يجب أن يكون تم تأكيد الاستلام بعد التركيب
+                    if (! $this->helper()->hasLog($this->record,'qa_ack_installation')) return false;
+
+                    // لا تظهر إذا تم اعتماد/رفض بعد التركيب مسبقًا
+                    if ($this->helper()->hasLog($this->record,'qa_approved_installation')
+                        || $this->helper()->hasLog($this->record,'qa_rejected_installation')) return false;
+
+                    // آخر handoff للجودة يجب أن يكون من التركيب
+                    $last = \App\Models\TaskLog::query()
+                        ->where('task_id', $this->record->id)
+                        ->whereIn('type', ['manufacturing_sent_to_qa','installation_sent_to_qa','sent_to_quality'])
+                        ->orderByRaw('COALESCE(happened_at, created_at) DESC')
+                        ->first();
+
+                    return $last && $last->type === 'installation_sent_to_qa';
+                })
+                ->form([
+                    \Filament\Forms\Components\Textarea::make('reason')->label('سبب الرفض')->rows(3)->required(),
+                ])
                 ->requiresConfirmation()
                 ->action(function(array $data){
                     $this->workflow()->rejectInstallationQA($this->record, $data['reason']);
-                    Notification::make()->warning()->title('تم رفض الجودة وأُعيدت المهمة للتركيب')->send();
+                    \Filament\Notifications\Notification::make()
+                        ->warning()->title('تم رفض الجودة وأُعيدت المهمة للتركيب')->send();
                     $this->redirect($this->getRedirectUrl());
                 }),
 
+
             Action::make('installationAcknowledgeRework')
                 ->label('تأكيد استلام التركيب (إعادة عمل)')->icon('heroicon-o-clipboard-document-check')->color('primary')
-                ->visible(fn()=> !$this->helper()->isClosedOrCompleted($this->record)
+                ->visible(fn () =>
+                    ! $this->helper()->isClosedOrCompleted($this->record)
                     && $this->helper()->ownerIs($this->record,'installation_manager')
                     && $this->helper()->hasLog($this->record,'sent_back_to_install')
-                    && !$this->helper()->hasLog($this->record,'install_ack_rework'))
+                    && ! $this->helper()->hasLog($this->record,'install_ack_rework')
+                )
                 ->requiresConfirmation()
-                ->action(function(){
+                ->action(function () {
                     $this->workflow()->installationAcknowledgeRework($this->record);
                     Notification::make()->success()->title('تم تأكيد استلام التركيب (إعادة عمل)')->send();
                 }),
@@ -482,7 +529,7 @@ class ViewTask extends ViewRecord
                 ->icon('heroicon-o-arrow-up-on-square')
                 ->color('success')
                 ->visible(fn () =>
-                    !$this->helper()->isClosedOrCompleted($this->record)
+                    ! $this->helper()->isClosedOrCompleted($this->record)
                     && $this->helper()->hasLog($this->record, 'qa_approved_installation')
                     && empty($this->record->client_receipt)
                 )
@@ -497,16 +544,8 @@ class ViewTask extends ViewRecord
                         ->acceptedFileTypes(['application/pdf', 'image/*'])
                         ->maxSize(10240) // 10 MB
                         ->required(),
-
-                    Forms\Components\DateTimePicker::make('actual_finished_at')
-                        ->label('تاريخ/وقت الانتهاء الفعلي للمهمة')
-                        ->native(false)
-                        ->default(now())
-                        ->required(),
-
-                    Forms\Components\Textarea::make('note')
-                        ->label('ملاحظة (اختياري)')
-                        ->rows(3),
+                    Forms\Components\DateTimePicker::make('actual_finished_at')->label('تاريخ/وقت الانتهاء الفعلي للمهمة')->native(false)->default(now())->required(),
+                    Forms\Components\Textarea::make('note')->label('ملاحظة (اختياري)')->rows(3),
                 ])
                 ->requiresConfirmation()
                 ->action(function (array $data) {
@@ -516,12 +555,7 @@ class ViewTask extends ViewRecord
                         Arr::get($data, 'actual_finished_at'),
                         Arr::get($data, 'note')
                     );
-
-                    Notification::make()
-                        ->success()
-                        ->title('اكتملت المهمة')
-                        ->send();
-
+                    Notification::make()->success()->title('اكتملت المهمة')->send();
                     $this->redirect($this->getRedirectUrl());
                 }),
         ];
@@ -540,7 +574,7 @@ class ViewTask extends ViewRecord
                 TextEntry::make('employee.employee_name')->label('المسؤول')->placeholder('—')->color('primary'),
                 TextEntry::make('showroom_name')
                     ->label('المعرض')
-                    ->getStateUsing(fn (\App\Models\ProductionTask $record) =>
+                    ->getStateUsing(fn (ProductionTask $record) =>
                     $record->project?->productionRequest?->showroom?->name ?: '—'
                     )
                     ->placeholder('—')->color('primary'),
@@ -549,19 +583,16 @@ class ViewTask extends ViewRecord
                     ->badge()
                     ->color(fn ($state) => $h->statusColor($state instanceof \BackedEnum ? $state->value : $h->normalizeStatus((string) $state)))
                     ->placeholder('—'),
-
                 TextEntry::make('due_date')->label('تاريخ التسليم')->date()->badge()
                     ->color(function ($state) {
                         if (blank($state)) return 'gray';
                         $due = $state instanceof \Illuminate\Support\Carbon ? $state : \Illuminate\Support\Carbon::parse($state);
                         return now()->gt($due) ? 'danger' : 'success';
                     }),
-
                 TextEntry::make('assigned_at')->label('تاريخ الإسناد')->dateTime()->placeholder('—')->color('primary'),
                 TextEntry::make('planned_start_at')->label('بداية التصنيع (خطة)')->date()->placeholder('—')->color('primary'),
                 TextEntry::make('planned_end_at')->label('نهاية التصنيع (خطة)')->date()->placeholder('—')->color('primary'),
                 TextEntry::make('planned_install_at')->label('التركيب المتوقع')->date()->placeholder('—')->color('primary'),
-
                 TextEntry::make('current_owner_role')->label('المالك الحالي (الدور)')
                     ->formatStateUsing(fn ($state) => $state
                         ? match (strtolower(trim($state))) {
@@ -576,20 +607,22 @@ class ViewTask extends ViewRecord
                 TextEntry::make('sent_to_owner_at')->label('أُرسل للمالك')->dateTime()->placeholder('—')->color('primary'),
                 TextEntry::make('received_by_owner_at')->label('مؤكد الاستلام')->dateTime()->placeholder('—')->color('primary'),
             ])->columns(2),
+
+            /* سجل الحركات الأساسية (مع إزالة التكرار في نفس الثانية) */
             Section::make('سجل الحركات')
                 ->schema([
                     ViewEntry::make('logs_timeline')
                         ->view('filament.task.logs-timeline')
-                        ->state(function (\App\Models\ProductionTask $record) {
+                        ->state(function (ProductionTask $record) {
                             $logs = \App\Models\TaskLog::query()
                                 ->where('task_id', $record->id)
-                                ->core()
+                                ->core()               // الحركات الأساسية فقط
                                 ->with('causer')
-//                                ->orderForTimeline()
-                                    ->orderByDesc('created_at')
+                                ->orderByRaw('COALESCE(happened_at, created_at) DESC')
                                 ->take(500)
                                 ->get();
 
+                            // إزالة التكرار: نفس (النوع + نفس صاحب الحركة + نفس الثانية)
                             $deduped = $logs->unique(function ($log) {
                                 $sec = optional($log->happened_at ?: $log->created_at)->format('Y-m-d H:i:s');
                                 return "{$log->type}|{$log->causer_id}|{$sec}";
@@ -599,7 +632,6 @@ class ViewTask extends ViewRecord
                         }),
                 ])
                 ->columnSpanFull(),
-
 
             Section::make('ملفات المهمة')
                 ->visible(fn () =>
@@ -616,64 +648,58 @@ class ViewTask extends ViewRecord
                     ], 'web')
                 )
                 ->schema([
-                // ملف الاتفاقية
-                TextEntry::make('agreement_file')
-                    ->label('ملف الاتفاقية')
-                    ->html()
-                    ->state(function (\App\Models\ProductionTask $record) {
-                        $pr = $record->project?->productionRequest;
-                        if (! $pr || blank($pr->agreement_file)) {
-                            return '<span style="opacity:.7">—</span>';
-                        }
-                        $url  = Storage::disk('public')->url($pr->agreement_file);
-                        $name = e(basename($pr->agreement_file));
-                        return '<a href="'.e($url).'" target="_blank"
-                        style="color:#2563eb; text-decoration:underline; font-weight:600;">
-                        '.$name.' ▸
-                    </a>';
-                    }),
+                    // ملف الاتفاقية
+                    TextEntry::make('agreement_file')
+                        ->label('ملف الاتفاقية')
+                        ->html()
+                        ->state(function (ProductionTask $record) {
+                            $pr = $record->project?->productionRequest;
+                            if (! $pr || blank($pr->agreement_file)) {
+                                return '<span style="opacity:.7">—</span>';
+                            }
+                            $url  = Storage::disk('public')->url($pr->agreement_file);
+                            $name = e(basename($pr->agreement_file));
+                            return '<a href="'.e($url).'" target="_blank" style="color:#2563eb; text-decoration:underline; font-weight:600;">'.$name.' ▸</a>';
+                        }),
 
-                // ملف التصنيع الخاص بالقسم
-                TextEntry::make('manufacturing_file')
-                    ->label('ملف التصنيع (للقسم)')
-                    ->html()
-                    ->state(function (\App\Models\ProductionTask $record) {
-                        $file = $record->project?->productionRequest?->files()
-                            ->where('department_id', $record->department_id)
-                            ->latest()->first();
+                    // ملف التصنيع الخاص بالقسم
+                    TextEntry::make('manufacturing_file')
+                        ->label('ملف التصنيع (للقسم)')
+                        ->html()
+                        ->state(function (ProductionTask $record) {
+                            $file = $record->project?->productionRequest?->files()
+                                ->where('department_id', $record->department_id)
+                                ->latest()->first();
 
-                        if (! $file || blank($file->file_path)) {
-                            return '<span style="opacity:.7">—</span>';
-                        }
+                            if (! $file || blank($file->file_path)) {
+                                return '<span style="opacity:.7">—</span>';
+                            }
 
-                        $url  = Storage::disk('public')->url($file->file_path);
-                        $name = e(basename($file->file_path));
-                        return '<a href="'.e($url).'" target="_blank"
-                        style="color:#16a34a; text-decoration:underline; font-weight:600;">
-                        '.$name.' ▸
-                    </a>';
-                    }),
-            ])->columns(1),
+                            $url  = Storage::disk('public')->url($file->file_path);
+                            $name = e(basename($file->file_path));
+                            return '<a href="'.e($url).'" target="_blank" style="color:#16a34a; text-decoration:underline; font-weight:600;">'.$name.' ▸</a>';
+                        }),
+                ])->columns(1),
 
             Section::make('التعليقات')
                 ->schema([
                     ViewEntry::make('comments_list')
                         ->view('filament.task.comments-list')
-                        ->state(fn (\App\Models\ProductionTask $record) =>
+                        ->state(fn (ProductionTask $record) =>
                         $record->comments()->with('author')->orderByDesc('id')->take(10)->get()
                         ),
                 ])
                 ->columnSpanFull()
-                ->visible(fn (\App\Models\ProductionTask $record) => $record->comments()->exists()),
+                ->visible(fn (ProductionTask $record) => $record->comments()->exists()),
 
             Section::make('المشتريات')->schema([
                 TextEntry::make('po_file_link')->label('أمر الشراء (PO)')->html()
-                    ->state(function (\App\Models\ProductionTask $record) {
+                    ->state(function (ProductionTask $record) {
                         $mr = $record->materialRequests()->orderByDesc('id')->first();
                         if (! $mr || blank($mr->po_file)) {
                             return '<span style="opacity:.7">—</span>';
                         }
-                        $url  = \Illuminate\Support\Facades\Storage::disk('public')->url($mr->po_file);
+                        $url  = Storage::disk('public')->url($mr->po_file);
                         $name = e(basename($mr->po_file));
                         return '<a href="'.e($url).'" target="_blank" style="color:#2563eb; text-decoration:underline; font-weight:600;">'.$name.' ▸</a>';
                     }),
@@ -683,13 +709,13 @@ class ViewTask extends ViewRecord
                 TextEntry::make('stage_durations_html')
                     ->label('تفصيل مدد كل مرحلة')
                     ->html()
-                    ->state(fn (\App\Models\ProductionTask $record) => $this->helper()->renderStageDurationsHtml($record))
+                    ->state(fn (ProductionTask $record) => $this->helper()->renderStageDurationsHtml($record))
                     ->columnSpanFull(),
             ])->columns(1),
 
             Section::make('إحصائيات')->schema([
                 TextEntry::make('total_time')->label('إجمالي الوقت منذ أول حدث')
-                    ->state(function (\App\Models\ProductionTask $record) {
+                    ->state(function (ProductionTask $record) {
                         $firstAt = $record->logs()->min('happened_at');
                         if (! $firstAt) return '—';
                         $lastAt = $record->logs()->max('happened_at') ?? now();
@@ -699,23 +725,22 @@ class ViewTask extends ViewRecord
                 TextEntry::make('status')
                     ->label('الحالة')
                     ->formatStateUsing(fn ($state) =>
-                    $h->statusAr(
+                    $this->helper()->statusAr(
                         $state instanceof \BackedEnum
                             ? $state->value
-                            : $h->normalizeStatus((string) $state)
+                            : $this->helper()->normalizeStatus((string) $state)
                     )
                     )
                     ->badge()
                     ->color(fn ($state) =>
-                    $h->statusColor(
+                    $this->helper()->statusColor(
                         $state instanceof \BackedEnum
                             ? $state->value
-                            : $h->normalizeStatus((string) $state)
+                            : $this->helper()->normalizeStatus((string) $state)
                     )
                     )
                     ->placeholder('—'),
             ])->columns(2),
         ]);
     }
-
 }

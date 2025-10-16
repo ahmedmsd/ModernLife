@@ -195,7 +195,6 @@ class TaskPageHelper
             && $this->ownerIs($t, 'department_manager')
             && $this->statusVal($t) === 'in_progress'
             && $this->hasLog($t, 'manufacturing_started')
-            && ! $this->hasLog($t, 'manufacturing_sent_to_qa')
             && ! $this->hasOpenMaterialsRequest($t);
     }
 
