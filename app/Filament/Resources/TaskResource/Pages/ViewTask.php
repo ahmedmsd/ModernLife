@@ -29,6 +29,7 @@ class ViewTask extends ViewRecord
     use HasRelationManagers;
 
     protected static string $resource = TaskResource::class;
+    protected static ?string $title = 'عرض مهمة التصنيع ';
 
     protected ?TaskPageHelper $helper = null;
     protected ?TaskWorkflowService $workflow = null;
@@ -54,7 +55,7 @@ class ViewTask extends ViewRecord
             'project.productionRequest.showroom',
             'department',
             'employee',
-            'logs',
+            'logs.causer',
             'materialRequests',
         ]);
     }
@@ -116,7 +117,7 @@ class ViewTask extends ViewRecord
                         })
                         ->searchable()
                         ->required(),
-                    Forms\Components\DateTimePicker::make('due_date')->label('تاريخ التسليم المتوقع')->required(),
+                    Forms\Components\DatePicker::make('due_date')->label('تاريخ التسليم المتوقع')->required(),
                 ])
                 ->requiresConfirmation()
                 ->action(function(array $data){
@@ -533,16 +534,16 @@ class ViewTask extends ViewRecord
 
         return $infolist->schema([
             Section::make('بيانات المهمة')->schema([
-                TextEntry::make('id')->label('رقم المهمة'),
-                TextEntry::make('project.project_name')->label('المشروع')->placeholder('—'),
-                TextEntry::make('department.dept_name')->label('القسم')->placeholder('—'),
-                TextEntry::make('employee.employee_name')->label('المسؤول')->placeholder('—'),
+                TextEntry::make('id')->label('رقم المهمة')->color('primary'),
+                TextEntry::make('project.project_name')->label('المشروع')->placeholder('—')->color('primary'),
+                TextEntry::make('department.dept_name')->label('القسم')->placeholder('—')->color('primary'),
+                TextEntry::make('employee.employee_name')->label('المسؤول')->placeholder('—')->color('primary'),
                 TextEntry::make('showroom_name')
                     ->label('المعرض')
                     ->getStateUsing(fn (\App\Models\ProductionTask $record) =>
                     $record->project?->productionRequest?->showroom?->name ?: '—'
                     )
-                    ->placeholder('—'),
+                    ->placeholder('—')->color('primary'),
                 TextEntry::make('status')->label('الحالة')
                     ->formatStateUsing(fn ($state) => $h->statusAr($state instanceof \BackedEnum ? $state->value : $h->normalizeStatus((string) $state)))
                     ->badge()
@@ -556,10 +557,10 @@ class ViewTask extends ViewRecord
                         return now()->gt($due) ? 'danger' : 'success';
                     }),
 
-                TextEntry::make('assigned_at')->label('تاريخ الإسناد')->dateTime()->placeholder('—'),
-                TextEntry::make('planned_start_at')->label('بداية التصنيع (خطة)')->date()->placeholder('—'),
-                TextEntry::make('planned_end_at')->label('نهاية التصنيع (خطة)')->date()->placeholder('—'),
-                TextEntry::make('planned_install_at')->label('التركيب المتوقع')->date()->placeholder('—'),
+                TextEntry::make('assigned_at')->label('تاريخ الإسناد')->dateTime()->placeholder('—')->color('primary'),
+                TextEntry::make('planned_start_at')->label('بداية التصنيع (خطة)')->date()->placeholder('—')->color('primary'),
+                TextEntry::make('planned_end_at')->label('نهاية التصنيع (خطة)')->date()->placeholder('—')->color('primary'),
+                TextEntry::make('planned_install_at')->label('التركيب المتوقع')->date()->placeholder('—')->color('primary'),
 
                 TextEntry::make('current_owner_role')->label('المالك الحالي (الدور)')
                     ->formatStateUsing(fn ($state) => $state
@@ -571,10 +572,34 @@ class ViewTask extends ViewRecord
                             'factory_manager'      => 'التصنيع',
                             default                => $state,
                         }
-                        : '—'),
-                TextEntry::make('sent_to_owner_at')->label('أُرسل للمالك')->dateTime()->placeholder('—'),
-                TextEntry::make('received_by_owner_at')->label('مؤكد الاستلام')->dateTime()->placeholder('—'),
+                        : '—')->color('primary'),
+                TextEntry::make('sent_to_owner_at')->label('أُرسل للمالك')->dateTime()->placeholder('—')->color('primary'),
+                TextEntry::make('received_by_owner_at')->label('مؤكد الاستلام')->dateTime()->placeholder('—')->color('primary'),
             ])->columns(2),
+            Section::make('سجل الحركات')
+                ->schema([
+                    ViewEntry::make('logs_timeline')
+                        ->view('filament.task.logs-timeline')
+                        ->state(function (\App\Models\ProductionTask $record) {
+                            $logs = \App\Models\TaskLog::query()
+                                ->where('task_id', $record->id)
+                                ->core()
+                                ->with('causer')
+//                                ->orderForTimeline()
+                                    ->orderByDesc('created_at')
+                                ->take(500)
+                                ->get();
+
+                            $deduped = $logs->unique(function ($log) {
+                                $sec = optional($log->happened_at ?: $log->created_at)->format('Y-m-d H:i:s');
+                                return "{$log->type}|{$log->causer_id}|{$sec}";
+                            })->values();
+
+                            return $deduped;
+                        }),
+                ])
+                ->columnSpanFull(),
+
 
             Section::make('ملفات المهمة')
                 ->visible(fn () =>

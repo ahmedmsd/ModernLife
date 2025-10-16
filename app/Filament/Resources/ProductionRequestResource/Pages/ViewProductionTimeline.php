@@ -74,7 +74,6 @@ class ViewProductionTimeline extends Page
             'project.tasks',         // لفحص المهام المفتوحة/المكتملة
         ]);
 
-        // ابنِ الملخّص الزمني (فروقات + فترات رئيسية)
         $this->summary = $this->buildSummary($this->record);
 
         // ابنِ الخط الزمني من اللوجات (مع دعم الأحداث الجديدة)
@@ -104,10 +103,7 @@ class ViewProductionTimeline extends Page
 
     /* ============================== Summary ============================== */
 
-    /**
-     * ملخص زمني سريع: فروقات التوريد، وفترات رئيسية من الإنشاء/الاعتماد وحتى التوريد،
-     * ومدة التصنيع الفعلية، والوقت الكلي حتى استلام العميل (إن وُجد).
-     */
+
     private function buildSummary(ProductionRequest $pr): array
     {
         $fmt = fn (?Carbon $c) => $c?->format('Y-m-d H:i') ?? '—';
@@ -118,7 +114,6 @@ class ViewProductionTimeline extends Page
         $created  = $pr->created_at           ? Carbon::parse($pr->created_at)           : null;
         $approved = $pr->approved_at          ? Carbon::parse($pr->approved_at)          : null;
 
-        // ابحث عن بدايات/نهايات التصنيع الفعلية من اللوج (إن لم تتوافر أعمدة فعلية على الطلب)
         $startLog = $this->firstLog($pr, 'manufacturing_started');
         $endLog   = $this->firstLog($pr, 'manufacturing_finished');
         $clientR  = $this->firstLog($pr, 'client_receipt_uploaded');

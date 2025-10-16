@@ -101,7 +101,7 @@ class ViewMaterialRequest extends Page implements HasInfolists
                 )
                 ->form([
                     Forms\Components\TextInput::make('estimated_cost')->label('التكلفة التقديرية')->numeric()->required(),
-                    Forms\Components\DateTimePicker::make('expected_delivery_at')->label('التاريخ المتوقع للتسليم')->required(),
+                    Forms\Components\DatePicker::make('expected_delivery_at')->label('التاريخ المتوقع للتسليم')->required(),
                     Forms\Components\Textarea::make('note')->label('ملاحظة')->rows(3),
                 ])
                 ->action(function (array $data) {
@@ -327,18 +327,17 @@ class ViewMaterialRequest extends Page implements HasInfolists
                     ->columns(4)
                     ->schema([
                         TextEntry::make('id')->label('#')->badge()->color('gray'),
-                        TextEntry::make('department.dept_name')->label('القسم')->placeholder('—'),
-                        TextEntry::make('task.id')->label('رقم المهمة')->placeholder('—'),
-                        TextEntry::make('task.project.project_name')->label('المشروع')->placeholder('—'),
+                        TextEntry::make('department.dept_name')->label('القسم')->placeholder('—')->color('primary'),
+                        TextEntry::make('task.id')->label('رقم المهمة')->placeholder('—')->color('primary'),
+                        TextEntry::make('task.project.project_name')->label('المشروع')->placeholder('—')->color('primary'),
                         TextEntry::make('requestedBy.name')->label('مقدّم الطلب')
-                            ->getStateUsing(fn () => ($r->requestedBy?->name) ?? ($r->task?->employee?->employee_name) ?? '—'),
-                        TextEntry::make('requested_at')->label('تاريخ الطلب')->dateTime('Y-m-d H:i'),
-                        TextEntry::make('task.estimated_cost')->label('الميزانية'),
-                        TextEntry::make('expected_delivery_at')->label('موعد التوريد (متوقّع)')->dateTime('Y-m-d H:i'),
+                            ->getStateUsing(fn () => ($r->requestedBy?->name) ?? ($r->task?->employee?->employee_name) ?? '—')->color('primary'),
+                        TextEntry::make('requested_at')->label('تاريخ الطلب')->dateTime('Y-m-d H:i')->color('primary'),
+                        TextEntry::make('task.estimated_cost')->label('الميزانية')->color('primary'),
                         TextEntry::make('status')->label('الحالة')->badge()
                             ->color(fn ($state) => $this->statusColor($state))
                             ->formatStateUsing(fn ($state) => $this->statusLabel($state)),
-                        TextEntry::make('note')->label('المطلوبات/ملاحظات')->columnSpanFull()->markdown(),
+                        TextEntry::make('note')->label('المطلوبات/ملاحظات')->columnSpanFull()->markdown()->color('primary'),
                     ]),
                 Section::make('ملفات الطلب')
                     ->columns(2)

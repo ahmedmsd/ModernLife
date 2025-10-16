@@ -34,6 +34,7 @@ class PurchasingOpenMaterialsRequests extends TableWidget
                 Tables\Columns\TextColumn::make('task.id')->label('المهمة')->sortable(),
                 Tables\Columns\TextColumn::make('department.dept_name')->label('القسم'),
                 Tables\Columns\TextColumn::make('requestedBy.name')->label('مقدّم الطلب')->placeholder('—'),
+                Tables\Columns\TextColumn::make('created_at')->label('تاريخ الطلب'),
                 Tables\Columns\TextColumn::make('status')
                     ->label('الحالة')
                     ->badge()

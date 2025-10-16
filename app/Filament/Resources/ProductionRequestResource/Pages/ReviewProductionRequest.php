@@ -280,9 +280,9 @@ class ReviewProductionRequest extends Page
 
         // 7) اعتماد المصنع (إنشاء مشروع ومهام)
         $actions[] = Action::make('approveFactoryAction')
-            ->label('اعتماد وإنشاء project & tasks')
+            ->label('اعتماد وإنشاء المشروع والمهام')
             ->icon('heroicon-o-check-circle')
-            ->color('primary')
+            ->color('success')
             ->modalHeading("اعتماد المصنع — طلب #{$rid}")
             ->modalDescription('سيتم إنشاء المشروع والمهام المرتبطة.')
             ->requiresConfirmation()

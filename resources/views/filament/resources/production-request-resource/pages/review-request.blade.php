@@ -41,6 +41,7 @@
 
     $clientName   = $record->client->client_name ?? '—';
     $projectName   = $record->project_name ?? '—';
+    $createdBy    = $record->creator->name ?? '—';
     $showroomName = $record->showroom->name ?? 'غير مرتبط';
     $ownerRole    = $record->current_owner_role ?? '—';
     $reqType      = $record->request_type === 'indirect' ? 'غير مباشر' : 'مباشر';
@@ -81,6 +82,7 @@
             <div><span class="text-gray-500 dark:text-gray-400">رقم الطلب:</span> <span class="font-semibold">{{ $record->id }}</span></div>
             <div><span class="text-gray-500 dark:text-gray-400">العميل:</span> <span class="font-semibold">{{ $clientName }}</span></div>
             <div><span class="text-gray-500 dark:text-gray-400">المعرض:</span> <span class="font-semibold">{{ $showroomName }}</span></div>
+            <div><span class="text-gray-500 dark:text-gray-400">بواسطة:</span> <span class="font-semibold">{{ $createdBy }}</span></div>
 
             <div>
                 <span class="text-gray-500 dark:text-gray-400">المشروع:</span>

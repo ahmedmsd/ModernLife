@@ -21,6 +21,7 @@ class ProductionTaskObserver
 
     public function updating(ProductionTask $task): void
     {
+        // لو تغيّر الإسناد، حدث المالك تلقائياً (بدون لوج هنا)
         if ($task->isDirty('assigned_to_employee_id')) {
             $ownerUserId = null;
             if ($task->assigned_to_employee_id) {
@@ -60,6 +61,7 @@ class ProductionTaskObserver
 
         $statusNow = $this->normStatus($task->status);
 
+        // إنشاء
         $task->logs()->create([
             'type'        => 'created',
             'data'        => [
@@ -115,11 +117,13 @@ class ProductionTaskObserver
                 'user' => $task->current_owner_user_id,
             ];
 
+            // لمس وقت الإرسال للمالك (لا لوج هنا؛ نضيف sent_to_* لاحقاً)
             $task->forceFill([
                 'sent_to_owner_at'     => now(),
                 'received_by_owner_at' => null,
             ])->saveQuietly();
 
+            // ownership_changed
             $task->logs()->create([
                 'type'        => 'ownership_changed',
                 'data'        => compact('from', 'to'),
@@ -127,6 +131,30 @@ class ProductionTaskObserver
                 'happened_at' => now(),
             ]);
 
+            // حدث إرسال موحّد حسب الدور الجديد (sent_to_*)
+            $sentEvent = match ($to['role']) {
+                'showroom_manager'    => 'sent_to_showroom',
+                'factory_manager'     => 'sent_to_factory',
+                'department_manager'  => 'sent_to_department',
+                'purchasing_manager'  => 'sent_to_purchasing',
+                'quality_manager'     => 'sent_to_quality',
+                'installation_manager'=> 'sent_to_install',
+                default               => null,
+            };
+
+            if ($sentEvent) {
+                $task->logs()->create([
+                    'type'        => $sentEvent,
+                    'data'        => [
+                        'from_owner_role' => $from['role'],
+                        'to_owner_role'   => $to['role'],
+                    ],
+                    'causer_id'   => Auth::id(),
+                    'happened_at' => now(),
+                ]);
+            }
+
+            // إشعار داخلي عند نقل الملكية لقسم مدير القسم
             $isDeptManagerOwnership =
                 ($task->current_owner_role === 'department_manager') &&
                 !empty($task->current_owner_user_id);
@@ -135,7 +163,6 @@ class ProductionTaskObserver
                 if (!$task->employee || $task->employee->user_id !== $task->current_owner_user_id) {
                     $tmp = clone $task;
                     $tmp->setRelation('department', $task->department()->first());
-                    // 🔧 تمرير User فعلي لتفادي الخطأ السابق
                     $dept = $task->department()->with(['managerUser'])->first();
                     $targets = collect([$dept?->managerUser])->filter();
                     if ($targets->isNotEmpty()) {
