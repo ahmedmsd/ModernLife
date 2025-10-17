@@ -2,6 +2,7 @@
 
 namespace App\Services\Tasks;
 
+use App\Enums\TaskStatus;
 use App\Models\ProductionTask;
 use App\Models\TaskLog;
 use App\Models\MaterialRequest;
@@ -224,7 +225,6 @@ class TaskWorkflowService
             }
             $task->update($update);
 
-            // تأكيد الملكية لمدير القسم (Observer يسجّل ownership_changed إن تغيّر + sent_to_department)
             $deptManagerId = $task->department?->manager_user_id
                 ?? $task->department?->head_user_id
                 ?? Auth::id();
@@ -237,7 +237,6 @@ class TaskWorkflowService
                 note: 'بدء التصنيع (تاريخ فعلي)'
             );
 
-            // لوج دوميني لبداية التصنيع (ملاحظة إن وُجدت)
             $this->log($task, 'manufacturing_started', [
                 'by'         => Auth::id(),
                 'started_at' => $start->toDateTimeString(),
@@ -274,8 +273,7 @@ class TaskWorkflowService
                 note: 'استلام للمراجعة بعد التصنيع'
             );
 
-            // لوج دوميني (نحتفظ به فقط)
-            $this->log($task, 'manufacturing_finished', [
+            $this->log($task, 'manufacturing_sent_to_qa', [
                 'by'           => Auth::id(),
                 'finished_at'  => $end->toDateTimeString(),
                 'note'         => trim((string) ($note ?? '')),
@@ -346,7 +344,7 @@ class TaskWorkflowService
 
             $task->update([
                 'status'                 => 'rework',
-                'current_owner_role'     => 'factory_manager',
+                'current_owner_role'     => 'department_manager',
                 'current_owner_user_id'  => null,
                 'sent_to_owner_at'       => now(),
                 'received_by_owner_at'   => null,
@@ -354,7 +352,7 @@ class TaskWorkflowService
 
             $this->notifier->handoffToOwner(
                 $task,
-                toRole: 'factory_manager',
+                toRole: 'department_manager',
                 toUserId: null,
                 title: 'مهمة مُعادة للتصنيع (رفض جودة)',
                 body: $this->notifier->defaultHandoffBody("سبب الرفض: {$reason}")
@@ -490,14 +488,35 @@ class TaskWorkflowService
         });
     }
 
-    /** التركيب يؤكد استلامه بعد الرفض */
-    public function installationAcknowledgeRework(ProductionTask $task): void
+    /** التصنيع يؤكد استلامه بعد الرفض */
+    public function manufacturingAcknowledgeRework(\App\Models\ProductionTask $task, ?string $note = null): void
     {
-        DB::transaction(function () use ($task) {
-            $task->update(['received_by_owner_at' => now()]);
-            $this->notifier->notifyActor('تم تأكيد استلام التركيب (إعادة عمل)', "المهمة #{$task->id}", $task);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($task, $note) {
+            $this->markOwnerReceived($task, 'تأكيد استلام التصنيع (إعادة عمل)');
+
+            $this->log($task, 'manufacturing_ack_rework', [
+                'by'   => \Illuminate\Support\Facades\Auth::id(),
+                'note' => $note,
+            ]);
+
+            if ($task->status !== \App\Enums\TaskStatus::WaitingProduction->value) {
+                $task->forceFill(['status' => TaskStatus::WaitingProduction->value])->save();
+            }
+
         });
     }
+    public function installationAcknowledgeRework(\App\Models\ProductionTask $task, ?string $note = null): void
+    {
+        \Illuminate\Support\Facades\DB::transaction(function () use ($task, $note) {
+            $this->markOwnerReceived($task, 'تأكيد استلام التركيب (إعادة عمل)');
+
+            $this->log($task, 'install_ack_rework', [
+                'by'   => \Illuminate\Support\Facades\Auth::id(),
+                'note' => $note,
+            ]);
+        });
+    }
+
 
     /**
      * رفع سند استلام العميل وإكمال المهمة + إغلاق المشروع/الطلب إن لا توجد مهام مفتوحة

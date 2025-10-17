@@ -137,7 +137,7 @@ class ViewMaterialRequest extends Page implements HasInfolists
             Action::make('confirmMaterials')
                 ->label('تأكيد توفير الخامات')
                 ->icon('heroicon-o-check-badge')
-                ->color('primary')
+                ->color('success')
                 ->visible(fn () =>
                     auth()->user()?->hasAnyRole(['purchasing_manager','admin','super-admin'])
                     && $this->record->status === 'approved'
@@ -205,7 +205,7 @@ class ViewMaterialRequest extends Page implements HasInfolists
                 ->color('danger')
                 ->visible(fn () =>
                     auth()->user()?->hasAnyRole(['purchasing_manager','admin','super-admin'])
-                    && in_array($this->record->status, ['requested','approved'])
+                    && in_array($this->record->status, ['requested'])
                 )
                 ->form([
                     Forms\Components\Textarea::make('reason')->label('سبب الرفض')->rows(3)->required(),
@@ -330,6 +330,8 @@ class ViewMaterialRequest extends Page implements HasInfolists
                         TextEntry::make('department.dept_name')->label('القسم')->placeholder('—')->color('primary'),
                         TextEntry::make('task.id')->label('رقم المهمة')->placeholder('—')->color('primary'),
                         TextEntry::make('task.project.project_name')->label('المشروع')->placeholder('—')->color('primary'),
+                        TextEntry::make('task.project.ProductionRequest.showroom.name')->label('المعرض')->placeholder('—')->color('primary'),
+
                         TextEntry::make('requestedBy.name')->label('مقدّم الطلب')
                             ->getStateUsing(fn () => ($r->requestedBy?->name) ?? ($r->task?->employee?->employee_name) ?? '—')->color('primary'),
                         TextEntry::make('requested_at')->label('تاريخ الطلب')->dateTime('Y-m-d H:i')->color('primary'),
@@ -337,6 +339,10 @@ class ViewMaterialRequest extends Page implements HasInfolists
                         TextEntry::make('status')->label('الحالة')->badge()
                             ->color(fn ($state) => $this->statusColor($state))
                             ->formatStateUsing(fn ($state) => $this->statusLabel($state)),
+                        TextEntry::make('po_file')->label('ملف أمر الشراء المُعتمد من مدير المصنع')
+                            ->formatStateUsing(fn ($state) => $state ? 'تنزيل' : '—')
+                            ->url(fn ($state) => $state ? \Storage::url($state) : null, true)
+                            ->icon(fn ($state) => $state ? 'heroicon-o-arrow-down-tray' : null)->badge(),
                         TextEntry::make('note')->label('المطلوبات/ملاحظات')->columnSpanFull()->markdown()->color('primary'),
                     ]),
                 Section::make('ملفات الطلب')
@@ -482,10 +488,7 @@ class ViewMaterialRequest extends Page implements HasInfolists
                         TextEntry::make('estimated_cost')->label('التكلفة التقديرية')->money('sar'),
                         TextEntry::make('actual_cost')->label('التكلفة الفعلية')->money('sar'),
                         TextEntry::make('po_number')->label('رقم الطلب/المرجع')->placeholder('—'),
-                        TextEntry::make('po_file')->label('ملف PO')
-                            ->formatStateUsing(fn ($state) => $state ? 'تنزيل' : '—')
-                            ->url(fn ($state) => $state ? \Storage::url($state) : null, true)
-                            ->icon(fn ($state) => $state ? 'heroicon-o-arrow-down-tray' : null),
+
                         TextEntry::make('providedBy.name')->label('مُنَفِّذ التوريد')->placeholder('—'),
                         TextEntry::make('provided_at')->label('تاريخ التوريد')->dateTime('Y-m-d H:i'),
                         TextEntry::make('created_at')->label('أُنشئ في')->dateTime('Y-m-d H:i'),

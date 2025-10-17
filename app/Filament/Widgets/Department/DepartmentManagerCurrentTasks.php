@@ -37,6 +37,7 @@ class DepartmentManagerCurrentTasks extends TableWidget
             ->columns([
                 Tables\Columns\TextColumn::make('id')->label('#'),
                 Tables\Columns\TextColumn::make('project.project_name')->label('المشروع'),
+                Tables\Columns\TextColumn::make('project.productionRequest.showroom.name')->label('المعرض'),
                 Tables\Columns\TextColumn::make('department.dept_name')->label('القسم'),
                 Tables\Columns\TextColumn::make('status')->label('الحالة')->badge(),
             ])

@@ -2,6 +2,7 @@
 
 namespace App\Enums;
 
+
 enum TaskStatus: string
 {
     case Pending            = 'pending';
@@ -15,6 +16,9 @@ enum TaskStatus: string
     case MaterialsPrep      = 'materials_prep';
     case MaterialsDone      = 'materials_done';
     case OnHold             = 'on_hold';
+    case QaReviewManufacture = 'qa_review_manufacture';
+    case InstallInProgress   = 'install_in_progress';
+    case QaReviewInstall     = 'qa_review_install';
     case Completed          = 'completed';
     case Cancelled          = 'cancelled';
     case WaitingProduction  = 'waiting_production';

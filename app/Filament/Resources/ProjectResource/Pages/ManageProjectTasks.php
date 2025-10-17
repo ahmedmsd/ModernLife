@@ -5,6 +5,8 @@ namespace App\Filament\Resources\ProjectResource\Pages;
 use App\Enums\PhaseStatus;
 use App\Filament\Resources\ProjectResource;
 use App\Filament\Resources\TaskResource;
+use App\Models\Employee;
+use App\Models\ProductionTask;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Pages\ManageRelatedRecords;
@@ -182,6 +184,32 @@ class ManageProjectTasks extends ManageRelatedRecords
                     ->modalHeading('إضافة مهمة تصنيع')
                     ->modalSubmitActionLabel('حفظ المهمة')
                     ->modalCancelActionLabel('إلغاء')
+                    ->after(function (ProductionTask $record, array $data): void {
+                        if (!empty($data['assigned_to_employee_id'])) {
+                            $emp = Employee::query()
+                                ->select('user_id')
+                                ->find($data['assigned_to_employee_id']);
+
+                            $record->forceFill([
+                                'current_owner_user_id' => $emp?->user_id,
+                                'current_owner_role'    => 'department_manager',
+                            ])->save();
+
+                            $record->logs()->create([
+                                'type'        => 'assigned_to_department_manager',
+                                'data'        => [
+                                    'employee_id' => (int) $data['assigned_to_employee_id'],
+                                    'source'      => 'project_tasks_create_action',
+                                ],
+                                'causer_id'   => auth()->id(),
+                                'happened_at' => now(),
+                            ]);
+                        } else {
+                            $record->forceFill([
+                                'current_owner_user_id' => null,
+                                'current_owner_role'    => 'department_manager',
+                            ])->save();
+                        }})
                     ->form($this->getCreateFormSchema()),
             ])
             ->actions([

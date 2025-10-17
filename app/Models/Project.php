@@ -22,7 +22,7 @@ class Project extends Model
         'project_name',
         'description',
         'start_date',
-        'end_date',          // = due date
+        'end_date',
         'status',
         'created_by',
     ];
@@ -45,10 +45,7 @@ class Project extends Model
         return $this->belongsTo(Client::class, 'client_id', 'client_id');
     }
 
-    public function showroom(): BelongsTo
-    {
-        return $this->belongsTo(Showroom::class, 'showroom_id', 'id');
-    }
+
 
     public function creator(): BelongsTo
     {

@@ -108,7 +108,7 @@ class ViewTask extends ViewRecord
                                 ->whereHas('user', function ($q) {
                                     $q->whereHas('roles', function ($r) {
                                         $r->where('name', 'department_manager')
-                                            ->where('guard_name', 'web');
+                                            ->where('guard_name');
                                     });
                                 })
                                 ->orderBy('employee_name')
@@ -139,7 +139,7 @@ class ViewTask extends ViewRecord
 
             /* طلب خامات */
             Action::make('request_materials')
-                ->label('طلب خامات')->icon('heroicon-o-truck')->color('warning')
+                ->label('طلب خامات')->icon('heroicon-o-truck')->color('info')
                 ->visible(fn () => $this->helper()->canRequestMaterials($this->record, Auth::user()))
                 ->form([
                     Forms\Components\Textarea::make('note')->label('تفاصيل المطلوب')->rows(3)->required(),
@@ -232,19 +232,89 @@ class ViewTask extends ViewRecord
 
             Action::make('start_production')
                 ->label('بدء التصنيع')
-                ->icon('heroicon-o-play-circle')
-                ->color('primary')
-                ->visible(fn () => $this->helper()->canStartProduction($this->record, Auth::user()))
+                ->icon('heroicon-o-play')
+                ->color('info')
+                ->visible(function () {
+                    // 1) الملكية والحالة
+                    if (($this->record->current_owner_role ?? null) !== 'department_manager') return false;
+                    if ($this->record->status !== \App\Enums\TaskStatus::WaitingProduction->value) return false;
+
+                    // 2) هل هناك إرجاع للتصنيع؟
+                    $lastBack = \App\Models\TaskLog::query()
+                        ->where('task_id', $this->record->id)
+                        ->where('type', 'sent_back_to_manufacturing')
+                        ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
+                        ->first();
+
+                    // سنحدد "مرجع الدورة" (الزمن + id) الذي بعده يجب ألا يوجد manufacturing_started
+                    $anchorTime = null;
+                    $anchorId   = null;
+
+                    if ($lastBack) {
+                        // آخر ack rework بعد هذا الإرجاع
+                        $tBack = $lastBack->happened_at ?? $lastBack->created_at;
+
+                        $ack = \App\Models\TaskLog::query()
+                            ->where('task_id', $this->record->id)
+                            ->where('type', 'manufacturing_ack_rework')
+                            ->where(function ($q) use ($tBack, $lastBack) {
+                                $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$tBack])
+                                    ->orWhere(function ($q2) use ($tBack, $lastBack) {
+                                        $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$tBack])
+                                            ->where('id', '>', $lastBack->id);
+                                    });
+                            })
+                            ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
+                            ->first();
+
+                        if (! $ack) {
+                            // لم يُؤكَّد استلام إعادة العمل بعد الإرجاع
+                            return false;
+                        }
+
+                        $anchorTime = $ack->happened_at ?? $ack->created_at;
+                        $anchorId   = $ack->id;
+                    } else {
+                        // الدورة الأولى: نعتمد تأكيد استلام القسم الأول
+                        $deptAck = \App\Models\TaskLog::query()
+                            ->where('task_id', $this->record->id)
+                            ->where('type', 'dept_ack_task')
+                            ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
+                            ->first();
+
+                        if (! $deptAck) return false;
+
+                        $anchorTime = $deptAck->happened_at ?? $deptAck->created_at;
+                        $anchorId   = $deptAck->id;
+                    }
+
+                    // 3) لا بد ألا يكون هناك manufacturing_started بعد مرجع الدورة
+                    $startedAfter = \App\Models\TaskLog::query()
+                        ->where('task_id', $this->record->id)
+                        ->where('type', 'manufacturing_started')
+                        ->where(function ($q) use ($anchorTime, $anchorId) {
+                            $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$anchorTime])
+                                ->orWhere(function ($q2) use ($anchorTime, $anchorId) {
+                                    $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$anchorTime])
+                                        ->where('id', '>', $anchorId);
+                                });
+                        })
+                        ->exists();
+
+                    return ! $startedAfter;
+                })
+
                 ->form([
-                    Forms\Components\DateTimePicker::make('started_at')->label('البدء الفعلي للتصنيع')->native(false)->default(now())->required(),
-                    Forms\Components\Textarea::make('note')->label('ملاحظة (اختياري)')->rows(3),
+                    Forms\Components\DateTimePicker::make('started_at')->label('تاريخ البدء')->required(),
+                    Forms\Components\Textarea::make('note')->label('ملاحظة')->rows(2),
                 ])
                 ->requiresConfirmation()
                 ->action(function (array $data) {
                     $this->workflow()->startProduction($this->record, $data['started_at'], $data['note'] ?? null);
-                    Notification::make()->success()->title('بدأ التصنيع (تاريخ فعلي)')->send();
-                    $this->redirect($this->getRedirectUrl());
+                    \Filament\Notifications\Notification::make()->success()->title('تم بدء التصنيع')->send();
+                    $this->record->refresh();
                 }),
+
 
             /* إنهاء التصنيع وإرسال للجودة */
             Action::make('finish_manufacturing_send_to_qa')
@@ -269,21 +339,38 @@ class ViewTask extends ViewRecord
                 ->icon('heroicon-o-inbox-arrow-down')
                 ->color('primary')
                 ->visible(function () {
-                    $u = auth()->user();
-//                    if (! $u || ! $u->hasRole('quality_manager','web')) return false;
-                    if (! $this->helper()->ownerIs($this->record,'quality_manager')) return false;
-                    if ($this->helper()->hasLog($this->record,'qa_ack_manufacturing')) return false;
+                    $user = auth()->user();
+                    if (! $user || ! $user->hasRole('quality_manager')) return false;
+                    if (($this->record->current_owner_role ?? null) !== 'quality_manager') return false;
 
-                    // احضر آخر handoff للجودة (تصنيع/تركيب/عام)
-                    $last = \App\Models\TaskLog::query()
+                    // آخر handoff للجودة (تصنيع/تركيب)
+                    $lastHandoff = \App\Models\TaskLog::query()
                         ->where('task_id', $this->record->id)
-                        ->whereIn('type', ['manufacturing_sent_to_qa','manufacturing_finished'])
-                        ->orderByRaw('COALESCE(happened_at, created_at) DESC')
+                        ->whereIn('type', ['manufacturing_sent_to_qa','installation_sent_to_qa','sent_to_quality'])
+                        ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
                         ->first();
 
-                    // يظهر فقط إذا كان آخر handoff من التصنيع
-                    return $last && $last->type !== 'installation_sent_to_qa';
+                    // يجب أن يكون من التصنيع
+                    if (! $lastHandoff || $lastHandoff->type !== 'manufacturing_sent_to_qa') return false;
+
+                    // هل تم ack للتصنيع بعد هذا الـ handoff؟
+                    $t = $lastHandoff->happened_at ?? $lastHandoff->created_at;
+                    $ackExistsAfter = \App\Models\TaskLog::query()
+                        ->where('task_id', $this->record->id)
+                        ->where('type', 'qa_ack_manufacturing')
+                        ->where(function ($q) use ($t, $lastHandoff) {
+                            $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
+                                ->orWhere(function ($q2) use ($t, $lastHandoff) {
+                                    $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$t])
+                                        ->where('id', '>', $lastHandoff->id);
+                                });
+                        })
+                        ->exists();
+
+                    return ! $ackExistsAfter;
                 })
+
+
                 ->requiresConfirmation()
                 ->action(function () {
                     $this->workflow()->qaAcknowledgeManufacturing($this->record);
@@ -297,13 +384,52 @@ class ViewTask extends ViewRecord
 
             Action::make('approveManufacturingQA')
                 ->label('اعتماد الجودة (بعد التصنيع)')->icon('heroicon-o-check-badge')->color('success')
-                ->visible(fn () =>
-                    ! $this->helper()->isClosedOrCompleted($this->record)
-                    && $this->helper()->ownerIs($this->record,'quality_manager')
-                    && $this->helper()->hasLog($this->record,'qa_ack_manufacturing')
-                    && ! $this->helper()->hasLog($this->record,'qa_approved_manufacturing')
-                    && ! $this->helper()->hasLog($this->record,'qa_rejected_manufacturing')
-                )
+                ->visible(function () {
+                    $user = auth()->user();
+                    if (! $user || ! $user->hasRole('quality_manager')) return false;
+                    if (($this->record->current_owner_role ?? null) !== 'quality_manager') return false;
+
+                    $lastHandoff = \App\Models\TaskLog::query()
+                        ->where('task_id', $this->record->id)
+                        ->whereIn('type', ['manufacturing_sent_to_qa','installation_sent_to_qa','sent_to_quality'])
+                        ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
+                        ->first();
+
+                    if (! $lastHandoff || $lastHandoff->type !== 'manufacturing_sent_to_qa') return false;
+
+                    $t = $lastHandoff->happened_at ?? $lastHandoff->created_at;
+
+                    // يلزم وجود ack بعد هذا التحويل
+                    $ackAfter = \App\Models\TaskLog::query()
+                        ->where('task_id', $this->record->id)
+                        ->where('type', 'qa_ack_manufacturing')
+                        ->where(function ($q) use ($t, $lastHandoff) {
+                            $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
+                                ->orWhere(function ($q2) use ($t, $lastHandoff) {
+                                    $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$t])
+                                        ->where('id', '>', $lastHandoff->id);
+                                });
+                        })
+                        ->exists();
+
+                    if (! $ackAfter) return false;
+
+                    // لا يوجد approve/reject بعد هذا التحويل
+                    $decisionExistsAfter = \App\Models\TaskLog::query()
+                        ->where('task_id', $this->record->id)
+                        ->whereIn('type', ['qa_approved_manufacturing','qa_rejected_manufacturing'])
+                        ->where(function ($q) use ($t, $lastHandoff) {
+                            $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
+                                ->orWhere(function ($q2) use ($t, $lastHandoff) {
+                                    $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$t])
+                                        ->where('id', '>', $lastHandoff->id);
+                                });
+                        })
+                        ->exists();
+
+                    return ! $decisionExistsAfter;
+                })
+
                 ->form([ Forms\Components\Textarea::make('note')->label('ملاحظة (اختياري)')->rows(3), ])
                 ->requiresConfirmation()
                 ->action(function (array $data) {
@@ -317,22 +443,47 @@ class ViewTask extends ViewRecord
                 ->icon('heroicon-o-x-circle')
                 ->color('danger')
                 ->visible(function () {
-                    $u = auth()->user();
-                    if (! $u || ! $u->hasRole('quality_manager','web')) return false;
-                    if (! $this->helper()->ownerIs($this->record,'quality_manager')) return false;
+                    $user = auth()->user();
+                    if (! $user || ! $user->hasRole('quality_manager')) return false;
+                    if (($this->record->current_owner_role ?? null) !== 'quality_manager') return false;
 
-                    if (! $this->helper()->hasLog($this->record,'qa_ack_manufacturing')) return false;
-
-                    if ($this->helper()->hasLog($this->record,'qa_approved_manufacturing')
-                        || $this->helper()->hasLog($this->record,'qa_rejected_manufacturing')) return false;
-
-                    $last = \App\Models\TaskLog::query()
+                    $lastHandoff = \App\Models\TaskLog::query()
                         ->where('task_id', $this->record->id)
-                        ->whereIn('type', ['manufacturing_sent_to_qa','installation_sent_to_qa','qa_ack_manufacturing'])
-                        ->orderByRaw('COALESCE(happened_at, created_at) DESC')
+                        ->whereIn('type', ['manufacturing_sent_to_qa','installation_sent_to_qa','sent_to_quality'])
+                        ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
                         ->first();
 
-                    return $last && $last->type !== 'installation_sent_to_qa';
+                    if (! $lastHandoff || $lastHandoff->type !== 'manufacturing_sent_to_qa') return false;
+
+                    $t = $lastHandoff->happened_at ?? $lastHandoff->created_at;
+
+                    // يجب ack بعد هذا التحويل
+                    $ackAfter = \App\Models\TaskLog::where('task_id', $this->record->id)
+                        ->where('type','qa_ack_manufacturing')
+                        ->where(function ($q) use ($t, $lastHandoff) {
+                            $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
+                                ->orWhere(function ($q2) use ($t, $lastHandoff) {
+                                    $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$t])
+                                        ->where('id', '>', $lastHandoff->id);
+                                });
+                        })
+                        ->exists();
+
+                    if (! $ackAfter) return false;
+
+                    // لا يوجد قرار (approve/reject) بعد هذا التحويل
+                    $decisionAfter = \App\Models\TaskLog::where('task_id', $this->record->id)
+                        ->whereIn('type', ['qa_approved_manufacturing','qa_rejected_manufacturing'])
+                        ->where(function ($q) use ($t, $lastHandoff) {
+                            $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
+                                ->orWhere(function ($q2) use ($t, $lastHandoff) {
+                                    $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$t])
+                                        ->where('id', '>', $lastHandoff->id);
+                                });
+                        })
+                        ->exists();
+
+                    return ! $decisionAfter;
                 })
                 ->form([
                     \Filament\Forms\Components\Textarea::make('reason')->label('سبب الرفض')->rows(3)->required(),
@@ -346,43 +497,94 @@ class ViewTask extends ViewRecord
                 }),
 
 
-            Action::make('installationAcknowledgeAfterQAApprove')
-                ->label('تأكيد استلام التركيب (بعد اعتماد جودة التصنيع)')
+            Action::make('manufacturingAcknowledgeRework')
+                ->label('تأكيد استلام التصنيع (إعادة عمل)')
                 ->icon('heroicon-o-clipboard-document-check')
-                ->color('primary')
+                ->color('info')
                 ->visible(function () {
-                    $u = auth()->user();
-//                    if (! $u || ! $u->hasRole('installation_manager', 'web')) {
-//                        return false;
-//                    }
-
-                    // المهمة بملكية قسم التركيب الآن
-                    if (($this->record->current_owner_role ?? null) !== 'installation_manager') {
+                    // يجب أن تعود الملكية لمدير القسم بعد رفض جودة التصنيع
+                    if (($this->record->current_owner_role ?? null) !== 'department_manager') {
                         return false;
                     }
 
-                    // لو فيه مالك مستخدم محدد لازم يطابق المستخدم الحالي
-//                    if (! blank($this->record->current_owner_user_id)
-//                        && (int) $this->record->current_owner_user_id !== (int) $u->id) {
-//                        return false;
-//                    }
-                    if ($this->helper()->hasLog($this->record, 'install_acknowledged')) {
-                        return false;
-                    }
-                    // لم يتم التأكيد مسبقًا
-                    if ($this->helper()->hasLog($this->record, 'qa_approved_manufacturing')) {
-                        return true;
-                    }
-
-                    // آخر handoff يجب أن يكون تحويلًا إلى قسم التركيب
-                    $lastHandoff = \App\Models\TaskLog::query()
+                    // آخر إرجاع للتصنيع من الجودة
+                    $lastBack = \App\Models\TaskLog::query()
                         ->where('task_id', $this->record->id)
-                        ->whereIn('type', ['qa_approved_manufacturing'])
+                        ->where('type', 'sent_back_to_manufacturing')
                         ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
                         ->first();
 
-                    return $lastHandoff && $lastHandoff->type === 'qa_approved_manufacturing';
+                    if (! $lastBack) {
+                        return false;
+                    }
+
+                    $t = $lastBack->happened_at ?? $lastBack->created_at;
+
+                    // لا يظهر الزر إن كان قد تم تأكيد استلام إعادة العمل للتصنيع بعد هذا الإرجاع
+                    $ackReworkAfter = \App\Models\TaskLog::query()
+                        ->where('task_id', $this->record->id)
+                        ->where('type', 'manufacturing_ack_rework')
+                        ->where(function ($q) use ($t, $lastBack) {
+                            $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
+                                ->orWhere(function ($q2) use ($t, $lastBack) {
+                                    $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$t])
+                                        ->where('id', '>', $lastBack->id);
+                                });
+                        })
+                        ->exists();
+
+                    return ! $ackReworkAfter;
                 })
+                ->form([
+                    Forms\Components\Textarea::make('note')
+                        ->label('ملاحظة (اختياري)')
+                        ->rows(3),
+                ])
+                ->requiresConfirmation()
+                ->action(function (array $data) {
+                    $this->workflow()->manufacturingAcknowledgeRework($this->record, $data['note'] ?? null);
+                    \Filament\Notifications\Notification::make()
+                        ->success()
+                        ->title('تم تأكيد استلام التصنيع (إعادة عمل)')
+                        ->send();
+                    $this->record->refresh();
+                }),
+
+            Action::make('installationAcknowledgeAfterQAApprove')
+                ->label('تأكيد استلام التركيب (بعد اعتماد جودة التصنيع)')
+                ->icon('heroicon-o-clipboard-document-check')
+                ->color('info')
+                ->visible(function () {
+                    $user = auth()->user();
+                    if (($this->record->current_owner_role ?? null) !== 'installation_manager') return false;
+
+                    // آخر اعتماد للتصنيع
+                    $lastApprove = \App\Models\TaskLog::query()
+                        ->where('task_id', $this->record->id)
+                        ->where('type','qa_approved_manufacturing')
+                        ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
+                        ->first();
+
+                    if (! $lastApprove) return false;
+
+                    $t = $lastApprove->happened_at ?? $lastApprove->created_at;
+
+                    // هل يوجد install_acknowledged بعد هذا الاعتماد؟
+                    $ackInstallAfter = \App\Models\TaskLog::query()
+                        ->where('task_id', $this->record->id)
+                        ->where('type','install_acknowledged')
+                        ->where(function ($q) use ($t, $lastApprove) {
+                            $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
+                                ->orWhere(function ($q2) use ($t, $lastApprove) {
+                                    $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$t])
+                                        ->where('id','>', $lastApprove->id);
+                                });
+                        })
+                        ->exists();
+
+                    return ! $ackInstallAfter;
+                })
+
                 ->requiresConfirmation()
                 ->action(function () {
                     // نفس خدمة التدفق الحالية لتأكيد استلام التركيب
@@ -396,16 +598,42 @@ class ViewTask extends ViewRecord
 
 
             Action::make('startInstallation')
-                ->label('بدء التركيب')->icon('heroicon-o-wrench-screwdriver')->color('primary')
-                ->visible(fn () =>
-                    ! $this->helper()->isClosedOrCompleted($this->record)
-                    && $u?->hasRole('installation_manager', 'web')
-                    && ($this->record->current_owner_role ?? null) === 'installation_manager'
-                    && (blank($this->record->current_owner_user_id) || $this->record->current_owner_user_id === $u->id)
-                    && ($this->helper()->hasLog($this->record, 'install_acknowledged')
-                        || $this->helper()->hasLog($this->record, 'install_ack_rework'))
-                    && ! $this->helper()->hasLog($this->record, 'installation_started')
-                )
+                ->label('بدء التركيب')->icon('heroicon-o-wrench-screwdriver')->color('info')
+                ->visible(function () {
+                    $u = auth()->user();
+                    if (($this->record->current_owner_role ?? null) !== 'installation_manager') return false;
+
+                    // لو فيه owner user محدد لازم يطابق
+                    if (!blank($this->record->current_owner_user_id) && (int) $this->record->current_owner_user_id !== (int) $u?->id) {
+                        return false;
+                    }
+
+                    // آخر تأكيد للتركيب (استلام أول أو إعادة عمل)
+                    $lastAck = \App\Models\TaskLog::query()
+                        ->where('task_id', $this->record->id)
+                        ->whereIn('type', ['install_acknowledged','install_ack_rework'])
+                        ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
+                        ->first();
+
+                    if (! $lastAck) return false;
+
+                    $t = $lastAck->happened_at ?? $lastAck->created_at;
+
+                    // لا يوجد installation_started بعد هذا التأكيد
+                    $startedAfter = \App\Models\TaskLog::query()
+                        ->where('task_id',$this->record->id)
+                        ->where('type','installation_started')
+                        ->where(function ($q) use ($t, $lastAck) {
+                            $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
+                                ->orWhere(function ($q2) use ($t, $lastAck) {
+                                    $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$t])
+                                        ->where('id','>', $lastAck->id);
+                                });
+                        })
+                        ->exists();
+
+                    return ! $startedAfter;
+                })
                 ->form([
                     Forms\Components\DateTimePicker::make('started_at')->label('تاريخ/وقت البدء')->default(now())->required(),
                     Forms\Components\Textarea::make('note')->label('ملاحظة (اختياري)')->rows(3),
@@ -413,19 +641,59 @@ class ViewTask extends ViewRecord
                 ->requiresConfirmation()
                 ->action(function (array $data) {
                     $this->workflow()->startInstallation($this->record, $data['started_at'], $data['note'] ?? null);
-                    Notification::make()->success()->title('تم بدء التركيب')->send();
+                    \Filament\Notifications\Notification::make()->success()->title('تم بدء التركيب')->send();
+
+                    // حدّث الصفحة فورًا
+                    $this->record->refresh();
+                    $this->dispatch('close-modal', id: 'filament.actions.modal');
+                    $this->js('$wire.$refresh()');
                 }),
 
+
             Action::make('finishInstallationAndSendQA')
-                ->label('إنهاء التركيب وإرسال للجودة')->icon('heroicon-o-paper-airplane')->color('warning')
-                ->visible(fn () =>
-                    ! $this->helper()->isClosedOrCompleted($this->record)
-                    && $u?->hasRole('installation_manager', 'web')
-                    && ($this->record->current_owner_role ?? null) === 'installation_manager'
-                    && (blank($this->record->current_owner_user_id) || $this->record->current_owner_user_id === $u->id)
-                    && $this->helper()->hasLog($this->record, 'installation_started')
-                    && ! $this->helper()->hasLog($this->record, 'installation_sent_to_qa')
-                )
+                ->label('إنهاء التركيب وإرسال للجودة')->icon('heroicon-o-paper-airplane')->color('success')
+                ->visible(function () {
+                    $u = auth()->user();
+                    if (! $u || ! $u->hasRole('installation_manager')) return false;
+                    if (($this->record->current_owner_role ?? null) !== 'installation_manager') return false;
+                    if (!blank($this->record->current_owner_user_id) && (int) $this->record->current_owner_user_id !== (int) $u->id) return false;
+
+                    $lastAck = \App\Models\TaskLog::query()
+                        ->where('task_id', $this->record->id)
+                        ->whereIn('type', ['install_acknowledged','install_ack_rework'])
+                        ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
+                        ->first();
+
+                    if (! $lastAck) return false;
+                    $t = $lastAck->happened_at ?? $lastAck->created_at;
+
+                    $startedAfter = \App\Models\TaskLog::where('task_id',$this->record->id)
+                        ->where('type','installation_started')
+                        ->where(function ($q) use ($t, $lastAck) {
+                            $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
+                                ->orWhere(function ($q2) use ($t, $lastAck) {
+                                    $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$t])
+                                        ->where('id','>', $lastAck->id);
+                                });
+                        })
+                        ->exists();
+
+                    if (! $startedAfter) return false;
+
+                    $sentAfter = \App\Models\TaskLog::where('task_id',$this->record->id)
+                        ->where('type','installation_sent_to_qa')
+                        ->where(function ($q) use ($t, $lastAck) {
+                            $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
+                                ->orWhere(function ($q2) use ($t, $lastAck) {
+                                    $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$t])
+                                        ->where('id','>', $lastAck->id);
+                                });
+                        })
+                        ->exists();
+
+                    return ! $sentAfter;
+                })
+
                 ->form([
                     Forms\Components\DateTimePicker::make('finished_at')->label('تاريخ/وقت الإنهاء')->default(now())->required(),
                     Forms\Components\Textarea::make('note')->label('ملاحظة (اختياري)')->rows(3),
@@ -438,16 +706,37 @@ class ViewTask extends ViewRecord
                 }),
 
             Action::make('qaAcknowledgeInstallation')
-                ->label('تأكيد استلام الجودة (التركيب)')->icon('heroicon-o-inbox-arrow-down')->color('primary')
-                ->visible(fn () =>
-                    ! $this->helper()->isClosedOrCompleted($this->record)
-                    && $this->helper()->ownerIs($this->record,'quality_manager')
-                    && (
-                        $this->helper()->hasLog($this->record,'installation_sent_to_qa')
-                        || $this->helper()->hasLog($this->record,'sent_to_quality')
-                    )
-                    && ! $this->helper()->hasLog($this->record,'qa_ack_installation')
-                )
+                ->label('تأكيد استلام الجودة (التركيب)')->icon('heroicon-o-inbox-arrow-down')->color('info')
+                ->visible(function () {
+                    $user = auth()->user();
+                    if (! $user || ! $user->hasRole('quality_manager')) return false;
+                    if (($this->record->current_owner_role ?? null) !== 'quality_manager') return false;
+
+                    $lastHandoff = \App\Models\TaskLog::query()
+                        ->where('task_id', $this->record->id)
+                        ->whereIn('type', ['manufacturing_sent_to_qa','installation_sent_to_qa','sent_to_quality'])
+                        ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
+                        ->first();
+
+                    if (! $lastHandoff || $lastHandoff->type !== 'installation_sent_to_qa') return false;
+
+                    $t = $lastHandoff->happened_at ?? $lastHandoff->created_at;
+
+                    $ackAfter = \App\Models\TaskLog::query()
+                        ->where('task_id',$this->record->id)
+                        ->where('type','qa_ack_installation')
+                        ->where(function ($q) use ($t, $lastHandoff) {
+                            $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
+                                ->orWhere(function ($q2) use ($t, $lastHandoff) {
+                                    $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$t])
+                                        ->where('id','>', $lastHandoff->id);
+                                });
+                        })
+                        ->exists();
+
+                    return ! $ackAfter;
+                })
+
                 ->requiresConfirmation()
                 ->action(function () {
                     $this->workflow()->qaAcknowledgeInstallation($this->record);
@@ -456,15 +745,48 @@ class ViewTask extends ViewRecord
 
             Action::make('approveInstallationQA')
                 ->label('اعتماد الجودة (بعد التركيب)')->icon('heroicon-o-check-badge')->color('success')
-                ->visible(fn () =>
-                    ! $this->helper()->isClosedOrCompleted($this->record)
-                    && $u?->hasRole('quality_manager', 'web')
-                    && ($this->record->current_owner_role ?? null) === 'quality_manager'
-                    && (blank($this->record->current_owner_user_id) || $this->record->current_owner_user_id === $u->id)
-                    && $this->helper()->hasLog($this->record, 'qa_ack_installation')
-                    && ! $this->helper()->hasLog($this->record, 'qa_approved_installation')
-                    && ! $this->helper()->hasLog($this->record, 'qa_rejected_installation')
-                )
+                ->visible(function () {
+                    $u = auth()->user();
+                    if (! $u || ! $u->hasRole('quality_manager')) return false;
+                    if (($this->record->current_owner_role ?? null) !== 'quality_manager') return false;
+
+                    $lastHandoff = \App\Models\TaskLog::query()
+                        ->where('task_id', $this->record->id)
+                        ->whereIn('type', ['manufacturing_sent_to_qa','installation_sent_to_qa','sent_to_quality'])
+                        ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
+                        ->first();
+
+                    if (! $lastHandoff || $lastHandoff->type !== 'installation_sent_to_qa') return false;
+
+                    $t = $lastHandoff->happened_at ?? $lastHandoff->created_at;
+
+                    $ackAfter = \App\Models\TaskLog::where('task_id',$this->record->id)
+                        ->where('type','qa_ack_installation')
+                        ->where(function ($q) use ($t, $lastHandoff) {
+                            $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
+                                ->orWhere(function ($q2) use ($t, $lastHandoff) {
+                                    $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$t])
+                                        ->where('id','>', $lastHandoff->id);
+                                });
+                        })
+                        ->exists();
+
+                    if (! $ackAfter) return false;
+
+                    $decisionAfter = \App\Models\TaskLog::where('task_id',$this->record->id)
+                        ->whereIn('type',['qa_approved_installation','qa_rejected_installation'])
+                        ->where(function ($q) use ($t, $lastHandoff) {
+                            $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
+                                ->orWhere(function ($q2) use ($t, $lastHandoff) {
+                                    $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$t])
+                                        ->where('id','>', $lastHandoff->id);
+                                });
+                        })
+                        ->exists();
+
+                    return ! $decisionAfter;
+                })
+
                 ->form([ Forms\Components\Textarea::make('note')->label('ملاحظة (اختياري)')->rows(3), ])
                 ->requiresConfirmation()
                 ->action(function (array $data) {
@@ -478,25 +800,46 @@ class ViewTask extends ViewRecord
                 ->color('danger')
                 ->visible(function () {
                     $u = auth()->user();
-                    if (! $u || ! $u->hasRole('quality_manager','web')) return false;
-                    if (! $this->helper()->ownerIs($this->record,'quality_manager')) return false;
+                    if (! $u || ! $u->hasRole('quality_manager')) return false;
+                    if (($this->record->current_owner_role ?? null) !== 'quality_manager') return false;
 
-                    // يجب أن يكون تم تأكيد الاستلام بعد التركيب
-                    if (! $this->helper()->hasLog($this->record,'qa_ack_installation')) return false;
-
-                    // لا تظهر إذا تم اعتماد/رفض بعد التركيب مسبقًا
-                    if ($this->helper()->hasLog($this->record,'qa_approved_installation')
-                        || $this->helper()->hasLog($this->record,'qa_rejected_installation')) return false;
-
-                    // آخر handoff للجودة يجب أن يكون من التركيب
-                    $last = \App\Models\TaskLog::query()
+                    $lastHandoff = \App\Models\TaskLog::query()
                         ->where('task_id', $this->record->id)
                         ->whereIn('type', ['manufacturing_sent_to_qa','installation_sent_to_qa','sent_to_quality'])
-                        ->orderByRaw('COALESCE(happened_at, created_at) DESC')
+                        ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
                         ->first();
 
-                    return $last && $last->type === 'installation_sent_to_qa';
+                    if (! $lastHandoff || $lastHandoff->type !== 'installation_sent_to_qa') return false;
+
+                    $t = $lastHandoff->happened_at ?? $lastHandoff->created_at;
+
+                    $ackAfter = \App\Models\TaskLog::where('task_id',$this->record->id)
+                        ->where('type','qa_ack_installation')
+                        ->where(function ($q) use ($t, $lastHandoff) {
+                            $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
+                                ->orWhere(function ($q2) use ($t, $lastHandoff) {
+                                    $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$t])
+                                        ->where('id','>', $lastHandoff->id);
+                                });
+                        })
+                        ->exists();
+
+                    if (! $ackAfter) return false;
+
+                    $decisionAfter = \App\Models\TaskLog::where('task_id',$this->record->id)
+                        ->whereIn('type',['qa_approved_installation','qa_rejected_installation'])
+                        ->where(function ($q) use ($t, $lastHandoff) {
+                            $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
+                                ->orWhere(function ($q2) use ($t, $lastHandoff) {
+                                    $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$t])
+                                        ->where('id','>', $lastHandoff->id);
+                                });
+                        })
+                        ->exists();
+
+                    return ! $decisionAfter;
                 })
+
                 ->form([
                     \Filament\Forms\Components\Textarea::make('reason')->label('سبب الرفض')->rows(3)->required(),
                 ])
@@ -510,18 +853,45 @@ class ViewTask extends ViewRecord
 
 
             Action::make('installationAcknowledgeRework')
-                ->label('تأكيد استلام التركيب (إعادة عمل)')->icon('heroicon-o-clipboard-document-check')->color('primary')
-                ->visible(fn () =>
-                    ! $this->helper()->isClosedOrCompleted($this->record)
-                    && $this->helper()->ownerIs($this->record,'installation_manager')
-                    && $this->helper()->hasLog($this->record,'sent_back_to_install')
-                    && ! $this->helper()->hasLog($this->record,'install_ack_rework')
-                )
+                ->label('تأكيد استلام التركيب (إعادة عمل)')
+                ->icon('heroicon-o-clipboard-document-check')
+                ->color('info')
+                ->visible(function () {
+                    if (($this->record->current_owner_role ?? null) !== 'installation_manager') return false;
+
+                    $lastBack = \App\Models\TaskLog::query()
+                        ->where('task_id', $this->record->id)
+                        ->where('type','sent_back_to_install')
+                        ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
+                        ->first();
+
+                    if (! $lastBack) return false;
+                    $t = $lastBack->happened_at ?? $lastBack->created_at;
+
+                    $ackReworkAfter = \App\Models\TaskLog::where('task_id',$this->record->id)
+                        ->where('type','install_ack_rework')
+                        ->where(function ($q) use ($t, $lastBack) {
+                            $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
+                                ->orWhere(function ($q2) use ($t, $lastBack) {
+                                    $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$t])
+                                        ->where('id','>', $lastBack->id);
+                                });
+                        })
+                        ->exists();
+
+                    return ! $ackReworkAfter;
+                })
                 ->requiresConfirmation()
                 ->action(function () {
                     $this->workflow()->installationAcknowledgeRework($this->record);
-                    Notification::make()->success()->title('تم تأكيد استلام التركيب (إعادة عمل)')->send();
+                    \Filament\Notifications\Notification::make()->success()->title('تم تأكيد استلام التركيب (إعادة عمل)')->send();
+
+                    // << التحديثات المهمة
+                    $this->record->refresh();
+                    $this->dispatch('close-modal', id: 'filament.actions.modal');
+                    $this->js('$wire.$refresh()');
                 }),
+
 
             /* سند استلام العميل → اكتمال */
             Action::make('uploadClientReceipt')
@@ -645,7 +1015,7 @@ class ViewTask extends ViewRecord
                         'purchasing_manager',
                         'sales_manager',
                         'showroom_manager',
-                    ], 'web')
+                    ])
                 )
                 ->schema([
                     // ملف الاتفاقية
