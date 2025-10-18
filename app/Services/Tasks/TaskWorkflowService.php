@@ -56,7 +56,6 @@ class TaskWorkflowService
                 'received_at' => now(),
             ]);
 
-            // فقط تحديث حقل الاستلام للمالك الحالي؛ الـ Observer سيسجّل ownership_received
             $this->markOwnerReceived($task, $note ?: 'تأكيد استلام المهمة (مدير القسم)');
 
             $this->notifier->notifyActor('تم تأكيد استلام المهمة', "رقم المهمة #{$task->id}", $task);
@@ -171,17 +170,26 @@ class TaskWorkflowService
         ?string $note = null
     ): void {
         DB::transaction(function () use ($task, $start, $end, $install, $note) {
+            // تحديث المهمة
             $payload = ['status' => 'waiting_production'];
             if ($start)   { $payload['planned_start_at']   = Carbon::parse($start); }
             if ($end)     { $payload['planned_end_at']     = Carbon::parse($end); }
             if ($install) { $payload['planned_install_at'] = Carbon::parse($install); }
             $task->update($payload);
 
-            // فقط تحديث الاستلام؛ الـ Observer يسجّل ownership_received
-            $msg = 'استلام الخامات — جاهز لبدء التصنيع' . ($note ? ' — ' . trim($note) : '');
-            $this->markOwnerReceived($task, $msg);
+            // لوج استلام واضح لهذه الخطوة + الملاحظة صريحة
+            $this->log($task, 'materials_received_ok', [
+                'planned_start_at'   => optional($task->planned_start_at)->toDateTimeString(),
+                'planned_end_at'     => optional($task->planned_end_at)->toDateTimeString(),
+                'planned_install_at' => optional($task->planned_install_at)->toDateTimeString(),
+                'note'               => $note ? trim($note) : null,
+                'by'                 => Auth::id(),
+            ]);
 
-            // تأكيد بقاء الملكية لمدير القسم (Observer يسجّل ownership_changed إن تغيّر فعلاً + sent_to_department)
+            // (اختياري) احتفظ بـ ownership_received بدون إلصاق الملاحظة بالنص:
+            $this->markOwnerReceived($task, 'استلام الخامات — جاهز لبدء التصنيع');
+
+            // إعادة ضبط الملكية للقسم
             $deptManagerId = $task->department?->manager_user_id
                 ?? $task->department?->head_user_id
                 ?? Auth::id();
@@ -194,7 +202,7 @@ class TaskWorkflowService
                 note: 'جاهز لبدء التصنيع'
             );
 
-            // دوميني: حفظ تلميح التخطيط
+            // (اختياري) أبقِ planning_hint_set لو تحب الفصل بين “تلميح التخطيط” و“تثبيت الاستلام”
             $this->log($task, 'planning_hint_set', [
                 'planned_start_at'   => optional($task->planned_start_at)->toDateTimeString(),
                 'planned_end_at'     => optional($task->planned_end_at)->toDateTimeString(),
@@ -210,6 +218,7 @@ class TaskWorkflowService
             );
         });
     }
+
 
     /** بدء التصنيع (تاريخ فعلي فقط) */
     public function startProduction(ProductionTask $task, string $startedAt, ?string $note = null): void

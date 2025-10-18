@@ -29,6 +29,11 @@ class ProjectResource extends Resource
     protected static ?string $modelLabel = 'مشروع';
     protected static bool $shouldRegisterNavigation = false;
 
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->can('view_any_project') ?? false;
+    }
+
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
         $q = parent::getEloquentQuery()

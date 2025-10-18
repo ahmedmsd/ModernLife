@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\TaskResource\Pages;
 
 use App\Filament\Resources\TaskResource;
+use App\Models\Employee;
 use Filament\Resources\Pages\Concerns\HasRelationManagers;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Actions\Action;
@@ -99,30 +100,45 @@ class ViewTask extends ViewRecord
 
             /* إسناد لمدير القسم */
             Action::make('assign_to_dept_manager')
-                ->label('إسناد لمدير القسم')->icon('heroicon-o-user-plus')
-                ->visible(fn () => $u?->hasAnyRole(['factory_manager','admin','super-admin']) && blank($this->record->assigned_to_employee_id))
+                ->label('إسناد لمدير القسم')
+                ->icon('heroicon-o-user-plus')
+                ->visible(function () {
+                    $u = Auth::user();
+                    return $u?->hasAnyRole(['factory_manager','admin','super-admin'])
+                        && blank($this->record->assigned_to_employee_id);
+                })
                 ->form([
-                    Forms\Components\Select::make('employee_id')->label('المسؤول')
+                    Forms\Components\Select::make('employee_id')
+                        ->label('المسؤول')
+                        ->searchable()
+                        ->preload()
                         ->options(function () {
-                            return \App\Models\Employee::query()
+                            $deptId = $this->record->department_id;
+
+                            return Employee::query()
                                 ->whereHas('user', function ($q) {
-                                    $q->whereHas('roles', function ($r) {
-                                        $r->where('name', 'department_manager')
-                                            ->where('guard_name');
-                                    });
+                                    $q->role('department_manager');
+
                                 })
+                                ->when($deptId, fn($q) => $q->where('department_id', $deptId))
                                 ->orderBy('employee_name')
                                 ->pluck('employee_name', 'employee_id')
                                 ->toArray();
                         })
-                        ->searchable()
                         ->required(),
-                    Forms\Components\DatePicker::make('due_date')->label('تاريخ التسليم المتوقع')->required(),
+
+                    Forms\Components\DatePicker::make('due_date')
+                        ->label('تاريخ التسليم المتوقع')
+                        ->required(),
                 ])
                 ->requiresConfirmation()
                 ->action(function (array $data) {
-                    $this->workflow()->assignToDeptManager($this->record, (int) $data['employee_id'], $data['due_date']);
-                    Notification::make()->success()->title('تم الإسناد')->send();
+                    $this->workflow()->assignToDeptManager(
+                        $this->record,
+                        (int) $data['employee_id'],
+                        $data['due_date']
+                    );
+                    \Filament\Notifications\Notification::make()->success()->title('تم الإسناد')->send();
                     $this->redirect($this->getRedirectUrl());
                 }),
 
@@ -235,26 +251,31 @@ class ViewTask extends ViewRecord
                 ->icon('heroicon-o-play')
                 ->color('info')
                 ->visible(function () {
-                    // 1) الملكية والحالة
-                    if (($this->record->current_owner_role ?? null) !== 'department_manager') return false;
-                    if ($this->record->status !== \App\Enums\TaskStatus::WaitingProduction->value) return false;
+                    // 1) الملكية
+                    if (($this->record->current_owner_role ?? null) !== 'department_manager') {
+                        return false;
+                    }
 
-                    // 2) هل هناك إرجاع للتصنيع؟
+                    // 2) الحالة (مقارنة نصية مقاومة للاختلافات في الـ Enum)
+                    $status = strtolower((string) ($this->record->status ?? ''));
+                    if ($status !== 'waiting_production') {
+                        return false;
+                    }
+
+                    // 3) حدد "مرجع الدورة" anchor: أحدث حدث منطقي نبدأ من بعده
+                    $anchor = null;
+
+                    // 3.a) لو فيه إرجاع للتصنيع: نبحث عن أحدث manufacturing_ack_rework بعده
                     $lastBack = \App\Models\TaskLog::query()
                         ->where('task_id', $this->record->id)
                         ->where('type', 'sent_back_to_manufacturing')
                         ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
                         ->first();
 
-                    // سنحدد "مرجع الدورة" (الزمن + id) الذي بعده يجب ألا يوجد manufacturing_started
-                    $anchorTime = null;
-                    $anchorId   = null;
-
                     if ($lastBack) {
-                        // آخر ack rework بعد هذا الإرجاع
                         $tBack = $lastBack->happened_at ?? $lastBack->created_at;
 
-                        $ack = \App\Models\TaskLog::query()
+                        $ackRework = \App\Models\TaskLog::query()
                             ->where('task_id', $this->record->id)
                             ->where('type', 'manufacturing_ack_rework')
                             ->where(function ($q) use ($tBack, $lastBack) {
@@ -267,28 +288,29 @@ class ViewTask extends ViewRecord
                             ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
                             ->first();
 
-                        if (! $ack) {
-                            // لم يُؤكَّد استلام إعادة العمل بعد الإرجاع
+                        if (! $ackRework) {
+                            // لم يتم تأكيد استلام إعادة العمل بعد الإرجاع
                             return false;
                         }
 
-                        $anchorTime = $ack->happened_at ?? $ack->created_at;
-                        $anchorId   = $ack->id;
+                        $anchor = $ackRework;
                     } else {
-                        // الدورة الأولى: نعتمد تأكيد استلام القسم الأول
-                        $deptAck = \App\Models\TaskLog::query()
+                        // 3.b) لا يوجد إرجاع: خذ أحدث materials_received_ok أو planning_hint_set
+                        $anchor = \App\Models\TaskLog::query()
                             ->where('task_id', $this->record->id)
-                            ->where('type', 'dept_ack_task')
+                            ->whereIn('type', ['materials_received_ok','materials_received_partial','materials_received_issue', 'planning_hint_set', 'dept_ack_task'])
                             ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
                             ->first();
 
-                        if (! $deptAck) return false;
-
-                        $anchorTime = $deptAck->happened_at ?? $deptAck->created_at;
-                        $anchorId   = $deptAck->id;
+                        if (! $anchor) {
+                            return false;
+                        }
                     }
 
-                    // 3) لا بد ألا يكون هناك manufacturing_started بعد مرجع الدورة
+                    $anchorTime = $anchor->happened_at ?? $anchor->created_at;
+                    $anchorId   = $anchor->id;
+
+                    // 4) تأكد أنه لا يوجد manufacturing_started بعد هذا المرجع (فقط بعده، لا قبل)
                     $startedAfter = \App\Models\TaskLog::query()
                         ->where('task_id', $this->record->id)
                         ->where('type', 'manufacturing_started')
@@ -303,6 +325,7 @@ class ViewTask extends ViewRecord
 
                     return ! $startedAfter;
                 })
+
 
                 ->form([
                     Forms\Components\DateTimePicker::make('started_at')->label('تاريخ البدء')->required(),
@@ -1004,24 +1027,21 @@ class ViewTask extends ViewRecord
                 ->columnSpanFull(),
 
             Section::make('ملفات المهمة')
-                ->visible(fn () =>
-                    auth()->check() &&
-                    auth()->user()->hasAnyRole([
-                        'admin',
-                        'super-admin',
-                        'super_admin',
-                        'factory_manager',
-                        'department_manager',
-                        'purchasing_manager',
-                        'sales_manager',
-                        'showroom_manager',
-                    ])
-                )
                 ->schema([
                     // ملف الاتفاقية
                     TextEntry::make('agreement_file')
                         ->label('ملف الاتفاقية')
                         ->html()
+                        ->visible(fn () =>
+                            auth()->check() &&
+                            auth()->user()->hasAnyRole([
+                                'admin',
+                                'super-admin',
+                                'super_admin',
+                                'factory_manager',
+                                'purchasing_manager',
+                            ])
+                        )
                         ->state(function (ProductionTask $record) {
                             $pr = $record->project?->productionRequest;
                             if (! $pr || blank($pr->agreement_file)) {
@@ -1063,7 +1083,7 @@ class ViewTask extends ViewRecord
                 ->visible(fn (ProductionTask $record) => $record->comments()->exists()),
 
             Section::make('المشتريات')->schema([
-                TextEntry::make('po_file_link')->label('أمر الشراء (PO)')->html()
+                TextEntry::make('po_file_link')->label('أمر الشراء المُعتمد من مدير المصنع (PO)')->html()
                     ->state(function (ProductionTask $record) {
                         $mr = $record->materialRequests()->orderByDesc('id')->first();
                         if (! $mr || blank($mr->po_file)) {

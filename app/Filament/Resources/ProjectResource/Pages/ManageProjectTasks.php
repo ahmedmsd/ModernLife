@@ -12,6 +12,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Pages\ManageRelatedRecords;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class ManageProjectTasks extends ManageRelatedRecords
 {
@@ -140,6 +141,25 @@ class ManageProjectTasks extends ManageRelatedRecords
     public function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(function (Builder $query) {
+                $user = auth()->user();
+
+                if ($user && $user->hasRole('department_manager')) {
+                    $emp = Employee::query()
+                        ->select(['employee_id', 'department_id'])
+                        ->where('user_id', $user->id)
+                        ->first();
+
+                    if ($emp) {
+                        $query->where(function (Builder $q) use ($emp) {
+                            $q->where('department_id', $emp->department_id)
+                                ->orWhere('assigned_to_employee_id', $emp->employee_id);
+                        });
+                    } else {
+                        $query->whereRaw('1 = 0');
+                    }
+                }
+            })
             ->columns([
                 Tables\Columns\TextColumn::make('department.dept_name')
                     ->label('القسم')

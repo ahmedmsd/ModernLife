@@ -48,8 +48,8 @@ class FactoryManagerCurrentTasks extends TableWidget
                 Tables\Actions\Action::make('view')
                     ->label('عرض')
                     ->icon('heroicon-o-eye')
-                    ->url(fn (TaskResource $record): string =>
-                    TaskResource::getUrl('view', ['record' => $record]))
+                    ->url(fn ($record) => TaskResource::getUrl('view', ['record' => $record->getKey()]))
+
             ])
             ->emptyStateHeading('لا توجد مهام تخصّك.');
     }

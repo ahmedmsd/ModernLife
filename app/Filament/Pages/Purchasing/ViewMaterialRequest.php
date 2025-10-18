@@ -4,6 +4,7 @@ namespace App\Filament\Pages\Purchasing;
 
 use App\Models\MaterialRequest;
 use App\Models\ProductionTask;
+use App\Models\TaskLog;
 use Filament\Infolists\Infolist;
 use Filament\Infolists\Contracts\HasInfolists;
 use Filament\Infolists\Concerns\InteractsWithInfolists;
@@ -345,6 +346,134 @@ class ViewMaterialRequest extends Page implements HasInfolists
                             ->icon(fn ($state) => $state ? 'heroicon-o-arrow-down-tray' : null)->badge(),
                         TextEntry::make('note')->label('المطلوبات/ملاحظات')->columnSpanFull()->markdown()->color('primary'),
                     ]),
+                Section::make('استلام القسم للخامات')
+                    ->columns(4)
+                    ->visible(function () {
+                        // ظهور هذا القسم لمن يهمه الاطلاع (مدير النظام + المشتريات)
+                        return auth()->check()
+                            && auth()->user()->hasAnyRole(['admin','super-admin','purchasing_manager'], 'web');
+                    })
+                    ->schema([
+                        TextEntry::make('dept_receipt_result')
+                            ->label('نتيجة الاستلام')
+                            ->state(function (MaterialRequest $r) {
+                                $log = TaskLog::query()
+                                    ->with('causer')
+                                    ->where('task_id', $r->task_id)
+                                    ->whereIn('type', [
+                                        'materials_received_ok',       // تم الاستلام (سليم)
+                                        'materials_received_partial',  // استلام جزئي
+                                        'materials_received_issue',    // استلام مع ملاحظات
+                                    ])
+                                    ->when($r->provided_at, function ($q) use ($r) {
+                                        $q->where(function($qq) use ($r) {
+                                            $qq->whereNotNull('happened_at')->where('happened_at', '>=', $r->provided_at)
+                                                ->orWhere(function($qqq) use ($r) {
+                                                    $qqq->whereNull('happened_at')->where('created_at', '>=', $r->provided_at);
+                                                });
+                                        });
+                                    })
+                                    ->latest('id')
+                                    ->first();
+
+                                if (! $log) return '—';
+
+                                return match ($log->type) {
+                                    'materials_received_ok'      => 'تم الاستلام',
+                                    'materials_received_partial' => 'استلام جزئي',
+                                    'materials_received_issue'   => 'استلام مع ملاحظات',
+                                    default                      => '—',
+                                };
+                            })
+                            ->badge()
+                            ->color(function ($state) {
+                                return match ($state) {
+                                    'تم الاستلام'       => 'success',
+                                    'استلام جزئي'       => 'warning',
+                                    'استلام مع ملاحظات' => 'danger',
+                                    default              => 'gray',
+                                };
+                            }),
+
+                        TextEntry::make('dept_receipt_note')
+                            ->label('ملاحظات مدير القسم')
+                            ->columnSpan(3)
+                            ->markdown()
+                            ->state(function (MaterialRequest $r) {
+                                $log = TaskLog::query()
+                                    ->where('task_id', $r->task_id)
+                                    ->whereIn('type', [
+                                        'materials_received_ok',
+                                        'materials_received_partial',
+                                        'materials_received_issue',
+                                    ])
+                                    ->when($r->provided_at, function ($q) use ($r) {
+                                        $q->where(function($qq) use ($r) {
+                                            $qq->whereNotNull('happened_at')->where('happened_at', '>=', $r->provided_at)
+                                                ->orWhere(function($qqq) use ($r) {
+                                                    $qqq->whereNull('happened_at')->where('created_at', '>=', $r->provided_at);
+                                                });
+                                        });
+                                    })
+                                    ->latest('id')
+                                    ->first();
+
+                                return $log?->note
+                                    ?? data_get($log, 'data.note')
+                                    ?? '—';
+                            }),
+
+                        TextEntry::make('dept_receipt_by')
+                            ->label('أكّد الاستلام')
+                            ->state(function (MaterialRequest $r) {
+                                $log = TaskLog::query()
+                                    ->with('causer')
+                                    ->where('task_id', $r->task_id)
+                                    ->whereIn('type', [
+                                        'materials_received_ok',
+                                        'materials_received_partial',
+                                        'materials_received_issue',
+                                    ])
+                                    ->when($r->provided_at, function ($q) use ($r) {
+                                        $q->where(function($qq) use ($r) {
+                                            $qq->whereNotNull('happened_at')->where('happened_at', '>=', $r->provided_at)
+                                                ->orWhere(function($qqq) use ($r) {
+                                                    $qqq->whereNull('happened_at')->where('created_at', '>=', $r->provided_at);
+                                                });
+                                        });
+                                    })
+                                    ->latest('id')
+                                    ->first();
+
+                                return $log?->causer?->name ?? '—';
+                            }),
+
+                        TextEntry::make('dept_receipt_at')
+                            ->label('تاريخ التأكيد')
+                            ->dateTime('Y-m-d H:i')
+                            ->state(function (MaterialRequest $r) {
+                                $log = TaskLog::query()
+                                    ->where('task_id', $r->task_id)
+                                    ->whereIn('type', [
+                                        'materials_received_ok',
+                                        'materials_received_partial',
+                                        'materials_received_issue',
+                                    ])
+                                    ->when($r->provided_at, function ($q) use ($r) {
+                                        $q->where(function($qq) use ($r) {
+                                            $qq->whereNotNull('happened_at')->where('happened_at', '>=', $r->provided_at)
+                                                ->orWhere(function($qqq) use ($r) {
+                                                    $qqq->whereNull('happened_at')->where('created_at', '>=', $r->provided_at);
+                                                });
+                                        });
+                                    })
+                                    ->latest('id')
+                                    ->first();
+
+                                return ($log?->happened_at ?? $log?->created_at) ?: null;
+                            }),
+                    ]),
+
                 Section::make('ملفات الطلب')
                     ->columns(2)
                     ->schema([

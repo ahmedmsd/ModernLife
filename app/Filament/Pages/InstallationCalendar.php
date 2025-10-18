@@ -22,8 +22,7 @@ class InstallationCalendar extends Page
     {
         return auth()->check()
             && auth()->user()->hasAnyRole([
-                'admin','super-admin','factory_manager','showroom_manager','department_manager',
-                // أضف أدواراً أخرى لو لزم
+                'admin','super-admin','factory_manager','showroom_manager','department_manager','sales','quality_manager'
             ]);
     }
 
@@ -38,7 +37,7 @@ class InstallationCalendar extends Page
         $query = ProductionTask::query()
             ->with([
                 'project.client',
-                'project.productionRequest.showroom', // مهم للتحمـيل الصحيح للمعرض
+                'project.productionRequest.showroom',
                 'department',
             ])
             ->whereNotNull('planned_install_at')
@@ -104,6 +103,10 @@ class InstallationCalendar extends Page
             'materialRequests' => fn($q) => $q->latest(),
         ])->findOrFail($taskId);
 
+        // من يحق له رؤية actual_cost ؟
+        $canSeeActualCost = auth()->check()
+            && auth()->user()->hasAnyRole(['admin', 'super-admin', 'purchasing_manager'], 'web');
+
         $statusLabel = match ((string) $t->status) {
             'pending'            => 'قيد الانتظار',
             'received'           => 'تم الاستلام',
@@ -133,7 +136,7 @@ class InstallationCalendar extends Page
             'client_name'        => $t->project?->client?->client_name,
             'production_request' => $t->project?->productionRequest?->id,
             'department'         => $t->department?->dept_name,
-            'showroom'           => $t->project?->productionRequest?->showroom?->name, // null-safe
+            'showroom'           => $t->project?->productionRequest?->showroom?->name,
             'owner_role'         => $t->current_owner_role,
             'owner_user_id'      => $t->current_owner_user_id,
             'links'              => [
@@ -147,14 +150,17 @@ class InstallationCalendar extends Page
                     ? \App\Filament\Resources\ProductionRequestResource::getUrl('view', ['record' => $t->project->productionRequest])
                     : null,
             ],
-            'materials'          => $t->materialRequests->map(function ($mr) {
+            'materials'          => $t->materialRequests->map(function ($mr) use ($canSeeActualCost) {
                 return [
-                    'id'         => $mr->id,
-                    'status'     => $mr->status,
-                    'expected'   => optional($mr->expected_delivery_at)->format('Y-m-d H:i') ?: '—',
-                    'provided'   => optional($mr->provided_at)->format('Y-m-d H:i') ?: '—',
-                    'po_number'  => $mr->po_number ?: '—',
-                    'actual_cost'=> $mr->actual_cost ? number_format($mr->actual_cost, 2) : '—',
+                    'id'          => $mr->id,
+                    'status'      => $mr->status,
+                    'expected'    => optional($mr->expected_delivery_at)->format('Y-m-d H:i') ?: '—',
+                    'provided'    => optional($mr->provided_at)->format('Y-m-d H:i') ?: '—',
+                    'po_number'   => $mr->po_number ?: '—',
+                    // إظهار التكلفة الفعلية فقط لمن لديهم صلاحية
+                    'actual_cost' => $canSeeActualCost
+                        ? ($mr->actual_cost !== null ? number_format($mr->actual_cost, 2) : '—')
+                        : '—',
                 ];
             })->all(),
         ];
@@ -182,7 +188,7 @@ class InstallationCalendar extends Page
             return $q->where($tasksTable.'.department_id', $u->employee->department_id);
         }
 
-        // مدير المعرض: يرى فقط ما يخص معرضه (عبر production_requests.showroom_id)
+        // مدير المعرض: يرى فقط ما يخص معرضه
         if ($u->hasRole('showroom_manager')) {
             $employeeId = $u->employee?->getKey();
             if (! $employeeId) {
@@ -202,7 +208,6 @@ class InstallationCalendar extends Page
             });
         }
 
-        // أدوار أخرى (لو وُجدت) -> لا شيء
         return $q;
     }
 }

@@ -110,24 +110,92 @@ class AdminPanelProvider extends PanelProvider
                     )
 
                     ->group(
-                        NavigationGroup::make()->label('المشروعات')->icon('heroicon-o-briefcase')->collapsed()
+                        NavigationGroup::make()
+                            ->label('المشروعات')
+                            ->icon('heroicon-o-briefcase')
+                            ->collapsed()
                             ->items([
                                 NavigationItem::make('المشروعات الحالية')
-                                    ->url(\App\Filament\Resources\ProjectResource::getUrl('index').'?tableFilters[is_completed][value]=false')
-                                    ->visible(fn () => \App\Filament\Resources\ProjectResource::canViewAny()),
-//                                    ->badge(fn () => \App\Filament\Resources\ProjectResource::canViewAny()
-//                                        ? \App\Models\Project::where('status','!=','completed')->count()
-//                                        : null
-//                                    ),
+                                    ->url(\App\Filament\Resources\ProjectResource::getUrl('index') . '?tableFilters[is_completed][value]=false')
+                                    ->visible(fn () => \App\Filament\Resources\ProjectResource::canViewAny())
+                                    ->badge(function () {
+                                        if (! \App\Filament\Resources\ProjectResource::canViewAny()) {
+                                            return null;
+                                        }
+
+                                        $u = auth()->user();
+                                        if (! $u) return null;
+
+                                        $base = \App\Models\Project::query();
+
+                                        if ($u->hasRole('department_manager', 'web') && $u->employee?->department_id) {
+                                            $deptId = $u->employee->department_id;
+                                            $base->whereHas('tasks', fn ($q) => $q->where('department_id', $deptId));
+                                        }
+                                        elseif ($u->hasRole('showroom_manager', 'web')) {
+                                            $employeeId = $u->employee?->getKey();
+                                            if (! $employeeId) {
+                                                return 0;
+                                            }
+                                            $showroomIds = \App\Models\Showroom::query()
+                                                ->where('manager_id', $employeeId)
+                                                ->pluck('id');
+
+                                            if ($showroomIds->isEmpty()) {
+                                                return 0;
+                                            }
+
+                                            $base->whereHas('productionRequest', function ($qq) use ($showroomIds) {
+                                                $qq->whereIn('showroom_id', $showroomIds);
+                                            });
+                                        }
+
+                                        return (clone $base)
+                                            ->where('status', '!=', 'completed')
+                                            ->count();
+                                    }),
+
                                 NavigationItem::make('المشروعات المكتملة')
-                                    ->url(\App\Filament\Resources\ProjectResource::getUrl('index').'?tableFilters[is_completed][value]=true')
-                                    ->visible(fn () => \App\Filament\Resources\ProjectResource::canViewAny()),
-//                                    ->badge(fn () => \App\Filament\Resources\ProjectResource::canViewAny()
-//                                        ? \App\Models\Project::where('status','completed')->count()
-//                                        : null
-//                                    ),
+                                    ->url(\App\Filament\Resources\ProjectResource::getUrl('index') . '?tableFilters[is_completed][value]=true')
+                                    ->visible(fn () => \App\Filament\Resources\ProjectResource::canViewAny())
+                                    ->badge(function () {
+                                        if (! \App\Filament\Resources\ProjectResource::canViewAny()) {
+                                            return null;
+                                        }
+
+                                        $u = auth()->user();
+                                        if (! $u) return null;
+
+                                        $base = \App\Models\Project::query();
+
+                                        if ($u->hasRole('department_manager', 'web') && $u->employee?->department_id) {
+                                            $deptId = $u->employee->department_id;
+                                            $base->whereHas('tasks', fn ($q) => $q->where('department_id', $deptId));
+                                        } elseif ($u->hasRole('showroom_manager', 'web')) {
+                                            $employeeId = $u->employee?->getKey();
+                                            if (! $employeeId) {
+                                                return 0;
+                                            }
+                                            $showroomIds = \App\Models\Showroom::query()
+                                                ->where('manager_id', $employeeId)
+                                                ->pluck('id');
+
+                                            if ($showroomIds->isEmpty()) {
+                                                return 0;
+                                            }
+
+                                            $base->whereHas('productionRequest', function ($qq) use ($showroomIds) {
+                                                $qq->whereIn('showroom_id', $showroomIds);
+                                            });
+                                        }
+
+                                        return (clone $base)
+                                            ->where('status', 'completed')
+                                            ->count();
+                                    }),
                             ])
                     )
+
 
                     ->group(
                         NavigationGroup::make()->label('المهام')->icon('heroicon-o-briefcase')->collapsible()->collapsed()
