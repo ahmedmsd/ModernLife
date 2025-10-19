@@ -25,7 +25,6 @@ class TaskPageHelper
             'assigned'     => 'pending',
             'acknowledged' => 'received',
             'blocked'      => 'on_hold',
-            'rework'       => 'rejected',
             'closed'       => 'completed',
             default        => $s,
         };
@@ -47,6 +46,7 @@ class TaskPageHelper
             'under_review'       => 'قيد المراجعة',
             'approved'           => 'معتمد',
             'rejected'           => 'مرفوض',
+            'rework'             => 'مطلوب إعادة تنفيذ',
             'in_progress'        => 'قيد التنفيذ',
             'materials_wait'     => 'بانتظار اعتماد المشتريات',
             'materials_prep'     => 'جارٍ تجهيز الخامات',
@@ -68,6 +68,7 @@ class TaskPageHelper
             'under_review'       => 'cyan',
             'approved'           => 'success',
             'rejected'           => 'danger',
+            'rework'             => '#f97316',
             'in_progress'        => 'primary',
             'materials_wait'     => 'warning',
             'materials_prep'     => 'primary',
@@ -181,22 +182,64 @@ class TaskPageHelper
     public function canStartProduction(ProductionTask $t, ?Authenticatable $u): bool
     {
         return $this->userHasAnyRole($u, ['department_manager','admin','super-admin'])
-            && $this->statusVal($t) === 'waiting_production'
+            && ($this->statusVal($t) === 'waiting_production' || $this->statusVal($t) === 'rework')
             && $this->ownerIs($t, 'department_manager')
             && ! $this->hasLog($t, 'manufacturing_started');
     }
-    public function canFinishManufacturing(ProductionTask $t, ?Authenticatable $u): bool
+    public function canFinishManufacturing(\App\Models\ProductionTask $t, ?\Illuminate\Contracts\Auth\Authenticatable $u): bool
     {
         if ($this->isClosedOrCompleted($t)) {
             return false;
         }
 
-        return $this->userHasAnyRole($u, ['department_manager','admin','super-admin'])
-            && $this->ownerIs($t, 'department_manager')
-            && $this->statusVal($t) === 'in_progress'
-            && $this->hasLog($t, 'manufacturing_started')
-            && ! $this->hasOpenMaterialsRequest($t);
+        // أدوار مسموح لها
+        if (! $this->userHasAnyRole($u, ['department_manager','admin','super-admin'])) {
+            return false;
+        }
+
+        // يجب أن يكون المالك الحالي هو مدير القسم (ما لم تكن عندك سياسة أخرى)
+        if (! $this->ownerIs($t, 'department_manager')) {
+            return false;
+        }
+
+        // الحالة يجب أن تكون in_progress
+        if ($this->statusVal($t) !== 'in_progress') {
+            return false;
+        }
+
+        // لازم يكون في manufacturing_started سابق
+        if (! $this->hasLog($t, 'manufacturing_started')) {
+            return false;
+        }
+
+        // منع التكرار: لا بد من عدم وجود manufacturing_sent_to_qa بعد آخر manufacturing_started
+        $lastStart = \App\Models\TaskLog::query()
+            ->where('task_id', $t->id)
+            ->where('type', 'manufacturing_started')
+            ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
+            ->first();
+
+        if (! $lastStart) {
+            return false;
+        }
+
+        $stAt = $lastStart->happened_at ?? $lastStart->created_at;
+
+        $sentAfter = \App\Models\TaskLog::query()
+            ->where('task_id', $t->id)
+            ->where('type', 'manufacturing_sent_to_qa')
+            ->where(function ($q) use ($stAt, $lastStart) {
+                $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$stAt])
+                    ->orWhere(function ($q2) use ($stAt, $lastStart) {
+                        $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$stAt])
+                            ->where('id', '>', $lastStart->id);
+                    });
+            })
+            ->exists();
+
+        return ! $sentAfter;
     }
+
 
     /* ===== Logs / Requests helpers ===== */
     public function hasLog(ProductionTask $t, string $type): bool

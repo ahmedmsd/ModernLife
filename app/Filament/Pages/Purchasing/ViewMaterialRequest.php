@@ -5,10 +5,12 @@ namespace App\Filament\Pages\Purchasing;
 use App\Models\MaterialRequest;
 use App\Models\ProductionTask;
 use App\Models\TaskLog;
+use Filament\Forms\Components\Textarea;
 use Filament\Infolists\Infolist;
 use Filament\Infolists\Contracts\HasInfolists;
 use Filament\Infolists\Concerns\InteractsWithInfolists;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Filament\Infolists\Components\{Section, Grid, TextEntry, IconEntry};
 use Filament\Pages\Page;
 
@@ -199,6 +201,150 @@ class ViewMaterialRequest extends Page implements HasInfolists
                     $this->refreshRecord();
                 }),
 
+            Action::make('purchasingAcknowledgeHold')
+                ->label('تأكيد استلام المشتريات (إيقاف جزئي)')
+                ->icon('heroicon-o-document-check')
+                ->color('primary')
+                ->visible(function () {
+                    if (($this->record->current_owner_role ?? null) !== 'purchasing_manager') return false;
+                    if (strtolower((string) $this->record->status) !== 'on_hold') return false;
+
+                    // المرجع: أحدث استلام جزئي/مشكلة
+                    $anchor = TaskLog::query()
+                        ->where('task_id', $this->record->id)
+                        ->whereIn('type', ['materials_received_partial','materials_received_issue'])
+                        ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
+                        ->first();
+
+                    if (! $anchor) return false;
+
+                    $t  = $anchor->happened_at ?? $anchor->created_at;
+                    $id = $anchor->id;
+
+                    // لا يوجد purchasing_hold_ack بعد هذا المرجع
+                    $ackAfter = TaskLog::query()
+                        ->where('task_id', $this->record->id)
+                        ->where('type', 'purchasing_hold_ack')
+                        ->where(function ($q) use ($t, $id) {
+                            $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
+                                ->orWhere(function ($q2) use ($t, $id) {
+                                    $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$t])
+                                        ->where('id','>', $id);
+                                });
+                        })
+                        ->exists();
+
+                    return ! $ackAfter;
+                })
+                ->form([
+                    Forms\Components\TextInput::make('eta')->label('موعد التوريد المتوقع')->placeholder('YYYY-MM-DD'),
+                    Forms\Components\TextInput::make('estimated_cost')->label('تكلفة تقديرية')->numeric(),
+                    Forms\Components\Textarea::make('note')->label('ملاحظات')->rows(3),
+                ])
+                ->requiresConfirmation()
+                ->action(function (array $data) {
+                    // لوج تأكيد استلام الإيقاف
+                    $this->record->logs()->create([
+                        'type'        => 'purchasing_hold_ack',
+                        'data'        => [
+                            'eta'            => $data['eta'] ?? null,
+                            'estimated_cost' => isset($data['estimated_cost']) ? (float)$data['estimated_cost'] : null,
+                            'note'           => $data['note'] ?? null,
+                            'by'             => auth()->id(),
+                        ],
+                        'causer_id'   => auth()->id(),
+                        'happened_at' => now(),
+                    ]);
+
+                    \Filament\Notifications\Notification::make()
+                        ->success()->title('تم تأكيد استلام الإيقاف من المشتريات')->send();
+
+                    $this->record->refresh();
+                    $this->dispatch('close-modal', id: 'filament.actions.modal');
+                    $this->js('$wire.$refresh()');
+                }),
+
+            Action::make('materialsProvidedAfterHold')
+                ->label('توفير وتوريد باقي الخامات')
+                ->icon('heroicon-o-truck')
+                ->color('success')
+                ->visible(function () {
+                    if (($this->record->current_owner_role ?? null) !== 'purchasing_manager') return false;
+                    if (strtolower((string) $this->record->status) !== 'on_hold') return false;
+
+                    $anchor = \App\Models\TaskLog::query()
+                        ->where('task_id', $this->record->id)
+                        ->whereIn('type', ['materials_received_partial','materials_received_issue'])
+                        ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
+                        ->first();
+
+                    if (! $anchor) return false;
+                    $t  = $anchor->happened_at ?? $anchor->created_at;
+                    $id = $anchor->id;
+
+                    $ackExists = \App\Models\TaskLog::query()
+                        ->where('task_id', $this->record->id)
+                        ->where('type', 'purchasing_hold_ack')
+                        ->where(function ($q) use ($t, $id) {
+                            $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
+                                ->orWhere(function ($q2) use ($t, $id) {
+                                    $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$t])
+                                        ->where('id','>', $id);
+                                });
+                        })
+                        ->exists();
+                    if (! $ackExists) return false;
+
+                    // لم يتم التوريد بعد هذا المرجع
+                    $providedAfter = \App\Models\TaskLog::query()
+                        ->where('task_id', $this->record->id)
+                        ->whereIn('type', ['materials_provided','materials_provided_after_hold'])
+                        ->where(function ($q) use ($t, $id) {
+                            $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
+                                ->orWhere(function ($q2) use ($t, $id) {
+                                    $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$t])
+                                        ->where('id','>', $id);
+                                });
+                        })
+                        ->exists();
+                    return ! $providedAfter;
+                })
+                ->form([
+                    Forms\Components\DateTimePicker::make('provided_at')->label('تاريخ/وقت التوريد')->default(now())->required(),
+                    Forms\Components\Textarea::make('note')->label('ملاحظات')->rows(3),
+                ])
+                ->requiresConfirmation()
+                ->action(function (array $data) {
+                    // سجّل التوريد (اسم موحّد أو مخصص بعد الإيقاف)
+                    $this->record->logs()->create([
+                        'type'        => 'materials_provided',
+                        'data'        => [
+                            'provided_at' => $data['provided_at'],
+                            'note'        => $data['note'] ?? null,
+                            'by'          => auth()->id(),
+                        ],
+                        'causer_id'   => auth()->id(),
+                        'happened_at' => now(),
+                    ]);
+
+                    // أعِد الحالة والملكية للقسم ليتابع
+                    $this->record->forceFill([
+                        'status'                => 'waiting_production',
+                        'current_owner_role'    => 'department_manager',
+                        // (اختياري) لو تريد تعيين مستخدم مدير القسم:
+                        // 'current_owner_user_id' => $this->record->department?->manager_user_id,
+                    ])->save();
+
+                    \Filament\Notifications\Notification::make()
+                        ->success()->title('تم توريد الخامات وإعادة المهمة للقسم')->send();
+
+                    $this->record->refresh();
+                    $this->dispatch('close-modal', id: 'filament.actions.modal');
+                    $this->js('$wire.$refresh()');
+                }),
+
+
+
             // 3) إلغاء/رفض الطلب
             Action::make('cancelRequest')
                 ->label('رفض الطلب')
@@ -299,21 +445,28 @@ class ViewMaterialRequest extends Page implements HasInfolists
     protected function statusLabel(?string $s): string
     {
         return match ($s) {
-            'requested' => 'بانتظار اعتماد المشتريات',
-            'approved'  => 'بانتظار التوريد',
-            'fulfilled' => 'مورَّد',
-            'cancelled' => 'ملغى',
-            default     => '—',
+            'requested'            => 'بانتظار اعتماد المشتريات',
+            'approved'             => 'بانتظار الإصدار/التوريد',
+            'ordered'              => 'تم إصدار أمر شراء',
+            'partially_fulfilled'  => 'توريد جزئي',
+            'on_hold'              => 'موقوف مؤقتًا',
+            'fulfilled'            => 'مورَّد (مغلق)',
+            'cancelled'            => 'ملغى',
+            default                => '—',
         };
     }
+
     protected function statusColor(?string $s): string
     {
         return match ($s) {
-            'requested' => 'warning',
-            'approved'  => 'info',
-            'fulfilled' => 'success',
-            'cancelled' => 'gray',
-            default     => 'secondary',
+            'requested'            => 'warning',
+            'approved'             => 'info',
+            'ordered'              => 'primary',
+            'partially_fulfilled'  => 'warning',
+            'on_hold'              => 'gray',
+            'fulfilled'            => 'success',
+            'cancelled'            => 'danger',
+            default                => 'secondary',
         };
     }
 

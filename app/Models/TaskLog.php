@@ -43,6 +43,15 @@ class TaskLog extends Model
             'qa_approved_installation',
             'qa_rejected_installation',
 
+            'materials_provided_note',
+            'materials_received_ok',
+            'materials_received_partial',
+            'materials_received_issue',
+            'planning_hint_set',
+
+            'qa_ack_manufacturing',
+            'qa_ack_installation',
+            'sent_back_to_install',
             'owner_receive_note',
 
             'client_receipt_uploaded',

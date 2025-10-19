@@ -126,6 +126,26 @@ class ProductionTaskObserver
                 'happened_at' => now(),
             ]);
 
+            $toRole = $task->current_owner_role;
+            $sentType = match ($toRole) {
+                'showroom_manager'   => 'sent_to_showroom',
+                'factory_manager'    => 'sent_to_factory',
+                'department_manager' => 'sent_to_department',
+                'purchasing_manager' => 'sent_to_purchasing',
+                'quality_manager'    => 'sent_to_quality',
+                'installation_manager' => 'sent_to_install',
+                default              => null,
+            };
+
+            if ($sentType) {
+                $task->logs()->create([
+                    'type'        => $sentType,
+                    'data'        => ['to' => $toRole, 'user' => $task->current_owner_user_id],
+                    'causer_id'   => Auth::id(),
+                    'happened_at' => now(),
+                ]);
+            }
+
             $isDeptManagerOwnership =
                 ($task->current_owner_role === 'department_manager') &&
                 !empty($task->current_owner_user_id);
@@ -181,7 +201,7 @@ class ProductionTaskObserver
             $stopOnLeaveInProgress = [
                 'materials_wait','materials_prep','materials_done',
                 'on_hold','under_review','approved','rejected',
-                'completed','cancelled',
+                'completed','cancelled','rework',
             ];
 
             if ($to === 'in_progress' && $from !== 'in_progress') {

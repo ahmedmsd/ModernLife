@@ -61,17 +61,14 @@ class ActiveTasks extends Page implements HasTable
                     ])
                     ->latest('created_at');
 
-                // مدير المصنع / أدمن: يرى كل شيء
                 if ($this->isFactoryManager()) {
                     return $q;
                 }
 
-                // مدير القسم: قسمه فقط
                 if ($this->isDepartmentManager()) {
                     return $deptId ? $q->where('department_id', $deptId) : $q->whereRaw('1=0');
                 }
 
-                // باقي الأدوار: نتركها كما هي (كل المهام الجارية)
                 return $q;
             })
             ->defaultSort('created_at', 'desc')

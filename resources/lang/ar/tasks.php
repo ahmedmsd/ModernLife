@@ -22,13 +22,15 @@ return [
             'sent_to_quality' => 'تم الإرسال إلى قسم الجودة',
             'sent_to_install' => 'تم الإرسال إلى قسم التركيب',
 
-            // الأحداث الخاصة بالتدفق
             'manufacturing_started' => 'بدء التصنيع',
             'manufacturing_finished' => 'إنهاء التصنيع',
             'purchasing_ack' => 'تأكيد استلام المشتريات',
             'purchasing_ack_hint' => 'ملاحظة استلام المشتريات',
             'materials_provided_note' => 'توريد الخامات',
-            'planning_hint_set' => 'تحديد الجدول الزمني',
+            'materials_received_ok'      => 'تأكيد استلام الخامات — كامل',
+            'materials_received_partial' => 'تأكيد استلام الخامات — جزئي',
+            'materials_received_issue'   => 'تأكيد استلام الخامات — به مشكلة',
+            'planning_hint_set'          => 'تحديد المواعيد المتوقعة',
             'qa_approved_manufacturing' => 'اعتماد الجودة بعد التصنيع',
             'qa_rejected_manufacturing' => 'رفض الجودة بعد التصنيع',
             'qa_approved_installation' => 'اعتماد الجودة بعد التركيب',
