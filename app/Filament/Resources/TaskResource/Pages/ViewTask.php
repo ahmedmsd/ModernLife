@@ -346,6 +346,7 @@ class ViewTask extends ViewRecord
                 ->icon('heroicon-o-play')
                 ->color('info')
                 ->visible(function () {
+                    global $status;
                     $u = auth()->user();
                     if (! $u || ! $u->hasRole('department_manager')) return false;
                     if (($this->record->current_owner_role ?? null) !== 'department_manager') return false;
