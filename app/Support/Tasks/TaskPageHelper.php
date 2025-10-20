@@ -40,20 +40,55 @@ class TaskPageHelper
         if ($val === null) return null;
         $val = $this->normalizeStatus($val);
         return match ($val) {
-            'pending'            => 'بانتظار التأكيد',
+            'draft'              => 'مسودة',
+            'submitted'          => 'مرسل',
             'received'           => 'تم الاستلام',
-            'waiting_production' => 'بانتظار التصنيع',
+            'pending'            => 'بالانتظار ',
+            'waiting_production' => 'بانتظار بدء التصنيع',
+            'in_progress'        => 'قيد التنفيذ',
+            'materials_wait'     => 'بانتظار الخامات',
+            'materials_prep'     => 'تجهيز الخامات',
+            'materials_done'     => 'الخامات جاهزة',
             'under_review'       => 'قيد المراجعة',
             'approved'           => 'معتمد',
             'rejected'           => 'مرفوض',
+            'on_hold'            => 'موقوف مؤقتاً',
             'rework'             => 'مطلوب إعادة تنفيذ',
-            'in_progress'        => 'قيد التنفيذ',
-            'materials_wait'     => 'بانتظار اعتماد المشتريات',
-            'materials_prep'     => 'جارٍ تجهيز الخامات',
-            'materials_done'     => 'تم توفير الخامات',
-            'on_hold'            => 'متوقفة مؤقتًا',
             'completed'          => 'مكتملة',
             'cancelled'          => 'ملغاة',
+            'assigned_changed'            => 'تغيير الإسناد',
+            'ownership_changed'           => 'تغيير الملكية (الدور)',
+            'owner_changed'               => 'تغيير المالك (المستخدم)',
+            'status_changed'              => 'تغيير الحالة العامة',
+            'ownership_received'          => 'تأكيد استلام الملكية',
+            'owner_received'              => 'تأكيد استلام المالك',
+            'plan_set'                    => 'تحديد الخطة',
+            'planning_set'                => 'تحديد المواعيد',
+            'planning_hint_set'           => 'تحديد مواعيد (مبدئية)',
+
+            'manufacturing_started'       => 'بدء التصنيع (فعلي)',
+            'manufacturing_finished'      => 'نهاية التصنيع (فعلي)',
+            'manufacturing_sent_to_qa'    => 'إرسال للجودة',
+            'qa_ack_manufacturing'        => 'تأكيد استلام الجودة للتصنيع',
+            'qa_approved_manufacturing'   => 'اعتماد الجودة للتصنيع',
+
+            'sent_to_install'             => 'إرسال للتركيب',
+            'install_acknowledged'        => 'تأكيد استلام التركيب',
+            'installation_started'        => 'بدء التركيب',
+            'installation_sent_to_qa'     => 'إرسال للجودة بعد التركيب',
+            'qa_ack_installation'         => 'تأكيد استلام الجودة للتركيب',
+            'qa_approved_installation'    => 'اعتماد التركيب',
+
+            'materials_requested'         => 'تم طلب الخامات',
+            'materials_expected'          => 'تحديد تاريخ التوريد المتوقع',
+            'materials_approved'          => 'تم اعتماد طلب الخامات',
+            'materials_provided'          => 'تم توريد الخامات',
+            'materials_received_ok'       => 'تم استلام الخامات',
+
+            'client_receipt_uploaded'     => 'رفع سند استلام العميل',
+            'task_completed'              => 'اكتمال المهمة',
+            'project_completed'           => 'اكتمال المشروع',
+            'production_request_closed', 'request_finalized' => 'إقفال طلب التصنيع',
             default              => $val,
         };
     }
@@ -161,7 +196,7 @@ class TaskPageHelper
 
         return $t->materialRequests()
             ->whereNull('provided_at')
-            ->where('status', 'approved')
+            ->whereIn('status',['approved','supplying'])
             ->exists();
     }
 

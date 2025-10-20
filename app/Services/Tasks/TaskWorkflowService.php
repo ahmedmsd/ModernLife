@@ -112,24 +112,36 @@ class TaskWorkflowService
     public function materialsProvided(ProductionTask $task, float $actualCost, ?string $note = null, ?array $invoice = null): void
     {
         DB::transaction(function () use ($task, $actualCost, $note, $invoice) {
-            $mr = $task->materialRequests()->whereNull('provided_at')->latest()->firstOrFail();
+            $mr = $task->materialRequests()
+                ->whereIn('status', ['approved','supplying']) // فقط الطلب “القابل للتوريد”
+                ->orderByDesc('id')
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $invoiceNo   = $invoice['invoice_no']   ?? null;
+            $invoiceDate = isset($invoice['invoice_date']) && $invoice['invoice_date']
+                ? \Illuminate\Support\Carbon::parse($invoice['invoice_date'])
+                : null;
+            $invoiceFile = $invoice['invoice_file'] ?? null;
 
             $mr->update([
                 'actual_cost'  => $actualCost,
-                'invoice_no'   => $invoice['invoice_no']   ?? $mr->invoice_no,
-                'invoice_date' => isset($invoice['invoice_date']) && $invoice['invoice_date']
-                    ? \Illuminate\Support\Carbon::parse($invoice['invoice_date'])
-                    : $mr->invoice_date,
-                'invoice_file' => $invoice['invoice_file'] ?? $mr->invoice_file,
+                'invoice_no'   => $invoiceNo   ?? $mr->invoice_no,
+                'invoice_date' => $invoiceDate ?? $mr->invoice_date,
+                'invoice_file' => $invoiceFile ?? $mr->invoice_file,
                 'note'         => trim(($mr->note ? $mr->note . "\n" : '') . ($note ?? '')),
                 'provided_by'  => Auth::id(),
                 'provided_at'  => now(),
-                'status'       => 'fulfilled',
+                'status'       => 'fulfilled', // التوريد على الطلب الصحيح فقط
             ]);
 
+            // المهمّة تظل حسب التدفق الجديد
             $task->update(['status' => 'materials_done']);
 
+            // لا تغيّر المالك هنا (ملكية المهمة منفصلة عن دورة الطلبات)
+
             $this->log($task, 'materials_provided_note', [
+                'mr_id'       => $mr->id,
                 'actual_cost' => $actualCost,
                 'note'        => $note ? trim($note) : null,
             ]);
@@ -137,6 +149,7 @@ class TaskWorkflowService
             $this->notifier->notifyActor('تم تأكيد توفر الخامات', "المهمة #{$task->id} جاهزة لاستلام القسم", $task);
         });
     }
+
 
 // 4) استلام كلي — جاهز لبدء التصنيع (لا تغيّر المالك)
     public function materialsReceivedOk(
@@ -224,17 +237,31 @@ class TaskWorkflowService
     public function materialsReceivedIssue(ProductionTask $task, ?string $note, ?string $issueDetails = null): void
     {
         DB::transaction(function () use ($task, $note, $issueDetails) {
+            // ابحث عن أقرب طلب هو سبب التوريد الأخير (fulfilled أو supplying أو approved)
+            $mr = $task->materialRequests()
+                ->whereIn('status', ['fulfilled','supplying','approved'])
+                ->orderByDesc('id')
+                ->lockForUpdate()
+                ->first();
+
+            if ($mr) {
+                // وسم الطلب بالمشكلة ليظهر للمشتريات في قوائم "طلب يحتاج معالجة"
+                $mr->update(['status' => 'issue_reported']);
+            }
+
+            // أوقف المهمة وحوّل الملكية للمشتريات لحين الحل
             $task->update(['status' => 'on_hold']);
+            $this->setOwner($task, 'purchasing_manager', userId: null, touchSent: true, note: 'مشكلة في الخامات — انتظار المعالجة');
 
             $this->log($task, 'materials_received_issue', [
+                'mr_id'  => $mr?->id,
                 'note'   => $note ? trim($note) : null,
                 'issues' => $issueDetails ? trim($issueDetails) : null,
                 'by'     => Auth::id(),
             ]);
-
-            $this->setOwner($task, 'purchasing_manager', userId: null, touchSent: true, note: 'مشكلة في الخامات — انتظار المعالجة');
         });
     }
+
 
 // 8) فتح طلب تكميلي مرتبط بالطلب السابق (parent_id) — لا تغيّر ملكية المهمة
     protected function openFollowupMaterialsRequest(ProductionTask $task, ?string $missingItemsNote): void
