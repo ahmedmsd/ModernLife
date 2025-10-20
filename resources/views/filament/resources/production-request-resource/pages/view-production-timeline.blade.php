@@ -7,6 +7,10 @@
     /* ================== تجميع البيانات من المهام وطلبات الخامات ================== */
 
     // نجلب مهام المشروع مع طلبات الخامات واللوجات (لو متاحة)
+
+    $clientNote = trim($record->client->notes ?? '');
+    $clientName = $record->client->client_name ?? '—';
+
     $tasks = $record->project
         ? $record->project->tasks()
             ->with([
@@ -117,6 +121,34 @@
 <x-filament::page>
     {{-- ============================ معلومات الطلب ============================ --}}
     <x-filament::section>
+
+        @if ($clientNote !== '')
+            <div
+                class="mb-4 rounded-xl border p-4 md:p-5"
+                role="note"
+                aria-label="ملاحظات العميل الخاصة بالدفع"
+                style="
+            background:#fff3cd;
+            border-color:#ffeeba;
+            border-left:8px solid #f59e0b;
+            color:#856404;
+        "
+                dir="rtl"
+            >
+                <div style="display:flex; gap:12px; align-items:flex-start;">
+                    <x-filament::icon icon="heroicon-o-exclamation-triangle" class="h-6 w-6" style="color:#d97706;" />
+                    <div style="flex:1;">
+                        <div style="margin-bottom:4px; font-weight:700;">
+                            ملاحظات العميل الخاصة بالدفع — {{ $clientName }}
+                        </div>
+                        <div style="line-height:1.7; font-size:0.95rem;">
+                            {!! nl2br(e($clientNote)) !!}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <x-slot name="header">
             <h2 class="text-xl font-bold">معلومات الطلب</h2>
         </x-slot>

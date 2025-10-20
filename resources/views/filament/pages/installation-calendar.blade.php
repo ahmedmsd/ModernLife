@@ -1,172 +1,194 @@
-<x-filament::page>
+<x-filament::page class="space-y-6">
+
+    {{-- فلاتر النطاق الزمني --}}
     <x-filament::section>
-        <x-slot name="heading">التقويم الشهري للتركيب (متوقّع)</x-slot>
+        <x-slot name="heading">نطاق العرض</x-slot>
 
-        {{-- نلف التقويم داخل Alpine ليتوفر this.$wire --}}
-        <div
-            x-data="installCalendar()"
-            x-init="init()"
-            class="rounded-lg border bg-white dark:bg-gray-900 p-2"
-        >
-            {{-- مهم: wire:ignore حتى لا يعيد Livewire لمس DOM التقويم --}}
-            <div x-ref="cal" id="install-cal" wire:ignore></div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+                <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">من تاريخ</label>
+                <input
+                    type="date"
+                    wire:model.defer="from"
+                    class="fi-input block w-full rounded-lg border border-gray-300 dark:border-gray-700
+                           bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm
+                           focus:ring-2 focus:ring-primary-600 focus:border-primary-600 p-2.5"
+                />
+            </div>
+
+            <div>
+                <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">إلى تاريخ</label>
+                <input
+                    type="date"
+                    wire:model.defer="to"
+                    class="fi-input block w-full rounded-lg border border-gray-300 dark:border-gray-700
+                           bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm
+                           focus:ring-2 focus:ring-primary-600 focus:border-primary-600 p-2.5"
+                />
+            </div>
+
+            <div class="flex items-end">
+                <x-filament::button wire:click="$refresh" icon="heroicon-o-magnifying-glass">
+                    تطبيق
+                </x-filament::button>
+            </div>
         </div>
-
-        {{-- FullCalendar (CDN) --}}
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css">
-        <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
-
-        <script>
-            // مكوّن Alpine: ينشئ التقويم ويتواصل مع Livewire عبر this.$wire
-            function installCalendar() {
-                return {
-                    calendar: null,
-
-                    init() {
-                        const el = this.$refs.cal;
-
-                        this.calendar = new FullCalendar.Calendar(el, {
-                                initialView: 'dayGridMonth',
-                                locale: 'ar',
-                                firstDay: 6,
-                                height: 'auto',
-                                headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
-                                buttonText: { today: 'اليوم' },
-                                dayMaxEventRows: true,
-
-                                events: (info, success, failure) => {
-                                this.$wire.fetchEvents(info.startStr, info.endStr)
-                                    .then(events => success(events))
-                                    .catch(err => failure(err));
-                            },
-
-                            eventClick: (info) => {
-                            const id = parseInt(info.event.id, 10);
-                            if (!isNaN(id)) {
-                                this.$wire.loadTaskDetails(id);
-                            }
-                        },
-                    });
-
-                this.calendar.render();
-
-                // عند تغيير الفلاتر من Livewire نعيد تحميل الأحداث
-                window.addEventListener('refresh-install-calendar', () => this.calendar.refetchEvents());
-            },
-            };
-            }
-        </script>
     </x-filament::section>
 
+    {{-- جدول المواعيد مجمّع حسب اليوم --}}
+    @php $groups = $this->groupedByDate(); @endphp
 
-    {{-- نافذة التفاصيل (Slide-over) --}}
-    <x-filament::modal id="task-detail" width="4xl" slide-over>
-        <x-slot name="header">
-            <div class="flex items-center justify-between w-full">
-                <div>
-                    <div class="text-base font-bold">تفاصيل الموعد / المهمة</div>
-                    <div class="text-xs text-gray-500">معلومات مرتبطة بموعد التركيب المتوقّع</div>
-                </div>
+    @forelse ($groups as $date => $tasks)
+        <x-filament::section collapsible>
+            <x-slot name="heading">
+                مواعيد {{ \Illuminate\Support\Carbon::parse($date)->translatedFormat('Y-m-d (l)') }}
+            </x-slot>
+
+            <div class="overflow-x-auto rounded-xl border bg-white/80 dark:bg-gray-900/70">
+                <table class="w-full text-sm rtl:text-right">
+                    <thead class="bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
+                    <tr>
+                        <th class="px-3 py-2 font-semibold">#</th>
+                        <th class="px-3 py-2 font-semibold">المشروع</th>
+                        <th class="px-3 py-2 font-semibold">العميل</th>
+                        <th class="px-3 py-2 font-semibold">المعرض</th>
+                        <th class="px-3 py-2 font-semibold">القسم</th>
+                        <th class="px-3 py-2 font-semibold">الحالة</th>
+                        <th class="px-3 py-2 font-semibold">تاريخ التركيب</th>
+                        <th class="px-3 py-2 font-semibold">إجراءات</th>
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 dark:divide-gray-800 text-gray-800 dark:text-gray-200">
+                    @foreach ($tasks as $i => $t)
+                        @php
+                            $canEdit = $this->canReschedule($t);
+                            $statusLabel = match ((string) $t->status) {
+                                'pending'            => 'قيد الانتظار',
+                                'received'           => 'تم الاستلام',
+                                'under_review'       => 'قيد المراجعة',
+                                'approved'           => 'معتمد',
+                                'rejected'           => 'مرفوض',
+                                'materials_prep'     => 'تحضير الخامات',
+                                'materials_done'     => 'تم توفير الخامات',
+                                'waiting_production' => 'جاهز لبدء التصنيع',
+                                'in_progress'        => 'قيد التنفيذ',
+                                'on_hold'            => 'معلّق',
+                                'rework'             => 'إعادة عمل',
+                                'completed'          => 'مكتمل',
+                                'cancelled'          => 'ملغي',
+                                default              => (string) $t->status,
+                            };
+
+                            $showroomName = $t->project?->productionRequest?->showroom?->name ?? '—';
+                            $clientName   = $t->project?->client?->client_name ?? '—';
+                            $deptName     = $t->department?->dept_name ?? '—';
+                            $projName     = $t->project?->project_name ?? "مهمة #{$t->id}";
+                        @endphp
+
+                        <tr class="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-900 dark:even:bg-gray-800">
+                            <td class="px-3 py-2">{{ $i + 1 }}</td>
+
+                            <td class="px-3 py-2">
+                                <a class="text-primary-600 underline"
+                                   href="{{ class_exists(\App\Filament\Resources\ProjectResource::class) && $t->project
+                                                ? \App\Filament\Resources\ProjectResource::getUrl('view', ['record' => $t->project])
+                                                : '#' }}"
+                                   target="_blank"
+                                >{{ $projName }}</a>
+                            </td>
+
+                            <td class="px-3 py-2">{{ $clientName }}</td>
+                            <td class="px-3 py-2">{{ $showroomName }}</td>
+                            <td class="px-3 py-2">{{ $deptName }}</td>
+                            <td class="px-3 py-2">{{ $statusLabel }}</td>
+                            <td class="px-3 py-2">{{ optional($t->planned_install_at)->format('Y-m-d') ?? '—' }}</td>
+
+                            <td class="px-3 py-2">
+                                <div class="flex items-center gap-2">
+                                    @if ($canEdit)
+                                        <x-filament::button
+                                            color="warning"
+                                            icon="heroicon-o-calendar"
+                                            wire:click="openRescheduleModal({{ $t->id }})"
+                                        >
+                                            تعديل الموعد
+                                        </x-filament::button>
+                                    @else
+                                        <x-filament::badge color="gray" size="sm">عرض فقط</x-filament::badge>
+                                    @endif
+
+                                    <a class="text-primary-600 underline"
+                                       href="{{ class_exists(\App\Filament\Resources\TaskResource::class)
+                                                    ? \App\Filament\Resources\TaskResource::getUrl('view', ['record' => $t])
+                                                    : '#' }}"
+                                       target="_blank"
+                                    >تفاصيل المهمة</a>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
             </div>
-        </x-slot>
+        </x-filament::section>
+    @empty
+        <x-filament::section>
+            <div class="text-sm text-gray-600 dark:text-gray-300">لا توجد مواعيد تركيب ضمن النطاق المحدد.</div>
+        </x-filament::section>
+    @endforelse
 
-        <div class="space-y-4">
-            {{-- سطر علوي مختصر --}}
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                <div class="text-sm">
-                    <div class="font-semibold">
-                        {{ $detail['task_title'] ?? '—' }}
-                        <span class="text-gray-500">(#{{ $detail['task_id'] ?? '—' }})</span>
-                    </div>
+    {{-- مودال تعديل موعد التركيب --}}
+    <x-filament::modal id="reschedule-modal" width="md">
+        <x-slot name="heading">تعديل موعد التركيب</x-slot>
 
-                    <div class="text-gray-500">
-                        الحالة:
-                        <span class="font-semibold">{{ $detail['status'] ?? '—' }}</span>
-                    </div>
-                </div>
-
-                <div class="text-sm">
-                    <div>التركيب (متوقع): <span class="font-semibold">{{ $detail['planned_install_at'] ?? '—' }}</span></div>
-                    <div class="text-gray-500">
-                        التصنيع (متوقع):
-                        <span class="font-semibold">{{ $detail['planned_start_at'] ?? '—' }}</span>
-                        <span class="mx-1">→</span>
-                        <span class="font-semibold">{{ $detail['planned_end_at'] ?? '—' }}</span>
-                    </div>
-                </div>
+        <div class="space-y-3">
+            <div>
+                <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    تاريخ التركيب الجديد
+                </label>
+                <input
+                    type="date"
+                    wire:model.defer="newInstallDate"
+                    class="fi-input block w-full rounded-lg border border-gray-300 dark:border-gray-700
+                           bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm
+                           focus:ring-2 focus:ring-primary-600 focus:border-primary-600 p-2.5"
+                />
+                @error('newInstallDate')
+                <p class="text-danger-600 text-xs mt-1">{{ $message }}</p>
+                @enderror
             </div>
 
-            {{-- تفاصيل الطلب/المشروع --}}
-            <x-filament::section>
-                <x-slot name="heading">الطلب / المشروع</x-slot>
-                <dl class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                    <div><span class="text-gray-500">رقم الطلب:</span> <span class="font-semibold">{{ $detail['production_request'] ?? '—' }}</span></div>
-                    <div><span class="text-gray-500">رقم المشروع:</span> <span class="font-semibold">{{ $detail['project_id'] ?? '—' }}</span></div>
-                    <div class="md:col-span-2">
-                        <span class="text-gray-500">اسم المشروع:</span> <span class="font-semibold">{{ $detail['project_name'] ?? '—' }}</span>
-                    </div>
-                    <div><span class="text-gray-500">المعرض:</span> <span class="font-semibold">{{ $detail['showroom'] ?? '—' }}</span></div>
-                    <div><span class="text-gray-500">العميل:</span> <span class="font-semibold">{{ $detail['client_name'] ?? '—' }}</span></div>
-
-                    <div><span class="text-gray-500">القسم:</span> <span class="font-semibold">{{ $detail['department'] ?? '—' }}</span></div>
-                    <div><span class="text-gray-500">المالك الحالي:</span> <span class="font-semibold">{{ $detail['owner_role'] ?? '—' }}</span></div>
-                </dl>
-
-                {{-- روابط سريعة --}}
-                <div class="mt-3 flex flex-wrap gap-2">
-                    @if (!empty($detail['links']['task']))
-                        <a href="{{ $detail['links']['task'] }}" target="_blank" class="text-primary-600 underline">عرض المهمة</a>
-                    @endif
-                    @if (!empty($detail['links']['project']))
-                        <a href="{{ $detail['links']['project'] }}" target="_blank" class="text-primary-600 underline">عرض المشروع</a>
-                    @endif
-                    @if (!empty($detail['links']['request']))
-                        <a href="{{ $detail['links']['request'] }}" target="_blank" class="text-primary-600 underline">عرض طلب الإنتاج</a>
-                    @endif
-                </div>
-            </x-filament::section>
-
-            {{-- نظرة سريعة على طلبات الخامات التابعة للمهمة (أحدثها أولًا) --}}
-            <x-filament::section>
-                <x-slot name="heading">طلبات الخامات (أحدث أولًا)</x-slot>
-                @php $mrs = $detail['materials'] ?? []; @endphp
-                @if (empty($mrs))
-                    <div class="text-sm text-gray-500">لا توجد طلبات خامات مرتبطة.</div>
-                @else
-                    <div class="overflow-x-auto rounded-md border bg-white/80 dark:bg-gray-900/70">
-                        <table class="w-full text-sm rtl:text-right">
-                            <thead class="bg-gray-100 dark:bg-gray-900">
-                            <tr>
-                                <th class="px-3 py-2 font-semibold">#</th>
-                                <th class="px-3 py-2 font-semibold">الحالة</th>
-                                <th class="px-3 py-2 font-semibold">موعد التوريد (متوقع)</th>
-                                <th class="px-3 py-2 font-semibold">تم التوريد (فعلي)</th>
-                                <th class="px-3 py-2 font-semibold">المرجع</th>
-                                <th class="px-3 py-2 font-semibold">التكلفة</th>
-                            </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-                            @foreach ($mrs as $m)
-                                <tr class="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-900 dark:even:bg-gray-800">
-                                    <td class="px-3 py-2">{{ $m['id'] }}</td>
-                                    <td class="px-3 py-2">{{ $m['status'] }}</td>
-                                    <td class="px-3 py-2">{{ $m['expected'] }}</td>
-                                    <td class="px-3 py-2">{{ $m['provided'] }}</td>
-                                    <td class="px-3 py-2">{{ $m['po_number'] }}</td>
-                                    <td class="px-3 py-2">{{ $m['actual_cost'] }}</td>
-                                </tr>
-                            @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                @endif
-            </x-filament::section>
+            <div>
+                <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    ملاحظة (اختياري)
+                </label>
+                <textarea
+                    wire:model.defer="rescheduleNote"
+                    rows="3"
+                    placeholder="سبب التعديل أو أي ملاحظات لفرق العمل..."
+                    class="fi-input block w-full rounded-lg border border-gray-300 dark:border-gray-700
+                           bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm
+                           focus:ring-2 focus:ring-primary-600 focus:border-primary-600 p-2.5"
+                ></textarea>
+            </div>
         </div>
 
         <x-slot name="footer">
-            <x-filament::button color="gray" x-on:click="$dispatch('close-modal', { id: 'task-detail' })">
-                إغلاق
+            <x-filament::button
+                color="gray"
+                x-on:click="$dispatch('close-modal', { id: 'reschedule-modal' })"
+            >
+                إلغاء
+            </x-filament::button>
+
+            <x-filament::button
+                color="primary"
+                wire:click="saveReschedule"
+                icon="heroicon-o-check-circle"
+            >
+                حفظ
             </x-filament::button>
         </x-slot>
     </x-filament::modal>
+
 </x-filament::page>

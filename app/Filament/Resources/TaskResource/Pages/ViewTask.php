@@ -23,7 +23,8 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Carbon;
-
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use App\Models\ProductionTask;
 use App\Models\TaskComment;
 use App\Support\Tasks\TaskPageHelper;
@@ -58,6 +59,7 @@ class ViewTask extends ViewRecord
 
         $this->record->load([
             'project.productionRequest.showroom',
+            'project.client',
             'department',
             'employee',
             'logs.causer',
@@ -231,26 +233,67 @@ class ViewTask extends ViewRecord
                         ])
                         ->native(false)
                         ->required()
-                        ->reactive(),
+                        ->reactive()
+                        // عند تغيير نوع الاستلام: لو ظهرت حقول التخطيط وكانت فارغة، نملأها بقيم السجل الحالية
+                        ->afterStateUpdated(function (Get $get, Set $set, ?string $state) {
+                            $needPlan = in_array($state, ['ok','partial_allow'], true);
+
+                            if (! $needPlan) {
+                                return;
+                            }
+
+                            // القيّم الحالية من السجل (المحفوظة سابقًا)
+                            $currentStart   = optional($this->record->planned_start_at)->toDateString();
+                            $currentEnd     = optional($this->record->planned_end_at)->toDateString();
+                            $currentInstall = optional($this->record->planned_install_at)->toDateString();
+
+                            // لا تطغى على إدخال المستخدم إن كان أدخلها بالفعل في نفس الجلسة
+                            if (!$get('planned_start') && $currentStart)   $set('planned_start', $currentStart);
+                            if (!$get('planned_end') && $currentEnd)       $set('planned_end', $currentEnd);
+                            if (!$get('planned_install') && $currentInstall) $set('planned_install', $currentInstall);
+                        }),
 
                     // حقول التخطيط تظهر فقط عند ok أو partial_allow
                     Forms\Components\DatePicker::make('planned_start')
                         ->label('بداية التصنيع (متوقعة)')
                         ->native(false)
-                        ->visible(fn ($get) => in_array($get('receipt_type'), ['ok','partial_allow'], true))
-                        ->required(fn ($get) => in_array($get('receipt_type'), ['ok','partial_allow'], true)),
+                        ->visible(fn (Get $get) => in_array($get('receipt_type'), ['ok','partial_allow'], true))
+                        ->required(fn (Get $get) => in_array($get('receipt_type'), ['ok','partial_allow'], true))
+                        // افتراضيًا: استخدم ما هو محفوظ بالسجل (ليظهر تلقائيًا في كل مرة)
+                        ->default(fn () => optional($this->record->planned_start_at)->toDateString())
+                        // في حال Hydration أولي: لو الحالة تتطلب الخانة وكانت فارغة، عبّئها من السجل
+                        ->afterStateHydrated(function (Get $get, Set $set, $state) {
+                            if (!$state && in_array($get('receipt_type'), ['ok','partial_allow'], true)) {
+                                $val = optional($this->record->planned_start_at)->toDateString();
+                                if ($val) $set('planned_start', $val);
+                            }
+                        }),
 
                     Forms\Components\DatePicker::make('planned_end')
                         ->label('نهاية التصنيع (متوقعة)')
                         ->native(false)
-                        ->visible(fn ($get) => in_array($get('receipt_type'), ['ok','partial_allow'], true))
-                        ->required(fn ($get) => in_array($get('receipt_type'), ['ok','partial_allow'], true)),
+                        ->visible(fn (Get $get) => in_array($get('receipt_type'), ['ok','partial_allow'], true))
+                        ->required(fn (Get $get) => in_array($get('receipt_type'), ['ok','partial_allow'], true))
+                        ->default(fn () => optional($this->record->planned_end_at)->toDateString())
+                        ->afterStateHydrated(function (Get $get, Set $set, $state) {
+                            if (!$state && in_array($get('receipt_type'), ['ok','partial_allow'], true)) {
+                                $val = optional($this->record->planned_end_at)->toDateString();
+                                if ($val) $set('planned_end', $val);
+                            }
+                        }),
 
                     Forms\Components\DatePicker::make('planned_install')
                         ->label('موعد التركيب (متوقع)')
                         ->native(false)
-                        ->visible(fn ($get) => in_array($get('receipt_type'), ['ok','partial_allow'], true))
-                        ->required(fn ($get) => in_array($get('receipt_type'), ['ok','partial_allow'], true)),
+                        ->visible(fn (Get $get) => in_array($get('receipt_type'), ['ok','partial_allow'], true))
+                        ->required(fn (Get $get) => in_array($get('receipt_type'), ['ok','partial_allow'], true))
+                        ->default(fn () => optional($this->record->planned_install_at)->toDateString())
+                        ->afterStateHydrated(function (Get $get, Set $set, $state) {
+                            if (!$state && in_array($get('receipt_type'), ['ok','partial_allow'], true)) {
+                                $val = optional($this->record->planned_install_at)->toDateString();
+                                if ($val) $set('planned_install', $val);
+                            }
+                        }),
 
                     // الملاحظات العامة
                     Forms\Components\Textarea::make('note')
@@ -262,12 +305,12 @@ class ViewTask extends ViewRecord
                     Forms\Components\Textarea::make('missing_items')
                         ->label('تفاصيل البنود الناقصة')
                         ->rows(3)
-                        ->visible(fn ($get) => in_array($get('receipt_type'), ['partial_allow','partial_hold'], true)),
+                        ->visible(fn (Get $get) => in_array($get('receipt_type'), ['partial_allow','partial_hold'], true)),
 
                     Forms\Components\Textarea::make('issue_details')
                         ->label('تفاصيل المشكلة')
                         ->rows(3)
-                        ->visible(fn ($get) => $get('receipt_type') === 'issue'),
+                        ->visible(fn (Get $get) => $get('receipt_type') === 'issue'),
                 ])
                 ->requiresConfirmation()
                 ->action(function (array $data) {
@@ -1122,6 +1165,31 @@ class ViewTask extends ViewRecord
         $h = $this->helper();
 
         return $infolist->schema([
+            Section::make('ملاحظات العميل الخاصة بالدفع')
+                ->description('يرجى مراجعتها قبل أي إجراء')
+                ->icon('heroicon-o-exclamation-triangle')
+                ->collapsible(false)
+                ->visible(fn ($record) => filled(optional($record->project?->client)->notes))
+                ->schema([
+                    TextEntry::make('project.client.notes')
+                        ->label(false)
+                        ->state(fn ($record) => nl2br(e(optional($record->project?->client)->notes)))
+                        ->visible(fn ($record) => filled(optional($record->project?->client)->notes))
+                        ->html()
+                        ->extraAttributes([
+                            'style' => '
+                                        display: block;
+                                        background: linear-gradient(90deg, #ffecb3, #fff8e1);
+                                        border-left: 6px solid #f59e0b;
+                                        padding: 16px 20px;
+                                        font-size: 1.1rem;
+                                        font-weight: 600;
+                                        color: #92400e;
+                                        border-radius: 8px;
+                                        margin-bottom: 20px;
+                                    ',
+                        ]),
+                ]),
             Section::make('بيانات المهمة')->schema([
                 TextEntry::make('id')->label('رقم المهمة')->color('primary'),
                 TextEntry::make('project.project_name')->label('المشروع')->placeholder('—')->color('primary'),

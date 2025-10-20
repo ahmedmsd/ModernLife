@@ -4,6 +4,8 @@
     use App\Enums\PhaseStatus as S;
     use Illuminate\Support\Facades\Storage;
 
+
+
     $phaseEnum  = Phase::tryFrom($record->current_phase);
     $statusEnum = S::tryFrom($record->phase_status);
 
@@ -57,9 +59,15 @@
     $tasksTotal    = $project?->tasks()->count() ?? 0;
     $tasksDone     = $project?->tasks()->where('status','completed')->count() ?? 0;
     $projectStatus = $project?->status ?? '—';
+
+    $clientNote = trim($record->client->notes ?? '');
+    $clientName = $record->client->client_name ?? '—';
+
 @endphp
 
 <x-filament::page>
+
+
     <div class="mb-4 flex flex-wrap items-center gap-2" wire:key="badges-{{ $actionRefreshKey ?? 0 }}">
     <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-{{ $phaseColor }}-600">
         المرحلة: {{ $phaseLabel }}
@@ -74,6 +82,30 @@
         المالك الحالي: {{ $ownerRole }}
     </span>
     </div>
+    @if ($clientNote !== '')
+        <div
+            class="mb-4 rounded-xl border p-4 md:p-5"
+            role="note"
+            aria-label="ملاحظات العميل الخاصة بالدفع"
+            style="
+            background:#fff3cd;
+            border-color:#ffeeba;
+            border-left:8px solid #f59e0b;
+            color:#856404;"
+            dir="rtl">
+            <div style="display:flex; gap:12px; align-items:flex-start;">
+                <x-filament::icon icon="heroicon-o-exclamation-triangle" class="h-6 w-6" style="color:#d97706;" />
+                <div style="flex:1;">
+                    <div style="margin-bottom:4px; font-weight:700;">
+                        ملاحظات العميل الخاصة بالدفع — {{ $clientName }}
+                    </div>
+                    <div style="line-height:1.7; font-size:0.95rem;">
+                        {!! nl2br(e($clientNote)) !!}
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 
     {{-- معلومات أساسية --}}
     <x-filament::section wire:key="info-section-{{ $actionRefreshKey ?? 0 }}">

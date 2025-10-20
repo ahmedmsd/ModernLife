@@ -1,13 +1,17 @@
 {
   "resources/css/app.css": {
-    "file": "assets/app-D6EYqEQy.css",
+    "file": "assets/app-CclPFfuZ.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
   "resources/css/filament-custom.css": {
-    "file": "assets/filament-custom-B7PBLpxl.css",
+    "file": "assets/filament-custom-D55RBYDf.css",
     "src": "resources/css/filament-custom.css",
     "isEntry": true
+  },
+  "resources/fonts/Cairo/Cairo.woff2": {
+    "file": "assets/Cairo-CJWMIGCx.woff2",
+    "src": "resources/fonts/Cairo/Cairo.woff2"
   },
   "resources/js/app.js": {
     "file": "assets/app-DNxiirP_.js",

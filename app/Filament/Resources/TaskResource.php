@@ -27,7 +27,7 @@ class TaskResource extends Resource
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
         $q = parent::getEloquentQuery()
-            ->with(['project.productionRequest.showroom', 'department', 'employee'])
+            ->with(['project.productionRequest.showroom', 'department', 'employee','project.client'])
             ->latest('id');
 
         $user = auth()->user();
