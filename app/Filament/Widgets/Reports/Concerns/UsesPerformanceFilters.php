@@ -33,7 +33,6 @@ trait UsesPerformanceFilters
             ->when($this->filters['status'],    fn($q, $v) => $q->where('status', $v));
     }
 
-    /** لوحة ألوان موحّدة */
     protected function palette(int $n): array
     {
         $base = [

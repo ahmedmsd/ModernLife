@@ -54,7 +54,6 @@
                     ? $record->sent_to_owner_at->diffForHumans(now(), true)
                     : '—';
 
-    // مشروع مرتبط (إن وُجد)
     $project       = $record->project ?? null;
     $tasksTotal    = $project?->tasks()->count() ?? 0;
     $tasksDone     = $project?->tasks()->where('status','completed')->count() ?? 0;
@@ -141,7 +140,6 @@
         </div>
     </x-filament::section>
 
-    {{-- سيكشن الحركات الأساسية (Filament v3) --}}
     <x-filament::section
         heading="العمليات / الحركات الأساسية"
         icon="heroicon-o-queue-list"
@@ -243,15 +241,12 @@
     </x-filament::section>
 
 
-    {{-- ملفات الطلب + ملف الاتفاقية في جدول واحد --}}
     <x-filament::section class="mt-6" wire:key="files-section-{{ $actionRefreshKey ?? 0 }}">
         <x-slot name="heading">الملفات</x-slot>
 
         @php
-            // نبني صفوف الجدول كمصفوفات فقط (بدون كائنات) لتفادي أخطاء الوصول
             $rows = [];
 
-            // الاتفاقية أولاً (إن وُجدت)
             if (!empty($record->agreement_file)) {
                 $rows[] = [
                     'is_agreement'   => true,
@@ -263,11 +258,9 @@
                 ];
             }
 
-            // ثم ملفات الأقسام (قد تكون Eloquent Models أو Arrays)
             $files = $record->files ?? collect();
 
             foreach ($files as $i => $f) {
-                // اجلب القيم بشكل آمن سواء كان $f مصفوفة أو موديل
                 $filePath   = is_array($f) ? ($f['file_path'] ?? null) : ($f->file_path ?? null);
                 $fileName   = is_array($f) ? ($f['file_name'] ?? basename($filePath ?? '')) : ($f->file_name ?? basename($filePath ?? ''));
                 $desc       = is_array($f) ? ($f['description'] ?? '—') : ($f->description ?? '—');

@@ -46,13 +46,10 @@ class ViewProductionTimeline extends Page
         ],
     ];
 
-    /** السجل الأساسي + البيانات المصاحبة */
     public ProductionRequest $record;
 
-    /** ملخص زمني سريع يُعرض أعلى الصفحة */
     public array $summary = [];
 
-    /** عناصر الخط الزمني */
     public array $timeline = [];
 
     public static function canAccess(array $parameters = []): bool
@@ -65,18 +62,16 @@ class ViewProductionTimeline extends Page
         app()->setLocale('ar');
         Carbon::setLocale('ar');
 
-        // نحمّل السجل بعلاقات تكفي للملخص والخط الزمني
         $this->record = $record->load([
             'logs.causer',
             'client',
             'showroom',
             'files.department',
-            'project.tasks',         // لفحص المهام المفتوحة/المكتملة
+            'project.tasks',
         ]);
 
         $this->summary = $this->buildSummary($this->record);
 
-        // ابنِ الخط الزمني من اللوجات (مع دعم الأحداث الجديدة)
         $this->timeline = $this->record->logs
             ->map(fn ($log) => $this->mapLogToTimelineRow($log))
             ->sortByDesc(fn ($row) => $row['sort_key'])
@@ -122,7 +117,6 @@ class ViewProductionTimeline extends Page
         $actualEnd   = $endLog?->happened_at   ?? $endLog?->created_at;
         $clientAt    = $clientR?->happened_at  ?? $clientR?->created_at;
 
-        // فرق المتوقع/الفعلي للتوريد
         $expectedVsActual = '—';
         if ($expected && $provided) {
             $mins = $expected->diffInMinutes($provided, false);
@@ -146,7 +140,6 @@ class ViewProductionTimeline extends Page
 
             'total_to_client'        => $h($created, $clientAt ? Carbon::parse($clientAt) : null),
 
-            // نبذة عن المشروع والمهام المفتوحة
             'project_open_tasks'     => (int) $this->record->project?->tasks()
                     ->whereNotIn('status', ['completed','cancelled','closed'])->count() ?? 0,
         ];

@@ -3,6 +3,9 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\EmployeeResource\Pages;
+use App\Filament\Resources\EmployeeResource\Pages\CreateEmployee;
+use App\Filament\Resources\EmployeeResource\Pages\EditEmployee;
+use App\Filament\Resources\EmployeeResource\Pages\ListEmployees;
 use App\Models\Employee;
 use App\Models\User;
 use Filament\Forms;
@@ -24,15 +27,6 @@ use Filament\Tables\Actions\ForceDeleteAction;
 use Filament\Tables\Actions\RestoreBulkAction;
 use Filament\Tables\Actions\ForceDeleteBulkAction;
 
-/**
- * Resource لإدارة الموظفين مع ربط الأدوار على المستخدم المرتبط فقط.
- *
- * ملاحظات تصميم:
- * - الأدوار تُحفظ على User حصراً (لا نستخدم HasRoles على Employee).
- * - عند الحفظ: ننشئ/نحدّث user ثم نعمل syncRoles() على user.
- * - نمسح أي بقايا قديمة في model_has_roles للموديل Employee (تنظيف حذر).
- * - نفرّغ كاش الصلاحيات بعد كل عملية.
- */
 class EmployeeResource extends Resource
 {
     protected static ?string $model = Employee::class;
@@ -47,7 +41,6 @@ class EmployeeResource extends Resource
     {
         return $form
             ->schema([
-                // -- حساب الدخول (User) --
                 Forms\Components\Section::make('معلومات الحساب')
                     ->schema([
                         Forms\Components\TextInput::make('user.email')
@@ -55,7 +48,6 @@ class EmployeeResource extends Resource
                             ->email()
                             ->required()
                             ->statePath('user.email')
-                            // عند التعديل: املأ القيمة من علاقة الـ User
                             ->formatStateUsing(fn ($state, ?\App\Models\Employee $record) =>
                                 $state ?? ($record?->user?->email)
                             )
@@ -239,37 +231,28 @@ class EmployeeResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListEmployees::route('/'),
-            'create' => Pages\CreateEmployee::route('/create'),
-            'edit'   => Pages\EditEmployee::route('/{record}/edit'),
+            'index'  => ListEmployees::route('/'),
+            'create' => CreateEmployee::route('/create'),
+            'edit'   => EditEmployee::route('/{record}/edit'),
         ];
     }
 
-    /**
-     * Hook عام لاستدعائه من صفحات الـ Resource بعد الحفظ.
-     * - ينشئ/يحدّث User المرتبط.
-     * - يزامن الأدوار على User فقط.
-     * - ينظف أي بقايا أدوار قديمة على Employee (model_has_roles).
-     */
+
     public static function syncUserAndRoles(Employee $record, array $data): void
     {
         DB::transaction(function () use ($record, $data) {
-            // 1) المستخدم (إنشاء/تحديث)
             if (isset($data['user'])) {
                 $userData = $data['user'];
 
                 if ($record->user) {
-                    // تحديث المستخدم المرتبط
                     $record->user->update(array_filter($userData));
                 } else {
-                    // إنشاء مستخدم جديد وربط الموظف به
                     /** @var User $user */
                     $user = User::create($userData);
                     $record->user()->associate($user)->save();
                 }
             }
 
-            // 2) مزامنة الأدوار على User فقط
             if (isset($data['roles_ids'])) {
                 $roleNames = Role::where('guard_name', 'web')
                     ->whereIn('id', (array) $data['roles_ids'])
@@ -281,13 +264,11 @@ class EmployeeResource extends Resource
                 }
             }
 
-            // 3) تنظيف بقايا الأدوار على Employee (اختياري لكن مفيد لبيانات قديمة)
             DB::table(config('permission.table_names.model_has_roles', 'model_has_roles'))
                 ->where('model_type', Employee::class)
                 ->where('model_id', $record->getKey())
                 ->delete();
 
-            // 4) تصفير الكاش
             app(PermissionRegistrar::class)->forgetCachedPermissions();
         });
     }

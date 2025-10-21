@@ -10,7 +10,6 @@ class CreateTasksFromRequest
     public function handle(ProductionRequest $pr): void
     {
         DB::transaction(function () use ($pr) {
-            // 1) أنشئ المشروع إن لم يوجد
             $project = $pr->project;
             if (! $project) {
                 $project = Project::create([
@@ -23,7 +22,6 @@ class CreateTasksFromRequest
                 ]);
             }
 
-            // 2) أنشئ مهمة لكل ملف قسم
             $pr->loadMissing('files.department');
 
             foreach ($pr->files as $file) {
@@ -41,7 +39,6 @@ class CreateTasksFromRequest
                     'assigned_at'             => $managerEmployeeId ? now() : null,
                 ]);
 
-                // لوج
                 TaskLog::create([
                     'task_id'     => $task->id,
                     'type'        => 'created',

@@ -119,18 +119,14 @@ class FactoryManagerTaskReview extends Page implements HasTable
                             ->label('ملاحظة (اختياري)')
                             ->rows(3)
                             ->nullable(),
-                        // (اختياري) إرفاق ملف تسليم نهائي:
-                        // Forms\Components\FileUpload::make('deliverable')->label('ملف التسليم').->directory('projects/deliverables'),
                     ])
                     ->requiresConfirmation()
                     ->action(function (ProductionTask $record, array $data) {
                         $record->update([
                             'status' => 'completed',
                             'notes' => trim(($record->notes ? $record->notes . "\n" : '') . '[Manager Approved] ' . ($data['note'] ?? '')),
-                            // 'completed_at' => now(), // لو لديك عمود
                         ]);
 
-                        // إشعار للموظف (بريد + داخلي)
                         if ($user = $record->employee?->user) {
                             $user->notify(new \App\Notifications\TaskReviewResultNotification($record, approved: true, managerNote: $data['note'] ?? null));
                         }
@@ -160,7 +156,6 @@ class FactoryManagerTaskReview extends Page implements HasTable
                             'status' => 'rework',
                             'due_date' => $data['new_due_date'] ?? $record->due_date,
                             'notes' => trim(($record->notes ? $record->notes . "\n" : '') . '[Rework] ' . $data['reason']),
-                            // 'reviewed_at' => now(), // لو لديك عمود زمني
                         ]);
 
                         if ($user = $record->employee?->user) {

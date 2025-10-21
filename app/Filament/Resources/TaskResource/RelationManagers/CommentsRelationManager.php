@@ -26,7 +26,7 @@ class CommentsRelationManager extends RelationManager
             Textarea::make('body')->label('نص التعليق')->required()->autosize()->maxLength(5000),
             FileUpload::make('attachments')->label('مرفقات (اختياري)')
                 ->multiple()->directory('task-comments')
-                ->preserveFilenames()->downloadable()->openable(),
+                ->downloadable()->openable(),
         ]);
     }
 

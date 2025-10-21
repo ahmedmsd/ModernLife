@@ -25,11 +25,10 @@ class SystemSettings extends Page implements Forms\Contracts\HasForms
     protected static string $view              = 'filament.pages.system-settings';
 
     public array $data = [];
-    public ?string $search = null; // بحث داخل الصفحة
+    public ?string $search = null;
 
     public function mount(): void
     {
-        // تحميل القيم، مع فك تشفير الحقول الحساسة (إن وجدت أعمدة تدل على ذلك)
         $pairs = SystemSetting::query()
             ->get()
             ->mapWithKeys(function (SystemSetting $s) {
@@ -51,9 +50,7 @@ class SystemSettings extends Page implements Forms\Contracts\HasForms
             ->statePath('data');
     }
 
-    /**
-     * نبني المخطط ديناميكيًا: مجموعات -> تبويبات
-     */
+
     protected function buildSchema(): array
     {
         $groups = SystemSetting::query()
@@ -69,7 +66,6 @@ class SystemSettings extends Page implements Forms\Contracts\HasForms
 
             foreach ($settings as $setting) {
                 $component = $this->makeComponentFor($setting);
-                // بحث: اخفِ الحقول التي لا تطابق نص البحث (إن وُضع)
                 if ($this->search) {
                     $hay = mb_strtolower(($setting->description ?? '') . ' ' . $setting->setting_key);
                     $q   = mb_strtolower($this->search);
@@ -85,7 +81,6 @@ class SystemSettings extends Page implements Forms\Contracts\HasForms
         }
 
         return [
-            // شريط بحث أعلى الصفحة
             Forms\Components\Section::make('بحث')
                 ->schema([
                     Forms\Components\TextInput::make('search')
@@ -100,9 +95,7 @@ class SystemSettings extends Page implements Forms\Contracts\HasForms
         ];
     }
 
-    /**
-     * إنشاء كومبوننت مناسب لنوع الإعداد
-     */
+
     protected function makeComponentFor(SystemSetting $s): Forms\Components\Component
     {
         $key   = $s->setting_key;
@@ -135,7 +128,7 @@ class SystemSettings extends Page implements Forms\Contracts\HasForms
                 ->image()->imageEditor()
                 ->disk('public')->directory('settings')->openable()->downloadable(),
             'file'      => Forms\Components\FileUpload::make($key)
-                ->disk('public')->directory('settings')->preserveFilenames()->openable()->downloadable(),
+                ->disk('public')->directory('settings')->openable()->downloadable(),
             'password', 'secret' =>
             Forms\Components\TextInput::make($key)->password()->revealable(),
             default     => Forms\Components\TextInput::make($key),
@@ -146,7 +139,6 @@ class SystemSettings extends Page implements Forms\Contracts\HasForms
         }
         if (!empty($s->help_text)) $base->hint($s->help_text);
 
-        // بعض التحسينات التجميليّة
         if (in_array($s->setting_type, ['text','email','url','phone','number'])) {
             $base = $base->suffixIcon('heroicon-o-information-circle');
         }
@@ -191,45 +183,32 @@ class SystemSettings extends Page implements Forms\Contracts\HasForms
             }
 
             if ($row->setting_type === 'image' || $row->setting_type === 'file') {
-                // لا شيء إضافي — المسار محفوظ بالفعل
             }
 
             $row->update(['setting_value' => $value]);
 
-            // سجل تغييرات (اختياري: أنشئ جدول system_setting_changes)
-            // \App\Models\SystemSettingChange::create([
-            //     'setting_key' => $key, 'old_value' => $old, 'new_value' => $value,
-            //     'user_id' => auth()->id(), 'ip' => request()->ip(),
-            // ]);
         }
 
-        // فضِّ الكاش العام
         Cache::forget('system_settings_all');
 
-        // مثال: اعكس بعض القيم على runtime بدون إعادة تشغيل
-        // if (isset($state['mail_from_address'])) config(['mail.from.address' => $state['mail_from_address']]);
 
         Notification::make()->title('تم حفظ الإعدادات بنجاح')->success()->send();
     }
 
-    /** أزرار أعلى الصفحة */
     protected function getHeaderActions(): array
     {
         return [
-            // تصدير JSON
             \Filament\Actions\Action::make('export')
                 ->label('تصدير الإعدادات')
                 ->icon('heroicon-o-arrow-down-tray')
                 ->action(function () {
                     $data = SystemSetting::query()->get(['setting_key','setting_value','setting_group','setting_type'])->toArray();
                     $name = 'settings-'.now()->format('Ymd-His').'.json';
-                    // حمّل مباشرة
                     return response()->streamDownload(function () use ($data) {
                         echo json_encode($data, JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT);
                     }, $name, ['Content-Type' => 'application/json; charset=utf-8']);
                 }),
 
-            // استيراد JSON
             \Filament\Actions\Action::make('import')
                 ->label('استيراد الإعدادات')
                 ->icon('heroicon-o-arrow-up-tray')
@@ -257,7 +236,6 @@ class SystemSettings extends Page implements Forms\Contracts\HasForms
                     Notification::make()->title('تم الاستيراد بنجاح')->success()->send();
                 }),
 
-            // اختبار البريد
             \Filament\Actions\Action::make('test_email')
                 ->label('إرسال بريد تجريبي')
                 ->icon('heroicon-o-paper-airplane')

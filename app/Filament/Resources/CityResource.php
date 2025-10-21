@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\CityResource\Pages;
+use App\Filament\Resources\CityResource\Pages\ListCities;
 use App\Models\City;
 use Filament\Forms\Components\Actions\Action;
 use Filament\Forms;
@@ -63,7 +64,7 @@ class CityResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListCities::route('/'),
+            'index' => ListCities::route('/'),
         ];
     }
 }

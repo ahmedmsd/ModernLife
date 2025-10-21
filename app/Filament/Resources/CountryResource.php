@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\CountryResource\Pages;
+use App\Filament\Resources\CountryResource\Pages\ListCountries;
 use App\Models\Country;
 use Filament\Forms;
 use Filament\Tables;
@@ -67,7 +68,7 @@ class CountryResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListCountries::route('/'),
+            'index' => ListCountries::route('/'),
 
         ];
     }

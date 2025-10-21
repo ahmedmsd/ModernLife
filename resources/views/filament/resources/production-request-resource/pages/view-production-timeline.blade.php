@@ -4,9 +4,6 @@
 
     $statusEnum = ProductionRequestStatus::tryFrom($record->status);
 
-    /* ================== تجميع البيانات من المهام وطلبات الخامات ================== */
-
-    // نجلب مهام المشروع مع طلبات الخامات واللوجات (لو متاحة)
 
     $clientNote = trim($record->client->notes ?? '');
     $clientName = $record->client->client_name ?? '—';
@@ -41,7 +38,6 @@
             ->first()
     )->provided_at;
 
-    // نحولها لـ Carbon (المتغيرات التي يستخدمها الملخص لاحقًا)
     $expected = $expectedAt ? Carbon::parse($expectedAt) : null;
     $approved = $approvedAt ? Carbon::parse($approvedAt) : null;
     $provided = $providedAt ? Carbon::parse($providedAt) : null;
@@ -51,20 +47,16 @@
 
     /* ================== بدء/نهاية التصنيع الفعلية من اللوجات/أعمدة المهام ================== */
 
-    // نجمع كل لوجات المهام
     $taskLogs = $tasks->flatMap(fn($t) => $t->logs ?? collect());
 
-    // نبحث عن أحداث بدء/نهاية التصنيع (سواء مخزّنة في "type" أو "action")
     $startLog = $taskLogs->first(fn($l) => ($l->type ?? null) === 'manufacturing_started' || ($l->action ?? null) === 'manufacturing_started');
     $endLog   = $taskLogs->first(fn($l) => ($l->type ?? null) === 'manufacturing_finished' || ($l->action ?? null) === 'manufacturing_finished');
     $clientR  = $taskLogs->first(fn($l) => ($l->type ?? null) === 'client_receipt_uploaded' || ($l->action ?? null) === 'client_receipt_uploaded');
 
-    // نقرأ التاريخ من أكثر من حقل محتمل
     $actualStartAt = $startLog?->action_at ?? $startLog?->happened_at ?? $startLog?->created_at;
     $actualEndAt   = $endLog?->action_at   ?? $endLog?->happened_at   ?? $endLog?->created_at;
     $clientAtRaw   = $clientR?->action_at  ?? $clientR?->happened_at  ?? $clientR?->created_at;
 
-    // إن لم نجدها في اللوجات، نحاول من أعمدة المهام (إن وجدت)
     if (!$actualStartAt) {
         $actualStartAt = $tasks->min(fn($t) => $t->actual_start_at ?? $t->started_at ?? null);
     }
@@ -72,17 +64,13 @@
         $actualEndAt = $tasks->max(fn($t) => $t->actual_end_at ?? $t->finished_at ?? null);
     }
 
-    // تحويل لـ Carbon لاستخدامها في الملخص
     $actualStartAt = $actualStartAt ? Carbon::parse($actualStartAt) : null;
     $actualEndAt   = $actualEndAt   ? Carbon::parse($actualEndAt)   : null;
     $clientAt      = $clientAtRaw   ? Carbon::parse($clientAtRaw)   : null;
 
-    /* ================== دوال عرض مساعدة ================== */
 
-    // تنسيق بسيط للتاريخ
     $fmt = function (?Carbon $c) { return $c?->format('Y-m-d H:i') ?? '—'; };
 
-    // تحويل دقائق إلى (أيام/ساعات/دقائق)
     $minutesToHuman = function (int $min): string {
         $d = intdiv($min, 1440);
         $h = intdiv($min % 1440, 60);
@@ -94,13 +82,11 @@
         return implode(' و ', $parts);
     };
 
-    // فرق زمني إنساني بين تاريخين
     $humanDiff = function (?Carbon $a, ?Carbon $b) use ($minutesToHuman) {
         if (!$a || !$b) return '—';
         return $minutesToHuman($a->diffInMinutes($b));
     };
 
-    // حساب فرق المتوقع/الفعلي للتوريد (نصي + لون شارة)
     $expectedVsActualText  = '—';
     $expectedVsActualColor = 'gray';
     if ($expected && $provided) {
@@ -184,27 +170,17 @@
         </x-slot>
 
         @php
-            /** ملاحظات:
-             * - نفترض أن الطلب مرتبط بمشروع واحد عبر $record->project، والمشروع يملك tasks().
-             * - نحاول قراءة عنوان المهمة من أكثر من حقل محتمل (task_title / title / name)،
-             *   واسم المسئول من owner/assignedTo/employee/department->manager... (سلسلة سقوط).
-             * - تاريخ البداية: فعلي ثم مخطط ثم started_at ثم إنشاء المهمة (fallback).
-             * - حالة المهمة: نعرض label + badge لون (جدول تحويل داخلي).
-             */
 
-            // تحميل آمن للمهام وعلاقات خفيفة (تقدر توسّعها لاحقًا لو احتجت)
             $record->loadMissing([
                 'project.tasks.department',
                 'project.tasks.employee',
-                // أضِف هنا أي علاقات مساعدة لو موجودة عندك:
-                // 'project.tasks.owner', 'project.tasks.assignedTo', 'project.tasks.ownerUser', ...
+
             ]);
 
             $tasks = $record->project
                 ? $record->project->tasks()->orderBy('id')->get()
                 : collect();
 
-            // دالة آمنة للحصول على نص من عدة مفاتيح محتمَلة
             $pick = function ($obj, array $paths, $default = '—') {
                 foreach ($paths as $p) {
                     $val = data_get($obj, $p);
@@ -213,7 +189,6 @@
                 return $default;
             };
 
-            // خرائط الحالة ← تسمية/لون (حدّثها حسب قاموس حالاتك)
             $statusLabel = function (?string $s): string {
                 return match ($s) {
                     'pending'            => 'قيد الانتظار',
@@ -248,8 +223,7 @@
                 };
             };
 
-            // هل لديك Resource لعرض المهمة؟ إن وجد، نضيف رابط "عرض"
-            $taskResourceExists = class_exists(\App\Filament\Resources\ProductionTaskResource::class);
+            $taskResourceExists = class_exists(\App\Filament\Resources\TaskResource::class);
         @endphp
 
         @if ($tasks->isEmpty())
@@ -285,7 +259,6 @@
                             ], null);
                             $startAt = $startRaw ? \Illuminate\Support\Carbon::parse($startRaw)->format('Y-m-d H:i') : '—';
 
-                            // اسم المسئول: سلسلة سقوط عبر علاقات محتملة
                             $ownerName = $pick($task, [
                                 'current_owner_name',
                                 'owner.name',
@@ -297,14 +270,12 @@
                                 'department.head_user.name',
                             ], '—');
 
-                            // حالة المهمة (label/color)
                             $st = (string) ($task->status ?? '');
                             $stLabel = $statusLabel($st);
                             $stColor = $statusColor($st);
 
-                            // رابط العرض (لو Resource موجود)
                             $viewUrl = $taskResourceExists
-                                ? \App\Filament\Resources\ProductionTaskResource::getUrl('view', ['record' => $task])
+                                ? \App\Filament\Resources\TaskResource::getUrl('view', ['record' => $task])
                                 : null;
                         @endphp
 
@@ -344,14 +315,12 @@
     </x-filament::section>
 
 
-    {{-- ============================ ملخص زمني (مرتب حسب تسلسل العمليات) ============================ --}}{{-- ============================ ملخص زمني (تفصيلي ومُرتب حسب تسلسل العمليات) ============================ --}}
     <x-filament::section class="mt-6">
         <x-slot name="header">
             <h2 class="text-xl font-bold">ملخص زمني</h2>
         </x-slot>
 
         @php
-            // نحمل الحد الأدنى من العلاقات (بدون project.logs لتفادي العلاقة غير المعرّفة)
             $record->loadMissing([
                 'logs',
                 'project.tasks.department',
@@ -359,9 +328,7 @@
                 'project.tasks.materialRequests.providedBy',
             ]);
 
-            /* -------------------- أدوات عرض مساعدة (للتوضيح لمن يأتي بعدك) -------------------- */
 
-            // تأمين تحويل أي قيمة إلى مصفوفة
             $toArr = function ($val) {
                 if (is_array($val)) return $val;
                 if (is_object($val)) return (array) $val;
@@ -372,10 +339,8 @@
                 return [];
             };
 
-            // تنسيق تاريخ مختصر
             $fmt = fn (? \Illuminate\Support\Carbon $c) => $c?->format('Y-m-d H:i') ?? '—';
 
-            // تحويل دقائق إلى (أيام/ساعات/دقائق) بالعربية
             $minutesToHuman = function (int $min): string {
                 $d = intdiv($min, 1440);
                 $h = intdiv($min % 1440, 60);
@@ -387,13 +352,11 @@
                 return implode(' و ', $parts);
             };
 
-            // فرق زمني إنساني بين تاريخين (أو "—" لو ناقص)
             $humanDiff = function (? \Illuminate\Support\Carbon $a, ? \Illuminate\Support\Carbon $b) use ($minutesToHuman) {
                 if (!$a || !$b) return '—';
                 return $minutesToHuman($a->diffInMinutes($b));
             };
 
-            // التقط أول حدث (حسب المفاتيح) من لوجات معيّنة
             $firstEventAt = function (array $keys, $logs) {
                 $ev = collect($logs ?? [])->first(function ($l) use ($keys) {
                     $k = $l->action ?? $l->type ?? null;
@@ -416,7 +379,6 @@
 
             $mrs = $tasks->flatMap(fn($t) => $t->materialRequests ?? collect());
 
-            // تجميع لوجات المهام (إن وُجدت العلاقة) + لوجات الطلب
             $taskLogs = collect();
             foreach ($tasks as $t) {
                 if (method_exists($t, 'logs')) {
@@ -426,9 +388,7 @@
             $reqLogs = $record->logs ?? collect();
             $allLogs = $reqLogs->concat($taskLogs);
 
-            /* --- أوقات الإرسال بين الأدوار --- */
             $firstOwnerSendAt = function (string $role) use ($reqLogs, $toArr) {
-                // أحداث إرسال صريحة إن وُجدت
                 $explicit = [
                     'showroom_manager'   => ['sent_to_showroom'],
                     'factory_manager'    => ['sent_to_factory'],
@@ -439,7 +399,6 @@
                     $type = $l->action ?? $l->type ?? null;
                     if (in_array($type, $explicit, true)) return true;
 
-                    // تغيّر ملكية/مالك → إلى الدور
                     if (in_array($type, ['ownership_changed','owner_changed','transition','status_changed'], true)) {
                         $data   = $toArr($l->data);
                         $toRole = data_get($data, 'to.owner_role')
@@ -450,7 +409,6 @@
                     return false;
                 });
 
-                // fallback: أول استلام من الدور
                 if (!$event) {
                     $event = $reqLogs->first(function ($l) use ($role, $toArr) {
                         $type = $l->action ?? $l->type ?? null;
@@ -471,7 +429,6 @@
             $sentFactoryAt  = $firstOwnerSendAt('factory_manager');
             $sentDeptAt     = $firstOwnerSendAt('department_manager');
 
-            /* --- التوريد (متوقع/فعلي/اعتماد) من طلبات الخامات عبر المهام --- */
             $expectedAt = optional(
                 $mrs->whereNotNull('expected_delivery_at')->sortBy('expected_delivery_at')->first()
             )->expected_delivery_at;
@@ -488,21 +445,18 @@
             $approved = $approvedAt ? \Illuminate\Support\Carbon::parse($approvedAt) : null;
             $provided = $providedAt ? \Illuminate\Support\Carbon::parse($providedAt) : null;
 
-            /* --- خط التصنيع: فعلي ومخطط (تجميع من اللوجات أو أعمدة المهام) --- */
             // فعلي
             $actualStartAt = $firstEventAt(['manufacturing_started'], $allLogs)
                           ?? ($tasks->min(fn($t) => $t->actual_start_at ?? $t->started_at ?? null) ? \Illuminate\Support\Carbon::parse($tasks->min(fn($t) => $t->actual_start_at ?? $t->started_at ?? null)) : null);
             $actualEndAt   = $firstEventAt(['manufacturing_finished'], $allLogs)
                           ?? ($tasks->max(fn($t) => $t->actual_end_at ?? $t->finished_at ?? null) ? \Illuminate\Support\Carbon::parse($tasks->max(fn($t) => $t->actual_end_at ?? $t->finished_at ?? null)) : null);
 
-            // مخطّط (من مهام الأقسام مجتمعة: أبكر بداية مخططة، وآخر نهاية مخططة)
             $plannedStartAgg = $tasks->min(fn($t) => $t->planned_start_at ?? $t->planned_start ?? null);
             $plannedEndAgg   = $tasks->max(fn($t) => $t->planned_end_at   ?? $t->planned_end   ?? null);
 
             $plannedStart = $plannedStartAgg ? \Illuminate\Support\Carbon::parse($plannedStartAgg) : null;
             $plannedEnd   = $plannedEndAgg   ? \Illuminate\Support\Carbon::parse($plannedEndAgg)   : null;
 
-            // انحرافات المخطط/الفعلي للتصنيع
             $startDriftText = '—'; $startDriftColor = 'gray';
             if ($plannedStart && $actualStartAt) {
                 $mins = $plannedStart->diffInMinutes($actualStartAt, false);
@@ -561,7 +515,6 @@
             $approved_to_provided  = $humanDiff($approved, $provided);
         @endphp
 
-        {{-- ➊ التسليم عبر الأدوار (حسب تسلسل العمليات) --}}
         <h3 class="mt-2 mb-3 text-sm font-semibold text-gray-700 dark:text-gray-200">التسليم عبر الأدوار</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
             <x-filament::card>
@@ -584,7 +537,6 @@
             </x-filament::card>
         </div>
 
-        {{-- ➋ توريد الخامات (متوقع/فعلي/فروق) --}}
         <h3 class="mt-6 mb-3 text-sm font-semibold text-gray-700 dark:text-gray-200">توريد الخامات</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
             <x-filament::card><div class="flex items-center justify-between"><div class="text-gray-600 dark:text-gray-300">توريد (متوقع)</div><div class="font-semibold">{{ $fmt($expected) }}</div></div></x-filament::card>
@@ -601,7 +553,6 @@
             <x-filament::card><div class="flex items-center justify-between"><div class="text-gray-600 dark:text-gray-300">القسم ← التوريد (فعلي)</div><div class="font-semibold">{{ $dept_to_supply }}</div></div></x-filament::card>
         </div>
 
-        {{-- ➌ التصنيع (مخطط/فعلي/انحرافات) --}}
         <h3 class="mt-6 mb-3 text-sm font-semibold text-gray-700 dark:text-gray-200">التصنيع</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
             <x-filament::card><div class="flex items-center justify-between"><div class="text-gray-600 dark:text-gray-300">بداية مخططـة</div><div class="font-semibold">{{ $fmt($plannedStart) }}</div></div></x-filament::card>
@@ -627,7 +578,6 @@
             <x-filament::card><div class="flex items-center justify-between"><div class="text-gray-600 dark:text-gray-300">من نهاية التصنيع → اعتماد جودة التصنيع</div><div class="font-semibold">{{ $mfg_to_qa_approve }}</div></div></x-filament::card>
         </div>
 
-        {{-- ➍ التركيب والختام --}}
         <h3 class="mt-6 mb-3 text-sm font-semibold text-gray-700 dark:text-gray-200">التركيب والختام</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
             <x-filament::card><div class="flex items-center justify-between"><div class="text-gray-600 dark:text-gray-300">بدء التركيب</div><div class="font-semibold">{{ $fmt($instStartedAt) }}</div></div></x-filament::card>
@@ -649,7 +599,6 @@
             </x-filament::card>
         </div>
 
-        {{-- (اختياري) عرض تواريخ مرجعية للشفافية --}}
         <div class="mt-4 p-3 rounded border bg-white/60 dark:bg-gray-900/40 text-xs">
             <div class="text-gray-600 dark:text-gray-300 mb-1">تواريخ مرجعية</div>
             <div class="space-x-4 space-x-reverse">
@@ -718,7 +667,6 @@
                 'project.tasks.materialRequests.providedBy',
             ]);
 
-            // دالة مساعدة لصناعة عنصر لوج "اصطناعي" بواجهة مشابهة للّوج الأصلي
             $mkLog = function (string $action, $at, ?string $note, ?string $who, array $data = []) {
                 $at = $at ? (\Illuminate\Support\Carbon::parse($at)) : null;
                 return (object) [
@@ -733,18 +681,14 @@
                 ];
             };
 
-            // 1) اجمع لوجات الطلب + المشروع + المهام
             $allLogs = collect();
 
-            // لوجات الطلب
             $allLogs = $allLogs->merge($record->logs ?? collect());
 
-            // لوجات المشروع (لو موجودة)
             if ($record->project && method_exists($record->project, 'logs')) {
                 $allLogs = $allLogs->merge($record->project->logs ?? collect());
             }
 
-            // لوجات كل المهام
             $tasks = $record->project?->tasks ?? collect();
             foreach ($tasks as $task) {
                 if (method_exists($task, 'logs')) {
@@ -752,11 +696,9 @@
                 }
             }
 
-            // 2) أحداث اصطناعية من طلبات الخامات لكل مهمة (لجعل التتبع واضحًا)
             foreach ($tasks as $task) {
                 foreach ($task->materialRequests ?? [] as $mr) {
                     $dept = $task->department->dept_name ?? '—';
-                    // طلب الخامات (مُنشأ/متوقع/معتمد/مورَّد)
                     if (!empty($mr->requested_at)) {
                         $allLogs->push($mkLog(
                             'materials_requested',
@@ -796,7 +738,6 @@
                 }
             }
 
-            // 3) أيقونات/ألوان وتعريب مفاتيح الأحداث
             $iconMap = [
                 'created'                     => ['heroicon-o-document-plus', 'primary'],
                 'transition'                  => ['heroicon-o-arrow-right', 'info'],
@@ -869,7 +810,6 @@
                 'request_finalized'           => 'إقفال طلب التصنيع',
             ];
 
-            // 4) الترتيب تنازليًا حسب التاريخ (مع fallback)
             $allLogs = $allLogs->filter()->sortByDesc(function ($l) {
                 $t = $l->action_at ?? $l->happened_at ?? $l->created_at ?? null;
                 return $t ? \Illuminate\Support\Carbon::parse($t)->timestamp : 0;
@@ -882,7 +822,6 @@
                 $rawAt    = $log->action_at ?? $log->happened_at ?? $log->created_at;
                 $at       = $rawAt instanceof \Illuminate\Support\Carbon ? $rawAt : ($rawAt ? \Illuminate\Support\Carbon::parse($rawAt) : null);
 
-                // استخراج اسم المنفّذ
                 $who = $log->causer->name
                     ?? data_get($log->data, 'causer_name')
                     ?? data_get($log->data, 'by')
@@ -893,7 +832,6 @@
                 [$icon, $color] = $iconMap[$actionKey] ?? ['heroicon-o-information-circle', 'gray'];
                 $actionLabel = $labelMap[$actionKey] ?? ($logEnum?->label() ?? $actionKey);
 
-                // وصف مختصر للمصدر (طلب/مشروع/مهمة)
                 $srcTxt = 'الطلب';
                 if (!empty(data_get($log->data, 'task_id'))) {
                     $srcTxt = 'مهمة #' . data_get($log->data, 'task_id');

@@ -36,7 +36,6 @@ class ReportFilters
         return new self($data);
     }
 
-    /** إرجاع الفلاتر كمصفوفة */
     public function toArray(): array
     {
         return $this->data;
@@ -104,7 +103,6 @@ class ReportFilters
     public function employeeId(): ?int    { return $this->data['employee_id'] ?? null; }
     public function status(): ?string     { return $this->data['status']      ?? null; }
 
-    /** دعم الوصول بـ camelCase مثل $filters->dateFrom */
     public function __get(string $name)
     {
         $snake = $this->camelToSnake($name);

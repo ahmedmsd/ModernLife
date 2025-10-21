@@ -34,16 +34,13 @@ class InstallationCalendar extends Page
             ]);
     }
 
-    /** نطاق الجدول */
     public ?string $from = null;
     public ?string $to   = null;
 
-    /** حقول تعديل الموعد */
     public ?int    $rescheduleTaskId = null;
     public ?string $newInstallDate   = null;
     public ?string $rescheduleNote   = null;
 
-    /** الاستعلام الأساسي للمهام ضمن النطاق الزمني */
     protected function baseQueryForTable(): Builder
     {
         $startAt = $this->from ? Carbon::parse($this->from)->startOfDay() : now()->startOfMonth();
@@ -62,7 +59,6 @@ class InstallationCalendar extends Page
         return $this->applyRoleScope($q, 'production_tasks');
     }
 
-    /** تجميع النتائج حسب تاريخ التركيب */
     public function groupedByDate(): array
     {
         $tasks = $this->baseQueryForTable()
@@ -74,7 +70,6 @@ class InstallationCalendar extends Page
             ->toArray();
     }
 
-    /** فتح مودال تعديل الموعد */
     public function openRescheduleModal(int $taskId): void
     {
         $task = ProductionTask::with(['project.productionRequest.showroom'])->findOrFail($taskId);
@@ -92,7 +87,6 @@ class InstallationCalendar extends Page
         $this->dispatch('open-modal', id: 'reschedule-modal');
     }
 
-    /** حفظ تعديل الموعد */
     public function saveReschedule(): void
     {
         $this->validate([
@@ -114,7 +108,6 @@ class InstallationCalendar extends Page
         $task->planned_install_at = Carbon::parse($this->newInstallDate)->startOfDay();
         $task->save();
 
-        // حفظ لوج الحركة
         TaskLog::create([
             'task_id'     => $task->id,
             'type'        => 'installation_rescheduled',
@@ -133,7 +126,6 @@ class InstallationCalendar extends Page
         $this->reset(['rescheduleTaskId', 'newInstallDate', 'rescheduleNote']);
     }
 
-    /** من يحق له تعديل الموعد؟ */
     protected function canReschedule(ProductionTask $task): bool
     {
         $u = auth()->user();
@@ -141,8 +133,8 @@ class InstallationCalendar extends Page
             return false;
         }
 
-        // الأدمن ومدير المصنع دائمًا يمكنهم التعديل
-        if ($u->hasAnyRole(['admin', 'super-admin', 'factory_manager'])) {
+        // الأدمن ومدير المصنع يمكنهم التعديل
+        if ($u->hasAnyRole(['admin', 'super-admin', 'factory_manager', 'department_manager'])) {
             return true;
         }
 
@@ -166,7 +158,6 @@ class InstallationCalendar extends Page
         return false;
     }
 
-    /** نطاق الرؤية حسب الدور */
     protected function applyRoleScope(Builder $q, string $tasksTable = 'production_tasks'): Builder
     {
         $u = auth()->user();
@@ -204,14 +195,12 @@ class InstallationCalendar extends Page
             });
         }
 
-        // المبيعات: يرى طلباته فقط (عدّل الحقول حسب جداولك)
         if ($u->hasRole('sales')) {
             $q->whereHas('project.productionRequest', function (Builder $qq) use ($u) {
                 $qq->where('created_by', $u->id);
             });
         }
 
-        // الجودة: عرض فقط
         return $q;
     }
 }

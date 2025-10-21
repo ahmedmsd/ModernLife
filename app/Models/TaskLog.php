@@ -18,7 +18,6 @@ class TaskLog extends Model
         'happened_at' => 'datetime',
     ];
 
-    /* ============ سكوبات ============ */
 
     public function scopeCore(Builder $q): Builder
     {
@@ -71,22 +70,17 @@ class TaskLog extends Model
     protected function typeLabel(): Attribute
     {
         return Attribute::get(function () {
-            // 1) جرّب الترجمة من lang
             $key = "tasks.logs.types.{$this->type}";
             $translated = __($key);
             if ($translated !== $key) {
                 return $translated;
             }
 
-            // 2) fallback عربي في حال مافي مفتاح ترجمة
             $fallback = [
-                // تأسيسية
                 'created'                     => 'تم إنشاء المهمة',
 
-                // تغييرات الحالة
                 'status_changed'              => 'تغيير حالة المهمة',
 
-                // إرسال الملكية
                 'sent_to_showroom'            => 'تم الإرسال إلى المعرض',
                 'sent_to_factory'             => 'تم الإرسال إلى التصنيع',
                 'sent_to_department'          => 'تم الإرسال إلى مدير القسم',
@@ -94,25 +88,20 @@ class TaskLog extends Model
                 'sent_to_quality'             => 'تم الإرسال إلى الجودة',
                 'sent_to_install'             => 'تم الإرسال إلى التركيب',
 
-                // أحداث تشغيلية
                 'purchasing_ack'              => 'تأكيد استلام المشتريات',
                 'manufacturing_started'       => 'بدء التصنيع',
                 'manufacturing_finished'      => 'إنهاء التصنيع',
                 'installation_started'        => 'بدء التركيب',
                 'installation_finished'       => 'إنهاء التركيب',
 
-                // جودة — بعد التصنيع
                 'qa_approved_manufacturing'   => 'اعتماد الجودة (بعد التصنيع)',
                 'qa_rejected_manufacturing'   => 'رفض الجودة (بعد التصنيع)',
 
-                // جودة — بعد التركيب
                 'qa_approved_installation'    => 'اعتماد الجودة (بعد التركيب)',
                 'qa_rejected_installation'    => 'رفض الجودة (بعد التركيب)',
 
-                // ملاحظات
                 'owner_receive_note'          => 'ملاحظة المالك/المستخدم',
 
-                // إكمال
                 'client_receipt_uploaded'     => 'تم رفع سند استلام العميل',
                 'task_completed'              => 'اكتملت المهمة',
                 'project_completed'           => 'اكتمل المشروع',

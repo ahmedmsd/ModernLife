@@ -29,6 +29,7 @@ use App\Models\ProductionTask;
 use App\Models\TaskComment;
 use App\Support\Tasks\TaskPageHelper;
 use App\Services\Tasks\TaskWorkflowService;
+use Illuminate\Support\Str;
 
 class ViewTask extends ViewRecord
 {
@@ -80,7 +81,6 @@ class ViewTask extends ViewRecord
         ];
     }
 
-    /* =============================== أزرار ===============================*/
     protected function getHeaderActions(): array
     {
         $u = Auth::user();
@@ -92,7 +92,7 @@ class ViewTask extends ViewRecord
                 ->form([
                     Textarea::make('body')->label('نص التعليق')->required()->autosize(),
                     FileUpload::make('attachments')->label('مرفقات (اختياري)')
-                        ->multiple()->directory('task-comments')->preserveFilenames()->downloadable()->openable(),
+                        ->multiple()->directory('task-comments')->downloadable()->openable(),
                 ])
                 ->action(function (array $data) {
                     TaskComment::create([
@@ -234,7 +234,6 @@ class ViewTask extends ViewRecord
                         ->native(false)
                         ->required()
                         ->reactive()
-                        // عند تغيير نوع الاستلام: لو ظهرت حقول التخطيط وكانت فارغة، نملأها بقيم السجل الحالية
                         ->afterStateUpdated(function (Get $get, Set $set, ?string $state) {
                             $needPlan = in_array($state, ['ok','partial_allow'], true);
 
@@ -242,26 +241,21 @@ class ViewTask extends ViewRecord
                                 return;
                             }
 
-                            // القيّم الحالية من السجل (المحفوظة سابقًا)
                             $currentStart   = optional($this->record->planned_start_at)->toDateString();
                             $currentEnd     = optional($this->record->planned_end_at)->toDateString();
                             $currentInstall = optional($this->record->planned_install_at)->toDateString();
 
-                            // لا تطغى على إدخال المستخدم إن كان أدخلها بالفعل في نفس الجلسة
                             if (!$get('planned_start') && $currentStart)   $set('planned_start', $currentStart);
                             if (!$get('planned_end') && $currentEnd)       $set('planned_end', $currentEnd);
                             if (!$get('planned_install') && $currentInstall) $set('planned_install', $currentInstall);
                         }),
 
-                    // حقول التخطيط تظهر فقط عند ok أو partial_allow
                     Forms\Components\DatePicker::make('planned_start')
                         ->label('بداية التصنيع (متوقعة)')
                         ->native(false)
                         ->visible(fn (Get $get) => in_array($get('receipt_type'), ['ok','partial_allow'], true))
                         ->required(fn (Get $get) => in_array($get('receipt_type'), ['ok','partial_allow'], true))
-                        // افتراضيًا: استخدم ما هو محفوظ بالسجل (ليظهر تلقائيًا في كل مرة)
                         ->default(fn () => optional($this->record->planned_start_at)->toDateString())
-                        // في حال Hydration أولي: لو الحالة تتطلب الخانة وكانت فارغة، عبّئها من السجل
                         ->afterStateHydrated(function (Get $get, Set $set, $state) {
                             if (!$state && in_array($get('receipt_type'), ['ok','partial_allow'], true)) {
                                 $val = optional($this->record->planned_start_at)->toDateString();
@@ -316,7 +310,6 @@ class ViewTask extends ViewRecord
                 ->action(function (array $data) {
                     $type = $data['receipt_type'];
 
-                    // تحقق ترتيب التواريخ عند الحاجة
                     $needPlan = in_array($type, ['ok','partial_allow'], true);
                     if ($needPlan) {
                         $start = \Illuminate\Support\Carbon::parse($data['planned_start']);
@@ -392,34 +385,27 @@ class ViewTask extends ViewRecord
                     $u = auth()->user();
                     if (! $u || ! $u->hasRole('department_manager','web')) return false;
 
-                    // يجب أن تكون ملكية المهمة لمدير القسم
                     if (($this->record->current_owner_role ?? null) !== 'department_manager') return false;
 
-                    // الحالة يجب أن تسمح بالبدء
                     $status = strtolower((string) ($this->record->status ?? ''));
                     if (! in_array($status, ['waiting_production','rework'], true)) return false;
 
-                    // === حدد "مرجع آخر دورة" يُسمح بعدها بالبدء ===
-                    // 1) آخر "تأكيد استلام إعادة عمل" إن وُجد
                     $anchor = \App\Models\TaskLog::query()
                         ->where('task_id', $this->record->id)
                         ->where('type', 'manufacturing_ack_rework')
                         ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
                         ->first();
 
-                    // 2) وإلاّ: آخر استلام خامات يسمح بالبدء
                     if (! $anchor) {
                         $anchor = \App\Models\TaskLog::query()
                             ->where('task_id', $this->record->id)
                             ->where(function ($q) {
-                                // materials_received_ok دائماً يسمح
                                 $q->where('type', 'materials_received_ok')
                                     // materials_received_partial مع allow_start = true
                                     ->orWhere(function ($q2) {
                                         $q2->where('type', 'materials_received_partial')
                                             ->where('data->allow_start', true);
                                     })
-                                    // (احتياطي) لو عندك لوج planning_hint_set بعد الاستلام
                                     ->orWhere('type','planning_hint_set');
                             })
                             ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
@@ -431,7 +417,6 @@ class ViewTask extends ViewRecord
                     $anchorTime = $anchor->happened_at ?? $anchor->created_at;
                     $anchorId   = $anchor->id;
 
-                    // 3) لا يظهر الزر لو كان هناك manufacturing_started بعد هذا المرجع
                     $startedAfter = \App\Models\TaskLog::query()
                         ->where('task_id', $this->record->id)
                         ->where('type', 'manufacturing_started')
@@ -475,10 +460,8 @@ class ViewTask extends ViewRecord
                 ])
                 ->requiresConfirmation()
                 ->action(function (array $data) {
-                    // 1) تحقق ترتيب التواريخ: لا نسمح بإنهاء قبل البدء
                     $finished = \Illuminate\Support\Carbon::parse($data['actual_finished_at']);
 
-                    // نحاول نقرأ actual_start_at/started_at من الحقول، وإلا من لوج manufacturing_started
                     $startField = $this->record->actual_start_at
                         ?? $this->record->started_at
                         ?? null;
@@ -510,7 +493,6 @@ class ViewTask extends ViewRecord
                         return;
                     }
 
-                    // 2) نفّذ الإنهاء والإرسال
                     $this->workflow()->finishManufacturingAndSendToQA(
                         $this->record,
                         $data['actual_finished_at'],
@@ -880,15 +862,12 @@ class ViewTask extends ViewRecord
                 ->visible(function () {
                     $u = auth()->user();
 
-                    // 1) صلاحية وهوية المالك الحالي
                     if (! $u || ! $u->hasRole('quality_manager')) return false;  // بدون تحديد guard
                     if (($this->record->current_owner_role ?? null) !== 'quality_manager') return false;
 
-                    // (اختياري) لو حاب تقيدها بحالة under_review فقط:
                     $status = strtolower((string) ($this->record->status ?? ''));
                     if ($status !== 'under_review') return false;
 
-                    // 2) آخر handoff “صريح” للـ QA من التركيب فقط
                     $lastInstall = \App\Models\TaskLog::query()
                         ->where('task_id', $this->record->id)
                         ->where('type', 'installation_sent_to_qa')
@@ -897,7 +876,6 @@ class ViewTask extends ViewRecord
 
                     if (! $lastInstall) return false;
 
-                    // 3) تأكد أن handoff التركيب هو الأحدث مقارنةً بـ handoff التصنيع (لو وُجد)
                     $lastMfg = \App\Models\TaskLog::query()
                         ->where('task_id', $this->record->id)
                         ->where('type', 'manufacturing_sent_to_qa')
@@ -913,7 +891,6 @@ class ViewTask extends ViewRecord
 
                     if (! $installIsLatest) return false;
 
-                    // 4) لا يوجد ack بعد هذا الـ handoff
                     $ackAfter = \App\Models\TaskLog::query()
                         ->where('task_id', $this->record->id)
                         ->where('type', 'qa_ack_installation')
@@ -946,7 +923,6 @@ class ViewTask extends ViewRecord
                     $status = strtolower((string) ($this->record->status ?? ''));
                     if ($status !== 'under_review') return false;
 
-                    // handoff الصريح من التركيب
                     $lastInstall = \App\Models\TaskLog::query()
                         ->where('task_id', $this->record->id)
                         ->where('type', 'installation_sent_to_qa')
@@ -954,7 +930,6 @@ class ViewTask extends ViewRecord
                         ->first();
                     if (! $lastInstall) return false;
 
-                    // تأكد إنه الأحدث مقارنةً بتHandOff التصنيع
                     $lastMfg = \App\Models\TaskLog::query()
                         ->where('task_id', $this->record->id)
                         ->where('type', 'manufacturing_sent_to_qa')
@@ -969,7 +944,6 @@ class ViewTask extends ViewRecord
                         || ($iAt == $mAt && $lastInstall->id > $lastMfg->id);
                     if (! $installIsLatest) return false;
 
-                    // يلزم وجود ACK بعد هذا الـ handoff
                     $ackAfter = \App\Models\TaskLog::query()
                         ->where('task_id', $this->record->id)
                         ->where('type', 'qa_ack_installation')
@@ -983,7 +957,6 @@ class ViewTask extends ViewRecord
                         ->exists();
                     if (! $ackAfter) return false;
 
-                    // لا يوجد قرار بعد هذا الـ handoff
                     $decisionAfter = \App\Models\TaskLog::query()
                         ->where('task_id', $this->record->id)
                         ->whereIn('type', ['qa_approved_installation', 'qa_rejected_installation'])
@@ -1127,7 +1100,8 @@ class ViewTask extends ViewRecord
                 ->icon('heroicon-o-arrow-up-on-square')
                 ->color('success')
                 ->visible(fn () =>
-                    ! $this->helper()->isClosedOrCompleted($this->record)
+                    Auth::user()?->hasRole('quality_manager')
+                    && ! $this->helper()->isClosedOrCompleted($this->record)
                     && $this->helper()->hasLog($this->record, 'qa_approved_installation')
                     && empty($this->record->client_receipt)
                 )
@@ -1136,7 +1110,6 @@ class ViewTask extends ViewRecord
                         ->label('سند استلام العميل')
                         ->disk('public')
                         ->directory(fn () => 'client-receipts/' . now()->format('Y/m'))
-                        ->preserveFilenames()
                         ->downloadable()
                         ->openable()
                         ->acceptedFileTypes(['application/pdf', 'image/*'])
@@ -1159,7 +1132,6 @@ class ViewTask extends ViewRecord
         ];
     }
 
-    /* =============================== Infolist ===============================*/
     public function infolist(Infolist $infolist): Infolist
     {
         $h = $this->helper();
@@ -1231,7 +1203,6 @@ class ViewTask extends ViewRecord
                 TextEntry::make('received_by_owner_at')->label('مؤكد الاستلام')->dateTime()->placeholder('—')->color('primary'),
             ])->columns(2),
 
-            /* سجل الحركات الأساسية (مع إزالة التكرار في نفس الثانية) */
             Section::make('سجل الحركات')
                 ->schema([
                     ViewEntry::make('logs_timeline')
@@ -1284,16 +1255,32 @@ class ViewTask extends ViewRecord
                         ->label('ملف التصنيع (للقسم)')
                         ->html()
                         ->state(function (ProductionTask $record) {
-                            $file = $record->project?->productionRequest?->files()
-                                ->where('department_id', $record->department_id)
-                                ->latest()->first();
+                            $path = $record->file_path ?? null;
+                            $disk = $record->file_disk ?? 'public';
 
-                            if (! $file || blank($file->file_path)) {
+                            if (blank($path)) {
+                                $file = $record->project?->productionRequest?->files()
+                                    ->where('department_id', $record->department_id)
+                                    ->latest()
+                                    ->first();
+
+                                if ($file && filled($file->file_path)) {
+                                    $path = $file->file_path;
+                                    $disk = $file->file_disk ?? 'public';
+                                }
+                            }
+
+                            if (blank($path)) {
                                 return '<span style="opacity:.7">—</span>';
                             }
 
-                            $url  = Storage::disk('public')->url($file->file_path);
-                            $name = e(basename($file->file_path));
+                            $url = Str::startsWith($path, ['http://', 'https://'])
+                                ? $path
+                                : Storage::disk($disk)->url($path);
+
+                            $basename = parse_url($path, PHP_URL_PATH) ?: $path;
+                            $name = e(basename($basename));
+
                             return '<a href="'.e($url).'" target="_blank" style="color:#16a34a; text-decoration:underline; font-weight:600;">'.$name.' ▸</a>';
                         }),
                 ])->columns(1),

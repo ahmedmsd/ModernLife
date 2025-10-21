@@ -5,7 +5,6 @@ namespace App\Filament\Resources\ProductionRequestResource\Pages;
 use App\Filament\Resources\ProductionRequestResource;
 use Filament\Resources\Pages\CreateRecord;
 
-// لإرسال بريد
 
 class CreateProductionRequest extends CreateRecord
 {

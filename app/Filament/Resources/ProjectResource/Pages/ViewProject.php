@@ -322,7 +322,6 @@ class ViewProject extends ViewRecord
             if ($d && array_key_exists($d,$series)) $series[$d] += 1;
         }
 
-        // تأخيرات بارزة
         $delays = $tasks->filter(fn($t)=> $t->due_date && !in_array($t->status,['completed','closed'],true))
             ->map(function($t){
                 $due = $this->parseDate($t->due_date);
@@ -395,7 +394,6 @@ class ViewProject extends ViewRecord
             }
         }
 
-        // حذف المكررات
         $seen = [];
         $final = [];
         foreach ($out as $row) {
@@ -500,7 +498,6 @@ class ViewProject extends ViewRecord
         $html .= $card('متوسط زمن الحجب/مهمة', $this->humanFromSeconds($s['avgBlocked']), '#a855f7');
         $html .= '</div>';
 
-        // قائمة مختصرة لأكثر المهام تأخرًا
         if (!empty($s['delays'])) {
             $html .= '<div class="mt-4 rounded-xl border bg-white/80 dark:bg-gray-900/70 p-4 shadow-sm">';
             $html .= '<div class="text-sm text-gray-500 dark:text-gray-400 mb-2">أكثر المهام تأخرًا</div>';

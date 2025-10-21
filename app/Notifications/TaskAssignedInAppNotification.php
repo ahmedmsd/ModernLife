@@ -17,7 +17,6 @@ class TaskAssignedInAppNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        // إشعار داخلي فقط
         return ['database'];
     }
 
@@ -40,7 +39,6 @@ class TaskAssignedInAppNotification extends Notification
         ];
     }
 
-    // (اختياري) لو أردت تحويل سريع للعرض
     public function toArray(object $notifiable): array
     {
         return $this->toDatabase($notifiable);

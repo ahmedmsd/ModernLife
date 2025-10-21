@@ -232,7 +232,6 @@ class TaskPageHelper
             return false;
         }
 
-        // يجب أن يكون المالك الحالي هو مدير القسم (ما لم تكن عندك سياسة أخرى)
         if (! $this->ownerIs($t, 'department_manager')) {
             return false;
         }

@@ -22,7 +22,6 @@ class EditEmployee extends EditRecord
 
         if (! empty($userData)) {
             if (! $employee->user) {
-                // إنشاء مستخدم جديد
                 $plain = data_get($userData, 'password') ?? Str::random(12);
                 $password = Str::startsWith($plain, ['$2y$', '$argon2']) ? $plain : Hash::make($plain);
 
@@ -35,7 +34,6 @@ class EditEmployee extends EditRecord
 
                 $employee->user()->associate($user)->save();
             } else {
-                // تحديث المستخدم الحالي
                 $payload = [];
 
                 if (filled(data_get($userData, 'email'))) {
@@ -55,7 +53,6 @@ class EditEmployee extends EditRecord
             }
         }
 
-        // لا نكتب user/roles إلى جدول employees
         unset($data['user'], $data['roles_ids'], $data['roles']);
 
         return $data;
@@ -67,7 +64,6 @@ class EditEmployee extends EditRecord
         $state    = $this->form->getRawState();
 
         DB::transaction(function () use ($employee, $state) {
-            // مزامنة الأدوار على User فقط
             if ($employee->user) {
                 $ids = (array) ($state['roles_ids'] ?? $state['roles'] ?? []);
                 $ids = array_values(array_filter(array_map('intval', $ids)));
@@ -83,7 +79,6 @@ class EditEmployee extends EditRecord
                 $employee->user->syncRoles($roleNames);
             }
 
-            // تنظيف أي بقايا لأدوار على موديل Employee (إن وُجدت)
             DB::table(config('permission.table_names.model_has_roles', 'model_has_roles'))
                 ->where('model_type', \App\Models\Employee::class)
                 ->where('model_id', $employee->getKey())

@@ -126,7 +126,6 @@ class ReviewProductionRequest extends Page
                 $this->record->refresh()->load(['client', 'project', 'logs', 'productionRequestFiles', 'files']);
             });
 
-        // 3) تحديد تكاليف الملفات
         $actions[] = Action::make('setFilesCostsAction')
             ->label('تحديد تكاليف الملفات')
             ->icon('heroicon-o-currency-dollar')
@@ -143,13 +142,11 @@ class ReviewProductionRequest extends Page
                 && $this->record->phase_status === S::UnderReview->value
             )
             ->mountUsing(function () {
-                // إعادة تحميل البيانات في كل مرة
                 $this->record->refresh()->load(['files.department']);
                 return null;
             })
             ->form(function () {
                 $schema = [];
-                // إعادة تحميل الملفات في كل مرة
                 $files = $this->record->files()->with('department')->get();
 
                 foreach ($files as $f) {
@@ -186,7 +183,6 @@ class ReviewProductionRequest extends Page
                 $this->record->refresh()->load(['client', 'project', 'logs', 'productionRequestFiles', 'files']);
             });
 
-        // 4) اعتماد المعرض → إرسال للمصنع
         $actions[] = Action::make('approveShowroomAndSendAction')
             ->label('اعتماد وإرسال للمصنع')
             ->icon('heroicon-o-paper-airplane')

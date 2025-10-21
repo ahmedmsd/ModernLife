@@ -3,6 +3,9 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\RoleResource\Pages;
+use App\Filament\Resources\RoleResource\Pages\CreateRole;
+use App\Filament\Resources\RoleResource\Pages\EditRole;
+use App\Filament\Resources\RoleResource\Pages\ListRoles;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Components\Section;
@@ -100,9 +103,9 @@ class RoleResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListRoles::route('/'),
-            'create' => Pages\CreateRole::route('/create'),
-            'edit'   => Pages\EditRole::route('/{record}/edit'),
+            'index'  => ListRoles::route('/'),
+            'create' => CreateRole::route('/create'),
+            'edit'   => EditRole::route('/{record}/edit'),
         ];
     }
 
@@ -230,10 +233,8 @@ class RoleResource extends Resource
             $resources[$entity][$perm->id] = $pretty;
         }
 
-        // ترتيب كيانات الموارد أبجدياً (عربي/لاتيني)
         ksort($resources, SORT_NATURAL | SORT_FLAG_CASE);
 
-        // انقل "_general" لآخر القائمة إن وجد
         if (isset($resources['_general'])) {
             $gen = $resources['_general'];
             unset($resources['_general']);
@@ -251,7 +252,6 @@ class RoleResource extends Resource
     {
         $key = str($entity)->replace(['_', '-'], ' ')->trim()->toString();
 
-        // ترجمات مخصصة اختيارية (أضف ما تشاء)
         $map = [
             'client'            => 'العملاء',
             'project'           => 'المشاريع',

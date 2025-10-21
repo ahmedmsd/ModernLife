@@ -6,6 +6,5 @@
         </div>
     </x-slot>
 
-    {{-- 👇 هذا السطر هو المهم لعرض الجدول --}}
     {{ $this->table }}
 </x-filament-panels::page>

@@ -20,7 +20,6 @@ class CreateEmployee extends CreateRecord
         $userData = $data['user'] ?? null;
 
         if (! empty($userData)) {
-            // استخدم data_get بدلاً من $userData['password']
             $plainPassword = data_get($userData, 'password');
 
             $password = $plainPassword;
@@ -28,7 +27,6 @@ class CreateEmployee extends CreateRecord
                 $password = Hash::make($plainPassword);
             }
 
-            /** @var \App\Models\User $user */
             $user = User::create([
                 'name'     => $data['employee_name'] ?? (data_get($userData, 'email') ?? 'User'),
                 'email'    => data_get($userData, 'email'),
@@ -38,7 +36,6 @@ class CreateEmployee extends CreateRecord
             $data['user_id'] = $user->id;
         }
 
-        // هذه الحقول لا تُكتب في جدول employees
         unset($data['user'], $data['roles_ids'], $data['roles']);
 
         return $data;
@@ -50,7 +47,6 @@ class CreateEmployee extends CreateRecord
         $state    = $this->form->getRawState();
 
         DB::transaction(function () use ($employee, $state) {
-            // تأكيد وجود مستخدم
             if (! $employee->user && ! empty($state['user'])) {
                 $userData      = $state['user'];
                 $plainPassword = data_get($userData, 'password');
@@ -69,7 +65,6 @@ class CreateEmployee extends CreateRecord
                 $employee->refresh();
             }
 
-            // مزامنة الأدوار على User فقط
             if ($employee->user) {
                 $ids = (array) ($state['roles_ids'] ?? $state['roles'] ?? []);
                 $ids = array_values(array_filter(array_map('intval', $ids)));
@@ -85,7 +80,6 @@ class CreateEmployee extends CreateRecord
                 $employee->user->syncRoles($roleNames);
             }
 
-            // تنظيف أي بقايا لأدوار على موديل Employee (بيانات قديمة)
             DB::table(config('permission.table_names.model_has_roles', 'model_has_roles'))
                 ->where('model_type', \App\Models\Employee::class)
                 ->where('model_id', $employee->getKey())

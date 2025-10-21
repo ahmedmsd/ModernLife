@@ -12,7 +12,6 @@ class RequestsByStatusChart extends ChartWidget
     protected int|string|array $columnSpan = ['default' => 1, 'lg' => 1];
     protected static ?int $sort = 90;
 
-    // الحالة => الوسم العربي (بالترتيب المرغوب)
     protected array $statusLabels = [
         'pending'       => 'قيد الإنشاء',
         'assigned'      => 'مُسندة',
@@ -26,7 +25,6 @@ class RequestsByStatusChart extends ChartWidget
         'cancelled'     => 'ملغاة',
     ];
 
-    // الحالة => اللون
     protected array $statusColors = [
         'pending'       => '#9CA3AF', // Gray-400
         'assigned'      => '#3B82F6', // Blue-500
@@ -38,12 +36,11 @@ class RequestsByStatusChart extends ChartWidget
         'completed'     => '#16A34A', // Green-600
         'closed'        => '#374151', // Gray-700
         'cancelled'     => '#E11D48', // Rose-600
-        'other'         => '#6B7280', // Gray-500 (لأي حالات غير متوقعة)
+        'other'         => '#6B7280', // Gray-500
     ];
 
     protected function getData(): array
     {
-        // إجلب التعدادات من قاعدة البيانات
         $rows = ProductionTask::query()
             ->selectRaw('COALESCE(status, "unknown") as status, COUNT(*) as c')
             ->groupBy('status')
@@ -63,7 +60,6 @@ class RequestsByStatusChart extends ChartWidget
             $knownTotal += $count;
         }
 
-        // أجمع أي حالات لم نعرّفها تحت "أخرى"
         $allTotal = array_sum($rows);
         $other    = max(0, $allTotal - $knownTotal);
         if ($other > 0) {
@@ -72,7 +68,6 @@ class RequestsByStatusChart extends ChartWidget
             $colors[] = $this->statusColors['other'];
         }
 
-        // لا بيانات إطلاقًا
         if (array_sum($data) === 0) {
             return [
                 'datasets' => [[

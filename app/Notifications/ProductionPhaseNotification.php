@@ -14,10 +14,10 @@ class ProductionPhaseNotification extends Notification implements ShouldQueue
 
     public function __construct(
         public ProductionRequest $pr,
-        public string $type,         // transition | received | rejected | project_bootstrap | ...
+        public string $type,
         public array $context = []
     ) {
-        $this->afterCommit(); // مهم: تجنّب تضارب afterCommit مع Queueable (لا تعرّف الخاصية يدويًا)
+        $this->afterCommit();
     }
 
     public function via($notifiable): array

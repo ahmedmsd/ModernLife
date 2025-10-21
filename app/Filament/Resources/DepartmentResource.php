@@ -3,6 +3,9 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\DepartmentResource\Pages;
+use App\Filament\Resources\DepartmentResource\Pages\CreateDepartment;
+use App\Filament\Resources\DepartmentResource\Pages\EditDepartment;
+use App\Filament\Resources\DepartmentResource\Pages\ListDepartments;
 use App\Models\Department;
 use App\Models\Employee;
 use Filament\Forms;
@@ -123,9 +126,9 @@ class DepartmentResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListDepartments::route('/'),
-            'create' => Pages\CreateDepartment::route('/create'),
-            'edit'   => Pages\EditDepartment::route('/{record}/edit'),
+            'index'  => ListDepartments::route('/'),
+            'create' => CreateDepartment::route('/create'),
+            'edit'   => EditDepartment::route('/{record}/edit'),
         ];
     }
 

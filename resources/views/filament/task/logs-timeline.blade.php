@@ -5,7 +5,6 @@
 
     $logs = $raw instanceof \Illuminate\Support\Collection ? $raw : collect($raw);
 
-    // لون لكل نوع حدث
     $colorFor = function (?string $type): string {
         return match ($type) {
             'qa_rejected_manufacturing', 'qa_rejected_installation' => '#dc2626', // أحمر
@@ -15,7 +14,6 @@
         };
     };
 
-    // تسميات الأدوار
     $roleLabel = function (?string $r): string {
         return [
             'showroom_manager'     => 'مدير المعرض',
@@ -27,7 +25,6 @@
         ][$r] ?? (string) $r;
     };
 
-    // تسميات الحالات (متناغمة مع الـ Helper)
     $statusLabel = function (?string $s): string {
         if ($s === null) return '—';
         $s = strtolower($s);
@@ -66,7 +63,6 @@
         ][$s] ?? $s;
     };
 
-    // فورمات بسيط للتواريخ
     $fmt = function ($v) {
         if (!$v) return '—';
         try { return \Illuminate\Support\Carbon::parse($v)->format('Y-m-d H:i'); } catch (\Throwable $e) { return (string) $v; }
@@ -126,7 +122,6 @@
                         @endif
                     </div>
 
-                    {{-- 🔎 تفاصيل الحدث --}}
                     @php
                         $showRows = [];
                         // 1) تغيير الحالة

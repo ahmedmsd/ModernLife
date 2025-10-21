@@ -32,7 +32,6 @@ class RequestsPerMonthChart extends ChartWidget
             $data[]   = (int) ($raw[$key] ?? 0);
         }
 
-        // اختياري: لو كل القيم صفر، أظهر عنصر "لا بيانات" حتى لا يبدو الرسم فارغًا تمامًا
         if (array_sum($data) === 0) {
             $labels = ['لا بيانات'];
             $data   = [1];

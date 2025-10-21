@@ -37,7 +37,6 @@ class SendReceiptReminders extends Command
                 }
                 $count++;
             } catch (\Throwable $e) {
-                // تجاهل دور غير موجود
             }
         }
 

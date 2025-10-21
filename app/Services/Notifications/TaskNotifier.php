@@ -17,7 +17,6 @@ class TaskNotifier
         return $task ? TaskResource::getUrl('view', ['record' => $task->getKey()]) : null;
     }
 
-    /** أرسل لِـ UserId محدد (داخلي + بريد) مع زر "عرض المهمة" */
     public function notifyUserId(
         int $userId,
         string $title,
@@ -46,7 +45,6 @@ class TaskNotifier
         LaravelNotification::send($user, new ActionHandoffNotification($title, $body, $url));
     }
 
-    /** أرسل لكل مستخدمي الدور */
     public function notifyRole(
         string $role,
         string $title,
@@ -78,7 +76,6 @@ class TaskNotifier
         }
     }
 
-    /** handoff قياسي عند تحويل الملكية (يشمل الرابط) */
     public function handoffToOwner(
         ProductionTask $task,
         ?string $toRole,
@@ -95,7 +92,6 @@ class TaskNotifier
         }
     }
 
-    /** بلّغ المنفّذ الحالي (المستخدم الحالي) مع زر عرض المهمة */
     public function notifyActor(string $title, ?string $body = null, ?ProductionTask $task = null): void
     {
         $uid = auth()->id();

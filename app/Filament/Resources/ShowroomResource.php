@@ -3,6 +3,10 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ShowroomResource\Pages;
+use App\Filament\Resources\ShowroomResource\Pages\CreateShowroom;
+use App\Filament\Resources\ShowroomResource\Pages\EditShowroom;
+use App\Filament\Resources\ShowroomResource\Pages\ListShowrooms;
+use App\Filament\Resources\ShowroomResource\Pages\ViewShowroom;
 use App\Models\Showroom;
 use Filament\Forms;
 use Filament\Tables;
@@ -70,10 +74,10 @@ class ShowroomResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListShowrooms::route('/'),
-            'create' => Pages\CreateShowroom::route('/create'),
-            'edit' => Pages\EditShowroom::route('/{record}/edit'),
-            'view' => Pages\ViewShowroom::route('/{record}'),
+            'index' => ListShowrooms::route('/'),
+            'create' => CreateShowroom::route('/create'),
+            'edit' => EditShowroom::route('/{record}/edit'),
+            'view' => ViewShowroom::route('/{record}'),
         ];
     }
 }

@@ -3,6 +3,10 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\MaintenanceRequestResource\Pages;
+use App\Filament\Resources\MaintenanceRequestResource\Pages\CreateMaintenanceRequest;
+use App\Filament\Resources\MaintenanceRequestResource\Pages\EditMaintenanceRequest;
+use App\Filament\Resources\MaintenanceRequestResource\Pages\ListMaintenanceRequests;
+use App\Filament\Resources\MaintenanceRequestResource\Pages\ViewMaintenanceRequest;
 use App\Filament\Resources\MaintenanceRequestResource\RelationManagers\CommentsRelationManager;
 use App\Models\Client;
 use App\Models\MaintenanceRequest;
@@ -91,7 +95,7 @@ class MaintenanceRequestResource extends Resource
                         ->directory(fn()=> 'maintenance-requests/' . now()->format('Y/m'))
                         ->visibility('public')->image()->multiple()
                         ->maxSize(8192)->acceptedFileTypes(['image/*'])
-                        ->preserveFilenames()->openable()->downloadable()
+                        ->openable()->downloadable()
                         ->dehydrateStateUsing(fn($state)=> array_values((array)$state))
                         ->columnSpanFull(),
                 ]),
@@ -201,7 +205,7 @@ class MaintenanceRequestResource extends Resource
                             ->label('صور بعد الصيانة (اختياري)')->disk('public')
                             ->directory(fn()=> 'maintenance-requests/' . now()->format('Y/m'))
                             ->visibility('public')->image()->multiple()
-                            ->preserveFilenames()->openable()->downloadable(),
+                            ->openable()->downloadable(),
                     ])
                     ->requiresConfirmation()
                     ->action(function (MaintenanceRequest $record, array $data) {
@@ -227,10 +231,10 @@ class MaintenanceRequestResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListMaintenanceRequests::route('/'),
-            'create' => Pages\CreateMaintenanceRequest::route('/create'),
-            'view'   => Pages\ViewMaintenanceRequest::route('/{record}'),
-            'edit'   => Pages\EditMaintenanceRequest::route('/{record}/edit'),
+            'index'  => ListMaintenanceRequests::route('/'),
+            'create' => CreateMaintenanceRequest::route('/create'),
+            'view'   => ViewMaintenanceRequest::route('/{record}'),
+            'edit'   => EditMaintenanceRequest::route('/{record}/edit'),
         ];
     }
 

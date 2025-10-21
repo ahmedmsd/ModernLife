@@ -19,7 +19,6 @@ class ActionHandoffNotification extends Notification implements ShouldQueue
 
     public function via($notifiable): array
     {
-        // بريد فقط (لو مفعل وعند المستخدم بريد)
         return (config('notify.email', true) && !empty($notifiable->email)) ? ['mail'] : [];
     }
 

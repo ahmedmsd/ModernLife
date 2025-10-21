@@ -21,9 +21,7 @@ class TaskWorkflowService
         protected TaskNotifier $notifier,
     ) {}
 
-    /* =========================================================================
-     |                           إجراءات التدفق الرئيسية
-     |=========================================================================*/
+
 
     /** إسناد المهمة لمدير القسم وتعيين المالك */
     public function assignToDeptManager(ProductionTask $task, int $employeeId, string $dueDate): void
@@ -39,10 +37,8 @@ class TaskWorkflowService
                 'due_date'                => $dueDate,
             ])->save();
 
-            // تعيين المالك (لا نسجّل لوج هنا؛ الـ Observer سيتولى ownership_changed + sent_to_department)
             $this->setOwner($task, 'department_manager', $ownerUserId, touchSent: true, note: 'إسناد من المصنع');
 
-            // تنبيه المُسنِد
             $this->notifier->notifyActor('تم إسناد المهمة لمدير القسم', "رقم المهمة #{$task->id}", $task);
         });
     }
@@ -62,8 +58,6 @@ class TaskWorkflowService
         });
     }
 
-    /** مدير القسم يطلب خامات (يرسل للمشتريات) */
-    // 1) طلب الخامات — لا تغيّر المالك
     public function requestMaterials(ProductionTask $task, string $note, string $poFilePath): void
     {
         DB::transaction(function () use ($task, $note, $poFilePath) {
@@ -77,7 +71,6 @@ class TaskWorkflowService
                 'po_file'       => $poFilePath,
             ]);
 
-            // تظل ملكية المهمة عند القسم
             $task->update(['status' => 'materials_wait']);
 
             $this->log($task, 'materials_request_opened', ['by' => Auth::id()]);
@@ -85,7 +78,6 @@ class TaskWorkflowService
         });
     }
 
-// 2) المشتريات تؤكد استلام الطلب — لا تغيّر المالك
     public function purchasingReceive(ProductionTask $task, array $data): void
     {
         DB::transaction(function () use ($task, $data) {
@@ -108,7 +100,6 @@ class TaskWorkflowService
         });
     }
 
-// 3) توريد الخامات — لا تغيّر ملكية المهمة
     public function materialsProvided(ProductionTask $task, float $actualCost, ?string $note = null, ?array $invoice = null): void
     {
         DB::transaction(function () use ($task, $actualCost, $note, $invoice) {
@@ -132,13 +123,11 @@ class TaskWorkflowService
                 'note'         => trim(($mr->note ? $mr->note . "\n" : '') . ($note ?? '')),
                 'provided_by'  => Auth::id(),
                 'provided_at'  => now(),
-                'status'       => 'fulfilled', // التوريد على الطلب الصحيح فقط
+                'status'       => 'fulfilled',
             ]);
 
-            // المهمّة تظل حسب التدفق الجديد
             $task->update(['status' => 'materials_done']);
 
-            // لا تغيّر المالك هنا (ملكية المهمة منفصلة عن دورة الطلبات)
 
             $this->log($task, 'materials_provided_note', [
                 'mr_id'       => $mr->id,
@@ -151,7 +140,6 @@ class TaskWorkflowService
     }
 
 
-// 4) استلام كلي — جاهز لبدء التصنيع (لا تغيّر المالك)
     public function materialsReceivedOk(
         ProductionTask $task,
         ?string $start = null,
@@ -178,7 +166,6 @@ class TaskWorkflowService
         });
     }
 
-// 5) استلام جزئي (السماح بالبدء) — طلب تكميلي + جاهز للبدء (لا تغيّر المالك)
     public function materialsReceivedPartialAllowStart(
         ProductionTask $task,
         ?string $start,
@@ -210,7 +197,6 @@ class TaskWorkflowService
         });
     }
 
-// 6) استلام جزئي (بدون سماح) — طلب تكميلي + إيقاف وتحويل الملكية للمشتريات مؤقتًا
     public function materialsReceivedPartialHold(
         ProductionTask $task,
         ?string $note,
@@ -228,12 +214,10 @@ class TaskWorkflowService
                 'by'          => Auth::id(),
             ]);
 
-            // فقط هنا ننقل الملكية للمشتريات لحين حل النواقص
             $this->setOwner($task, 'purchasing_manager', userId: null, touchSent: true, note: 'نواقص خامات — انتظار توريد تكميلي');
         });
     }
 
-// 7) استلام به مشكلة — إيقاف وتحويل الملكية للمشتريات
     public function materialsReceivedIssue(ProductionTask $task, ?string $note, ?string $issueDetails = null): void
     {
         DB::transaction(function () use ($task, $note, $issueDetails) {
@@ -245,11 +229,9 @@ class TaskWorkflowService
                 ->first();
 
             if ($mr) {
-                // وسم الطلب بالمشكلة ليظهر للمشتريات في قوائم "طلب يحتاج معالجة"
                 $mr->update(['status' => 'issue_reported']);
             }
 
-            // أوقف المهمة وحوّل الملكية للمشتريات لحين الحل
             $task->update(['status' => 'on_hold']);
             $this->setOwner($task, 'purchasing_manager', userId: null, touchSent: true, note: 'مشكلة في الخامات — انتظار المعالجة');
 
@@ -263,7 +245,6 @@ class TaskWorkflowService
     }
 
 
-// 8) فتح طلب تكميلي مرتبط بالطلب السابق (parent_id) — لا تغيّر ملكية المهمة
     protected function openFollowupMaterialsRequest(ProductionTask $task, ?string $missingItemsNote): void
     {
         $prevMr = $task->materialRequests()->latest()->first();
@@ -286,7 +267,6 @@ class TaskWorkflowService
     }
 
 
-    /** بدء التصنيع (تاريخ فعلي فقط) */
     public function startProduction(ProductionTask $task, string $startedAt, ?string $note = null): void
     {
         DB::transaction(function () use ($task, $startedAt, $note) {
@@ -327,7 +307,6 @@ class TaskWorkflowService
         DB::transaction(function () use ($task, $actualFinishedAt, $note) {
             $end = \Illuminate\Support\Carbon::parse($actualFinishedAt);
 
-            // تحديث حالة ووقت الإنهاء
             $update = ['status' => 'under_review'];
             if (\Illuminate\Support\Facades\Schema::hasColumn($task->getTable(), 'actual_end_at')) {
                 $update['actual_end_at'] = $end;
@@ -336,14 +315,12 @@ class TaskWorkflowService
             }
             $task->update($update);
 
-            // لوج: انتهاء التصنيع (واضح في السجل)
             $this->log($task, 'manufacturing_finished', [
                 'by'          => \Illuminate\Support\Facades\Auth::id(),
                 'finished_at' => $end->toDateTimeString(),
                 'note'        => trim((string) ($note ?? '')),
             ]);
 
-            // تعيين الملكية للجودة (Observer سيولّد ownership_changed + sent_to_quality)
             $qaManagerId = $task->department?->quality_manager_user_id
                 ?? $task->department?->qa_head_user_id
                 ?? null;
@@ -356,7 +333,6 @@ class TaskWorkflowService
                 note: 'استلام للمراجعة بعد التصنيع'
             );
 
-            // لوج: إرسال للتقييم بعد التصنيع
             $this->log($task, 'manufacturing_sent_to_qa', [
                 'by'          => \Illuminate\Support\Facades\Auth::id(),
                 'finished_at' => $end->toDateTimeString(),
@@ -368,7 +344,6 @@ class TaskWorkflowService
     }
 
 
-    /** الجودة تؤكد الاستلام بعد التصنيع */
     public function qaAcknowledgeManufacturing(ProductionTask $task): void
     {
         DB::transaction(function () use ($task) {
@@ -387,7 +362,6 @@ class TaskWorkflowService
         });
     }
 
-    /** الجودة تعتمد بعد التصنيع وتحوّل للتركيب */
     public function approveManufacturingQA(ProductionTask $task, ?string $note = null): void
     {
         DB::transaction(function () use ($task, $note) {
@@ -396,7 +370,6 @@ class TaskWorkflowService
                 'note' => trim((string) ($note ?? '')),
             ]);
 
-            // handoff للتركيب (Observer سيسجّل ownership_changed + sent_to_install)
             $task->update([
                 'status'                 => 'approved',
                 'current_owner_role'     => 'installation_manager',
@@ -405,7 +378,6 @@ class TaskWorkflowService
                 'received_by_owner_at'   => null,
             ]);
 
-            // لا نسجل sent_to_install هنا — سيصدر من الـ Observer
             $this->notifier->handoffToOwner(
                 $task,
                 toRole: 'installation_manager',
@@ -418,7 +390,6 @@ class TaskWorkflowService
         });
     }
 
-    /** الجودة ترفض بعد التصنيع وتعيد للتصنيع */
     public function rejectManufacturingQA(ProductionTask $task, string $reason): void
     {
         DB::transaction(function () use ($task, $reason) {
@@ -446,7 +417,6 @@ class TaskWorkflowService
         });
     }
 
-    /** التركيب يؤكد الاستلام */
     public function installationAcknowledge(ProductionTask $task): void
     {
 
@@ -468,7 +438,6 @@ class TaskWorkflowService
 
     }
 
-    /** بدء التركيب */
     public function startInstallation(ProductionTask $task, string $startedAt, ?string $note = null): void
     {
         DB::transaction(function () use ($task, $startedAt, $note) {
@@ -488,7 +457,6 @@ class TaskWorkflowService
     public function finishInstallationToQA(ProductionTask $task, string $finishedAt, ?string $note = null): void
     {
         DB::transaction(function () use ($task, $finishedAt, $note) {
-            // لوج دوميني (نحتفظ به فقط)
             $this->log($task, 'installation_sent_to_qa', [
                 'by'          => Auth::id(),
                 'finished_at' => $finishedAt,
@@ -515,7 +483,6 @@ class TaskWorkflowService
         });
     }
 
-    /** الجودة تؤكد الاستلام بعد التركيب */
     public function qaAcknowledgeInstallation(ProductionTask $task): void
     {
         $this->log($task, 'qa_ack_installation', [
@@ -576,23 +543,18 @@ class TaskWorkflowService
     public function manufacturingAcknowledgeRework(\App\Models\ProductionTask $task, ?string $note = null): void
     {
         \Illuminate\Support\Facades\DB::transaction(function () use ($task, $note) {
-            // (2) تثبيت الاستلام العام
             $this->markOwnerReceived($task, 'تأكيد استلام التصنيع (إعادة عمل)');
 
-            // (1) لوج صريح لإعادة العمل
             $this->log($task, 'manufacturing_ack_rework', [
                 'by'   => \Illuminate\Support\Facades\Auth::id(),
                 'note' => $note ? trim($note) : null,
             ]);
 
-            // (3) الحالة إلى انتظار بدء التصنيع
             $status = strtolower((string) $task->status);
             if ($status !== 'waiting_production') {
-                // لو تستخدم PhaseStatus عدّله هنا
                 $task->forceFill(['status' => 'waiting_production'])->save();
             }
 
-            // (4) تثبيت الملكية عند مدير القسم (اختياري ضبط المستخدم المحدد)
             $deptManagerUserId = $task->department?->manager_user_id
                 ?? $task->department?->head_user_id
                 ?? null;
@@ -617,9 +579,6 @@ class TaskWorkflowService
     }
 
 
-    /**
-     * رفع سند استلام العميل وإكمال المهمة + إغلاق المشروع/الطلب إن لا توجد مهام مفتوحة
-     */
     public function uploadClientReceiptAndComplete(ProductionTask $task, ?string $receiptPath, ?string $actualFinishedAt, ?string $note = null): void
     {
         DB::transaction(function () use ($task, $receiptPath, $actualFinishedAt, $note) {
@@ -640,7 +599,6 @@ class TaskWorkflowService
 
             $task->update($update);
 
-            // لوجات دومينية فقط
             $this->log($task, 'client_receipt_uploaded', [
                 'by'   => Auth::id(),
                 'path' => $receiptPath,
@@ -654,7 +612,6 @@ class TaskWorkflowService
                 ]);
             }
 
-            // إقفال المشروع/الطلب إن لم تبقَ مهام مفتوحة
             $finalStatuses = ['completed', 'cancelled', 'closed'];
 
             $project = $task->project()
@@ -715,16 +672,7 @@ class TaskWorkflowService
         });
     }
 
-    /* =========================================================================
-     |                              أدوات داخلية
-     |=========================================================================*/
 
-    /**
-     * تغيير المالك (الدور/المستخدم) + إشعار handoff
-     * ملاحظة: لا نسجّل أي لوج هنا؛ الـ Observer سيتولى:
-     * - ownership_changed
-     * - sent_to_* (حسب الدور)
-     */
     public function setOwner(
         ProductionTask $task,
         ?string $role,
@@ -744,7 +692,6 @@ class TaskWorkflowService
 
         $task->forceFill($payload)->save();
 
-        // handoff إشعار للمالك الجديد مع زر "عرض المهمة"
         $this->notifier->handoffToOwner(
             $task,
             toRole: $role,
@@ -754,7 +701,6 @@ class TaskWorkflowService
         );
     }
 
-    /** تحديث الاستلام فقط (الـ Observer سيسجّل ownership_received) */
     public function markOwnerReceived(ProductionTask $task, ?string $note = null): void
     {
         $task->update(['received_by_owner_at' => now()]);
@@ -763,7 +709,6 @@ class TaskWorkflowService
         }
     }
 
-    /** هل يوجد طلب خامات مفتوح */
     public function hasOpenMaterialsRequest(ProductionTask $task): bool
     {
         return $task->materialRequests()
@@ -772,7 +717,6 @@ class TaskWorkflowService
             ->exists();
     }
 
-    /** إغلاق المشروع/الطلب إذا اكتملت جميع المهام */
     public function finalizeIfProjectDone(ProductionTask $task): void
     {
         $proj = $task->project;
@@ -795,7 +739,6 @@ class TaskWorkflowService
         }
     }
 
-    /** إنشاء سجل حدث دوميني (مع Idempotency خفيفة) */
     public function log(
         ProductionTask $task,
         string $type,
@@ -807,7 +750,6 @@ class TaskWorkflowService
         $causerId = Auth::id();
         $when     = $at ?: now();
 
-        // منع التكرار خلال نافذة قصيرة
         $exists = TaskLog::query()
             ->where('task_id', $task->getKey())
             ->where('type', $type)
@@ -816,7 +758,7 @@ class TaskWorkflowService
             ->exists();
 
         if ($exists) {
-            return new TaskLog(); // تجاهل
+            return new TaskLog();
         }
 
         $log = TaskLog::create([

@@ -8,14 +8,12 @@ use Illuminate\Support\Facades\DB;
 
 class TaskTimerService
 {
-    /** افتح سجل وقت إن لم يوجد سجل مفتوح */
     public static function start(ProductionTask $task, string $reason = 'manual'): void
     {
         if (! method_exists($task, 'timeEntries')) {
             return;
         }
 
-        // لو في سجل مفتوح لا تفتح واحد جديد
         $hasOpen = $task->timeEntries()->whereNull('ended_at')->exists();
         if ($hasOpen) {
             return;
@@ -24,14 +22,13 @@ class TaskTimerService
         $nowUtc = Carbon::now('UTC');
 
         $task->timeEntries()->create([
-            'started_at'   => $nowUtc,     // دايمًا UTC
+            'started_at'   => $nowUtc,
             'ended_at'     => null,
             'duration_sec' => 0,
             'reason'       => $reason,
         ]);
     }
 
-    /** أغلق السجل المفتوح إن وجد — بحساب صفري كحد أدنى مهما كان */
     public static function stop(ProductionTask $task, string $reason = 'manual'): void
     {
         if (! method_exists($task, 'timeEntries')) {

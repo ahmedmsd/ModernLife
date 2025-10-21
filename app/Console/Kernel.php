@@ -18,7 +18,6 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping()
             ->onOneServer();
 
-        // (اختياري) مهام صيانة أخرى:
         // $schedule->command('queue:work --stop-when-empty')->everyMinute()->withoutOverlapping();
         // $schedule->command('backup:run')->dailyAt('02:30');
         // $schedule->command('horizon:snapshot')->everyFiveMinutes();

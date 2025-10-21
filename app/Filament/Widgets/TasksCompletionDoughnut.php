@@ -12,13 +12,11 @@ class TasksCompletionDoughnut extends ChartWidget
     protected int|string|array $columnSpan = ['default' => 1, 'lg' => 1];
     protected static ?int $sort = 80;
 
-    // حالات الإنجاز
     protected array $doneStatuses = ['completed','done','closed','approved'];
 
-    // ألوان قابلة للتعديل
-    protected string $colorDone      = '#16a34a'; // أخضر (green-600)
-    protected string $colorRemaining = '#e11d48'; // وردي/أحمر (rose-600)
-    protected string $colorEmpty     = '#cbd5e1'; // رمادي عند عدم وجود بيانات (slate-300)
+    protected string $colorDone      = '#16a34a';
+    protected string $colorRemaining = '#e11d48';
+    protected string $colorEmpty     = '#cbd5e1';
 
     protected function getData(): array
     {
@@ -55,12 +53,11 @@ class TasksCompletionDoughnut extends ChartWidget
     {
         return [
             'maintainAspectRatio' => false,
-            'cutout' => '70%', // اختياري: يُظهرها كـ donut أرفع
+            'cutout' => '70%',
             'plugins' => [
                 'legend' => [
                     'position' => 'bottom',
-                    // يمكنك إخفاء الليجند إن رغبت:
-                    // 'display' => false,
+
                 ],
             ],
         ];

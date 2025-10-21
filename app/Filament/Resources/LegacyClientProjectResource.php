@@ -3,6 +3,10 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\LegacyClientProjectResource\Pages;
+use App\Filament\Resources\LegacyClientProjectResource\Pages\CreateLegacyClientProject;
+use App\Filament\Resources\LegacyClientProjectResource\Pages\EditLegacyClientProject;
+use App\Filament\Resources\LegacyClientProjectResource\Pages\ListLegacyClientProjects;
+use App\Filament\Resources\LegacyClientProjectResource\Pages\ViewLegacyClientProject;
 use App\Models\LegacyClientProject;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -100,10 +104,10 @@ class LegacyClientProjectResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListLegacyClientProjects::route('/'),
-            'create' => Pages\CreateLegacyClientProject::route('/create'),
-            'edit'   => Pages\EditLegacyClientProject::route('/{record}/edit'),
-            'view'   => Pages\ViewLegacyClientProject::route('/{record}'),
+            'index'  => ListLegacyClientProjects::route('/'),
+            'create' => CreateLegacyClientProject::route('/create'),
+            'edit'   => EditLegacyClientProject::route('/{record}/edit'),
+            'view'   => ViewLegacyClientProject::route('/{record}'),
         ];
     }
 

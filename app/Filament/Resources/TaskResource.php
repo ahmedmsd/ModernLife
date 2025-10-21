@@ -3,6 +3,10 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\TaskResource\Pages;
+use App\Filament\Resources\TaskResource\Pages\ActiveTasks;
+use App\Filament\Resources\TaskResource\Pages\CompletedTasks;
+use App\Filament\Resources\TaskResource\Pages\ListTasks;
+use App\Filament\Resources\TaskResource\Pages\ViewTask;
 use App\Models\ProductionTask;
 use App\Support\Tenancy\RoleScope;
 use App\Support\Tenancy\ShowroomFilter;
@@ -42,14 +46,9 @@ class TaskResource extends Resource
 
             if ($isShowroomManager) {
                 if (! $employeeId) {
-                    // عنده role مدير معرض بدون Employee مربوط → لا نتائج
                     return $q->whereRaw('1 = 0');
                 }
 
-                // قيّد المهام بمشروعات تنتمي لمعارض هذا المدير:
-                // production_tasks.project_id -> projects.id
-                // projects.production_request_id -> production_requests.id
-                // production_requests.showroom_id -> showrooms.id (manager_id = employee_id)
                 $q->whereExists(function ($sub) use ($employeeId) {
                     $sub->from('projects as p')
                         ->join('production_requests as pr', 'pr.id', '=', 'p.production_request_id')
@@ -110,10 +109,10 @@ class TaskResource extends Resource
     public static function getPages(): array
     {
         return [
-            'active'    => Pages\ActiveTasks::route('/active'),
-            'completed' => Pages\CompletedTasks::route('/completed'),
-            'index'     => Pages\ListTasks::route('/'),
-            'view'      => Pages\ViewTask::route('/{record}'),
+            'active'    => ActiveTasks::route('/active'),
+            'completed' => CompletedTasks::route('/completed'),
+            'index'     => ListTasks::route('/'),
+            'view'      => ViewTask::route('/{record}'),
 
         ];
     }

@@ -17,7 +17,6 @@ class ViewMaintenanceRequest extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            // زر إضافة ملاحظة من صفحة العرض
             Actions\Action::make('add_comment')
                 ->label('إضافة ملاحظة')
                 ->icon('heroicon-o-chat-bubble-left-right')

@@ -50,8 +50,8 @@ class ManageProjectTasks extends ManageRelatedRecords
 
             Forms\Components\FileUpload::make('file_path')
                 ->label('ملف المهمة')
-                ->directory(fn () => "projects/{$this->getOwnerRecord()->id}/tasks")
-                ->preserveFilenames()
+                ->required()
+                ->directory('production_files/' . now()->format('Y/m'))
                 ->helperText('يمكنك رفع ملف جديد للمهمة أو الإبقاء على الملف المنشأ تلقائيًا.')
                 ->nullable(),
 
@@ -102,8 +102,7 @@ class ManageProjectTasks extends ManageRelatedRecords
 
             Forms\Components\FileUpload::make('file_path')
                 ->label('ملف المهمة')
-                ->directory(fn () => "projects/{$this->getOwnerRecord()->id}/tasks")
-                ->preserveFilenames()
+                ->directory('production_files/' . now()->format('Y/m'))
                 ->helperText('يمكنك رفع ملف جديد للمهمة أو الإبقاء على الملف المنشأ تلقائيًا.')
                 ->nullable(),
 
@@ -252,7 +251,6 @@ class ManageProjectTasks extends ManageRelatedRecords
             ]);
     }
 
-    /** خيارات الحالات [value => label] */
     protected static function statusOptions(): array
     {
         $out = [];
@@ -262,23 +260,17 @@ class ManageProjectTasks extends ManageRelatedRecords
         return $out;
     }
 
-    /** إرجاع Enum من أي قيمة واردة (Enum أو string) */
     protected static function coerce(?string $state): ?PhaseStatus
     {
-        if ($state instanceof PhaseStatus) {
-            return $state;
-        }
         return $state !== null ? PhaseStatus::tryFrom((string) $state) : null;
     }
 
-    /** وسم عربي للحالة */
     protected static function statusLabel($state): string
     {
         $e = $state instanceof PhaseStatus ? $state : PhaseStatus::tryFrom((string) $state);
         return $e?->label() ?? (string) $state;
     }
 
-    /** لون الشارة */
     protected static function statusColor($state): string
     {
         $e = $state instanceof PhaseStatus ? $state : PhaseStatus::tryFrom((string) $state);

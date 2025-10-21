@@ -1,5 +1,4 @@
 <x-filament::page>
-    {{-- نموذج المهام --}}
     <x-filament::form wire:submit="save">
         {{ $this->form }}
 
@@ -10,7 +9,6 @@
         </x-slot>
     </x-filament::form>
 
-    {{-- جدول عرض المهام الحالية --}}
     <div class="mt-10">
         <x-filament::section>
             <x-slot name="heading">المهام الحالية</x-slot>

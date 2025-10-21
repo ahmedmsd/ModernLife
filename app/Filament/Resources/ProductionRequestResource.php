@@ -3,6 +3,11 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProductionRequestResource\Pages;
+use App\Filament\Resources\ProductionRequestResource\Pages\CreateProductionRequest;
+use App\Filament\Resources\ProductionRequestResource\Pages\EditProductionRequest;
+use App\Filament\Resources\ProductionRequestResource\Pages\ListProductionRequests;
+use App\Filament\Resources\ProductionRequestResource\Pages\ReviewProductionRequest;
+use App\Filament\Resources\ProductionRequestResource\Pages\ViewProductionTimeline;
 use App\Models\ProductionRequest;
 use App\Support\Tenancy\RoleScope;
 use App\Support\Tenancy\ShowroomFilter;
@@ -44,17 +49,14 @@ class ProductionRequestResource extends Resource
             return $q->whereRaw('1 = 0');
         }
 
-        // Admins / owners يرون الكل
         if (method_exists($user, 'hasAnyRole') && $user->hasAnyRole(['admin','super-admin','owner'])) {
             return $q;
         }
 
-        // Sales: يرى ما أنشأه فقط
         if (method_exists($user, 'hasRole') && $user->hasRole('sales')) {
             return $q->where('production_requests.created_by', $user->id);
         }
 
-        // Showroom Manager: يرى طلبات معارضه فقط (بحسب علاقة manager_id -> employees.employee_id)
         if ($user->hasRole('showroom_manager')) {
             $employeeId = $user->employee?->getKey();
 
@@ -304,11 +306,11 @@ class ProductionRequestResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListProductionRequests::route('/'),
-            'create' => Pages\CreateProductionRequest::route('/create'),
-            'edit'   => Pages\EditProductionRequest::route('/{record}/edit'),
-            'view'   => Pages\ViewProductionTimeline::route('/{record}/timeline'),
-            'review' => Pages\ReviewProductionRequest::route('/{record}/review'),
+            'index'  => ListProductionRequests::route('/'),
+            'create' => CreateProductionRequest::route('/create'),
+            'edit'   => EditProductionRequest::route('/{record}/edit'),
+            'view'   => ViewProductionTimeline::route('/{record}/timeline'),
+            'review' => ReviewProductionRequest::route('/{record}/review'),
         ];
     }
 }

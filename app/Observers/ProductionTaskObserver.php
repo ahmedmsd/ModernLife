@@ -81,7 +81,6 @@ class ProductionTaskObserver
 
     public function updated(ProductionTask $task): void
     {
-        /*** 1) تغيّر الإسناد ***/
         if ($task->wasChanged('assigned_to_employee_id')) {
             $task->forceFill(['assigned_at' => now()])->saveQuietly();
 
@@ -103,7 +102,6 @@ class ProductionTaskObserver
             ]);
         }
 
-        /*** 2) تغيّر المالك (role/user) ***/
         if ($task->wasChanged('current_owner_role') || $task->wasChanged('current_owner_user_id')) {
             $from = [
                 'role' => $task->getOriginal('current_owner_role'),
@@ -154,7 +152,6 @@ class ProductionTaskObserver
                 if (!$task->employee || $task->employee->user_id !== $task->current_owner_user_id) {
                     $tmp = clone $task;
                     $tmp->setRelation('department', $task->department()->first());
-                    // 🔧 تمرير User فعلي لتفادي الخطأ السابق
                     $dept = $task->department()->with(['managerUser'])->first();
                     $targets = collect([$dept?->managerUser])->filter();
                     if ($targets->isNotEmpty()) {
@@ -170,7 +167,6 @@ class ProductionTaskObserver
             }
         }
 
-        /*** 3) تأكيد استلام المالك ***/
         if ($task->wasChanged('received_by_owner_at')) {
             $task->logs()->create([
                 'type'        => 'ownership_received',
@@ -186,7 +182,6 @@ class ProductionTaskObserver
             ]);
         }
 
-        /*** 4) تغيّر الحالة ***/
         if ($task->wasChanged('status')) {
             $from = $this->normStatus($task->getOriginal('status'));
             $to   = $this->normStatus($task->status);
@@ -223,7 +218,6 @@ class ProductionTaskObserver
             }
         }
 
-        /*** 5) تغيّر تاريخ التسليم ***/
         if ($task->wasChanged('due_date')) {
             $task->logs()->create([
                 'type'        => 'due_changed',
@@ -236,7 +230,6 @@ class ProductionTaskObserver
             ]);
         }
 
-        /*** 6) تغيّر المواعيد المخططة ***/
         if (Schema::hasColumn('production_tasks', 'planned_start_at')) {
             if ($task->wasChanged('planned_start_at') || $task->wasChanged('planned_end_at') || $task->wasChanged('planned_install_at')) {
                 $task->logs()->create([
@@ -252,7 +245,6 @@ class ProductionTaskObserver
             }
         }
 
-        /*** 7) تغيّر القسم ***/
         if ($task->wasChanged('department_id')) {
             $dept = $task->department()->with(['managerUser', 'headUser'])->first();
             $targets = collect([$dept?->managerUser, $dept?->headUser])->filter();

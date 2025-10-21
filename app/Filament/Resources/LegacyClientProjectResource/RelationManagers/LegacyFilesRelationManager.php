@@ -41,7 +41,6 @@ class LegacyFilesRelationManager extends RelationManager
                 ->label('الملف')
                 ->disk('public')
                 ->directory('legacy-projects')
-                ->preserveFilenames()
                 ->acceptedFileTypes([
                     'image/*',
                     'application/pdf',
@@ -115,7 +114,6 @@ class LegacyFilesRelationManager extends RelationManager
                     ->modalDescription('سيتم حذف السجلات والملفات من التخزين نهائيًا.')
                     ->modalSubmitActionLabel('حذف')
                     ->action(function (Collection $records) {
-                        // هوك الموديل سينفّذ حذف الملفات من التخزين تلقائيًا
                         $records->each->delete();
                     })
                     ->successNotificationTitle('تم حذف الملفات المحددة'),

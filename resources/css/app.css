@@ -18,6 +18,37 @@ html, body, :root {
     Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji",
     "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
+.fi-sidebar-header {
+    min-height: 72px;
+    padding-block: 12px;
+}
+
+.fi-sidebar-header .fi-brand {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+.fi-sidebar-header .fi-brand img {
+    height: 56px !important;
+    max-height: 56px !important;
+    width: auto !important;
+}
+
+.fi-sidebar[data-state="collapsed"] .fi-sidebar-header .fi-brand img {
+    height: 36px !important;
+    max-height: 36px !important;
+}
+
+.fi-sidebar-header .fi-brand .fi-brand-name {
+    display: none;
+}
+
+.fi-topbar .fi-brand img {
+    height: 36px !important;
+    max-height: 36px !important;
+    width: auto !important;
+}
 
 
 @theme {

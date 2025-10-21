@@ -28,7 +28,6 @@ class MaterialsRequests extends Page implements HasTable
     use InteractsWithTable;
 //    use HasShieldAccess;
 
-    /** إعدادات الواجهة والتنقل */
     protected static ?string $navigationIcon  = 'heroicon-o-truck';
     protected static ?string $navigationLabel = 'طلبات الخامات';
     protected static ?string $title           = 'طلبات الخامات (المشتريات)';
@@ -149,11 +148,7 @@ class MaterialsRequests extends Page implements HasTable
                     ->url(fn (MaterialRequest $record) => ViewMaterialRequest::getUrl(['record' => $record])),
             ])
             ->bulkActions([
-                /**
-                 * تأكيد توفير مجمّع:
-                 * - لا يجمع بيانات الفاتورة (منطقيًا يحتاج إدخال يدوي لكل سجل).
-                 * - يحوّل المهام إلى materials_done وينقل الملكية لمدير القسم.
-                 */
+
                 Tables\Actions\BulkAction::make('bulkConfirm')
                     ->label('تأكيد توفير (مجمع)')
                     ->icon('heroicon-o-check')
@@ -167,14 +162,12 @@ class MaterialsRequests extends Page implements HasTable
                                     return;
                                 }
 
-                                // 1) Fulfill طلب الخامات (بدون بيانات فاتورة في المجمع)
                                 $record->update([
                                     'status'      => 'fulfilled',
                                     'provided_by' => Auth::id(),
                                     'provided_at' => now(),
                                 ]);
 
-                                // 2) نقل المهمة إلى materials_done + ملكية مدير القسم
                                 /** @var ProductionTask|null $task */
                                 $task = $record->task()->lockForUpdate()->first();
                                 if (! $task || in_array($task->status, ['completed','cancelled'])) {
@@ -202,7 +195,6 @@ class MaterialsRequests extends Page implements HasTable
     }
 
     /**
-     * تحديث حالة وملكية المهمة بشكل آمن (يتحقق من الأعمدة قبل التحديث).
      *
      * @param ProductionTask $task
      * @param array{
@@ -238,7 +230,6 @@ class MaterialsRequests extends Page implements HasTable
         }
     }
 
-    /** إرسال تنبيه داخلي لدور معين (لا يوقف المعاملة عند الفشل) */
     protected function notifyRole(string $roleName, string $title, string $body): void
     {
         try {

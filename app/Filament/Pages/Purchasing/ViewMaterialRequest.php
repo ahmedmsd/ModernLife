@@ -93,7 +93,6 @@ class ViewMaterialRequest extends Page implements HasInfolists
     public function getHeaderActions(): array
     {
         return [
-            // 1) اعتماد المشتريات: requested -> approved
             Action::make('approvePurchasing')
                 ->label('اعتماد طلب الشراء')
                 ->icon('heroicon-o-check-circle')
@@ -136,7 +135,6 @@ class ViewMaterialRequest extends Page implements HasInfolists
                     $this->refreshRecord();
                 }),
 
-            // 2) تأكيد توفير الخامات: approved -> fulfilled (+فاتورة)
             Action::make('confirmMaterials')
                 ->label('تأكيد توفير الخامات')
                 ->icon('heroicon-o-check-badge')
@@ -154,7 +152,7 @@ class ViewMaterialRequest extends Page implements HasInfolists
                     Forms\Components\FileUpload::make('invoice_file')
                         ->label('فاتورة الشراء (PDF/صورة)')
                         ->disk('public')->directory('materials_invoices')
-                        ->preserveFilenames()->openable()->downloadable()
+                        ->openable()->downloadable()
                         ->maxSize(10240)->acceptedFileTypes(['application/pdf','image/*']),
                     Forms\Components\Textarea::make('note')->label('ملاحظة')->rows(3),
                 ])
@@ -209,7 +207,6 @@ class ViewMaterialRequest extends Page implements HasInfolists
                     if (($this->record->current_owner_role ?? null) !== 'purchasing_manager') return false;
                     if (strtolower((string) $this->record->status) !== 'on_hold') return false;
 
-                    // المرجع: أحدث استلام جزئي/مشكلة
                     $anchor = TaskLog::query()
                         ->where('task_id', $this->record->id)
                         ->whereIn('type', ['materials_received_partial','materials_received_issue'])
@@ -221,7 +218,6 @@ class ViewMaterialRequest extends Page implements HasInfolists
                     $t  = $anchor->happened_at ?? $anchor->created_at;
                     $id = $anchor->id;
 
-                    // لا يوجد purchasing_hold_ack بعد هذا المرجع
                     $ackAfter = TaskLog::query()
                         ->where('task_id', $this->record->id)
                         ->where('type', 'purchasing_hold_ack')
@@ -243,7 +239,6 @@ class ViewMaterialRequest extends Page implements HasInfolists
                 ])
                 ->requiresConfirmation()
                 ->action(function (array $data) {
-                    // لوج تأكيد استلام الإيقاف
                     $this->record->logs()->create([
                         'type'        => 'purchasing_hold_ack',
                         'data'        => [
@@ -295,7 +290,6 @@ class ViewMaterialRequest extends Page implements HasInfolists
                         ->exists();
                     if (! $ackExists) return false;
 
-                    // لم يتم التوريد بعد هذا المرجع
                     $providedAfter = \App\Models\TaskLog::query()
                         ->where('task_id', $this->record->id)
                         ->whereIn('type', ['materials_provided','materials_provided_after_hold'])
@@ -315,7 +309,6 @@ class ViewMaterialRequest extends Page implements HasInfolists
                 ])
                 ->requiresConfirmation()
                 ->action(function (array $data) {
-                    // سجّل التوريد (اسم موحّد أو مخصص بعد الإيقاف)
                     $this->record->logs()->create([
                         'type'        => 'materials_provided',
                         'data'        => [
@@ -327,12 +320,10 @@ class ViewMaterialRequest extends Page implements HasInfolists
                         'happened_at' => now(),
                     ]);
 
-                    // أعِد الحالة والملكية للقسم ليتابع
                     $this->record->forceFill([
                         'status'                => 'waiting_production',
                         'current_owner_role'    => 'department_manager',
-                        // (اختياري) لو تريد تعيين مستخدم مدير القسم:
-                        // 'current_owner_user_id' => $this->record->department?->manager_user_id,
+
                     ])->save();
 
                     \Filament\Notifications\Notification::make()
@@ -362,7 +353,6 @@ class ViewMaterialRequest extends Page implements HasInfolists
                     DB::transaction(function () use ($data) {
                         $reason = trim((string)($data['reason'] ?? ''));
 
-                        // (1) حدّث طلب الخامات
                         $mrPayload = [
                             'status' => 'cancelled',
                             'note'   => trim(($this->record->note ? $this->record->note."\n\n" : '') . '[رفض المشتريات]: ' . $reason),
@@ -383,7 +373,7 @@ class ViewMaterialRequest extends Page implements HasInfolists
                             $ownerId = $dept?->manager_id ?? $dept?->head_user_id ?? null;
 
                             $taskPayload = [
-                                'status' => 'on_hold', // ← حالة موجودة بالـ ENUM
+                                'status' => 'on_hold',
                             ];
                             if (\Illuminate\Support\Facades\Schema::hasColumn($task->getTable(), 'current_owner_role')) {
                                 $taskPayload['current_owner_role'] = 'department_manager';
@@ -391,7 +381,6 @@ class ViewMaterialRequest extends Page implements HasInfolists
                             if (\Illuminate\Support\Facades\Schema::hasColumn($task->getTable(), 'current_owner_user_id')) {
                                 $taskPayload['current_owner_user_id'] = $ownerId;
                             }
-                            // أوقات خطية مفيدة
                             if (\Illuminate\Support\Facades\Schema::hasColumn($task->getTable(), 'received_by_owner_at')) {
                                 $taskPayload['received_by_owner_at'] = null;
                             }
@@ -441,7 +430,6 @@ class ViewMaterialRequest extends Page implements HasInfolists
         $this->js('$wire.$refresh()');
     }
 
-    // ====== بقية الكلاس (infolist/status helpers) كما هو ======
     protected function statusLabel(?string $s): string
     {
         return match ($s) {
@@ -502,7 +490,6 @@ class ViewMaterialRequest extends Page implements HasInfolists
                 Section::make('استلام القسم للخامات')
                     ->columns(4)
                     ->visible(function () {
-                        // ظهور هذا القسم لمن يهمه الاطلاع (مدير النظام + المشتريات)
                         return auth()->check()
                             && auth()->user()->hasAnyRole(['admin','super-admin','purchasing_manager'], 'web');
                     })
@@ -664,7 +651,6 @@ class ViewMaterialRequest extends Page implements HasInfolists
                 Section::make('إحصائيات زمنية')
                     ->columns(4)
                     ->schema([
-                        // 1) التواريخ الأساسية
                         TextEntry::make('expected_delivery_at')
                             ->label('التاريخ المتوقع للتوريد')
                             ->dateTime('Y-m-d H:i')
@@ -675,7 +661,6 @@ class ViewMaterialRequest extends Page implements HasInfolists
                             ->dateTime('Y-m-d H:i')
                             ->placeholder('—'),
 
-                        // 2) الفرق بين المتوقع والفعلي (أبكر/في الموعد/متأخر)
                         TextEntry::make('expected_vs_actual_delta')
                             ->label('الفرق بين المتوقع والفعلي')
                             ->state(function ($record) {
@@ -686,7 +671,6 @@ class ViewMaterialRequest extends Page implements HasInfolists
                                 $exp = Carbon::parse($record->expected_delivery_at);
                                 $act = Carbon::parse($record->provided_at);
 
-                                // احسب الفرق بالدقائق ثم حوله لأيام/ساعات/دقائق
                                 $mins = $exp->diffInMinutes($act, false); // سالب = قبل الموعد
                                 if ($mins === 0) {
                                     return 'في الموعد تمامًا';
@@ -719,7 +703,6 @@ class ViewMaterialRequest extends Page implements HasInfolists
                                 return 'danger';                     // متأخر
                             }),
 
-                        // 3) المدة من إنشاء الطلب حتى التوريد
                         TextEntry::make('requested_to_provided_duration')
                             ->label('المدة من إنشاء الطلب حتى التوريد')
                             ->state(function ($record) {
@@ -741,7 +724,6 @@ class ViewMaterialRequest extends Page implements HasInfolists
                             })
                             ->placeholder('—'),
 
-                        // 4) المدة من اعتماد المشتريات حتى التوريد
                         TextEntry::make('approved_to_provided_duration')
                             ->label('المدة من اعتماد المشتريات حتى التوريد')
                             ->state(function ($record) {

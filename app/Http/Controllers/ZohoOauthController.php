@@ -15,10 +15,8 @@ class ZohoOauthController extends Controller
             return response('Missing ?code', 400);
         }
 
-        // 2) حدّد حساب الـaccounts (من بارامتر Zoho أو افتراضي .com)
         $accountsBase = $request->query('accounts-server', 'https://accounts.zoho.com');
 
-        // 3) استخدم نفس redirect_uri المُسجَّل في الـConsole تمامًا
         $redirectUri = 'http://localhost:8000/oauth/zoho/callback';
 
         // 4) بدّل code ← access_token + refresh_token
@@ -30,13 +28,10 @@ class ZohoOauthController extends Controller
             'code'          => $code,
         ])->throw()->json();
 
-        // 5) اعرض النتيجة ببساطة (انسخ الـrefresh_token وضعه في .env)
         $access  = $res['access_token']   ?? null;
         $refresh = $res['refresh_token']  ?? null;
         $expires = $res['expires_in']     ?? null;
 
-        // تقدر هنا تحفظ الـrefresh_token في DB/Settings بدلاً من العرض
-        // مثال سريع (اختياري): \Log::info('ZOHO TOKENS', $res);
 
         return response()->json([
             'ok'            => true,

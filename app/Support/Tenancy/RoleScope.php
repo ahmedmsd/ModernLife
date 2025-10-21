@@ -12,11 +12,9 @@ class RoleScope
         $emp = $u?->employee;
 
         if (! $u) {
-            // بدون مستخدم -> لا شيء
             return $q->whereRaw('1=0');
         }
 
-        // 1) أدوار تَرى الكل
         if ($u->hasAnyRole(['admin','super-admin','factory_manager'])) {
             return $q;
         }
@@ -26,15 +24,12 @@ class RoleScope
         $uid    = (int) $u->id;
         $eid    = (int) ($emp?->getKey() ?? 0);
 
-        // ===== showroom_manager: عناصر تخص المعارض التي يديرها =====
         if ($u->hasRole('showroom_manager') && $eid) {
-            // كل المعارض التي يديرها هذا الموظف
             $showroomIds = \App\Models\Showroom::query()
                 ->where('manager_id', $eid)
                 ->pluck('id');
 
             if ($table === 'production_requests') {
-                // عمود showroom_id موجود مباشرة
                 return $q->whereIn($table.'.showroom_id', $showroomIds);
             }
 
@@ -57,22 +52,18 @@ class RoleScope
                 });
             }
 
-            // جداول أخرى: إن وُجد عمود showroom_id استخدمه
             if ($hasCol('showroom_id')) {
                 return $q->whereIn($table.'.showroom_id', $showroomIds);
             }
 
-            // افتراضي آمن
             return $q->whereRaw('1=0');
         }
 
-        // ===== sales: يرى ما أنشأه فقط =====
         if ($u->hasRole('sales')) {
             if ($hasCol('created_by')) {
                 return $q->where($table.'.created_by', $uid);
             }
 
-            // إن لم يوجد created_by على الجدول، نحاول المرور عبر العلاقات المعروفة
             if ($table === 'projects') {
                 // projects -> production_requests.created_by
                 return $q->whereExists(function ($sub) use ($uid, $table) {
@@ -92,22 +83,17 @@ class RoleScope
                 });
             }
 
-            // افتراضي آمن
             return $q->whereRaw('1=0');
         }
 
-        // ===== department_manager: قسمه فقط (ينطبق منطقيًا على المهام) =====
         if ($u->hasRole('department_manager') && $emp?->department_id) {
             if (in_array($table, ['production_tasks','tasks']) && $hasCol('department_id')) {
                 $q->where($table.'.department_id', $emp->department_id);
             }
-            // على جداول أخرى: لا قيد إضافي.
         }
 
-        // ===== quality_manager: ما يخص الجودة (على المهام فقط) =====
         if ($u->hasRole('quality_manager')) {
             if (in_array($table, ['production_tasks','tasks'])) {
-                // إمّا مملوكة للجودة، أو أُرسلت للجودة عبر اللوج
                 $q->where(function ($qq) use ($table) {
                     $qq->when(Schema::hasColumn($table, 'current_owner_role'),
                         fn ($w) => $w->where($table.'.current_owner_role', 'quality_manager')
@@ -120,7 +106,6 @@ class RoleScope
             }
         }
 
-        // ===== installation_manager: ما يخص التركيب (على المهام) =====
         if ($u->hasRole('installation_manager')) {
             if (in_array($table, ['production_tasks','tasks']) && Schema::hasColumn($table, 'current_owner_role')) {
                 $q->where($table.'.current_owner_role', 'installation_manager');

@@ -1,8 +1,6 @@
 @php
-    // في ViewEntry، الأفضل استخدام $getState() لجلب القيمة الفعلية
     $value = (isset($getState) && is_callable($getState)) ? $getState() : ($state ?? null);
 
-    // ضمان أن لدينا Collection (ولو رجعت Array/Null نحولها لـ Collection)
     $comments = $value instanceof \Illuminate\Support\Collection ? $value : collect($value);
 @endphp
 
@@ -12,7 +10,6 @@
     <ul class="space-y-4">
         @foreach ($comments as $c)
             @php
-                // دعم للوصول سواء كان Model أو Array
                 $authorName = $c->author->name ?? data_get($c, 'author.name', '—');
                 $createdAt  = $c->created_at ?? data_get($c, 'created_at');
                 $createdForHumans = $createdAt

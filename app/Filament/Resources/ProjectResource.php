@@ -3,6 +3,11 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProjectResource\Pages;
+use App\Filament\Resources\ProjectResource\Pages\CreateProject;
+use App\Filament\Resources\ProjectResource\Pages\EditProject;
+use App\Filament\Resources\ProjectResource\Pages\ListProjects;
+use App\Filament\Resources\ProjectResource\Pages\ManageProjectTasks;
+use App\Filament\Resources\ProjectResource\Pages\ViewProject;
 use App\Filament\Resources\ProjectResource\RelationManagers\TasksRelationManager;
 use App\Models\Project;
 use App\Support\Tenancy\RoleScope;
@@ -42,7 +47,6 @@ class ProjectResource extends Resource
 
         $user = auth()->user();
 
-        // أدوار تشوف كل شيء
         $isSuper = $user && method_exists($user, 'hasAnyRole')
             && $user->hasAnyRole(['admin','super-admin','owner']);
 
@@ -178,11 +182,11 @@ class ProjectResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListProjects::route('/'),
-            'create' => Pages\CreateProject::route('/create'),
-            'view'   => Pages\ViewProject::route('/{record}'),
-            'edit'   => Pages\EditProject::route('/{record}/edit'),
-            'manage-tasks' => Pages\ManageProjectTasks::route('/{record}/manage-tasks'),
+            'index'  => ListProjects::route('/'),
+            'create' => CreateProject::route('/create'),
+            'view'   => ViewProject::route('/{record}'),
+            'edit'   => EditProject::route('/{record}/edit'),
+            'manage-tasks' => ManageProjectTasks::route('/{record}/manage-tasks'),
         ];
     }
 }

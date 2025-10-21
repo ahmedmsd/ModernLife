@@ -26,9 +26,6 @@ class ProductionRequestWorkflow
         return $this->move($pr, Phase::ShowroomReview, S::Pending, 'showroom_manager', null, true);
     }
 
-    /**
-     * نقل عام مع إمكانية تثبيت مالك مستخدم محدد.
-     */
     public function move(
         ProductionRequest $pr,
         Phase $toPhase,
@@ -45,7 +42,7 @@ class ProductionRequestWorkflow
                 $pr->phase_status       === $toStatus->value &&
                 $pr->current_owner_role === $role &&
                 ! $touchSent &&
-                ($ownerUserId === null); // لا نتجاهل الحركة إذا طلبنا تثبيت مستخدم جديد
+                ($ownerUserId === null);
 
             if ($noChange) {
                 return $pr->refresh();
@@ -61,7 +58,6 @@ class ProductionRequestWorkflow
             $pr->phase_status        = $toStatus->value;
             $pr->current_owner_role  = $role;
 
-            // إن تم تمرير مالك مستخدم صريح نستخدمه، وإلا نستنتجه من الدور/العلاقات
             if ($ownerUserId !== null) {
                 $pr->current_owner_user_id = $ownerUserId;
             } else {
@@ -192,12 +188,10 @@ class ProductionRequestWorkflow
 
     public function reject(ProductionRequest $pr, ?string $reason = null): ProductionRequest
     {
-        // لو كان الرفض من مدير المصنع، نفّذ مسار factoryReject الكامل (تغيير المرحلة + المالك + sent_at)
         if (($pr->current_phase ?? null) === \App\Enums\ProductionRequestPhase::FactoryIntake->value) {
             return $this->factoryReject($pr, $reason);
         }
 
-        // خلاف ذلك (رفض في أي مرحلة أخرى): نحفظ الرفض مع بقية البيانات كما كان
         $fromStatus = $pr->phase_status;
 
         $pr->phase_status = \App\Enums\PhaseStatus::Rejected->value;
@@ -248,10 +242,8 @@ class ProductionRequestWorkflow
         $ownerRole = $isDirect ? 'sales_manager'        : 'showroom_manager';
         $ownerUser = $this->resolveReturnOwnerUserId($pr, $isDirect); // << النقطة الأهم
 
-        // نثبت حالة Pending لبدء إعادة المراجعة عند الجهة المستهدفة
         $pr = $this->move($pr, $toPhase, S::Pending, $ownerRole, $ownerUser, true);
 
-        // لوج واضح لرفض المصنع
         $pr->logs()->create([
             'causer_id'   => Auth::id(),
             'type'        => 'factory_rejected',
@@ -466,15 +458,12 @@ class ProductionRequestWorkflow
             Phase::Installation             => 'installation_manager',
             Phase::QualityAfterInstallation => 'quality_manager',
             Phase::Closed                   => null,
-            // ملاحظة: SalesIntake ليس له دور افتراضي هنا لأننا نحدده صراحة عند الرفض المباشر
         };
     }
 
     /* ======================= Helpers ======================= */
 
-    /**
-     * للمسارات العامة حسب الدور/العلاقات.
-     */
+
     protected function resolveOwnerUserId(ProductionRequest $pr, ?string $role): ?int
     {
         if (! $role) {
@@ -488,7 +477,7 @@ class ProductionRequestWorkflow
             'department_manager'    => null,
             'quality_manager'       => null,
             'installation_manager'  => null,
-            'sales_manager'         => null, // لا علاقة مباشرة هنا عادة
+            'sales_manager'         => null,
             default                 => null,
         };
 
@@ -496,7 +485,6 @@ class ProductionRequestWorkflow
             return $byRelation;
         }
 
-        // البحث عبر الأدوار
         return match ($role) {
             'factory_manager'       => User::role('factory_manager')->value('id'),
             'purchasing_manager'    => User::role('purchasing_manager')->value('id'),
@@ -508,19 +496,13 @@ class ProductionRequestWorkflow
         };
     }
 
-    /**
-     * تحديد المستخدم المستلم عند رفض المصنع:
-     * - مباشر: منشئ/مقدّم الطلب.
-     * - غير مباشر: آخر showroom_manager مرّر الطلب للمصنع.
-     */
+
     protected function resolveReturnOwnerUserId(ProductionRequest $pr, bool $isDirect): ?int
     {
         if ($isDirect) {
-            // أفضلية: أعمدة صريحة
             if (!empty($pr->created_by))   return (int) $pr->created_by;
             if (!empty($pr->submitted_by)) return (int) $pr->submitted_by;
 
-            // استنباط من لوج الإنشاء
             $created = $pr->logs()
                 ->where('type', 'created')
                 ->orderByDesc('happened_at')
@@ -532,7 +514,6 @@ class ProductionRequestWorkflow
             return null;
         }
 
-        // غير مباشر: نبحث عن آخر انتقال إلى FactoryIntake كان صاحبه showroom_manager
         $logs = $pr->logs()
             ->orderByDesc('happened_at')
             ->limit(50)
@@ -552,7 +533,6 @@ class ProductionRequestWorkflow
             }
         }
 
-        // fallback لو خزّنت آخر مدير معرض تعامل مع الطلب
         if (!empty($pr->last_showroom_manager_id)) {
             return (int) $pr->last_showroom_manager_id;
         }

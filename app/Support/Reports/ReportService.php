@@ -11,7 +11,6 @@ class ReportService
 {
     public function __construct(protected ReportFilters $f) {}
 
-    /** الحالات المنتهية/غير عاملة */
     protected array $DONE = ['completed','closed','cancelled'];
 
     protected function baseTasks(): Builder
@@ -34,12 +33,10 @@ class ReportService
             ->where('t.status', 'completed')
             ->count();
 
-        // WIP = كل ما ليس (completed/closed/cancelled)
         $wip = (clone $base)
             ->whereNotIn('t.status', $this->DONE)
             ->count();
 
-        // متأخر: كما في كودك الأصلي (مقارنة بـ planned_end_at)
         $delayed = (clone $base)
             ->whereNotNull('t.planned_end_at')
             ->where(function($q) {
@@ -53,14 +50,12 @@ class ReportService
             })
             ->count();
 
-        // متوسط المدة بالساعات من الإسناد حتى الإكمال
         $avgHours = (clone $base)
             ->whereNotNull('t.assigned_at')
             ->whereNotNull('t.completed_at')
             ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, t.assigned_at, t.completed_at)) as h')
             ->value('h');
 
-        // SLA: نسبة الإغلاق في/قبل due_date (بين المهام المكتملة التي لها due_date)
         $completedWithDue = (clone $base)
             ->where('t.status', 'completed')
             ->whereNotNull('t.due_date')
@@ -69,7 +64,6 @@ class ReportService
         $onTimeCompleted = (clone $base)
             ->where('t.status', 'completed')
             ->whereNotNull('t.due_date')
-            // اعتبرنا "في الموعد" = completed_at <= نهاية يوم due_date
             ->whereRaw("t.completed_at <= DATE_ADD(DATE(t.due_date), INTERVAL 1 DAY) - INTERVAL 1 SECOND")
             ->count();
 

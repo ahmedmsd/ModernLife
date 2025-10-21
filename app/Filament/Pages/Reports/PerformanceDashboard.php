@@ -103,10 +103,8 @@ class PerformanceDashboard extends Page implements Forms\Contracts\HasForms
                 Forms\Components\Actions::make([
                     Action::make('apply')->label('تطبيق الفلاتر')->icon('heroicon-o-funnel')
                         ->action(function () {
-                            // اقرأ حالة الفورم
                             $state = $this->form->getState();
 
-                            // حدّث خصائص الصفحة
                             foreach ($state as $k => $v) $this->{$k} = $v ?: null;
 
                             // أعد التوجيه لنفس الصفحة مع Query String

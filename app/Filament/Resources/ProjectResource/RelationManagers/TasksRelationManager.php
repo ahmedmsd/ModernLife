@@ -29,8 +29,7 @@ class TasksRelationManager extends RelationManager
 
             Forms\Components\FileUpload::make('file_path')
                 ->label('ملف المهمة')
-                ->directory('projects/{record}/tasks')
-                ->preserveFilenames()
+                ->directory('production_files/' . now()->format('Y/m'))
                 ->required(),
 
             Forms\Components\Select::make('assigned_to_employee_id')
@@ -48,11 +47,11 @@ class TasksRelationManager extends RelationManager
             Forms\Components\Select::make('status')
                 ->label('الحالة')
                 ->options([
-                    'assigned'    => 'موزعة',
+                    'pending'    => 'بانتظار الاستلام',
                     'in_progress' => 'قيد التنفيذ',
                     'completed'   => 'مكتملة',
                 ])
-                ->default('assigned')
+                ->default('pending')
                 ->required(),
         ]);
     }
