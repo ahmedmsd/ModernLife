@@ -305,8 +305,7 @@ class AdminPanelProvider extends PanelProvider
                                     ->visible(fn () => \App\Filament\Resources\CityResource::canViewAny()),
 
                                 NavigationItem::make('إدارة الأدوار')
-                                    ->url(\App\Filament\Resources\RoleResource::getUrl())
-                                    ->visible(fn () => \App\Filament\Resources\RoleResource::canViewAny())
+                                    ->url('/admin/shield/roles')
                             ])
                     );
             });

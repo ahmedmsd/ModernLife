@@ -139,20 +139,20 @@ class InstallationCalendar extends Page
         }
 
         // مدير المعرض: فقط لو كانت المهمة ضمن أحد معارضه
-        if ($u->hasRole('showroom_manager')) {
-            $employeeId = $u->employee?->getKey();
-            if (! $employeeId) {
-                return false;
-            }
-
-            $showroomIds = Showroom::query()
-                ->where('manager_id', $employeeId)
-                ->pluck('id');
-
-            $taskShowroomId = $task->project?->productionRequest?->showroom_id;
-
-            return $taskShowroomId && $showroomIds->contains($taskShowroomId);
-        }
+//        if ($u->hasRole('showroom_manager')) {
+//            $employeeId = $u->employee?->getKey();
+//            if (! $employeeId) {
+//                return false;
+//            }
+//
+//            $showroomIds = Showroom::query()
+//                ->where('manager_id', $employeeId)
+//                ->pluck('id');
+//
+//            $taskShowroomId = $task->project?->productionRequest?->showroom_id;
+//
+//            return $taskShowroomId && $showroomIds->contains($taskShowroomId);
+//        }
 
         // بقية الأدوار: عرض فقط
         return false;

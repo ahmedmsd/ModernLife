@@ -206,12 +206,28 @@
                         </div>
                     @endif
 
-                    @if(!blank($log->note) || filled(data_get($data, 'note')))
+                    @php
+                        $rawNote = $log->note
+                        ?? data_get($data, 'note')
+                        ?? data_get($data, 'reason')
+                        ?? data_get($data, 'reason_factory')
+                        ?? data_get($data, 'reason_showroom');
+
+                        $noteHtml = e($rawNote);
+
+                        $noteHtml = preg_replace(
+                            '~(https?://[^\s<]+)~i',
+                            '<a href="$1" target="_blank" rel="noopener" class="underline">$1</a>',
+                            $noteHtml
+                        );
+
+                        $noteHtml = nl2br($noteHtml);
+                    @endphp
+
+                    @if (filled($rawNote))
                         <div class="rounded-md border p-3 mt-2 bg-gray-50 dark:bg-gray-800">
                             <div class="text-xs opacity-70 mb-1">ملاحظة صاحب الحركة:</div>
-                            <div class="font-medium leading-relaxed">
-                                {{ $log->note ?? data_get($data, 'note') }}
-                            </div>
+                            <div class="font-medium leading-relaxed">{!! $noteHtml !!}</div>
                         </div>
                     @endif
                 </div>

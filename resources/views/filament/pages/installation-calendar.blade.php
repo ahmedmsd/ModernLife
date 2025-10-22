@@ -89,12 +89,7 @@
                             <td class="px-3 py-2">{{ $i + 1 }}</td>
 
                             <td class="px-3 py-2">
-                                <a class="text-primary-600 underline"
-                                   href="{{ class_exists(\App\Filament\Resources\ProjectResource::class) && $t->project
-                                                ? \App\Filament\Resources\ProjectResource::getUrl('view', ['record' => $t->project])
-                                                : '#' }}"
-                                   target="_blank"
-                                >{{ $projName }}</a>
+                                {{ $projName }}
                             </td>
 
                             <td class="px-3 py-2">{{ $clientName }}</td>

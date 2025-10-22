@@ -1372,8 +1372,7 @@ Action::make('resume')
                             auth()->user()->hasAnyRole([
                                 'admin', 'super-admin', 'super_admin',
                                 'factory_manager', 'purchasing_manager',
-                                // أضف ما يلزم
-                                'installation_manager', 'accountant',
+                                'installation_manager', 'sales', 'showroom_manager'
                             ])
                         )
                         ->state(function (\App\Models\ProductionTask $record) {
@@ -1450,7 +1449,13 @@ Action::make('resume')
 
                         return $po . ' <span style="opacity:.8">'. $kind .'</span>';
                     }),
-            ])->columns(1),
+            ])->columns(1)->visible(fn () =>
+                auth()->check() &&
+                auth()->user()->hasAnyRole([
+                    'admin', 'super-admin', 'super_admin',
+                    'factory_manager', 'purchasing_manager',
+                ])
+            ),
 
             Section::make('مدد المراحل')->schema([
                 TextEntry::make('stage_durations_html')
@@ -1460,34 +1465,6 @@ Action::make('resume')
                     ->columnSpanFull(),
             ])->columns(1),
 
-            Section::make('إحصائيات')->schema([
-                TextEntry::make('total_time')->label('إجمالي الوقت منذ أول حدث')
-                    ->state(function (ProductionTask $record) {
-                        $firstAt = $record->logs()->min('happened_at');
-                        if (! $firstAt) return '—';
-                        $lastAt = $record->logs()->max('happened_at') ?? now();
-                        return \Illuminate\Support\Carbon::parse($firstAt)->diffForHumans(\Illuminate\Support\Carbon::parse($lastAt), true);
-                    }),
-
-                TextEntry::make('status')
-                    ->label('الحالة')
-                    ->formatStateUsing(fn ($state) =>
-                    $this->helper()->statusAr(
-                        $state instanceof \BackedEnum
-                            ? $state->value
-                            : $this->helper()->normalizeStatus((string) $state)
-                    )
-                    )
-                    ->badge()
-                    ->color(fn ($state) =>
-                    $this->helper()->statusColor(
-                        $state instanceof \BackedEnum
-                            ? $state->value
-                            : $this->helper()->normalizeStatus((string) $state)
-                    )
-                    )
-                    ->placeholder('—'),
-            ])->columns(2),
         ]);
     }
 }
