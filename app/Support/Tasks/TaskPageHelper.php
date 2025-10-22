@@ -430,7 +430,7 @@ class TaskPageHelper
         if ($u && method_exists($u, 'hasAnyRole') && $u->hasAnyRole(['super-admin','admin','project_manager'])) {
             return $t->project_id ? url("/admin/projects/{$t->project_id}/manage-tasks") : url('/admin/tasks');
         }
-        return url('/admin/my-tasks');
+        return url('/admin/tasks/active');
     }
 
     public function parentTasksLabel(?Authenticatable $u): string

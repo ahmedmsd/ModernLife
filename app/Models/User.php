@@ -47,7 +47,7 @@ class User extends Authenticatable implements FilamentUser
         ];
     }
 
-    public function employee(): HasOne|User
+    public function employee(): HasOne
     {
         return $this->hasOne(\App\Models\Employee::class, 'user_id', 'id');
     }

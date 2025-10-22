@@ -52,6 +52,14 @@ class ProductionTask extends Model
         return $this->belongsTo(Employee::class, 'assigned_to_employee_id');
     }
 
+    public function holds(): HasMany
+    { return $this->hasMany(TaskHold::class, 'task_id'); }
+    public function dependencies(): HasMany
+    { return $this->hasMany(TaskDependency::class, 'task_id'); }
+    public function blockingDependencies(): HasMany
+    {
+        return $this->dependencies()->where('kind', 'hard_block');
+    }
 
     public function logs(): HasMany
     {

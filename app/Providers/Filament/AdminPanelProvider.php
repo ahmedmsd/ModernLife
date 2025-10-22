@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\SystemSettings;
+use App\Filament\Widgets\Showroom\ShowroomManagerCurrentTasks;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use App\Filament\Resources\CityResource;
 use App\Filament\Resources\ClientResource;
@@ -65,6 +66,7 @@ class AdminPanelProvider extends PanelProvider
 
                 \App\Filament\Widgets\Sales\SalesInProgressRequests::class,
                 \App\Filament\Widgets\Showroom\ShowroomManagerNeedsResponse::class,
+                \App\Filament\Widgets\Showroom\ShowroomManagerCurrentTasks::class,
                 \App\Filament\Widgets\Factory\FactoryManagerCurrentRequests::class,
                 \App\Filament\Widgets\Factory\FactoryManagerCurrentTasks::class,
                 \App\Filament\Widgets\Department\DepartmentManagerCurrentTasks::class,
@@ -201,13 +203,11 @@ class AdminPanelProvider extends PanelProvider
                     ->group(
                         NavigationGroup::make()->label('المهام')->icon('heroicon-o-briefcase')->collapsible()->collapsed()
                             ->items([
-                                NavigationItem::make('المهام المسندة إليّ')
-                                    ->url(\App\Filament\Pages\AssignedTasks::getUrl())
-                                    ->visible(fn () => \App\Filament\Pages\AssignedTasks::canAccess()),
+
                                 NavigationItem::make('عرض المهام (الجارية)')
                                     ->url(\App\Filament\Resources\TaskResource::getUrl('active'))
                                     ->visible(fn () => \App\Filament\Resources\TaskResource\Pages\ActiveTasks::canAccess()),
-                                NavigationItem::make('المهام المنجزة')
+                                NavigationItem::make('المهام المُنجزة')
                                     ->url(\App\Filament\Resources\TaskResource::getUrl('completed'))
                                     ->visible(fn () => \App\Filament\Resources\TaskResource\Pages\CompletedTasks::canAccess()),
                             ])

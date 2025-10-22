@@ -5,6 +5,7 @@ namespace App\Filament\Resources\TaskResource\Pages;
 use App\Filament\Resources\TaskResource;
 use App\Models\Employee;
 use App\Models\TaskLog;
+use App\Services\Tasks\TaskTimerService;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Toggle;
@@ -1094,6 +1095,86 @@ class ViewTask extends ViewRecord
                     $this->js('$wire.$refresh()');
                 }),
 
+Action::make('hold')
+    ->label('تعليق المهمة')
+    ->icon('heroicon-o-pause-circle')
+    ->color('warning')
+    ->visible(function (ProductionTask $record): bool {
+        if (! auth()->check()) return false;
+        $u = auth()->user();
+
+        $isDeptManagerAndOwner =
+            $u->hasRole('department_manager')
+            && $record->current_owner_role === 'department_manager'
+            && (int) $record->current_owner_user_id === (int) $u->id;
+
+        $isPureFactoryManager =
+            $u->hasRole('factory_manager')
+            && $u->getRoleNames()->count() === 1;
+
+        return ! in_array($record->status, ['completed','closed'])
+            && ($isDeptManagerAndOwner || $isPureFactoryManager);
+    })
+    ->form([
+        Forms\Components\Select::make('type')
+            ->label('نوع التعليق')
+            ->options([
+                'awaiting_dependency' => 'بانتظار مهمة أخرى',
+                'awaiting_materials'  => 'بانتظار خامات',
+                'client_feedback'     => 'بانتظار رد العميل',
+                'other'               => 'أخرى',
+            ])->required(),
+        Forms\Components\Select::make('related_task_id')
+            ->label('المهمة المرتبطة')
+            ->searchable()
+            ->preload()
+            ->options(\App\Models\ProductionTask::query()
+                ->orderByDesc('id')
+                ->limit(200)->pluck('id','id'))
+            ->visible(fn ($get) => $get('type') === 'awaiting_dependency'),
+        Forms\Components\Textarea::make('reason')->label('السبب')->rows(2),
+        Forms\Components\Textarea::make('note')->label('ملاحظة')->rows(2),
+    ])
+    ->action(function (array $data, ProductionTask $record) {
+        $data['created_by'] = auth()->id();
+        app(TaskTimerService::class)->startHold($record, $data);
+
+        Notification::make()
+            ->title('تم تعليق المهمة وإيقاف العدّ.')
+            ->success()
+            ->send();
+    }),
+
+Action::make('resume')
+    ->label('استئناف المهمة')
+    ->icon('heroicon-o-play-circle')
+    ->color('success')
+    ->visible(function (ProductionTask $record): bool {
+        if (! auth()->check()) return false;
+        $u = auth()->user();
+
+        $isDeptManagerAndOwner =
+            $u->hasRole('department_manager')
+            && $record->current_owner_role === 'department_manager'
+            && (int) $record->current_owner_user_id === (int) $u->id;
+
+        $isPureFactoryManager =
+            $u->hasRole('factory_manager')
+            && $u->getRoleNames()->count() === 1;
+
+        return in_array($record->status, ['on_hold','blocked'])
+            && ($isDeptManagerAndOwner || $isPureFactoryManager);
+    })
+    ->action(function (ProductionTask $record) {
+        app(TaskTimerService::class)->endHold($record, 'Manual resume');
+
+        Notification::make()
+            ->title('تم استئناف المهمة وتشغيل العدّ.')
+            ->success()
+            ->send();
+    }),
+
+
             /* سند استلام العميل → اكتمال */
             Action::make('uploadClientReceipt')
                 ->label('رفع سند استلام العميل وإكمال المهمة')
@@ -1283,6 +1364,35 @@ class ViewTask extends ViewRecord
 
                             return '<a href="'.e($url).'" target="_blank" style="color:#16a34a; text-decoration:underline; font-weight:600;">'.$name.' ▸</a>';
                         }),
+                    TextEntry::make('client_receipt_link')
+                        ->label('سند استلام العميل')
+                        ->html()
+                        ->visible(fn () =>
+                            auth()->check() &&
+                            auth()->user()->hasAnyRole([
+                                'admin', 'super-admin', 'super_admin',
+                                'factory_manager', 'purchasing_manager',
+                                // أضف ما يلزم
+                                'installation_manager', 'accountant',
+                            ])
+                        )
+                        ->state(function (\App\Models\ProductionTask $record) {
+                            $value = (string) ($record->client_receipt ?? '');
+
+                            if (blank($value)) {
+                                return '<span style="opacity:.7">—</span>';
+                            }
+
+                            $url = \Illuminate\Support\Str::startsWith($value, ['http://', 'https://'])
+                                ? $value
+                                : \Illuminate\Support\Facades\Storage::disk('public')->url($value);
+
+                            $basename = parse_url($value, PHP_URL_PATH) ?: $value;
+                            $name = e(basename($basename));
+
+                            return '<a href="'.e($url).'" target="_blank" style="color:#d97706; text-decoration:underline; font-weight:600;">'.$name.' ▸</a>';
+                        }),
+
                 ])->columns(1),
 
             Section::make('التعليقات')

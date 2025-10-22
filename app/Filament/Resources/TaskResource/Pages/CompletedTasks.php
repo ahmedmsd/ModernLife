@@ -5,6 +5,8 @@ namespace App\Filament\Resources\TaskResource\Pages;
 use App\Enums\TaskStatus;
 use App\Filament\Resources\TaskResource;
 use App\Models\ProductionTask;
+use App\Models\Showroom;
+use App\Models\User;
 use Filament\Resources\Pages\Page;
 use Filament\Tables;
 use Filament\Tables\Contracts\HasTable;
@@ -13,6 +15,7 @@ use Filament\Tables\Table;
 use Filament\Tables\Filters\Filter;
 use Filament\Forms;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class CompletedTasks extends Page implements HasTable
 {
@@ -22,59 +25,117 @@ class CompletedTasks extends Page implements HasTable
     protected static ?string $title = 'المهام المكتملة';
     protected static string $view = 'filament.pages.blank';
 
-    public static function canAccess(array $parameters = []): bool
+    protected function isAdminLike(): bool
     {
-        return auth()->check();
-    }
-
-    protected function isFactoryManager(): bool
-    {
-        $u = auth()->user();
-        return (bool)$u?->hasAnyRole(['factory_manager', 'admin', 'super-admin']);
+        $u = Auth::user();
+        return (bool)$u?->hasAnyRole(['admin', 'super-admin', 'factory_manager']);
     }
 
     protected function isDepartmentManager(): bool
     {
-        $u = auth()->user();
+        $u = Auth::user();
         return (bool)$u?->hasRole('department_manager');
+    }
+
+    protected function isShowroomManager(): bool
+    {
+        $u = Auth::user();
+        return (bool)$u?->hasRole('showroom_manager');
+    }
+
+    protected function isQualityManager(): bool
+    {
+        $u = Auth::user();
+        return (bool)$u?->hasRole('quality_manager');
+    }
+
+    public static function canAccess(array $parameters = []): bool
+    {
+        if (!Auth::check()) return false;
+
+        $u = Auth::user();
+        if ($u->hasAnyRole(['sales', 'purchasing_manager'])) {
+            return false;
+        }
+
+        return true;
     }
 
     public function table(Table $table): Table
     {
-        $user = auth()->user();
-        $emp = $user?->employee;
-        $deptId = $emp?->department_id;
+        $u = Auth::user();
+        $deptId = null;
+        $managedShowroomIds = [];
+
+        if ($u instanceof User) {
+            $u->loadMissing('employee');
+            $deptId = $u->employee?->department_id;
+
+            $empId = $u->employee?->employee_id;
+            if ($empId) {
+                $managedShowroomIds = Showroom::query()
+                    ->where('manager_id', $empId)
+                    ->pluck('id')
+                    ->all();
+            }
+        }
 
         return $table
             ->heading(
-                $this->isFactoryManager()
-                    ? 'كل المهام المكتملة'
-                    : ($this->isDepartmentManager() ? 'المهام المكتملة لقسمي' : 'المهام المكتملة')
+                $this->isAdminLike() ? 'كل المهام المكتملة'
+                    : ($this->isQualityManager() ? 'كل المهام المكتملة'
+                    : ($this->isShowroomManager() ? 'مهام المعارض التي أديرها (مكتملة)'
+                        : ($this->isDepartmentManager() ? 'مهام قسمي المكتملة' : 'المهام المكتملة')))
             )
-            ->query(function () use ($deptId): Builder {
+            ->query(function () use ($deptId, $managedShowroomIds): Builder {
                 $q = ProductionTask::query()
                     ->whereIn('status', ['completed', 'closed'])
                     ->with([
-                        'project:id,project_name',
+                        'project:id,project_name,production_request_id',
+                        'project.productionRequest:id,showroom_id',
+                        'project.productionRequest.showroom:id,name',
                         'department:dept_id,dept_name',
                         'employee:employee_id,employee_name',
                     ])
+                    // ->orderByRaw('COALESCE(completed_at, updated_at, created_at) DESC');
                     ->latest('completed_at');
 
-                if ($this->isFactoryManager()) {
+                // 1) Admin-like => الكل
+                if ($this->isAdminLike()) {
                     return $q;
                 }
 
-                if ($this->isDepartmentManager()) {
-                    return $deptId ? $q->where('department_id', $deptId) : $q->whereRaw('1=0');
+                // 2) Quality Manager => الكل (لا يوجد needs action هنا)
+                if ($this->isQualityManager()) {
+                    return $q;
                 }
 
-                return $q;
+                // 3) Showroom Manager => مهام معارضي
+                if ($this->isShowroomManager()) {
+                    if (!empty($managedShowroomIds)) {
+                        return $q->whereHas('project.productionRequest', function (Builder $w) use ($managedShowroomIds) {
+                            $w->whereIn('showroom_id', $managedShowroomIds);
+                        });
+                    }
+                    return $q->whereRaw('1=0'); // لا يدير أي معرض
+                }
+
+                // 4) Department Manager => قسمه فقط
+                if ($this->isDepartmentManager()) {
+                    return $deptId
+                        ? $q->where('department_id', $deptId)
+                        : $q->whereRaw('1=0');
+                }
+
+                // أدوار أخرى: لا شيء
+                return $q->whereRaw('1=0');
             })
             ->defaultSort('completed_at', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('id')->label('#')->sortable(),
                 Tables\Columns\TextColumn::make('project.project_name')->label('المشروع')->searchable()->wrap(),
+                Tables\Columns\TextColumn::make('project.productionRequest.showroom.name')
+                    ->label('المعرض'),
                 Tables\Columns\TextColumn::make('department.dept_name')->label('القسم')->sortable(),
                 Tables\Columns\TextColumn::make('employee.employee_name')->label('المسؤول')->sortable(),
                 Tables\Columns\TextColumn::make('status')
@@ -101,11 +162,30 @@ class CompletedTasks extends Page implements HasTable
             ->filters([
                 Tables\Filters\SelectFilter::make('department_id')
                     ->label('القسم')
-                    ->relationship('department', 'dept_name'),
+                    ->relationship('department', 'dept_name')
+                    ->visible(!$this->isDepartmentManager()),
                 Tables\Filters\SelectFilter::make('assigned_to_employee_id')
                     ->label('المسؤول')
                     ->relationship('employee', 'employee_name')
-                    ->searchable(),
+                    ->searchable()
+                    ->visible(!$this->isDepartmentManager() && !$this->isShowroomManager()),
+                // فلتر المعرض عبر السلسلة Task -> Project -> ProductionRequest -> showroom_id
+                Filter::make('showroom_id')
+                    ->label('المعرض')
+                    ->form([
+                        Forms\Components\Select::make('showroom_id')
+                            ->label('اختر المعرض')
+                            ->options(fn() => Showroom::query()->orderBy('name')->pluck('name', 'id')->all())
+                            ->searchable(),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        $sid = $data['showroom_id'] ?? null;
+                        if (!$sid) return $query;
+                        return $query->whereHas('project.productionRequest', function (Builder $w) use ($sid) {
+                            $w->where('showroom_id', $sid);
+                        });
+                    })
+                    ->visible(!$this->isShowroomManager()),
                 Filter::make('period')
                     ->label('الفترة (تاريخ الإكمال)')
                     ->form([
