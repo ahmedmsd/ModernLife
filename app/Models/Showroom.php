@@ -20,7 +20,6 @@ class Showroom extends Model
     {
         return $this->belongsTo(\App\Models\City::class);
     }
-
     public function manager(): BelongsTo
     {
         return $this->belongsTo(\App\Models\Employee::class, 'manager_id' ,'employee_id');

@@ -61,7 +61,7 @@ class MaintenanceRequestResource extends Resource
                         )
                         ->searchable()
                         ->preload()
-                        ->required()
+//                        ->required()
                         ->reactive()
                         ->afterStateUpdated(function ($state, callable $set) {
                             $project = $state

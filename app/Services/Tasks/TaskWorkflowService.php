@@ -742,39 +742,77 @@ class TaskWorkflowService
     public function log(
         ProductionTask $task,
         string $type,
-        array $data = [],
+        array|string $data = [],
         ?string $note = null,
         ?Carbon $at = null
     ): TaskLog {
-        $note = $note ?? (is_string(Arr::get($data, 'note')) ? trim((string) $data['note']) : null);
-        $causerId = Auth::id();
+        if (is_string($data) && $note === null) {
+            $note = trim($data);
+            $data = [];
+        }
+
+        $candidates = [
+            $note,
+            is_array($data) ? data_get($data, 'note') : null,
+            is_array($data) ? data_get($data, 'reason') : null,
+            is_array($data) ? data_get($data, 'reason_factory') : null,
+            is_array($data) ? data_get($data, 'reason_showroom') : null,
+        ];
+
+        $note = collect($candidates)
+            ->filter(fn ($v) => is_string($v) && trim($v) !== '')
+            ->map(fn ($v) => trim((string) $v))
+            ->first();
+
+        if (is_array($data)) {
+            unset($data['note'], $data['reason'], $data['reason_factory'], $data['reason_showroom']);
+        } else {
+            $data = [];
+        }
+
+        $causerId = \Illuminate\Support\Facades\Auth::id();
         $when     = $at ?: now();
+
+        $fingerprint = sha1(json_encode([
+            'task' => $task->getKey(),
+            'type' => $type,
+            'note' => $note,
+            'data' => $data,
+        ], JSON_UNESCAPED_UNICODE));
+
+        $data['_fp'] = $fingerprint;
 
         $exists = TaskLog::query()
             ->where('task_id', $task->getKey())
             ->where('type', $type)
             ->where('causer_id', $causerId)
-            ->where('happened_at', '>=', $when->copy()->subSeconds(2))
-            ->exists();
+            ->where('happened_at', '>=', $when->copy()->subSeconds(1))
+            ->where('data->_fp', $fingerprint)->exists();
 
-        if ($exists) {
-            return new TaskLog();
-        }
-
-        $log = TaskLog::create([
-            'task_id'     => $task->getKey(),
-            'type'        => $type,
-            'data'        => $data,
-            'note'        => $note,
-            'causer_id'   => $causerId,
-            'happened_at' => $when,
-        ]);
-
-        if ($task->relationLoaded('logs')) {
-            $task->unsetRelation('logs');
-            $task->load('logs');
-        }
-
-        return $log;
+    if ($exists) {
+        return TaskLog::query()
+            ->where('task_id', $task->getKey())
+            ->where('type', $type)
+            ->where('causer_id', $causerId)
+            ->orderByDesc('id')
+            ->first() ?? new TaskLog();
     }
+
+    $log = TaskLog::create([
+        'task_id'     => $task->getKey(),
+        'type'        => $type,
+        'data'        => $data,
+        'note'        => $note,
+        'causer_id'   => $causerId,
+        'happened_at' => $when,
+    ]);
+
+    if ($task->relationLoaded('logs')) {
+        $task->unsetRelation('logs');
+        $task->load('logs');
+    }
+
+    return $log;
+}
+
 }

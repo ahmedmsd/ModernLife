@@ -47,7 +47,7 @@ class ShowroomManagerNeedsResponse extends TableWidget
                 ProductionRequest::query()
                     ->with([
                         'creator:id,name',
-                        'client:id,client_name',
+                        'client:client_id,client_name',
                         'project:id,project_name,production_request_id',
                         'productionRequest',
                         'showroom:id,name',
