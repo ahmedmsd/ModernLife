@@ -306,6 +306,8 @@ class AdminPanelProvider extends PanelProvider
 
                                 NavigationItem::make('إدارة الأدوار')
                                     ->url('/admin/shield/roles')
+                                    ->visible(fn () => auth()->check() && auth()->user()->hasAnyRole(['admin','super-admin'], 'web')),
+
                             ])
                     );
             });
