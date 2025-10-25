@@ -117,7 +117,9 @@ class MaintenanceRequestResource extends Resource
                 Tables\Columns\TextColumn::make('client.client_name')
                     ->label('العميل')
                     ->searchable(),
-
+                Tables\Columns\TextColumn::make('client.phone')
+                    ->label('رقم الجوال')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('request_date')
                     ->label('تاريخ الطلب')
                     ->date(),
