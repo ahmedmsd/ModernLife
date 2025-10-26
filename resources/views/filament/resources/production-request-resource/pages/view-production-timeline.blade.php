@@ -636,6 +636,15 @@
                     </a>
                 </li>
             @endif
+            @if ($record->additional_work_file)
+                <li class="flex justify-between items-center bg-gray-50 dark:bg-gray-800 p-3 rounded border">
+                    <span><strong>ملف الأعمال الإضافية:</strong></span>
+                    <a href="{{ Storage::disk('public')->url($record->additional_work_file) }}"
+                       class="text-primary-600 underline" target="_blank">
+                        تحميل الملف
+                    </a>
+                </li>
+            @endif
 
             @forelse ($record->files as $file)
                 <li class="flex justify-between items-center bg-gray-50 dark:bg-gray-800 p-3 rounded border">

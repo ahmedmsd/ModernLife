@@ -145,6 +145,19 @@ class ProductionRequestResource extends Resource
                             ->downloadable()
                             ->columnSpan(['xl' => 4, 'lg' => 5, 'md' => 12]),
 
+                        FileUpload::make('additional_work_file')
+                            ->label('ملف الأعمال الإضافية (PDF)')
+                            ->helperText('صيغة PDF فقط — حتى 20MB')
+                            ->acceptedFileTypes(['application/pdf'])
+                            ->maxSize(20_480)
+                            ->disk('public')
+                            ->visibility('public')
+                            ->directory('additional_work/' . now()->format('Y/m'))
+                            ->openable()
+                            ->moveFiles()
+                            ->downloadable()
+                            ->columnSpan(['xl' => 4, 'lg' => 5, 'md' => 12]),
+
                         // ملفات الأقسام
                         Repeater::make('files')
                             ->label('ملفات التصنيع للأقسام')

@@ -15,6 +15,7 @@ class ProductionRequest extends Model
         'client_id',
         'showroom_id',
         'agreement_file',
+        'additional_work_file',
         'status',
         'created_by',
         'submitted_at',

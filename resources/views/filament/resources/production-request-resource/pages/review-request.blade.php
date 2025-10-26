@@ -4,8 +4,6 @@
     use App\Enums\PhaseStatus as S;
     use Illuminate\Support\Facades\Storage;
 
-
-
     $phaseEnum  = Phase::tryFrom($record->current_phase);
     $statusEnum = S::tryFrom($record->phase_status);
 
@@ -61,26 +59,24 @@
 
     $clientNote = trim($record->client->notes ?? '');
     $clientName = $record->client->client_name ?? '—';
-
 @endphp
 
 <x-filament::page>
-
-
     <div class="mb-4 flex flex-wrap items-center gap-2" wire:key="badges-{{ $actionRefreshKey ?? 0 }}">
-    <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-{{ $phaseColor }}-600">
-        المرحلة: {{ $phaseLabel }}
-    </span>
+        <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-{{ $phaseColor }}-600">
+            المرحلة: {{ $phaseLabel }}
+        </span>
         <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-{{ $statusColor }}-600">
-        الحالة: {{ $statusLabel }}
-    </span>
+            الحالة: {{ $statusLabel }}
+        </span>
         <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-slate-600">
-        نوع الطلب: {{ $reqType }}
-    </span>
+            نوع الطلب: {{ $reqType }}
+        </span>
         <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-gray-600">
-        المالك الحالي: {{ $ownerRole }}
-    </span>
+            المالك الحالي: {{ $ownerRole }}
+        </span>
     </div>
+
     @if ($clientNote !== '')
         <div
             class="mb-4 rounded-xl border p-4 md:p-5"
@@ -106,7 +102,6 @@
         </div>
     @endif
 
-    {{-- معلومات أساسية --}}
     <x-filament::section wire:key="info-section-{{ $actionRefreshKey ?? 0 }}">
         <x-slot name="heading">معلومات الطلب</x-slot>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
@@ -114,15 +109,12 @@
             <div><span class="text-gray-500 dark:text-gray-400">العميل:</span> <span class="font-semibold">{{ $clientName }}</span></div>
             <div><span class="text-gray-500 dark:text-gray-400">المعرض:</span> <span class="font-semibold">{{ $showroomName }}</span></div>
             <div><span class="text-gray-500 dark:text-gray-400">بواسطة:</span> <span class="font-semibold">{{ $createdBy }}</span></div>
-
             <div>
                 <span class="text-gray-500 dark:text-gray-400">المشروع:</span>
                 <span class="font-semibold">{{ $projectName }}</span>
             </div>
-
             <div><span class="text-gray-500 dark:text-gray-400">أُرسل للمالك:</span> <span class="font-semibold">{{ $sentAt }}</span></div>
             <div><span class="text-gray-500 dark:text-gray-400">تم الاستلام:</span> <span class="font-semibold">{{ $received }}</span></div>
-
             @if ($project)
                 <div class="col-span-1 md:col-span-2 lg:col-span-3">
                     <span class="text-gray-500 dark:text-gray-400">حالة المشروع:</span>
@@ -132,7 +124,6 @@
                     <span class="font-semibold">{{ $tasksDone }} / {{ $tasksTotal }}</span>
                 </div>
             @endif
-
             <div class="col-span-1 md:col-span-2 lg:col-span-3">
                 <span class="text-gray-500 dark:text-gray-400">مدة الانتظار الحالية:</span>
                 <span class="font-semibold">{{ $pendingFor }}</span>
@@ -167,9 +158,7 @@
                 @foreach ($logs as $log)
                     <div class="relative pl-5">
                         <div class="absolute left-0 top-2 h-[6px] w-[6px] rounded-full bg-gray-300 dark:bg-gray-600"></div>
-
                         <div class="flex items-start gap-2.5">
-
                             <span class="mt-[2px] flex h-4 w-4 items-center justify-center">
                                 <x-filament::icon
                                     :icon="$this->logIcon($log)"
@@ -184,25 +173,21 @@
                                     ])"
                                 />
                             </span>
-
                             <div class="grow">
                                 <div class="text-sm font-medium">
                                     {{ $this->logTitle($log) }}
                                 </div>
-
                                 <div class="mt-0.5 text-xs text-gray-500">
                                     {{ optional($log->happened_at)->format('Y-m-d H:i') }}
                                     @if ($log->causer)
                                         — بواسطة: {{ $log->causer->name }}
                                     @endif
                                 </div>
-
                                 @if (!empty($log->note))
                                     <div class="mt-1 text-sm">
                                         {{ $log->note }}
                                     </div>
                                 @endif
-
                                 @php
                                     $reason = data_get($log->data, 'reason')
                                         ?? data_get($log->data, 'reason_factory')
@@ -211,7 +196,6 @@
                                     $status = data_get($log->data, 'status');
                                     $ownerR = data_get($log->data, 'owner_role');
                                 @endphp
-
                                 <div class="mt-2 flex flex-wrap gap-1.5">
                                     @if ($phase)
                                         <x-filament::badge size="sm" color="gray">المرحلة: {{ $phase }}</x-filament::badge>
@@ -223,7 +207,6 @@
                                         <x-filament::badge size="sm" color="gray">المالك: {{ $ownerR }}</x-filament::badge>
                                     @endif
                                 </div>
-
                                 @if ($reason)
                                     <div class="mt-2 rounded-md border border-red-200/60 dark:border-red-900/40 bg-red-50 dark:bg-red-900/20 p-2.5">
                                         <div class="text-xs font-semibold text-red-700 dark:text-red-300">سبب الرفض</div>
@@ -240,16 +223,14 @@
         @endif
     </x-filament::section>
 
-
     <x-filament::section class="mt-6" wire:key="files-section-{{ $actionRefreshKey ?? 0 }}">
         <x-slot name="heading">الملفات</x-slot>
-
         @php
             $rows = [];
 
             if (!empty($record->agreement_file)) {
                 $rows[] = [
-                    'is_agreement'   => true,
+                    'kind'           => 'agreement',
                     'name'           => 'ملف الاتفاقية',
                     'description'    => 'اتفاقية المشروع (PDF)',
                     'department'     => '—',
@@ -258,19 +239,30 @@
                 ];
             }
 
+            if (!empty($record->additional_work_file)) {
+                $rows[] = [
+                    'kind'           => 'additional',
+                    'name'           => 'ملف الأعمال الإضافية',
+                    'description'    => 'أعمال إضافية / ملحق العقد (إن وجد)',
+                    'department'     => '—',
+                    'file_path'      => $record->additional_work_file,
+                    'estimated_cost' => null,
+                ];
+            }
+
             $files = $record->files ?? collect();
 
             foreach ($files as $i => $f) {
-                $filePath   = is_array($f) ? ($f['file_path'] ?? null) : ($f->file_path ?? null);
-                $fileName   = is_array($f) ? ($f['file_name'] ?? basename($filePath ?? '')) : ($f->file_name ?? basename($filePath ?? ''));
-                $desc       = is_array($f) ? ($f['description'] ?? '—') : ($f->description ?? '—');
-                $deptName   = is_array($f)
-                                ? (data_get($f, 'department.dept_name', '—'))
-                                : ($f->department->dept_name ?? '—');
-                $estCost    = is_array($f) ? ($f['estimated_cost'] ?? null) : ($f->estimated_cost ?? null);
+                $filePath = is_array($f) ? ($f['file_path'] ?? null) : ($f->file_path ?? null);
+                $fileName = is_array($f) ? ($f['file_name'] ?? basename($filePath ?? '')) : ($f->file_name ?? basename($filePath ?? ''));
+                $desc     = is_array($f) ? ($f['description'] ?? '—') : ($f->description ?? '—');
+                $deptName = is_array($f)
+                    ? (data_get($f, 'department.dept_name', '—'))
+                    : ($f->department->dept_name ?? '—');
+                $estCost  = is_array($f) ? ($f['estimated_cost'] ?? null) : ($f->estimated_cost ?? null);
 
                 $rows[] = [
-                    'is_agreement'   => false,
+                    'kind'           => 'regular',
                     'name'           => $fileName ?: '—',
                     'description'    => $desc ?: '—',
                     'department'     => $deptName ?: '—',
@@ -294,21 +286,31 @@
                     </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-800 text-gray-800 dark:text-gray-200">
-                    @foreach ($rows as $i => $row)
+                    @php $regularIndex = 0; @endphp
+                    @foreach ($rows as $row)
                         @php
                             $url = null;
                             if (!empty($row['file_path']) && Storage::disk('public')->exists($row['file_path'])) {
                                 $url = Storage::disk('public')->url($row['file_path']);
                             }
+                            $isSpecial = in_array($row['kind'], ['agreement', 'additional'], true);
                         @endphp
                         <tr class="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-900 dark:even:bg-gray-800">
-                            <td class="px-3 py-2">{{ $row['is_agreement'] ? '—' : $loop->iteration - (empty($record->agreement_file) ? 0 : 1) }}</td>
+                            <td class="px-3 py-2">
+                                @if ($isSpecial)
+                                    —
+                                @else
+                                    {{ ++$regularIndex }}
+                                @endif
+                            </td>
                             <td class="px-3 py-2">{{ $row['name'] }}</td>
                             <td class="px-3 py-2">{{ $row['description'] }}</td>
-                            <td class="px-3 py-2">{{ $row['is_agreement'] ? '—' : $row['department'] }}</td>
                             <td class="px-3 py-2">
-                                @if(!$row['is_agreement'] && !is_null($row['estimated_cost']))
-                                    SAR {{ number_format((float)$row['estimated_cost'], 2) }}
+                                {{ $isSpecial ? '—' : ($row['department'] ?? '—') }}
+                            </td>
+                            <td class="px-3 py-2">
+                                @if (!$isSpecial && !is_null($row['estimated_cost']))
+                                    SAR {{ number_format((float) $row['estimated_cost'], 2) }}
                                 @else
                                     —
                                 @endif
@@ -330,14 +332,10 @@
         @endif
     </x-filament::section>
 
-    {{-- ملاحظات --}}
     <x-filament::section class="mt-6">
         <x-slot name="heading">ملاحظات</x-slot>
         <div class="text-sm text-gray-600 dark:text-gray-300">
             الطلب سيظل مفتوحًا حتى اكتمال المشروع وجميع المهام المرتبطة به. عند اكتمالها، يُغلق الطلب تلقائيًا.
         </div>
     </x-filament::section>
-
-    {{-- JavaScript removed - using full page reloads instead --}}
-
 </x-filament::page>
