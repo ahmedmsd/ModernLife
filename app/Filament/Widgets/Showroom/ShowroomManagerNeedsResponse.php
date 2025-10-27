@@ -49,7 +49,6 @@ class ShowroomManagerNeedsResponse extends TableWidget
                         'creator:id,name',
                         'client:client_id,client_name',
                         'project:id,project_name,production_request_id',
-                        'productionRequest',
                         'showroom:id,name',
                     ])
                     ->whereIn('showroom_id', $managedShowroomIds ?: [-1])

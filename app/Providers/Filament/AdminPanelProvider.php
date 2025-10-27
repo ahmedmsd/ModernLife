@@ -216,6 +216,9 @@ class AdminPanelProvider extends PanelProvider
                     ->group(
                         NavigationGroup::make()->label('المشتريات')->icon('heroicon-o-truck')->collapsed()
                             ->items([
+                                NavigationItem::make('طلبات الأقسام الخارجية')
+                                    ->url(\App\Filament\Resources\DepartmentPurchaseRequestResource::getUrl())
+                                    ->visible(fn () => \App\Filament\Resources\DepartmentPurchaseRequestResource::canViewAny()),
                                 NavigationItem::make('طلبات الخامات')
                                     ->url(\App\Filament\Pages\Purchasing\MaterialsRequests::getUrl())
                                     ->visible(fn () => \App\Filament\Pages\Purchasing\MaterialsRequests::canAccess()),

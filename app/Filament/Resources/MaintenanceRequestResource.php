@@ -91,12 +91,20 @@ class MaintenanceRequestResource extends Resource
                         ->label('وصف المشكلة')->rows(5)->columnSpanFull(),
 
                     Forms\Components\FileUpload::make('images')
-                        ->label('صور للمشكلة')->disk('public')
-                        ->directory(fn()=> 'maintenance-requests/' . now()->format('Y/m'))
-                        ->visibility('public')->image()->multiple()
-                        ->maxSize(8192)->acceptedFileTypes(['image/*'])
-                        ->openable()->downloadable()
-                        ->dehydrateStateUsing(fn($state)=> array_values((array)$state))
+                        ->label('صور/فيديو المشكلة')
+                        ->disk('public')
+                        ->directory(fn () => 'maintenance-requests/' . now()->format('Y/m'))
+                        ->visibility('public')
+                        ->multiple()
+                        ->acceptedFileTypes([
+                            'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml',
+                            'video/mp4', 'video/webm', 'video/ogg', 'video/quicktime', // mov
+                        ])
+                        ->maxSize(102_400) // ≈ 100 MB لكل ملف
+                        ->helperText('يدعم الصور والفيديو حتى 100MB. الصيغ: jpg, png, webp, gif, svg, mp4, webm, ogg, mov')
+                        ->openable()
+                        ->downloadable()
+                        ->dehydrateStateUsing(fn ($state) => array_values((array) $state))
                         ->columnSpanFull(),
                 ]),
         ]);
