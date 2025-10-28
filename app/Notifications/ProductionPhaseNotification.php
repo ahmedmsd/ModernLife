@@ -13,8 +13,8 @@ class ProductionPhaseNotification extends Notification implements ShouldQueue
     use Queueable;
 
     public function __construct(
-        public ProductionRequest $pr,
-        public string $type,
+        public int $prId,
+        public string $event,
         public array $context = []
     ) {
         $this->afterCommit();
@@ -22,48 +22,70 @@ class ProductionPhaseNotification extends Notification implements ShouldQueue
 
     public function via($notifiable): array
     {
-        return ['database', 'mail'];
+        $channels = ['database'];
+        if (!empty($notifiable->email)) {
+            $channels[] = 'mail';
+        }
+        return $channels;
+    }
+
+    public function viaQueues(): array
+    {
+        return [
+            'mail' => 'mail',
+            'database' => 'default',
+        ];
     }
 
     public function toMail($notifiable): MailMessage
     {
-        $url = $this->timelineUrl($this->pr);
-        $subject = $this->mailSubject();
+        $pr = $this->pr();
+        $url = $this->timelineUrl($pr);
+        $subject = $this->mailSubject($pr);
 
         return (new MailMessage)
             ->subject($subject)
             ->greeting('مرحبًا ' . ($notifiable->name ?? ''))
             ->line($this->mailLine())
             ->action('عرض تفاصيل الطلب', $url)
-            ->line('رقم الطلب: #' . $this->pr->id);
+            ->line('رقم الطلب: #' . $pr->id);
     }
 
     public function toDatabase($notifiable): array
     {
+        $pr = $this->pr();
+
         return [
-            'pr_id'     => $this->pr->id,
-            'type'      => $this->type,
-            'context'   => $this->context,
-            'title'     => $this->dbTitle(),
-            'body'      => $this->dbBody(),
-            'url'       => $this->timelineUrl($this->pr),
+            'pr_id'   => $pr->id,
+            'event'   => $this->event, // was: type
+            'context' => $this->context,
+            'title'   => $this->dbTitle(),
+            'body'    => $this->dbBody(),
+            'url'     => $this->timelineUrl($pr),
         ];
     }
 
-    protected function mailSubject(): string
+    /* ---------------- Helpers ---------------- */
+
+    protected function pr(): ProductionRequest
     {
-        return match ($this->type) {
-            'transition'        => "تحديث مرحلة لطلب التصنيع #{$this->pr->id}",
-            'received'          => "تأكيد استلام لطلب التصنيع #{$this->pr->id}",
-            'rejected'          => "رفض طلب التصنيع #{$this->pr->id}",
-            'project_bootstrap' => "تهيئة مشروع لطلب التصنيع #{$this->pr->id}",
-            default             => "إشعار حول طلب التصنيع #{$this->pr->id}",
+        return (new \App\Models\ProductionRequest)->findOrFail($this->prId);
+    }
+
+    protected function mailSubject(ProductionRequest $pr): string
+    {
+        return match ($this->event) {
+            'transition'        => "تحديث مرحلة لطلب التصنيع #{$pr->id}",
+            'received'          => "تأكيد استلام لطلب التصنيع #{$pr->id}",
+            'rejected'          => "رفض طلب التصنيع #{$pr->id}",
+            'project_bootstrap' => "تهيئة مشروع لطلب التصنيع #{$pr->id}",
+            default             => "إشعار حول طلب التصنيع #{$pr->id}",
         };
     }
 
     protected function mailLine(): string
     {
-        return match ($this->type) {
+        return match ($this->event) {
             'transition'        => 'تم تحديث مرحلة الطلب.',
             'received'          => 'تم تأكيد استلام الطلب من قِبل المالك الحالي.',
             'rejected'          => 'تم رفض الطلب.',
@@ -74,7 +96,7 @@ class ProductionPhaseNotification extends Notification implements ShouldQueue
 
     protected function dbTitle(): string
     {
-        return match ($this->type) {
+        return match ($this->event) {
             'transition'        => 'انتقال مرحلة',
             'received'          => 'تأكيد استلام',
             'rejected'          => 'رفض طلب',
@@ -90,7 +112,6 @@ class ProductionPhaseNotification extends Notification implements ShouldQueue
 
     protected function timelineUrl(ProductionRequest $pr): string
     {
-
         $base = config('app.url') ?: url('/');
         return rtrim($base, '/') . "/admin/production-requests/{$pr->id}/timeline";
     }
