@@ -11,7 +11,10 @@ class NotifyProductionPhaseStakeholders
 {
     public function handle(ProductionRequestPhaseEvent $event): void
     {
-        $pr = $event->pr->loadMissing(['showroom.manager.user', 'project.tasks.department.manager.user']);
+        $pr = $event->pr->loadMissing([
+            'showroom.manager.user',
+            'project.tasks.department.manager.user',
+        ]);
 
         $recipients = $this->resolveRecipients($pr, $event->type, $event->context);
 
@@ -19,9 +22,14 @@ class NotifyProductionPhaseStakeholders
             return;
         }
 
+        // ✅ مرر المعرّف فقط، وليس الكائن
         Notification::send(
             $recipients->unique('id')->values(),
-            new \App\Notifications\ProductionPhaseNotification($pr, $event->type, $event->context)
+            new \App\Notifications\ProductionPhaseNotification(
+                prId: $pr->id,            // كان $pr -> الآن $pr->id
+                event: $event->type,      // لو بقيت على "type" داخل الـ Notification غيّر المفتاح ليتوافق
+                context: $event->context
+            )
         );
     }
 

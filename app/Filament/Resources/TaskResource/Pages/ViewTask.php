@@ -31,6 +31,7 @@ use App\Models\TaskComment;
 use App\Support\Tasks\TaskPageHelper;
 use App\Services\Tasks\TaskWorkflowService;
 use Illuminate\Support\Str;
+use Filament\Notifications\Actions\Action as NotificationAction;
 
 class ViewTask extends ViewRecord
 {
@@ -96,13 +97,54 @@ class ViewTask extends ViewRecord
                         ->multiple()->directory('task-comments')->downloadable()->openable(),
                 ])
                 ->action(function (array $data) {
-                    TaskComment::create([
+                    $comment = TaskComment::create([
                         'task_id'     => $this->record->id,
                         'user_id'     => auth()->id(),
                         'body'        => $data['body'],
                         'attachments' => isset($data['attachments']) ? array_values((array) $data['attachments']) : null,
                     ]);
-                    Notification::make()->title('تم إضافة التعليق')->success()->send();
+
+                    $taskUrl = \App\Filament\Resources\TaskResource::getUrl('view', ['record' => $this->record]);
+
+                    $recipients = collect();
+
+                    if ($this->record->created_by && ($u = \App\Models\User::find($this->record->created_by))) {
+                        $recipients->push($u);
+                    }
+
+                    if ($this->record->current_owner_user_id && ($owner = \App\Models\User::find($this->record->current_owner_user_id))) {
+                        $recipients->push($owner);
+                    }
+
+                    $deptManagerUser = optional(optional($this->record->department)->manager)->user;
+                    if ($deptManagerUser) {
+                        $recipients->push($deptManagerUser);
+                    }
+
+                    $recipients = $recipients
+                        ->filter()
+                        ->unique('id')
+                        ->reject(fn ($user) => (int) $user->id === (int) auth()->id())
+                        ->values();
+
+                    if ($recipients->isNotEmpty()) {
+                        \Filament\Notifications\Notification::make()
+                            ->title("تعليق جديد على المهمة #{$this->record->id}")
+                            ->icon('heroicon-m-chat-bubble-left-right')
+                            ->body(\Illuminate\Support\Str::limit(strip_tags((string) $data['body']), 180))
+                            ->actions([
+                                NotificationAction::make('عرض المهمة')
+                                    ->button()
+                                    ->url($taskUrl)
+                                    ->openUrlInNewTab(),
+                            ])
+                            ->sendToDatabase($recipients);
+                    }
+
+                    \Filament\Notifications\Notification::make()
+                        ->title('تم إضافة التعليق')
+                        ->success()
+                        ->send();
                 }),
 
             /* إسناد لمدير القسم */
@@ -1363,6 +1405,39 @@ Action::make('resume')
                             $name = e(basename($basename));
 
                             return '<a href="'.e($url).'" target="_blank" style="color:#16a34a; text-decoration:underline; font-weight:600;">'.$name.' ▸</a>';
+                        }),
+                    TextEntry::make('additional_work_file_link')
+                        ->label('ملف الأعمال الإضافية')
+                        ->html()
+                        ->visible(fn () =>
+                            auth()->check() &&
+                            auth()->user()->hasAnyRole([
+                                'admin',
+                                'super-admin',
+                                'super_admin',
+                                'factory_manager',
+                                'purchasing_manager',
+                                'installation_manager',
+                                'quality_manager',
+                                'department_manager',
+                                'sales',
+                                'showroom_manager',
+                            ])
+                        )
+                        ->state(function (ProductionTask $record) {
+                            $pr = $record->project?->productionRequest;
+                            $value = (string) ($pr?->additional_work_file ?? '');
+                            if (blank($value)) {
+                                return '<span style="opacity:.7">—</span>';
+                            }
+
+                            $isUrl = Str::startsWith($value, ['http://', 'https://']);
+                            $url   = $isUrl ? $value : Storage::disk('public')->url($value);
+
+                            $basename = parse_url($value, PHP_URL_PATH) ?: $value;
+                            $name = e(basename($basename));
+
+                            return '<a href="'.e($url).'" target="_blank" style="color:#0ea5e9; text-decoration:underline; font-weight:600;">'.$name.' ▸</a>';
                         }),
                     TextEntry::make('client_receipt_link')
                         ->label('سند استلام العميل')
