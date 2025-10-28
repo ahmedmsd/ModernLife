@@ -179,12 +179,15 @@ class MaintenanceRequestResource extends Resource
                     ->form([
                         Forms\Components\Textarea::make('note')->label('الملاحظة')->rows(4)->required()->maxLength(5000),
                     ])
-                    ->action(function (MaintenanceRequest $record, array $data) {
+                    ->action(function (\App\Models\MaintenanceRequest $record, array $data) {
                         $record->comments()->create([
-                            'user_id'=>Auth::id(),
-                            'note'=>(string)$data['note'],
+                            'user_id' => Auth::id(),
+                            'note'    => (string) $data['note'],
                         ]);
-                        Notification::make()->success()->title('تمت إضافة الملاحظة')->send();
+
+                        app(\App\Services\MaintenanceNotifier::class)->notifyComment($record, (string) $data['note']);
+
+                        \Filament\Notifications\Notification::make()->success()->title('تمت إضافة الملاحظة')->send();
                     }),
 
                 Tables\Actions\Action::make('start')
@@ -193,14 +196,17 @@ class MaintenanceRequestResource extends Resource
                         Auth::user()?->hasAnyRole(['factory_manager','admin','super-admin']) && $r->status==='new'
                     )
                     ->requiresConfirmation()
-                    ->action(function (MaintenanceRequest $record) {
+                    ->action(function (\App\Models\MaintenanceRequest $record) {
                         $record->update([
-                            'status'=>'in_progress',
-                            'current_owner_role'=>'factory_manager',
-                            'current_owner_user_id'=>Auth::id(),
-                            'received_by_owner_at'=>now(),
+                            'status'                 => 'in_progress',
+                            'current_owner_role'     => 'factory_manager',
+                            'current_owner_user_id'  => Auth::id(),
+                            'received_by_owner_at'   => now(),
                         ]);
-                        Notification::make()->success()->title('تم بدء الصيانة')->send();
+
+                        app(\App\Services\MaintenanceNotifier::class)->notifyStatusChange($record, 'started');
+
+                        \Filament\Notifications\Notification::make()->success()->title('تم بدء الصيانة')->send();
                     }),
 
                 Tables\Actions\Action::make('complete')
@@ -218,17 +224,20 @@ class MaintenanceRequestResource extends Resource
                             ->openable()->downloadable(),
                     ])
                     ->requiresConfirmation()
-                    ->action(function (MaintenanceRequest $record, array $data) {
+                    ->action(function (\App\Models\MaintenanceRequest $record, array $data) {
                         $merged = array_values(array_unique(array_merge(
                             (array)($record->images ?? []),
                             (array)($data['closing_images'] ?? [])
                         )));
                         $record->update([
-                            'status'=>'completed',
-                            'images'=>$merged,
-                            'closed_at'=>now(),
+                            'status'    => 'completed',
+                            'images'    => $merged,
+                            'closed_at' => now(),
                         ]);
-                        Notification::make()->success()->title('تم إغلاق طلب الصيانة')->send();
+
+                        app(\App\Services\MaintenanceNotifier::class)->notifyCompletedToOwner($record, $data['note'] ?? null);
+
+                        \Filament\Notifications\Notification::make()->success()->title('تم إغلاق طلب الصيانة')->send();
                     }),
             ]);
     }
@@ -248,22 +257,19 @@ class MaintenanceRequestResource extends Resource
         ];
     }
 
-    public static function afterCreate(MaintenanceRequest $record): void
+    public static function afterCreate(\App\Models\MaintenanceRequest $record): void
     {
         $record->update([
-            'current_owner_role'=>'factory_manager',
-            'current_owner_user_id'=>null,
-            'sent_to_owner_at'=>now(),
+            'current_owner_role'    => 'factory_manager',
+            'current_owner_user_id' => null,
+            'sent_to_owner_at'      => now(),
         ]);
 
-        try {
-            $role = Role::findByName('factory_manager');
-            foreach ($role->users as $user) {
-                Notification::make()
-                    ->title('طلب صيانة جديد')
-                    ->body("طلب #{$record->id} للمشروع #{$record->project_id}")
-                    ->sendToDatabase($user);
-            }
-        } catch (\Throwable $e) {}
+        app(\App\Services\MaintenanceNotifier::class)->notifyNewRequest($record);
+
+        \Filament\Notifications\Notification::make()
+            ->title('تم إنشاء طلب صيانة جديد وإبلاغ مدير المصنع')
+            ->success()
+            ->send();
     }
 }

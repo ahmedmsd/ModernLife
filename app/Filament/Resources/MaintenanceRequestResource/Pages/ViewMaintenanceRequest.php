@@ -29,21 +29,15 @@ class ViewMaintenanceRequest extends ViewRecord
                         ->required()
                         ->maxLength(5000),
                 ])
-                ->action(function (array $data) {
-                    /** @var MaintenanceRequest $record */
-                    $record = $this->getRecord();
+                ->action(function (\App\Models\MaintenanceRequest $record, array $data) {
                     $record->comments()->create([
                         'user_id' => Auth::id(),
                         'note'    => (string) $data['note'],
                     ]);
 
-                    Notification::make()
-                        ->success()
-                        ->title('تمت إضافة الملاحظة')
-                        ->send();
+                    app(\App\Services\MaintenanceNotifier::class)->notifyComment($record, (string) $data['note']);
 
-                    $this->redirect(MaintenanceRequestResource::getUrl('view', ['record' => $record]));
-
+                    \Filament\Notifications\Notification::make()->success()->title('تمت إضافة الملاحظة')->send();
                 }),
         ];
     }

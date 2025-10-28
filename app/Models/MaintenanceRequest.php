@@ -33,6 +33,9 @@ class MaintenanceRequest extends Model
     public function requester(): BelongsTo { return $this->belongsTo(User::class, 'requested_by'); }
     public function ownerUser(): BelongsTo { return $this->belongsTo(User::class, 'current_owner_user_id'); }
     public function comments(): HasMany { return $this->hasMany(MaintenanceComment::class, 'maintenance_request_id')->latest(); }
-
+    public function createdByUser(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class, 'created_by');
+    }
 
 }
