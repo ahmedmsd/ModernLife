@@ -5,6 +5,7 @@ namespace App\Filament\Resources\TaskResource\Pages;
 use App\Filament\Resources\TaskResource;
 use App\Models\Employee;
 use App\Models\TaskLog;
+use App\Models\User;
 use App\Services\Tasks\TaskTimerService;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Radio;
@@ -104,21 +105,41 @@ class ViewTask extends ViewRecord
                         'attachments' => isset($data['attachments']) ? array_values((array) $data['attachments']) : null,
                     ]);
 
+                    $this->record->loadMissing([
+                        'department.manager.user',
+                        'project.productionRequest.showroom.manager.user',
+                    ]);
+
                     $taskUrl = \App\Filament\Resources\TaskResource::getUrl('view', ['record' => $this->record]);
 
                     $recipients = collect();
 
-                    if ($this->record->created_by && ($u = \App\Models\User::find($this->record->created_by))) {
+                    if ($this->record->created_by && ($u = User::find($this->record->created_by))) {
                         $recipients->push($u);
                     }
 
-                    if ($this->record->current_owner_user_id && ($owner = \App\Models\User::find($this->record->current_owner_user_id))) {
+                    if ($this->record->current_owner_user_id && ($owner = User::find($this->record->current_owner_user_id))) {
                         $recipients->push($owner);
                     }
 
                     $deptManagerUser = optional(optional($this->record->department)->manager)->user;
                     if ($deptManagerUser) {
                         $recipients->push($deptManagerUser);
+                    }
+
+                    $showroomManagerUser = optional(
+                        optional(
+                            optional($this->record->project)->productionRequest
+                        )->showroom
+                    )->manager?->user;
+
+                    if ($showroomManagerUser) {
+                        $recipients->push($showroomManagerUser);
+                    }
+
+                    $factoryManagers = User::role('factory_manager')->get();
+                    if ($factoryManagers->isNotEmpty()) {
+                        $recipients = $recipients->merge($factoryManagers);
                     }
 
                     $recipients = $recipients

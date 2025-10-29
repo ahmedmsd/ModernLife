@@ -10,8 +10,8 @@ class ProductionRequestLog extends Model
     protected $fillable = [
         'production_request_id',
         'causer_id',
-        'type',           // created | transition | status_changed | received | rejected | deleted | ...
-        'data',           // JSON
+        'type',
+        'data',
         'note',
         'happened_at',
     ];

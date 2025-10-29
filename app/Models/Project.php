@@ -5,7 +5,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, HasManyThrough};
+use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, HasManyThrough, MorphMany};
 use Illuminate\Support\Carbon;
 use App\Models\Concerns\HasStatusScopes;
 
@@ -62,7 +62,6 @@ class Project extends Model
     {
         return $this->hasMany(ProjectFile::class, 'project_id', 'id');
     }
-
 
 
     public function materialRequests(): HasManyThrough

@@ -1,76 +1,60 @@
 @php
     use App\Enums\ProductionRequestStatus;
     use Illuminate\Support\Carbon;
+    use Illuminate\Support\Arr;
+    use Illuminate\Support\Str;
 
-    $statusEnum = ProductionRequestStatus::tryFrom($record->status);
+    /* ======================= أدوات عامة موحّدة ======================= */
 
+     $normalizeRole = function (?string $role) {
+        $role = (string) $role;
+        $role = Str::of($role)->lower()->replace([' ', '-'], '_')->value();
+        return match ($role) {
+            'showroom', 'showroomowner', 'showroom_manager'      => 'showroom_manager',
+            'factory', 'factoryowner', 'factory_manager'          => 'factory_manager',
+            'dept', 'department', 'department_manager'            => 'department_manager',
+            default                                                => $role,
+        };
+    };
 
-    $clientNote = trim($record->client->notes ?? '');
-    $clientName = $record->client->client_name ?? '—';
+$detectRole = function (array $data) use ($normalizeRole) : ?string {
+    $role = data_get($data, 'owner_role')
+         ?? data_get($data, 'to.owner_role')
+         ?? data_get($data, 'owner')
+         ?? data_get($data, 'to.role');
 
-    $tasks = $record->project
-        ? $record->project->tasks()
-            ->with([
-                'materialRequests:id,task_id,expected_delivery_at,approved_at,provided_at',
-                'logs', // إن لم تكن العلاقة موجودة، احذفها أو أضفها لاحقًا في الموديل
-            ])->get()
-        : collect();
-
-    // كل طلبات الخامات التابعة للمشروع عبر المهام
-    $mrs = $tasks->flatMap(fn($t) => $t->materialRequests ?? collect());
-
-    // نختار أحدث قيم لكل تاريخ مهم
-    $expectedAt = optional(
-        $mrs->filter(fn($m) => !is_null($m->expected_delivery_at))
-            ->sortByDesc('expected_delivery_at')
-            ->first()
-    )->expected_delivery_at;
-
-    $approvedAt = optional(
-        $mrs->filter(fn($m) => !is_null($m->approved_at))
-            ->sortByDesc('approved_at')
-            ->first()
-    )->approved_at;
-
-    $providedAt = optional(
-        $mrs->filter(fn($m) => !is_null($m->provided_at))
-            ->sortByDesc('provided_at')
-            ->first()
-    )->provided_at;
-
-    $expected = $expectedAt ? Carbon::parse($expectedAt) : null;
-    $approved = $approvedAt ? Carbon::parse($approvedAt) : null;
-    $provided = $providedAt ? Carbon::parse($providedAt) : null;
-
-    // تواريخ الإنشاء والملخص العام من الطلب نفسه
-    $created  = $record->created_at ? Carbon::parse($record->created_at) : null;
-
-    /* ================== بدء/نهاية التصنيع الفعلية من اللوجات/أعمدة المهام ================== */
-
-    $taskLogs = $tasks->flatMap(fn($t) => $t->logs ?? collect());
-
-    $startLog = $taskLogs->first(fn($l) => ($l->type ?? null) === 'manufacturing_started' || ($l->action ?? null) === 'manufacturing_started');
-    $endLog   = $taskLogs->first(fn($l) => ($l->type ?? null) === 'manufacturing_finished' || ($l->action ?? null) === 'manufacturing_finished');
-    $clientR  = $taskLogs->first(fn($l) => ($l->type ?? null) === 'client_receipt_uploaded' || ($l->action ?? null) === 'client_receipt_uploaded');
-
-    $actualStartAt = $startLog?->action_at ?? $startLog?->happened_at ?? $startLog?->created_at;
-    $actualEndAt   = $endLog?->action_at   ?? $endLog?->happened_at   ?? $endLog?->created_at;
-    $clientAtRaw   = $clientR?->action_at  ?? $clientR?->happened_at  ?? $clientR?->created_at;
-
-    if (!$actualStartAt) {
-        $actualStartAt = $tasks->min(fn($t) => $t->actual_start_at ?? $t->started_at ?? null);
-    }
-    if (!$actualEndAt) {
-        $actualEndAt = $tasks->max(fn($t) => $t->actual_end_at ?? $t->finished_at ?? null);
+    if (!empty($role)) {
+        return $normalizeRole((string) $role);
     }
 
-    $actualStartAt = $actualStartAt ? Carbon::parse($actualStartAt) : null;
-    $actualEndAt   = $actualEndAt   ? Carbon::parse($actualEndAt)   : null;
-    $clientAt      = $clientAtRaw   ? Carbon::parse($clientAtRaw)   : null;
+    $phase = Str::of((string) (data_get($data, 'phase') ?? data_get($data, 'to.phase') ?? ''))
+        ->lower()->value();
+
+    if ($phase === '') return null;
+
+    if (Str::contains($phase, 'showroom'))   return 'showroom_manager';
+    if (Str::contains($phase, 'factory'))    return 'factory_manager';
+    if (Str::contains($phase, 'department')) return 'department_manager';
+
+    return null;
+};
+    $toArr = function ($v) {
+        if (is_array($v)) return $v;
+        if ($v instanceof \JsonSerializable) $v = $v->jsonSerialize();
+        if (is_object($v)) return (array) $v;
+        if (is_string($v)) {
+            $j = json_decode($v, true);
+            if (json_last_error() === JSON_ERROR_NONE) return $j ?? [];
+        }
+        return (array) $v;
+    };
 
 
+
+    // تنسيق وقت مختصر
     $fmt = function (?Carbon $c) { return $c?->format('Y-m-d H:i') ?? '—'; };
 
+    // تحويل دقائق إلى نص عربي
     $minutesToHuman = function (int $min): string {
         $d = intdiv($min, 1440);
         $h = intdiv($min % 1440, 60);
@@ -82,62 +66,252 @@
         return implode(' و ', $parts);
     };
 
-    $humanDiff = function (?Carbon $a, ?Carbon $b) use ($minutesToHuman) {
-        if (!$a || !$b) return '—';
-        return $minutesToHuman($a->diffInMinutes($b));
+    // فرق زمني آمن
+    $humanDiff = function ($from, $to) use ($minutesToHuman) {
+        if (blank($from) || blank($to)) return '—';
+        $from = $from instanceof Carbon ? $from : Carbon::parse($from);
+        $to   = $to   instanceof Carbon ? $to   : Carbon::parse($to);
+        if ($to->lessThan($from)) { [$from, $to] = [$to, $from]; }
+        return $minutesToHuman($from->diffInMinutes($to));
     };
+
+    /* ======================= رؤوس بيانات أساسية ======================= */
+
+    $statusEnum  = ProductionRequestStatus::tryFrom($record->status);
+    $clientNote  = trim($record->client->notes ?? '');
+    $clientName  = $record->client->client_name ?? '—';
+    $created     = $record->created_at ? Carbon::parse($record->created_at) : null;
+
+    // تحميل علاقات لازمة
+    $record->loadMissing([
+        'logs',
+        'creator',
+        'client',
+        'showroom',
+        'project.tasks.department',
+        'project.tasks.employee',
+        'project.tasks.materialRequests.requestedBy',
+        'project.tasks.materialRequests.providedBy',
+        'project.tasks.logs',
+    ]);
+
+    /* ======================= تجميع اللوج ======================= */
+
+    $reqLogs  = collect($record->logs ?? []);
+    $projLogs = $record->project
+    ? collect($record->project->taskLogs ?? [])
+    : collect();
+    $taskLogs  = collect();
+
+    $tasks = $record->project
+        ? $record->project->tasks()->with([
+            'department',
+            'employee',
+            'materialRequests:id,task_id,expected_delivery_at,approved_at,provided_at,requested_at,requested_by,provided_by',
+            'logs',
+        ])->orderBy('id')->get()
+        : collect();
+
+    foreach ($tasks as $t) {
+        $taskLogs = $taskLogs->merge($t->logs ?? collect());
+    }
+
+    $allLogs = $reqLogs
+        ->concat($projLogs)
+        ->concat($taskLogs)
+        ->filter();
+
+    // ترتيب زمني واحد للكل
+    $allLogs = $allLogs->sortBy(function ($l) {
+        $t = $l->action_at ?? $l->happened_at ?? $l->created_at ?? null;
+        return $t ? Carbon::parse($t)->timestamp : 0;
+    })->values();
+
+    // ترتيب فرعي للوج الطلب فقط (لاستخراج الإرسال/الاستلام للأدوار)
+    $reqLogsSorted = $reqLogs->sortBy(function ($l) {
+        $t = $l->action_at ?? $l->happened_at ?? $l->created_at ?? null;
+        return $t ? Carbon::parse($t)->timestamp : 0;
+    })->values();
+
+    /* ======================= مساعدات استخراج الأحداث ======================= */
+
+    $firstEventAt = function (array $keys, $logs) {
+        $ev = collect($logs ?? [])->first(function ($l) use ($keys) {
+            $k = $l->action ?? $l->type ?? null;
+            return $k && in_array($k, $keys, true);
+        });
+        $at = $ev?->action_at ?? $ev?->happened_at ?? $ev?->created_at;
+        return $at ? Carbon::parse($at) : null;
+    };
+
+   $firstOwnerSendAt = function (string $role) use ($reqLogsSorted, $toArr, $normalizeRole, $detectRole) {
+    $role = $normalizeRole($role);
+
+    $explicit = [
+        'showroom_manager'   => ['sent_to_showroom'],
+        'factory_manager'    => ['sent_to_factory'],
+        'department_manager' => ['sent_to_department', 'waiting_production'],
+    ][$role] ?? [];
+
+    $event = $reqLogsSorted->first(function ($l) use ($explicit, $role, $toArr, $detectRole) {
+        $type = $l->action ?? $l->type ?? null;
+
+        // أحداث إرسال صريحة
+        if (in_array($type, $explicit, true)) return true;
+
+        // انتقالات تحمل phase فقط
+        if (in_array($type, ['ownership_changed','owner_changed','transition','status_changed'], true)) {
+            $data   = $toArr($l->data);
+            $toRole = $detectRole($data);
+            return $toRole === $role;
+        }
+        return false;
+    });
+
+    $at = $event?->action_at ?? $event?->happened_at ?? $event?->created_at;
+    return $at ? \Illuminate\Support\Carbon::parse($at) : null;
+};
+
+$firstOwnerReceiveAt = function (string $role) use ($reqLogsSorted, $toArr, $normalizeRole, $detectRole) {
+    $role = $normalizeRole($role);
+
+    $event = $reqLogsSorted->first(function ($l) use ($role, $toArr, $detectRole) {
+        $type = $l->action ?? $l->type ?? null;
+        if (!in_array($type, ['ownership_received','owner_received','received'], true)) return false;
+
+        $data  = $toArr($l->data);
+        $rRole = $detectRole($data);
+
+        return $rRole === $role;
+    });
+
+    $at = $event?->action_at ?? $event?->happened_at ?? $event?->created_at;
+    return $at ? \Illuminate\Support\Carbon::parse($at) : null;
+};
+    /* ======================= مواد/توريد ======================= */
+
+    $mrs = $tasks->flatMap(fn($t) => $t->materialRequests ?? collect());
+
+    $expectedAt = optional(
+        $mrs->whereNotNull('expected_delivery_at')->sortBy('expected_delivery_at')->first()
+    )->expected_delivery_at;
+
+    $approvedAt = optional(
+        $mrs->whereNotNull('approved_at')->sortBy('approved_at')->first()
+    )->approved_at;
+
+    $providedAt = optional(
+        $mrs->whereNotNull('provided_at')->sortBy('provided_at')->first()
+    )->provided_at;
+
+    $expected = $expectedAt ? Carbon::parse($expectedAt) : null;
+    $approved = $approvedAt ? Carbon::parse($approvedAt) : null;
+    $provided = $providedAt ? Carbon::parse($providedAt) : null;
+
+    /* ======================= تصنيع فعلي/مخطط ======================= */
+
+    $actualStartAt = $firstEventAt(['manufacturing_started'], $allLogs)
+        ?? ($tasks->min(fn($t) => $t->actual_start_at ?? $t->started_at ?? null)
+            ? Carbon::parse($tasks->min(fn($t) => $t->actual_start_at ?? $t->started_at ?? null)) : null);
+
+    $actualEndAt = $firstEventAt(['manufacturing_finished'], $allLogs)
+        ?? ($tasks->max(fn($t) => $t->actual_end_at ?? $t->finished_at ?? null)
+            ? Carbon::parse($tasks->max(fn($t) => $t->actual_end_at ?? $t->finished_at ?? null)) : null);
+
+    $plannedStartAgg = $tasks->min(fn($t) => $t->planned_start_at ?? $t->planned_start ?? null);
+    $plannedEndAgg   = $tasks->max(fn($t) => $t->planned_end_at   ?? $t->planned_end   ?? null);
+    $plannedStart    = $plannedStartAgg ? Carbon::parse($plannedStartAgg) : null;
+    $plannedEnd      = $plannedEndAgg   ? Carbon::parse($plannedEndAgg)   : null;
+
+    /* ======================= أحداث ما بعد التصنيع ======================= */
+
+    $qaMfgApproveAt   = $firstEventAt(['qa_approved_manufacturing'], $allLogs);
+    $sentToInstallAt  = $firstEventAt(['sent_to_install'], $allLogs);
+    $instStartedAt    = $firstEventAt(['installation_started'], $allLogs);
+    $qaInstApproveAt  = $firstEventAt(['qa_approved_installation'], $allLogs);
+
+    $clientReceiptAt  = $firstEventAt(['client_receipt_uploaded'], $allLogs);
+    $taskCompletedAt  = $firstEventAt(['task_completed'], $allLogs);
+    $projectCompletedAt = $firstEventAt(['project_completed'], $reqLogs);
+    $requestClosedAt    = $firstEventAt(['production_request_closed'], $reqLogs)
+                       ?? (($record->status ?? null) === 'closed'
+                           ? ($record->updated_at ? Carbon::parse($record->updated_at) : null)
+                           : null);
+
+    /* ======================= أوقات إرسال/استلام الأدوار ======================= */
+
+    $sentShowroomAt = $firstOwnerSendAt('showroom_manager');
+    $sentFactoryAt  = $firstOwnerSendAt('factory_manager');
+    $sentDeptAt     = $firstOwnerSendAt('department_manager');
+
+    $recvShowroomAt = $firstOwnerReceiveAt('showroom_manager')   ?? $sentShowroomAt;
+    $recvFactoryAt  = $firstOwnerReceiveAt('factory_manager')    ?? $sentFactoryAt;
+    $recvDeptAt     = $firstOwnerReceiveAt('department_manager') ?? $sentDeptAt;
+
+    /* ======================= فروق زمنية/مؤشرات ======================= */
 
     $expectedVsActualText  = '—';
     $expectedVsActualColor = 'gray';
     if ($expected && $provided) {
-        $mins = $expected->diffInMinutes($provided, false); // سالب = أبكر من الموعد
-        if ($mins === 0) {
-            $expectedVsActualText  = 'في الموعد تمامًا';
-            $expectedVsActualColor = 'success';
-        } elseif ($mins < 0) {
-            $expectedVsActualText  = 'أبكر بـ ' . $minutesToHuman(abs($mins));
-            $expectedVsActualColor = 'info';
-        } else {
-            $expectedVsActualText  = 'متأخر بـ ' . $minutesToHuman($mins);
-            $expectedVsActualColor = 'danger';
-        }
+        $mins = $expected->diffInMinutes($provided, false); // سالب = أبكر
+        $expectedVsActualText  = $mins === 0 ? 'في الموعد تمامًا'
+            : ($mins < 0 ? 'أبكر بـ ' : 'متأخر بـ ') . $minutesToHuman(abs($mins));
+        $expectedVsActualColor = $mins <= 0 ? ($mins === 0 ? 'success' : 'info') : 'danger';
     }
+
+    $startDriftText = '—'; $startDriftColor = 'gray';
+    if ($plannedStart && $actualStartAt) {
+        $mins = $plannedStart->diffInMinutes($actualStartAt, false);
+        $startDriftText  = $mins === 0 ? 'في الموعد'
+            : ($mins < 0 ? 'أبكر بـ ' : 'متأخر بـ ') . $minutesToHuman(abs($mins));
+        $startDriftColor = $mins <= 0 ? ($mins === 0 ? 'success' : 'info') : 'danger';
+    }
+
+    $endDriftText = '—'; $endDriftColor = 'gray';
+    if ($plannedEnd && $actualEndAt) {
+        $mins = $plannedEnd->diffInMinutes($actualEndAt, false);
+        $endDriftText  = $mins === 0 ? 'في الموعد'
+            : ($mins < 0 ? 'أبكر بـ ' : 'متأخر بـ ') . $minutesToHuman(abs($mins));
+        $endDriftColor = $mins <= 0 ? ($mins === 0 ? 'success' : 'info') : 'danger';
+    }
+
+    // فترات رئيسية
+    $created_to_showroom   = $humanDiff($created,        $recvShowroomAt);   // الإنشاء → استلام المعرض
+    $showroom_to_factory   = $humanDiff($recvShowroomAt, $recvFactoryAt);    // استلام المعرض → استلام المصنع
+    $factory_to_department = $humanDiff($recvFactoryAt,  $recvDeptAt);       // استلام المصنع → استلام القسم
+
+    $dept_to_supply        = $humanDiff($sentDeptAt,     $provided);
+    $dept_to_mfg_start     = $humanDiff($sentDeptAt,     $actualStartAt);
+    $mfg_duration          = $humanDiff($actualStartAt,  $actualEndAt);
+    $mfg_to_qa_approve     = $humanDiff($actualEndAt,    $qaMfgApproveAt);
+    $qa_to_install_start   = $humanDiff($qaMfgApproveAt, $instStartedAt);
+    $install_to_qa_appr    = $humanDiff($instStartedAt,  $qaInstApproveAt);
+    $qa_appr_to_client     = $humanDiff($qaInstApproveAt,$clientReceiptAt);
+
+    $total_to_client       = $humanDiff($created,        $clientReceiptAt);
+    $created_to_provided   = $humanDiff($created,        $provided);
+    $approved_to_provided  = $humanDiff($approved,       $provided);
 @endphp
 
 <x-filament::page>
-    {{-- ============================ معلومات الطلب ============================ --}}
+    <!-- ============================ معلومات الطلب ============================ -->
     <x-filament::section>
-
         @if ($clientNote !== '')
-            <div
-                class="mb-4 rounded-xl border p-4 md:p-5"
-                role="note"
-                aria-label="ملاحظات العميل الخاصة بالدفع"
-                style="
-            background:#fff3cd;
-            border-color:#ffeeba;
-            border-left:8px solid #f59e0b;
-            color:#856404;
-        "
-                dir="rtl"
-            >
+            <div class="mb-4 rounded-xl border p-4 md:p-5" role="note" aria-label="ملاحظات العميل الخاصة بالدفع"
+                 style="background:#fff3cd;border-color:#ffeeba;border-left:8px solid #f59e0b;color:#856404;" dir="rtl">
                 <div style="display:flex; gap:12px; align-items:flex-start;">
                     <x-filament::icon icon="heroicon-o-exclamation-triangle" class="h-6 w-6" style="color:#d97706;" />
                     <div style="flex:1;">
                         <div style="margin-bottom:4px; font-weight:700;">
                             ملاحظات العميل الخاصة بالدفع — {{ $clientName }}
                         </div>
-                        <div style="line-height:1.7; font-size:0.95rem;">
-                            {!! nl2br(e($clientNote)) !!}
-                        </div>
+                        <div style="line-height:1.7; font-size:0.95rem;">{!! nl2br(e($clientNote)) !!}</div>
                     </div>
                 </div>
             </div>
         @endif
 
-        <x-slot name="header">
-            <h2 class="text-xl font-bold">معلومات الطلب</h2>
-        </x-slot>
+        <x-slot name="header"><h2 class="text-xl font-bold">معلومات الطلب</h2></x-slot>
 
         <dl class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
             <div><strong>اسم المشروع:</strong> {{ $record->project_name }}</div>
@@ -150,7 +324,6 @@
                     $label = $statusEnum?->label() ?? (string) $record->status;
                     $bg    = $statusEnum?->color() ?? '#64748b';
                 @endphp
-                {{-- نستخدم style مباشر هنا لأن اللون يأتي من enum كقيمة HEX --}}
                 <span class="px-2 py-1 rounded-full text-white text-xs" style="background-color: {{ $bg }};">
                     {{ $label }}
                 </span>
@@ -163,24 +336,11 @@
         </dl>
     </x-filament::section>
 
-    {{-- ============================ مهام الطلب / المشروع ============================ --}}
+    <!-- ============================ مهام الطلب / المشروع ============================ -->
     <x-filament::section class="mt-6">
-        <x-slot name="header">
-            <h2 class="text-xl font-bold">مهام الطلب</h2>
-        </x-slot>
+        <x-slot name="header"><h2 class="text-xl font-bold">مهام الطلب</h2></x-slot>
 
         @php
-
-            $record->loadMissing([
-                'project.tasks.department',
-                'project.tasks.employee',
-
-            ]);
-
-            $tasks = $record->project
-                ? $record->project->tasks()->orderBy('id')->get()
-                : collect();
-
             $pick = function ($obj, array $paths, $default = '—') {
                 foreach ($paths as $p) {
                     $val = data_get($obj, $p);
@@ -222,11 +382,10 @@
                     default              => 'gray',
                 };
             };
-
             $taskResourceExists = class_exists(\App\Filament\Resources\TaskResource::class);
         @endphp
 
-        @if ($tasks->isEmpty())
+        @if (($tasks ?? collect())->isEmpty())
             <p class="text-sm text-gray-500">لا توجد مهام مرتبطة بهذا الطلب.</p>
         @else
             <div class="overflow-x-auto rounded-xl border bg-white/80 dark:bg-gray-900/70">
@@ -246,34 +405,18 @@
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-800 text-gray-800 dark:text-gray-200">
                     @foreach ($tasks as $i => $task)
                         @php
-                            // عنوان المهمة: جرّب عدة حقول شائعة
                             $title = $pick($task, ['task_title','title','name'], 'مهمة #' . ($task->id ?? '—'));
-
-                            // تاريخ البداية: actual → planned → started_at → created_at
                             $startRaw = $pick($task, [
-                                'actual_start_at',
-                                'started_at',
-                                'planned_start_at',
-                                'planned_start',
-                                'created_at',
+                                'actual_start_at','started_at','planned_start_at','planned_start','created_at',
                             ], null);
-                            $startAt = $startRaw ? \Illuminate\Support\Carbon::parse($startRaw)->format('Y-m-d H:i') : '—';
-
+                            $startAt = $startRaw ? Carbon::parse($startRaw)->format('Y-m-d H:i') : '—';
                             $ownerName = $pick($task, [
-                                'current_owner_name',
-                                'owner.name',
-                                'ownerUser.name',
-                                'assignedTo.name',
-                                'assignee.name',
-                                'employee.employee_name',
-                                'department.manager_user.name',
-                                'department.head_user.name',
+                                'current_owner_name','owner.name','ownerUser.name','assignedTo.name','assignee.name',
+                                'employee.employee_name','department.manager_user.name','department.head_user.name',
                             ], '—');
-
                             $st = (string) ($task->status ?? '');
                             $stLabel = $statusLabel($st);
                             $stColor = $statusColor($st);
-
                             $viewUrl = $taskResourceExists
                                 ? \App\Filament\Resources\TaskResource::getUrl('view', ['record' => $task])
                                 : null;
@@ -287,7 +430,6 @@
                                 @else
                                     {{ $title }}
                                 @endif
-                                {{-- توضيح القسم إن وجد --}}
                                 @if (!empty($task->department?->dept_name))
                                     <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                                         قسم: {{ $task->department->dept_name }}
@@ -297,14 +439,10 @@
                             <td class="px-3 py-2 whitespace-nowrap">{{ $startAt }}</td>
                             <td class="px-3 py-2">{{ $ownerName }}</td>
                             <td class="px-3 py-2">
-                                <x-filament::badge :color="$stColor">
-                                    {{ $stLabel }}
-                                </x-filament::badge>
+                                <x-filament::badge :color="$stColor">{{ $stLabel }}</x-filament::badge>
                             </td>
                             @if ($viewUrl)
-                                <td class="px-3 py-2">
-                                    <a href="{{ $viewUrl }}" class="text-primary-600 underline">عرض</a>
-                                </td>
+                                <td class="px-3 py-2"><a href="{{ $viewUrl }}" class="text-primary-600 underline">عرض</a></td>
                             @endif
                         </tr>
                     @endforeach
@@ -314,224 +452,27 @@
         @endif
     </x-filament::section>
 
-
+    <!-- ============================ ملخص زمني ============================ -->
     <x-filament::section class="mt-6">
-        <x-slot name="header">
-            <h2 class="text-xl font-bold">ملخص زمني</h2>
-        </x-slot>
-
-        @php
-            $record->loadMissing([
-                'logs',
-                'project.tasks.department',
-                'project.tasks.materialRequests.requestedBy',
-                'project.tasks.materialRequests.providedBy',
-            ]);
-
-
-            $toArr = function ($val) {
-                if (is_array($val)) return $val;
-                if (is_object($val)) return (array) $val;
-                if (is_string($val)) {
-                    try { return json_decode($val, true, 512, JSON_THROW_ON_ERROR) ?? []; }
-                    catch (\Throwable) { return []; }
-                }
-                return [];
-            };
-
-            $fmt = fn (? \Illuminate\Support\Carbon $c) => $c?->format('Y-m-d H:i') ?? '—';
-
-            $minutesToHuman = function (int $min): string {
-                $d = intdiv($min, 1440);
-                $h = intdiv($min % 1440, 60);
-                $m = $min % 60;
-                $parts = [];
-                if ($d) $parts[] = "{$d} يوم";
-                if ($h) $parts[] = "{$h} ساعة";
-                if ($m || (!$d && !$h)) $parts[] = "{$m} دقيقة";
-                return implode(' و ', $parts);
-            };
-
-            $humanDiff = function (? \Illuminate\Support\Carbon $a, ? \Illuminate\Support\Carbon $b) use ($minutesToHuman) {
-                if (!$a || !$b) return '—';
-                return $minutesToHuman($a->diffInMinutes($b));
-            };
-
-            $firstEventAt = function (array $keys, $logs) {
-                $ev = collect($logs ?? [])->first(function ($l) use ($keys) {
-                    $k = $l->action ?? $l->type ?? null;
-                    return $k && in_array($k, $keys, true);
-                });
-                $at = $ev?->action_at ?? $ev?->happened_at ?? $ev?->created_at;
-                return $at ? \Illuminate\Support\Carbon::parse($at) : null;
-            };
-
-            /* -------------------- مصادر البيانات -------------------- */
-
-            $created  = $record->created_at ? \Illuminate\Support\Carbon::parse($record->created_at) : null;
-
-            // مهام المشروع + طلبات الخامات
-            $tasks = $record->project
-                ? $record->project->tasks()->with([
-                    'materialRequests:id,task_id,expected_delivery_at,approved_at,provided_at,requested_at,requested_by,provided_by',
-                ])->get()
-                : collect();
-
-            $mrs = $tasks->flatMap(fn($t) => $t->materialRequests ?? collect());
-
-            $taskLogs = collect();
-            foreach ($tasks as $t) {
-                if (method_exists($t, 'logs')) {
-                    $taskLogs = $taskLogs->merge($t->logs ?? collect());
-                }
-            }
-            $reqLogs = $record->logs ?? collect();
-            $allLogs = $reqLogs->concat($taskLogs);
-
-            $firstOwnerSendAt = function (string $role) use ($reqLogs, $toArr) {
-                $explicit = [
-                    'showroom_manager'   => ['sent_to_showroom'],
-                    'factory_manager'    => ['sent_to_factory'],
-                    'department_manager' => ['sent_to_department', 'waiting_production'], // جاهز لدى القسم
-                ][$role] ?? [];
-
-                $event = $reqLogs->first(function ($l) use ($role, $explicit, $toArr) {
-                    $type = $l->action ?? $l->type ?? null;
-                    if (in_array($type, $explicit, true)) return true;
-
-                    if (in_array($type, ['ownership_changed','owner_changed','transition','status_changed'], true)) {
-                        $data   = $toArr($l->data);
-                        $toRole = data_get($data, 'to.owner_role')
-                              ?? data_get($data, 'owner_role')
-                              ?? data_get($data, 'to.owner');
-                        return $toRole === $role;
-                    }
-                    return false;
-                });
-
-                if (!$event) {
-                    $event = $reqLogs->first(function ($l) use ($role, $toArr) {
-                        $type = $l->action ?? $l->type ?? null;
-                        if (!in_array($type, ['ownership_received','owner_received','received'], true)) return false;
-                        $data = $toArr($l->data);
-                        $rRole = data_get($data, 'owner_role')
-                              ?? data_get($data, 'to.owner_role')
-                              ?? data_get($data, 'owner');
-                        return $rRole === $role;
-                    });
-                }
-
-                $at = $event?->action_at ?? $event?->happened_at ?? $event?->created_at;
-                return $at ? \Illuminate\Support\Carbon::parse($at) : null;
-            };
-
-            $sentShowroomAt = $firstOwnerSendAt('showroom_manager');
-            $sentFactoryAt  = $firstOwnerSendAt('factory_manager');
-            $sentDeptAt     = $firstOwnerSendAt('department_manager');
-
-            $expectedAt = optional(
-                $mrs->whereNotNull('expected_delivery_at')->sortBy('expected_delivery_at')->first()
-            )->expected_delivery_at;
-
-            $approvedAt = optional(
-                $mrs->whereNotNull('approved_at')->sortBy('approved_at')->first()
-            )->approved_at;
-
-            $providedAt = optional(
-                $mrs->whereNotNull('provided_at')->sortBy('provided_at')->first()
-            )->provided_at;
-
-            $expected = $expectedAt ? \Illuminate\Support\Carbon::parse($expectedAt) : null;
-            $approved = $approvedAt ? \Illuminate\Support\Carbon::parse($approvedAt) : null;
-            $provided = $providedAt ? \Illuminate\Support\Carbon::parse($providedAt) : null;
-
-            // فعلي
-            $actualStartAt = $firstEventAt(['manufacturing_started'], $allLogs)
-                          ?? ($tasks->min(fn($t) => $t->actual_start_at ?? $t->started_at ?? null) ? \Illuminate\Support\Carbon::parse($tasks->min(fn($t) => $t->actual_start_at ?? $t->started_at ?? null)) : null);
-            $actualEndAt   = $firstEventAt(['manufacturing_finished'], $allLogs)
-                          ?? ($tasks->max(fn($t) => $t->actual_end_at ?? $t->finished_at ?? null) ? \Illuminate\Support\Carbon::parse($tasks->max(fn($t) => $t->actual_end_at ?? $t->finished_at ?? null)) : null);
-
-            $plannedStartAgg = $tasks->min(fn($t) => $t->planned_start_at ?? $t->planned_start ?? null);
-            $plannedEndAgg   = $tasks->max(fn($t) => $t->planned_end_at   ?? $t->planned_end   ?? null);
-
-            $plannedStart = $plannedStartAgg ? \Illuminate\Support\Carbon::parse($plannedStartAgg) : null;
-            $plannedEnd   = $plannedEndAgg   ? \Illuminate\Support\Carbon::parse($plannedEndAgg)   : null;
-
-            $startDriftText = '—'; $startDriftColor = 'gray';
-            if ($plannedStart && $actualStartAt) {
-                $mins = $plannedStart->diffInMinutes($actualStartAt, false);
-                $startDriftText  = $mins === 0 ? 'في الموعد'
-                    : ($mins < 0 ? 'أبكر بـ ' : 'متأخر بـ ') . $minutesToHuman(abs($mins));
-                $startDriftColor = $mins <= 0 ? ($mins === 0 ? 'success' : 'info') : 'danger';
-            }
-
-            $endDriftText = '—'; $endDriftColor = 'gray';
-            if ($plannedEnd && $actualEndAt) {
-                $mins = $plannedEnd->diffInMinutes($actualEndAt, false);
-                $endDriftText  = $mins === 0 ? 'في الموعد'
-                    : ($mins < 0 ? 'أبكر بـ ' : 'متأخر بـ ') . $minutesToHuman(abs($mins));
-                $endDriftColor = $mins <= 0 ? ($mins === 0 ? 'success' : 'info') : 'danger';
-            }
-
-            /* --- ما بعد التصنيع / الختام --- */
-            $qaMfgApproveAt   = $firstEventAt(['qa_approved_manufacturing'], $allLogs);
-            $sentToInstallAt  = $firstEventAt(['sent_to_install'], $allLogs);
-            $instStartedAt    = $firstEventAt(['installation_started'], $allLogs);
-            $qaInstApproveAt  = $firstEventAt(['qa_approved_installation'], $allLogs);
-
-            // استلام العميل / إغلاق
-            $clientReceiptAt  = $firstEventAt(['client_receipt_uploaded'], $allLogs);
-            $taskCompletedAt  = $firstEventAt(['task_completed'], $allLogs);
-            $projectCompletedAt = $firstEventAt(['project_completed'], $reqLogs);
-            $requestClosedAt    = $firstEventAt(['production_request_closed'], $reqLogs)
-                               ?? (($record->status ?? null) === 'closed' ? ($record->updated_at ? \Illuminate\Support\Carbon::parse($record->updated_at) : null) : null);
-
-            // إجمالي الوقت حتى استلام العميل
-            $total_to_client = $humanDiff($created, $clientReceiptAt);
-
-            /* --- فروق التوريد: فعلي مقابل متوقع --- */
-            $expectedVsActualText  = '—'; $expectedVsActualColor = 'gray';
-            if ($expected && $provided) {
-                $mins = $expected->diffInMinutes($provided, false); // سالب = أبكر
-                $expectedVsActualText  = $mins === 0 ? 'في الموعد تمامًا'
-                    : ($mins < 0 ? 'أبكر بـ ' : 'متأخر بـ ') . $minutesToHuman(abs($mins));
-                $expectedVsActualColor = $mins <= 0 ? ($mins === 0 ? 'success' : 'info') : 'danger';
-            }
-
-            /* --- فترات تفصيلية بين كل طرف والآخر --- */
-            $created_to_showroom   = $humanDiff($created,          $sentShowroomAt);
-            $showroom_to_factory   = $humanDiff($sentShowroomAt,   $sentFactoryAt);
-            $factory_to_department = $humanDiff($sentFactoryAt,    $sentDeptAt);
-            $dept_to_supply        = $humanDiff($sentDeptAt,       $provided);
-            $dept_to_mfg_start     = $humanDiff($sentDeptAt,       $actualStartAt);
-            $mfg_duration          = $humanDiff($actualStartAt,    $actualEndAt);
-            $mfg_to_qa_approve     = $humanDiff($actualEndAt,      $qaMfgApproveAt);
-            $qa_to_install_start   = $humanDiff($qaMfgApproveAt,   $instStartedAt);
-            $install_to_qa_appr    = $humanDiff($instStartedAt,    $qaInstApproveAt);
-            $qa_appr_to_client     = $humanDiff($qaInstApproveAt,  $clientReceiptAt);
-
-            // فترات عامة إضافية
-            $created_to_provided   = $humanDiff($created,  $provided);
-            $approved_to_provided  = $humanDiff($approved, $provided);
-        @endphp
+        <x-slot name="header"><h2 class="text-xl font-bold">ملخص زمني</h2></x-slot>
 
         <h3 class="mt-2 mb-3 text-sm font-semibold text-gray-700 dark:text-gray-200">التسليم عبر الأدوار</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
             <x-filament::card>
                 <div class="flex items-center justify-between">
-                    <div class="text-gray-600 dark:text-gray-300">الإنشاء ← إرسال إلى مدير المعرض</div>
+                    <div class="text-gray-600 dark:text-gray-300">الإنشاء ← استلام مدير المعرض</div>
                     <div class="font-semibold">{{ $created_to_showroom }}</div>
                 </div>
             </x-filament::card>
             <x-filament::card>
                 <div class="flex items-center justify-between">
-                    <div class="text-gray-600 dark:text-gray-300">المعرض ← المصنع</div>
+                    <div class="text-gray-600 dark:text-gray-300">المعرض ← المصنع (استلام)</div>
                     <div class="font-semibold">{{ $showroom_to_factory }}</div>
                 </div>
             </x-filament::card>
             <x-filament::card>
                 <div class="flex items-center justify-between">
-                    <div class="text-gray-600 dark:text-gray-300">المصنع ← مدير القسم</div>
+                    <div class="text-gray-600 dark:text-gray-300">المصنع ← مدير القسم (استلام)</div>
                     <div class="font-semibold">{{ $factory_to_department }}</div>
                 </div>
             </x-filament::card>
@@ -602,11 +543,11 @@
         <div class="mt-4 p-3 rounded border bg-white/60 dark:bg-gray-900/40 text-xs">
             <div class="text-gray-600 dark:text-gray-300 mb-1">تواريخ مرجعية</div>
             <div class="space-x-4 space-x-reverse">
-                <span>إلى المعرض: <span class="font-semibold">{{ $fmt($sentShowroomAt) }}</span></span>
+                <span>استلام المعرض: <span class="font-semibold">{{ $fmt($recvShowroomAt) }}</span></span>
                 <span class="mx-2 text-gray-400">•</span>
-                <span>إلى المصنع: <span class="font-semibold">{{ $fmt($sentFactoryAt) }}</span></span>
+                <span>استلام المصنع: <span class="font-semibold">{{ $fmt($recvFactoryAt) }}</span></span>
                 <span class="mx-2 text-gray-400">•</span>
-                <span>إلى مدير القسم: <span class="font-semibold">{{ $fmt($sentDeptAt) }}</span></span>
+                <span>استلام مدير القسم: <span class="font-semibold">{{ $fmt($recvDeptAt) }}</span></span>
                 <span class="mx-2 text-gray-400">•</span>
                 <span>بدء التصنيع (فعلي): <span class="font-semibold">{{ $fmt($actualStartAt) }}</span></span>
                 <span class="mx-2 text-gray-400">•</span>
@@ -617,42 +558,29 @@
         </div>
     </x-filament::section>
 
-
-
-
-    {{-- ============================ ملفات التصنيع ============================ --}}
+    <!-- ============================ ملفات التصنيع ============================ -->
     <x-filament::section class="mt-6">
-        <x-slot name="header">
-            <h2 class="text-xl font-bold">ملفات التصنيع</h2>
-        </x-slot>
+        <x-slot name="header"><h2 class="text-xl font-bold">ملفات التصنيع</h2></x-slot>
 
         <ul class="mt-4 space-y-3">
             @if ($record->agreement_file)
                 <li class="flex justify-between items-center bg-gray-50 dark:bg-gray-800 p-3 rounded border">
                     <span><strong>ملف الاتفاقية:</strong></span>
-                    <a href="{{ Storage::disk('public')->url($record->agreement_file) }}"
-                       class="text-primary-600 underline" target="_blank">
-                        تحميل الملف
-                    </a>
+                    <a href="{{ Storage::disk('public')->url($record->agreement_file) }}" class="text-primary-600 underline" target="_blank">تحميل الملف</a>
                 </li>
             @endif
+
             @if ($record->additional_work_file)
                 <li class="flex justify-between items-center bg-gray-50 dark:bg-gray-800 p-3 rounded border">
                     <span><strong>ملف الأعمال الإضافية:</strong></span>
-                    <a href="{{ Storage::disk('public')->url($record->additional_work_file) }}"
-                       class="text-primary-600 underline" target="_blank">
-                        تحميل الملف
-                    </a>
+                    <a href="{{ Storage::disk('public')->url($record->additional_work_file) }}" class="text-primary-600 underline" target="_blank">تحميل الملف</a>
                 </li>
             @endif
 
             @forelse ($record->files as $file)
                 <li class="flex justify-between items-center bg-gray-50 dark:bg-gray-800 p-3 rounded border">
                     <span><strong>{{ $file->department->dept_name }}</strong></span>
-                    <a href="{{ Storage::disk('public')->url($file->file_path) }}"
-                       class="text-primary-600 underline" target="_blank">
-                        تحميل الملف
-                    </a>
+                    <a href="{{ Storage::disk('public')->url($file->file_path) }}" class="text-primary-600 underline" target="_blank">تحميل الملف</a>
                 </li>
             @empty
                 <p class="text-sm text-gray-500">لا توجد ملفات مرتبطة.</p>
@@ -660,24 +588,14 @@
         </ul>
     </x-filament::section>
 
-    {{-- ============================ سجل الأحداث (شامل الطلب/المشروع/المهام + طلبات الخامات) ============================ --}}
+    <!-- ============================ سجل الأحداث ============================ -->
     <x-filament::section class="mt-6">
-        <x-slot name="header">
-            <h2 class="text-xl font-bold">سجل الأحداث</h2>
-        </x-slot>
+        <x-slot name="header"><h2 class="text-xl font-bold">سجل الأحداث</h2></x-slot>
 
         @php
-            $record->loadMissing([
-                'logs.causer',
-                'project.tasks.logs.causer',
-                'project.tasks.logs.causer',
-                'project.tasks.department',
-                'project.tasks.materialRequests.requestedBy',
-                'project.tasks.materialRequests.providedBy',
-            ]);
-
+            // صانع لوج بسيط لطلبات الخامات
             $mkLog = function (string $action, $at, ?string $note, ?string $who, array $data = []) {
-                $at = $at ? (\Illuminate\Support\Carbon::parse($at)) : null;
+                $at = $at ? Carbon::parse($at) : null;
                 return (object) [
                     'action'      => $action,
                     'type'        => $action,
@@ -690,99 +608,64 @@
                 ];
             };
 
-            $allLogs = collect();
-
-            $allLogs = $allLogs->merge($record->logs ?? collect());
-
+            $displayLogs = collect($record->logs ?? []);
             if ($record->project && method_exists($record->project, 'logs')) {
-                $allLogs = $allLogs->merge($record->project->logs ?? collect());
+                $displayLogs = $displayLogs->merge($record->project->logs ?? collect());
             }
-
-            $tasks = $record->project?->tasks ?? collect();
             foreach ($tasks as $task) {
                 if (method_exists($task, 'logs')) {
-                    $allLogs = $allLogs->merge($task->logs ?? collect());
+                    $displayLogs = $displayLogs->merge($task->logs ?? collect());
                 }
-            }
-
-            foreach ($tasks as $task) {
                 foreach ($task->materialRequests ?? [] as $mr) {
                     $dept = $task->department->dept_name ?? '—';
                     if (!empty($mr->requested_at)) {
-                        $allLogs->push($mkLog(
-                            'materials_requested',
-                            $mr->requested_at,
-                            "طلب خامات للمهمة #{$task->id} — قسم {$dept}",
-                            $mr->requestedBy->name ?? null,
-                            ['task_id' => $task->id, 'department' => $dept]
-                        ));
+                        $displayLogs->push($mkLog('materials_requested', $mr->requested_at, "طلب خامات للمهمة #{$task->id} — قسم {$dept}", $mr->requestedBy->name ?? null, ['task_id' => $task->id, 'department' => $dept]));
                     }
                     if (!empty($mr->expected_delivery_at)) {
-                        $allLogs->push($mkLog(
-                            'materials_expected',
-                            $mr->expected_delivery_at,
-                            "موعد توريد متوقّع للمهمة #{$task->id} — قسم {$dept}",
-                            $mr->requestedBy->name ?? null,
-                            ['task_id' => $task->id, 'department' => $dept]
-                        ));
+                        $displayLogs->push($mkLog('materials_expected', $mr->expected_delivery_at, "موعد توريد متوقّع للمهمة #{$task->id} — قسم {$dept}", $mr->requestedBy->name ?? null, ['task_id' => $task->id, 'department' => $dept]));
                     }
                     if (!empty($mr->approved_at)) {
-                        $allLogs->push($mkLog(
-                            'materials_approved',
-                            $mr->approved_at,
-                            "اعتماد المشتريات لطلب الخامات للمهمة #{$task->id} — قسم {$dept}",
-                            null,
-                            ['task_id' => $task->id, 'department' => $dept]
-                        ));
+                        $displayLogs->push($mkLog('materials_approved', $mr->approved_at, "اعتماد المشتريات لطلب الخامات للمهمة #{$task->id} — قسم {$dept}", null, ['task_id' => $task->id, 'department' => $dept]));
                     }
                     if (!empty($mr->provided_at)) {
-                        $allLogs->push($mkLog(
-                            'materials_provided',
-                            $mr->provided_at,
-                            "توريد الخامات للمهمة #{$task->id} — قسم {$dept}",
-                            $mr->providedBy->name ?? null,
-                            ['task_id' => $task->id, 'department' => $dept]
-                        ));
+                        $displayLogs->push($mkLog('materials_provided', $mr->provided_at, "توريد الخامات للمهمة #{$task->id} — قسم {$dept}", $mr->providedBy->name ?? null, ['task_id' => $task->id, 'department' => $dept]));
                     }
                 }
             }
 
             $iconMap = [
-                'created'                     => ['heroicon-o-document-plus', 'primary'],
-                'transition'                  => ['heroicon-o-arrow-right', 'info'],
-                'received'                    => ['heroicon-o-hand-thumb-up', 'success'],
-                'rejected'                    => ['heroicon-o-x-circle', 'danger'],
-                'status_changed'              => ['heroicon-o-adjustments-vertical', 'warning'],
-                'project_bootstrap'           => ['heroicon-o-briefcase', 'success'],
-                'sent_to_factory'             => ['heroicon-o-paper-airplane', 'info'],
+                'created'                   => ['heroicon-o-document-plus', 'primary'],
+                'transition'                => ['heroicon-o-arrow-right', 'info'],
+                'received'                  => ['heroicon-o-hand-thumb-up', 'success'],
+                'rejected'                  => ['heroicon-o-x-circle', 'danger'],
+                'status_changed'            => ['heroicon-o-adjustments-vertical', 'warning'],
+                'project_bootstrap'         => ['heroicon-o-briefcase', 'success'],
+                'sent_to_factory'           => ['heroicon-o-paper-airplane', 'info'],
 
                 // المواد
-                'materials_requested'         => ['heroicon-o-clipboard-document-list', 'zinc'],
-                'materials_expected'          => ['heroicon-o-calendar', 'amber'],
-                'materials_approved'          => ['heroicon-o-check-badge', 'green'],
-                'materials_provided'          => ['heroicon-o-truck', 'orange'],
-                'materials_received_ok'       => ['heroicon-o-hand-thumb-up', 'violet'],
+                'materials_requested'       => ['heroicon-o-clipboard-document-list', 'zinc'],
+                'materials_expected'        => ['heroicon-o-calendar', 'amber'],
+                'materials_approved'        => ['heroicon-o-check-badge', 'green'],
+                'materials_provided'        => ['heroicon-o-truck', 'orange'],
+                'materials_received_ok'     => ['heroicon-o-hand-thumb-up', 'violet'],
 
                 // التصنيع
-                'waiting_production'          => ['heroicon-o-clock', 'amber'],
-                'manufacturing_started'       => ['heroicon-o-play-circle', 'sky'],
-                'manufacturing_finished'      => ['heroicon-o-check-circle', 'emerald'],
-                'manufacturing_sent_to_qa'    => ['heroicon-o-shield-check', 'blue'],
+                'waiting_production'        => ['heroicon-o-clock', 'amber'],
+                'manufacturing_started'     => ['heroicon-o-play-circle', 'sky'],
+                'manufacturing_finished'    => ['heroicon-o-check-circle', 'emerald'],
+                'manufacturing_sent_to_qa'  => ['heroicon-o-shield-check', 'blue'],
 
                 // ما بعد التصنيع
-                'qa_approved_installation'    => ['heroicon-o-wrench', 'teal'],
-                'client_receipt_uploaded'     => ['heroicon-o-arrow-up-on-square', 'indigo'],
-                'project_completed'           => ['heroicon-o-flag', 'green'],
-                'production_request_closed'   => ['heroicon-o-lock-closed', 'slate'],
+                'qa_approved_installation'  => ['heroicon-o-wrench', 'teal'],
+                'client_receipt_uploaded'   => ['heroicon-o-arrow-up-on-square', 'indigo'],
+                'project_completed'         => ['heroicon-o-flag', 'green'],
+                'production_request_closed' => ['heroicon-o-lock-closed', 'slate'],
             ];
 
             $labelMap = [
                 'created'                     => 'تم الإنشاء',
                 'received'                    => 'تأكيد استلام',
-                'transition'                  => 'انتقال ',
-                'created'                     => 'تم الإنشاء',
-                'created'                     => 'تم الإنشاء',
-
+                'transition'                  => 'انتقال',
                 'assigned_changed'            => 'تغيير الإسناد',
                 'ownership_changed'           => 'تغيير الملكية (الدور)',
                 'owner_changed'               => 'تغيير المالك (المستخدم)',
@@ -819,34 +702,30 @@
                 'request_finalized'           => 'إقفال طلب التصنيع',
             ];
 
-            $allLogs = $allLogs->filter()->sortByDesc(function ($l) {
+            $displayLogs = $displayLogs->filter()->sortByDesc(function ($l) {
                 $t = $l->action_at ?? $l->happened_at ?? $l->created_at ?? null;
-                return $t ? \Illuminate\Support\Carbon::parse($t)->timestamp : 0;
+                return $t ? Carbon::parse($t)->timestamp : 0;
             })->values();
         @endphp
 
-        @forelse ($allLogs as $log)
+        @forelse ($displayLogs as $log)
             @php
-                $logEnum  = \App\Enums\ProductionRequestStatus::tryFrom($log->action ?? $log->type ?? '');
-                $rawAt    = $log->action_at ?? $log->happened_at ?? $log->created_at;
-                $at       = $rawAt instanceof \Illuminate\Support\Carbon ? $rawAt : ($rawAt ? \Illuminate\Support\Carbon::parse($rawAt) : null);
-
-                $who = $log->causer->name
-                    ?? data_get($log->data, 'causer_name')
-                    ?? data_get($log->data, 'by')
-                    ?? (data_get($log->data, 'owner_role_label') ?: data_get($log->data, 'owner_role'))
-                    ?? 'مجهول';
+                $rawAt  = $log->action_at ?? $log->happened_at ?? $log->created_at;
+                $at     = $rawAt instanceof Carbon ? $rawAt : ($rawAt ? Carbon::parse($rawAt) : null);
+                $who    = $log->causer->name
+                        ?? data_get($log->data, 'causer_name')
+                        ?? data_get($log->data, 'by')
+                        ?? (data_get($log->data, 'owner_role_label') ?: data_get($log->data, 'owner_role'))
+                        ?? 'مجهول';
 
                 $actionKey   = $log->action ?? $log->type ?? 'event';
                 [$icon, $color] = $iconMap[$actionKey] ?? ['heroicon-o-information-circle', 'gray'];
-                $actionLabel = $labelMap[$actionKey] ?? ($logEnum?->label() ?? $actionKey);
+                $actionLabel = $labelMap[$actionKey] ?? ($actionKey);
 
                 $srcTxt = 'الطلب';
                 if (!empty(data_get($log->data, 'task_id'))) {
                     $srcTxt = 'مهمة #' . data_get($log->data, 'task_id');
-                    if ($dept = data_get($log->data, 'department')) {
-                        $srcTxt .= ' — ' . $dept;
-                    }
+                    if ($dept = data_get($log->data, 'department')) $srcTxt .= ' — ' . $dept;
                 }
             @endphp
 
@@ -873,17 +752,12 @@
 
                 @if (!empty($log->note))
                     <div class="mt-3 text-sm">
-                        @if (($log->action ?? '') === \App\Enums\ProductionRequestStatus::REJECTED->value)
-                            <div class="font-semibold text-red-700">سبب الرفض:</div>
-                        @endif
                         <div>{{ $log->note }}</div>
                     </div>
                 @endif
 
                 <div class="mt-3">
-                    <x-filament::badge :color="$color">
-                        {{ $actionLabel }}
-                    </x-filament::badge>
+                    <x-filament::badge :color="$color">{{ $actionLabel }}</x-filament::badge>
                 </div>
             </div>
         @empty

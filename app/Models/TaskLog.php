@@ -16,6 +16,8 @@ class TaskLog extends Model
     protected $casts = [
         'data'        => 'array',
         'happened_at' => 'datetime',
+        'created_at'  => 'datetime',
+        'updated_at'  => 'datetime',
     ];
 
 

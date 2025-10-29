@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\Concerns\HasStatusScopes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class ProductionTask extends Model
 {
@@ -67,7 +68,17 @@ class ProductionTask extends Model
             ->orderBy('happened_at')
             ->orderBy('created_at');
     }
-
+    public function taskLogs(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            \App\Models\TaskLog::class,
+            \App\Models\ProductionTask::class,
+            'project_id',
+            'task_id',
+            'id',
+            'id'
+        )->latest('happened_at')->latest('created_at');
+    }
     public function times(): HasMany
     {
         return $this->hasMany(TaskTimeEntry::class, 'task_id')->latest('started_at');
