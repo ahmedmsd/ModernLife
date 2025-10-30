@@ -322,8 +322,9 @@ class ProductionRequestResource extends Resource
             'index'  => ListProductionRequests::route('/'),
             'create' => CreateProductionRequest::route('/create'),
             'edit'   => EditProductionRequest::route('/{record}/edit'),
-            'view'   => ViewProductionTimeline::route('/{record}/timeline'),
+            'timeline'   => ViewProductionTimeline::route('/{record}/timeline'),
             'review' => ReviewProductionRequest::route('/{record}/review'),
+            'view' => ReviewProductionRequest::route('/{record}/timeline'),
         ];
     }
 }

@@ -25,10 +25,7 @@ class ManageProjectTasks extends ManageRelatedRecords
         return 'مهام التصنيع للمشروع';
     }
 
-    public static function canAccess(array $parameters = []): bool
-    {
-        return \Illuminate\Support\Facades\Auth::user()?->can('access_manage_project_tasks');
-    }
+
 
     public function form(Form $form): Form
     {

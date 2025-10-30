@@ -36,9 +36,8 @@ class TaskResource extends Resource
 
         $user = auth()->user();
 
-        // أدوار تشوف كل شيء
         $isSuper = $user && method_exists($user, 'hasAnyRole')
-            && $user->hasAnyRole(['admin','super-admin','owner']);
+            && $user->hasAnyRole(['admin','super-admin','factory_manager']);
 
         if (! $isSuper) {
             $isShowroomManager = $user && method_exists($user, 'hasRole') && $user->hasRole('showroom_manager');

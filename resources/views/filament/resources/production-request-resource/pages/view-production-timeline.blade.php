@@ -589,179 +589,284 @@ $firstOwnerReceiveAt = function (string $role) use ($reqLogsSorted, $toArr, $nor
     </x-filament::section>
 
     <!-- ============================ سجل الأحداث ============================ -->
-    <x-filament::section class="mt-6">
-        <x-slot name="header"><h2 class="text-xl font-bold">سجل الأحداث</h2></x-slot>
+{{-- ============================ سجل الأحداث (شامل الطلب/المشروع/المهام + طلبات الخامات) ============================ --}}
+<x-filament::section class="mt-6">
+    <x-slot name="header">
+        <h2 class="text-xl font-bold">سجل الأحداث</h2>
+    </x-slot>
 
+    @php
+        use Carbon\CarbonInterface;
+
+        $record->loadMissing([
+            'logs.causer',
+            'project.tasks.logs.causer',
+            'project.tasks.department',
+            'project.tasks.materialRequests.requestedBy',
+            'project.tasks.materialRequests.providedBy',
+        ]);
+
+        $mkLog = function (string $action, $at, ?string $note, ?string $who, array $data = []) {
+            $at = $at ? (\Illuminate\Support\Carbon::parse($at)) : null;
+            return (object) [
+                'action'      => $action,
+                'type'        => $action,
+                'action_at'   => $at,
+                'happened_at' => null,
+                'created_at'  => $at,
+                'note'        => $note,
+                'data'        => $data,
+                'causer'      => (object) ['name' => $who],
+            ];
+        };
+
+        $allLogs = collect();
+
+        // سجلات الطلب
+        $allLogs = $allLogs->merge($record->logs ?? collect());
+
+        // سجلات المشروع (إن وُجدت علاقة logs)
+        if ($record->project && method_exists($record->project, 'logs')) {
+            $allLogs = $allLogs->merge($record->project->logs ?? collect());
+        }
+
+        // لاحظ: استخدم اسم مختلف عن $tasks لتفادي التضارب
+        $tlTasks = $record->project?->tasks ?? collect();
+
+        // سجلات المهام
+        foreach ($tlTasks as $t) {
+            if (method_exists($t, 'logs')) {
+                $allLogs = $allLogs->merge($t->logs ?? collect());
+            }
+        }
+
+        // حقن أحداث طلبات الخامات كأحداث Timeline إضافية
+        foreach ($tlTasks as $t) {
+            foreach ($t->materialRequests ?? [] as $mr) {
+                $dept = $t->department->dept_name ?? '—';
+                if (!empty($mr->requested_at)) {
+                    $allLogs->push($mkLog(
+                        'materials_requested',
+                        $mr->requested_at,
+                        "طلب خامات للمهمة #{$t->id} — قسم {$dept}",
+                        $mr->requestedBy->name ?? null,
+                        ['task_id' => $t->id, 'department' => $dept]
+                    ));
+                }
+                if (!empty($mr->expected_delivery_at)) {
+                    $allLogs->push($mkLog(
+                        'materials_expected',
+                        $mr->expected_delivery_at,
+                        "موعد توريد متوقّع للمهمة #{$t->id} — قسم {$dept}",
+                        $mr->requestedBy->name ?? null,
+                        ['task_id' => $t->id, 'department' => $dept]
+                    ));
+                }
+                if (!empty($mr->approved_at)) {
+                    $allLogs->push($mkLog(
+                        'materials_approved',
+                        $mr->approved_at,
+                        "اعتماد المشتريات لطلب الخامات للمهمة #{$t->id} — قسم {$dept}",
+                        null,
+                        ['task_id' => $t->id, 'department' => $dept]
+                    ));
+                }
+                if (!empty($mr->provided_at)) {
+                    $allLogs->push($mkLog(
+                        'materials_provided',
+                        $mr->provided_at,
+                        "توريد الخامات للمهمة #{$t->id} — قسم {$dept}",
+                        $mr->providedBy->name ?? null,
+                        ['task_id' => $t->id, 'department' => $dept]
+                    ));
+                }
+            }
+        }
+
+        $iconMap = [
+            'created'                     => ['heroicon-o-document-plus', 'primary'],
+            'transition'                  => ['heroicon-o-arrow-right', 'info'],
+            'received'                    => ['heroicon-o-hand-thumb-up', 'success'],
+            'rejected'                    => ['heroicon-o-x-circle', 'danger'],
+            'status_changed'              => ['heroicon-o-adjustments-vertical', 'warning'],
+            'project_bootstrap'           => ['heroicon-o-briefcase', 'success'],
+            'sent_to_factory'             => ['heroicon-o-paper-airplane', 'info'],
+
+            // المواد
+            'materials_requested'         => ['heroicon-o-clipboard-document-list', 'zinc'],
+            'materials_expected'          => ['heroicon-o-calendar', 'amber'],
+            'materials_approved'          => ['heroicon-o-check-badge', 'green'],
+            'materials_provided'          => ['heroicon-o-truck', 'orange'],
+            'materials_received_ok'       => ['heroicon-o-hand-thumb-up', 'violet'],
+
+            // التصنيع
+            'waiting_production'          => ['heroicon-o-clock', 'amber'],
+            'manufacturing_started'       => ['heroicon-o-play-circle', 'sky'],
+            'manufacturing_finished'      => ['heroicon-o-check-circle', 'emerald'],
+            'manufacturing_sent_to_qa'    => ['heroicon-o-shield-check', 'blue'],
+
+            // ما بعد التصنيع
+            'qa_approved_installation'    => ['heroicon-o-wrench', 'teal'],
+            'client_receipt_uploaded'     => ['heroicon-o-arrow-up-on-square', 'indigo'],
+            'project_completed'           => ['heroicon-o-flag', 'green'],
+            'production_request_closed'   => ['heroicon-o-lock-closed', 'slate'],
+        ];
+
+        $labelMap = [
+            'created'                     => 'تم الإنشاء',
+            'received'                    => 'تأكيد استلام',
+            'transition'                  => 'انتقال ',
+            'assigned_changed'            => 'تغيير الإسناد',
+            'ownership_changed'           => 'تغيير الملكية (الدور)',
+            'owner_changed'               => 'تغيير المالك (المستخدم)',
+            'status_changed'              => 'تغيير الحالة العامة',
+            'ownership_received'          => 'تأكيد استلام الملكية',
+            'owner_received'              => 'تأكيد استلام المالك',
+            'plan_set'                    => 'تحديد الخطة',
+            'planning_set'                => 'تحديد المواعيد',
+            'planning_hint_set'           => 'تحديد مواعيد (مبدئية)',
+
+            'manufacturing_started'       => 'بدء التصنيع (فعلي)',
+            'manufacturing_finished'      => 'نهاية التصنيع (فعلي)',
+            'manufacturing_sent_to_qa'    => 'إرسال للجودة',
+            'qa_ack_manufacturing'        => 'تأكيد استلام الجودة للتصنيع',
+            'qa_approved_manufacturing'   => 'اعتماد الجودة للتصنيع',
+
+            'sent_to_install'             => 'إرسال للتركيب',
+            'install_acknowledged'        => 'تأكيد استلام التركيب',
+            'installation_started'        => 'بدء التركيب',
+            'installation_sent_to_qa'     => 'إرسال للجودة بعد التركيب',
+            'qa_ack_installation'         => 'تأكيد استلام الجودة للتركيب',
+            'qa_approved_installation'    => 'اعتماد التركيب',
+
+            'materials_requested'         => 'تم طلب الخامات',
+            'materials_expected'          => 'تحديد تاريخ التوريد المتوقع',
+            'materials_approved'          => 'تم اعتماد طلب الخامات',
+            'materials_provided'          => 'تم توريد الخامات',
+            'materials_received_ok'       => 'تم استلام الخامات',
+
+            'client_receipt_uploaded'     => 'رفع سند استلام العميل',
+            'task_completed'              => 'اكتمال المهمة',
+            'project_completed'           => 'اكتمال المشروع',
+            'production_request_closed'   => 'إقفال طلب التصنيع',
+            'request_finalized'           => 'إقفال طلب التصنيع',
+        ];
+
+        /**
+         *  توحيد الطابع الزمني لكل حدث + ترتيب تصاعدي لحساب الفواصل الزمنية الصحيحة
+         */
+        $tz = config('app.timezone', 'Asia/Riyadh');
+
+        $normalizedAsc = collect($allLogs ?? [])
+            ->filter()
+            ->map(function ($l) use ($tz) {
+                $ts = $l->action_at ?? $l->happened_at ?? $l->created_at ?? null;
+                $when = $ts ? \Illuminate\Support\Carbon::parse($ts)->setTimezone($tz) : null;
+                $l->when_ts = $when;
+                return $l;
+            })
+            ->sortBy(fn($l) => optional($l->when_ts)?->timestamp ?? 0)
+            ->values();
+
+        // فرق زمني مطلق
+        $minutesToHuman2 = function (int $min): string {
+            $d = intdiv($min, 1440);
+            $h = intdiv($min % 1440, 60);
+            $m = $min % 60;
+            $parts = [];
+            if ($d) $parts[] = "{$d} يوم";
+            if ($h) $parts[] = "{$h} ساعة";
+            if ($m || (!$d && !$h)) $parts[] = "{$m} دقيقة";
+            return implode(' و ', $parts);
+        };
+        $gapHuman = function (?Carbon $a, ?Carbon $b) use ($minutesToHuman2) {
+            if (!$a || !$b) return null;
+            return $minutesToHuman2($a->diffInMinutes($b));
+        };
+
+        // احسب الفاصل عن الحدث السابق (تصاعديًا)
+        for ($i = 0; $i < $normalizedAsc->count(); $i++) {
+            $curr = $normalizedAsc[$i];
+            $prev = $i > 0 ? $normalizedAsc[$i - 1] : null;
+            $curr->gap_from_prev_text = $gapHuman($prev?->when_ts, $curr?->when_ts);
+        }
+
+        // أعرض تنازليًا بعد الحسبة التصاعدية
+        $allLogs = $normalizedAsc
+            ->sortByDesc(fn($l) => optional($l->when_ts)?->timestamp ?? 0)
+            ->values();
+    @endphp
+
+    @forelse ($allLogs as $log)
         @php
-            // صانع لوج بسيط لطلبات الخامات
-            $mkLog = function (string $action, $at, ?string $note, ?string $who, array $data = []) {
-                $at = $at ? Carbon::parse($at) : null;
-                return (object) [
-                    'action'      => $action,
-                    'type'        => $action,
-                    'action_at'   => $at,
-                    'happened_at' => null,
-                    'created_at'  => $at,
-                    'note'        => $note,
-                    'data'        => $data,
-                    'causer'      => (object) ['name' => $who],
-                ];
-            };
+            $logEnum  = \App\Enums\ProductionRequestStatus::tryFrom($log->action ?? $log->type ?? '');
+            $at       = $log->when_ts instanceof \Illuminate\Support\Carbon ? $log->when_ts : null;
 
-            $displayLogs = collect($record->logs ?? []);
-            if ($record->project && method_exists($record->project, 'logs')) {
-                $displayLogs = $displayLogs->merge($record->project->logs ?? collect());
-            }
-            foreach ($tasks as $task) {
-                if (method_exists($task, 'logs')) {
-                    $displayLogs = $displayLogs->merge($task->logs ?? collect());
-                }
-                foreach ($task->materialRequests ?? [] as $mr) {
-                    $dept = $task->department->dept_name ?? '—';
-                    if (!empty($mr->requested_at)) {
-                        $displayLogs->push($mkLog('materials_requested', $mr->requested_at, "طلب خامات للمهمة #{$task->id} — قسم {$dept}", $mr->requestedBy->name ?? null, ['task_id' => $task->id, 'department' => $dept]));
-                    }
-                    if (!empty($mr->expected_delivery_at)) {
-                        $displayLogs->push($mkLog('materials_expected', $mr->expected_delivery_at, "موعد توريد متوقّع للمهمة #{$task->id} — قسم {$dept}", $mr->requestedBy->name ?? null, ['task_id' => $task->id, 'department' => $dept]));
-                    }
-                    if (!empty($mr->approved_at)) {
-                        $displayLogs->push($mkLog('materials_approved', $mr->approved_at, "اعتماد المشتريات لطلب الخامات للمهمة #{$task->id} — قسم {$dept}", null, ['task_id' => $task->id, 'department' => $dept]));
-                    }
-                    if (!empty($mr->provided_at)) {
-                        $displayLogs->push($mkLog('materials_provided', $mr->provided_at, "توريد الخامات للمهمة #{$task->id} — قسم {$dept}", $mr->providedBy->name ?? null, ['task_id' => $task->id, 'department' => $dept]));
-                    }
+            $who = $log->causer->name
+                ?? data_get($log->data, 'causer_name')
+                ?? data_get($log->data, 'by')
+                ?? (data_get($log->data, 'owner_role_label') ?: data_get($log->data, 'owner_role'))
+                ?? 'مجهول';
+
+            $actionKey   = $log->action ?? $log->type ?? 'event';
+            [$icon, $color] = $iconMap[$actionKey] ?? ['heroicon-o-information-circle', 'gray'];
+            $actionLabel = $labelMap[$actionKey] ?? ($logEnum?->label() ?? $actionKey);
+
+            $srcTxt = 'الطلب';
+            if (!empty(data_get($log->data, 'task_id'))) {
+                $srcTxt = 'مهمة #' . data_get($log->data, 'task_id');
+                if ($dept = data_get($log->data, 'department')) {
+                    $srcTxt .= ' — ' . $dept;
                 }
             }
 
-            $iconMap = [
-                'created'                   => ['heroicon-o-document-plus', 'primary'],
-                'transition'                => ['heroicon-o-arrow-right', 'info'],
-                'received'                  => ['heroicon-o-hand-thumb-up', 'success'],
-                'rejected'                  => ['heroicon-o-x-circle', 'danger'],
-                'status_changed'            => ['heroicon-o-adjustments-vertical', 'warning'],
-                'project_bootstrap'         => ['heroicon-o-briefcase', 'success'],
-                'sent_to_factory'           => ['heroicon-o-paper-airplane', 'info'],
-
-                // المواد
-                'materials_requested'       => ['heroicon-o-clipboard-document-list', 'zinc'],
-                'materials_expected'        => ['heroicon-o-calendar', 'amber'],
-                'materials_approved'        => ['heroicon-o-check-badge', 'green'],
-                'materials_provided'        => ['heroicon-o-truck', 'orange'],
-                'materials_received_ok'     => ['heroicon-o-hand-thumb-up', 'violet'],
-
-                // التصنيع
-                'waiting_production'        => ['heroicon-o-clock', 'amber'],
-                'manufacturing_started'     => ['heroicon-o-play-circle', 'sky'],
-                'manufacturing_finished'    => ['heroicon-o-check-circle', 'emerald'],
-                'manufacturing_sent_to_qa'  => ['heroicon-o-shield-check', 'blue'],
-
-                // ما بعد التصنيع
-                'qa_approved_installation'  => ['heroicon-o-wrench', 'teal'],
-                'client_receipt_uploaded'   => ['heroicon-o-arrow-up-on-square', 'indigo'],
-                'project_completed'         => ['heroicon-o-flag', 'green'],
-                'production_request_closed' => ['heroicon-o-lock-closed', 'slate'],
-            ];
-
-            $labelMap = [
-                'created'                     => 'تم الإنشاء',
-                'received'                    => 'تأكيد استلام',
-                'transition'                  => 'انتقال',
-                'assigned_changed'            => 'تغيير الإسناد',
-                'ownership_changed'           => 'تغيير الملكية (الدور)',
-                'owner_changed'               => 'تغيير المالك (المستخدم)',
-                'status_changed'              => 'تغيير الحالة العامة',
-                'ownership_received'          => 'تأكيد استلام الملكية',
-                'owner_received'              => 'تأكيد استلام المالك',
-                'plan_set'                    => 'تحديد الخطة',
-                'planning_set'                => 'تحديد المواعيد',
-                'planning_hint_set'           => 'تحديد مواعيد (مبدئية)',
-
-                'manufacturing_started'       => 'بدء التصنيع (فعلي)',
-                'manufacturing_finished'      => 'نهاية التصنيع (فعلي)',
-                'manufacturing_sent_to_qa'    => 'إرسال للجودة',
-                'qa_ack_manufacturing'        => 'تأكيد استلام الجودة للتصنيع',
-                'qa_approved_manufacturing'   => 'اعتماد الجودة للتصنيع',
-
-                'sent_to_install'             => 'إرسال للتركيب',
-                'install_acknowledged'        => 'تأكيد استلام التركيب',
-                'installation_started'        => 'بدء التركيب',
-                'installation_sent_to_qa'     => 'إرسال للجودة بعد التركيب',
-                'qa_ack_installation'         => 'تأكيد استلام الجودة للتركيب',
-                'qa_approved_installation'    => 'اعتماد التركيب',
-
-                'materials_requested'         => 'تم طلب الخامات',
-                'materials_expected'          => 'تحديد تاريخ التوريد المتوقع',
-                'materials_approved'          => 'تم اعتماد طلب الخامات',
-                'materials_provided'          => 'تم توريد الخامات',
-                'materials_received_ok'       => 'تم استلام الخامات',
-
-                'client_receipt_uploaded'     => 'رفع سند استلام العميل',
-                'task_completed'              => 'اكتمال المهمة',
-                'project_completed'           => 'اكتمال المشروع',
-                'production_request_closed'   => 'إقفال طلب التصنيع',
-                'request_finalized'           => 'إقفال طلب التصنيع',
-            ];
-
-            $displayLogs = $displayLogs->filter()->sortByDesc(function ($l) {
-                $t = $l->action_at ?? $l->happened_at ?? $l->created_at ?? null;
-                return $t ? Carbon::parse($t)->timestamp : 0;
-            })->values();
+            $gapPrev = $log->gap_from_prev_text ?? null;
         @endphp
 
-        @forelse ($displayLogs as $log)
-            @php
-                $rawAt  = $log->action_at ?? $log->happened_at ?? $log->created_at;
-                $at     = $rawAt instanceof Carbon ? $rawAt : ($rawAt ? Carbon::parse($rawAt) : null);
-                $who    = $log->causer->name
-                        ?? data_get($log->data, 'causer_name')
-                        ?? data_get($log->data, 'by')
-                        ?? (data_get($log->data, 'owner_role_label') ?: data_get($log->data, 'owner_role'))
-                        ?? 'مجهول';
-
-                $actionKey   = $log->action ?? $log->type ?? 'event';
-                [$icon, $color] = $iconMap[$actionKey] ?? ['heroicon-o-information-circle', 'gray'];
-                $actionLabel = $labelMap[$actionKey] ?? ($actionKey);
-
-                $srcTxt = 'الطلب';
-                if (!empty(data_get($log->data, 'task_id'))) {
-                    $srcTxt = 'مهمة #' . data_get($log->data, 'task_id');
-                    if ($dept = data_get($log->data, 'department')) $srcTxt .= ' — ' . $dept;
-                }
-            @endphp
-
-            <div class="border rounded-md p-4 mb-4 bg-white dark:bg-gray-900 shadow-sm">
-                <div class="flex items-start justify-between gap-4 text-sm">
-                    <div class="flex items-center gap-2">
-                        <x-filament::icon :icon="$icon" class="h-5 w-5 text-gray-500 dark:text-gray-400" />
-                        <div>
-                            <div class="font-semibold">
-                                {{ $actionLabel }}
-                                <span class="text-gray-500 dark:text-gray-400">— {{ $srcTxt }}</span>
-                            </div>
-                            <div class="text-gray-600 dark:text-gray-400">
-                                <span class="font-medium">{{ $who }}</span>
-                            </div>
+        <div class="border rounded-md p-4 mb-4 bg-white dark:bg-gray-900 shadow-sm">
+            <div class="flex items-start justify-between gap-4 text-sm">
+                <div class="flex items-center gap-2">
+                    <x-filament::icon :icon="$icon" class="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                    <div>
+                        <div class="font-semibold">
+                            {{ $actionLabel }}
+                            <span class="text-gray-500 dark:text-gray-400">— {{ $srcTxt }}</span>
+                        </div>
+                        <div class="text-gray-600 dark:text-gray-400">
+                            <span class="font-medium">{{ $who }}</span>
                         </div>
                     </div>
-
-                    <div class="text-xs text-gray-600 dark:text-gray-400 text-right">
-                        <div>{{ $at?->format('Y-m-d H:i') ?? '—' }}</div>
-                        <div>{{ $at?->diffForHumans() ?? '—' }}</div>
-                    </div>
                 </div>
 
-                @if (!empty($log->note))
-                    <div class="mt-3 text-sm">
-                        <div>{{ $log->note }}</div>
-                    </div>
-                @endif
-
-                <div class="mt-3">
-                    <x-filament::badge :color="$color">{{ $actionLabel }}</x-filament::badge>
+                <div class="text-xs text-gray-600 dark:text-gray-400 text-right">
+                    <div>{{ $at?->format('Y-m-d H:i') ?? '—' }}</div>
+                    <div>{{ $at?->diffForHumans() ?? '—' }}</div>
                 </div>
             </div>
-        @empty
-            <p class="text-sm text-gray-500">لا يوجد سجل للأحداث حالياً.</p>
-        @endforelse
-    </x-filament::section>
+
+            @if (!empty($log->note))
+                <div class="mt-3 text-sm">
+                    @if (($log->action ?? '') === \App\Enums\ProductionRequestStatus::REJECTED->value)
+                        <div class="font-semibold text-red-700">سبب الرفض:</div>
+                    @endif
+                    <div>{{ $log->note }}</div>
+                </div>
+            @endif
+
+            <div class="mt-3 flex items-center justify-between">
+                <x-filament::badge :color="$color">
+                    {{ $actionLabel }}
+                </x-filament::badge>
+
+                @if($gapPrev)
+                    <div class="text-xs text-gray-500 dark:text-gray-400">
+                        الفاصل عن الحدث السابق: <span class="font-semibold">{{ $gapPrev }}</span>
+                    </div>
+                @endif
+            </div>
+        </div>
+    @empty
+        <p class="text-sm text-gray-500">لا يوجد سجل للأحداث حالياً.</p>
+    @endforelse
+</x-filament::section>
 </x-filament::page>

@@ -14,6 +14,7 @@ class ViewProductionTimeline extends Page
     protected static string $resource = ProductionRequestResource::class;
     protected static string $view = 'filament.resources.production-request-resource.pages.view-production-timeline';
     protected static ?string $title = 'عرض معلومات طلب التصنيع';
+
     private array $i18n = [
         'roles' => [
             'factory_manager'       => 'مدير المصنع',
