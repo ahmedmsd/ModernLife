@@ -25,8 +25,6 @@ class ManageProjectTasks extends ManageRelatedRecords
         return 'مهام التصنيع للمشروع';
     }
 
-
-
     public function form(Form $form): Form
     {
         return $form->schema($this->getCreateFormSchema());

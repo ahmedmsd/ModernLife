@@ -285,6 +285,11 @@ class AdminPanelProvider extends PanelProvider
                                 \Filament\Navigation\NavigationItem::make('لوحة التقارير')
                                 ->url(\App\Filament\Pages\Reports\PerformanceDashboard::getUrl())
                                 ->visible(fn () => \App\Filament\Pages\Reports\PerformanceDashboard::canAccess()),
+                                \Filament\Navigation\NavigationItem::make(' متابعة التأخيرات')
+                                    ->url(\App\Filament\Pages\DelaysFollowUp::getUrl())
+                                    ->visible(fn () => \App\Filament\Pages\DelaysFollowUp::canAccess()),
+
+
                             ])
                     )
 

@@ -68,6 +68,11 @@ class ProductionRequest extends Model
         return $this->files();
     }
 
+    public function currentOwnerUser(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class, 'current_owner_user_id','id');
+    }
+
     public function logs(): HasMany
     {
         return $this->hasMany(ProductionRequestLog::class, 'production_request_id', 'id')
