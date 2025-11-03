@@ -141,7 +141,7 @@ class DelayedRequestsTable extends TableWidget
                     ->label('دور المالك')
                     ->options([
                         'factory_manager'     => 'مدير المصنع',
-                        'sales_manager'       => 'مدير المبيعات',
+                        'sales'       => ' المبيعات',
                         'purchasing_manager'  => 'مدير المشتريات',
                     ]),
 

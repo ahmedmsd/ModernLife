@@ -239,7 +239,7 @@ class ProductionRequestWorkflow
         $isDirect = ($pr->request_type ?? RequestType::Direct->value) === RequestType::Direct->value;
 
         $toPhase   = $isDirect ? Phase::SalesIntake     : Phase::ShowroomReview;
-        $ownerRole = $isDirect ? 'sales_manager'        : 'showroom_manager';
+        $ownerRole = $isDirect ? 'sales'        : 'showroom_manager';
         $ownerUser = $this->resolveReturnOwnerUserId($pr, $isDirect); // << النقطة الأهم
 
         $pr = $this->move($pr, $toPhase, S::Pending, $ownerRole, $ownerUser, true);
@@ -477,7 +477,7 @@ class ProductionRequestWorkflow
             'department_manager'    => null,
             'quality_manager'       => null,
             'installation_manager'  => null,
-            'sales_manager'         => null,
+            'sales'         => null,
             default                 => null,
         };
 
@@ -491,7 +491,7 @@ class ProductionRequestWorkflow
             'quality_manager'       => User::role('quality_manager')->value('id'),
             'installation_manager'  => User::role('installation_manager')->value('id'),
             'showroom_manager'      => User::role('showroom_manager')->value('id'),
-            'sales_manager'         => User::role('sales_manager')->value('id'),
+            'sales'         => User::role('sales')->value('id'),
             default                 => null,
         };
     }
@@ -587,7 +587,6 @@ class ProductionRequestWorkflow
             'quality_manager'       => 'مدير الجودة',
             'installation_manager'  => 'مدير التركيب',
             'manufacturing_manager' => 'مدير التصنيع',
-            'sales_manager'         => 'مدير المبيعات',
             'sales'                 => 'المبيعات',
             default                 => $role,
         };

@@ -22,12 +22,11 @@ class NotifyProductionPhaseStakeholders
             return;
         }
 
-        // ✅ مرر المعرّف فقط، وليس الكائن
         Notification::send(
             $recipients->unique('id')->values(),
             new \App\Notifications\ProductionPhaseNotification(
-                prId: $pr->id,            // كان $pr -> الآن $pr->id
-                event: $event->type,      // لو بقيت على "type" داخل الـ Notification غيّر المفتاح ليتوافق
+                prId: $pr->id,
+                event: $event->type,
                 context: $event->context
             )
         );

@@ -134,7 +134,7 @@ class InstallationCalendar extends Page
         }
 
         // الأدمن ومدير المصنع يمكنهم التعديل
-        if ($u->hasAnyRole(['admin', 'super-admin', 'factory_manager', 'department_manager'])) {
+        if ($u->hasAnyRole(['admin', 'super-admin', 'factory_manager'])) {
             return true;
         }
 
@@ -165,17 +165,14 @@ class InstallationCalendar extends Page
             return $q->whereRaw('1=0');
         }
 
-        // الأدمن/السوبر/مدير المصنع: يرون الكل
         if ($u->hasAnyRole(['admin', 'super-admin', 'factory_manager'])) {
             return $q;
         }
 
-        // مدير القسم: يرى مهام قسمه
         if ($u->hasRole('department_manager') && $u->employee?->department_id) {
             $q->where($tasksTable . '.department_id', $u->employee->department_id);
         }
 
-        // مدير المعرض: يرى مهام معارضه
         if ($u->hasRole('showroom_manager')) {
             $employeeId = $u->employee?->getKey();
             if (! $employeeId) {
