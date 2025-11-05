@@ -217,8 +217,6 @@ class DelayedTasksTable extends TableWidget
                     ->label('عرض')
                     ->icon('heroicon-o-eye')
                     ->url(fn (ProductionTask $r) => TaskResource::getUrl('view', ['record' => $r])),
-
-
             ])
             ->bulkActions([
                 Tables\Actions\BulkAction::make('bulkRemind')
@@ -272,7 +270,11 @@ class DelayedTasksTable extends TableWidget
     protected function defaultTaskMsg(ProductionTask $r): string
     {
         $start = $r->sent_to_owner_at ?? $r->assigned_at;
-        $waitH = $start ? Carbon::parse($start)->diffInHours(now()) : 0;
+
+        $waitH = 0;
+        if (is_null($r->received_by_owner_at) && $start) {
+            $waitH = Carbon::parse($start)->diffInHours(now());
+        }
 
         $isOpen = ! in_array($r->status, ['completed','closed'], true) && is_null($r->completed_at);
         $over   = ($r->due_date && $isOpen && now()->gt($r->due_date))
@@ -289,23 +291,30 @@ class DelayedTasksTable extends TableWidget
         $table = (new ProductionTask())->getTable();
 
         return ProductionTask::query()
-            ->select("{$table}.*") // مهم جداً لضمان وجود الـ PK دائماً
+            ->select("{$table}.*")
             ->with([
                 'project',
                 'department',
                 'currentOwnerUser',
             ])
             ->addSelect([
+                // ساعات الانتظار تُحسب فقط إذا لم يتم الاستلام بعد.
                 'delay_hours_calc' => DB::raw("
-                    COALESCE(
-                        TIMESTAMPDIFF(
-                            HOUR,
-                            COALESCE({$table}.sent_to_owner_at, {$table}.assigned_at),
-                            NOW()
-                        ),
-                        0
-                    )
+                    CASE
+                        WHEN {$table}.received_by_owner_at IS NULL
+                             AND ( {$table}.sent_to_owner_at IS NOT NULL OR {$table}.assigned_at IS NOT NULL )
+                        THEN GREATEST(
+                             TIMESTAMPDIFF(
+                                 HOUR,
+                                 COALESCE({$table}.sent_to_owner_at, {$table}.assigned_at),
+                                 NOW()
+                             ),
+                             0
+                        )
+                        ELSE NULL
+                    END
                 "),
+                // تأخير التسليم بالأيام للمهام غير المكتملة فقط.
                 'overdue_days_calc' => DB::raw("
                     CASE
                         WHEN ({$table}.status NOT IN ('completed','closed')
@@ -331,7 +340,6 @@ class DelayedTasksTable extends TableWidget
             });
     }
 
-    // ضمان مفتاح سجل String حتى لو حصلت حالة شاذة
     public function getTableRecordKey(mixed $record): string
     {
         if (method_exists($record, 'getKey')) {
@@ -341,9 +349,7 @@ class DelayedTasksTable extends TableWidget
             $key = $record->{$keyName} ?? null;
         }
 
-        // fallback احتياطي جداً إذا حدثت حالة نادرة
         if ($key === null) {
-            // حاول نجيب id لو متوفر كخاصية خام
             $key = $record->id ?? $record->uuid ?? spl_object_id($record);
         }
 

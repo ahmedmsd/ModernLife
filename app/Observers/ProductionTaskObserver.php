@@ -7,6 +7,7 @@ use App\Models\ProductionTask;
 use App\Notifications\TaskAssignedInAppNotification;
 use App\Notifications\TaskAssignedNotification;
 use App\Services\Tasks\TaskTimerService;
+use App\Services\Notifications\TaskNotifier;
 use Filament\Notifications\Actions\Action as FAction;
 use Filament\Notifications\Notification as FNotification;
 use Illuminate\Support\Facades\Auth;
@@ -18,6 +19,7 @@ class ProductionTaskObserver
     {
         return $s instanceof \BackedEnum ? $s->value : ($s === null ? null : (string) $s);
     }
+
     public function updating(ProductionTask $task): void
     {
         if ($task->isDirty('assigned_to_employee_id')) {
@@ -126,13 +128,13 @@ class ProductionTaskObserver
 
             $toRole = $task->current_owner_role;
             $sentType = match ($toRole) {
-                'showroom_manager'   => 'sent_to_showroom',
-                'factory_manager'    => 'sent_to_factory',
-                'department_manager' => 'sent_to_department',
-                'purchasing_manager' => 'sent_to_purchasing',
-                'quality_manager'    => 'sent_to_quality',
-                'installation_manager' => 'sent_to_install',
-                default              => null,
+                'showroom_manager'      => 'sent_to_showroom',
+                'factory_manager'       => 'sent_to_factory',
+                'department_manager'    => 'sent_to_department',
+                'purchasing_manager'    => 'sent_to_purchasing',
+                'quality_manager'       => 'sent_to_quality',
+                'installation_manager'  => 'sent_to_install',
+                default                 => null,
             };
 
             if ($sentType) {
@@ -164,6 +166,15 @@ class ProductionTaskObserver
                         }
                     }
                 }
+            }
+
+            $notifier = app(TaskNotifier::class);
+            $title    = "تسليم مهمة #{$task->id}";
+            $body     = "تم تحويل ملكية المهمة إلى {$task->current_owner_role}.";
+
+            if (in_array($task->current_owner_role, ['purchasing_manager', 'quality_manager'], true)) {
+                $notifier->notifyCriticalForEvent('OwnerHandoffSLA', $task, $title, $body);
+            } elseif ($task->current_owner_role) {
             }
         }
 
@@ -215,6 +226,55 @@ class ProductionTaskObserver
             }
             if ($to === 'cancelled' && Schema::hasColumn('production_tasks', 'closed_at') && blank($task->closed_at)) {
                 $task->forceFill(['closed_at' => now()])->saveQuietly();
+            }
+
+            $notifier = app(TaskNotifier::class);
+
+            switch ($to) {
+                case 'materials_wait':
+                    $notifier->notifyCriticalForEvent(
+                        'MaterialsRequested',
+                        $task,
+                        "طلب خامات لمهمة #{$task->id}",
+                        "المطلوب تجهيز خامات لهذه المهمة."
+                    );
+                    break;
+
+                case 'materials_done':
+                    $notifier->notifyCriticalForEvent(
+                        'MaterialsProvided',
+                        $task,
+                        "توريد خامات لمهمة #{$task->id}",
+                        "تم توريد الخامات المطلوبة."
+                    );
+                    break;
+
+                case 'approved':
+                    $notifier->notifyCriticalForEvent(
+                        'QAApproved',
+                        $task,
+                        "اعتماد الجودة لمهمة #{$task->id}",
+                        "تم اعتماد نتيجة الجودة."
+                    );
+                    break;
+
+                case 'rejected':
+                    $notifier->notifyCriticalForEvent(
+                        'QARejected',
+                        $task,
+                        "رفض الجودة لمهمة #{$task->id}",
+                        "يرجى مراجعة الملاحظات وإعادة العمل."
+                    );
+                    break;
+
+                case 'completed':
+                    $notifier->notifyCriticalForEvent(
+                        'TaskCompleted',
+                        $task,
+                        "اكتمال مهمة #{$task->id}",
+                        "تم إنهاء المهمة بنجاح."
+                    );
+                    break;
             }
         }
 

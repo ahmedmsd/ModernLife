@@ -106,11 +106,9 @@ class DelayedRequestsTable extends TableWidget
                     ->sortable()
                     ->toggleable(),
 
-                // أعمدة محسوبة قابلة للترتيب بدون إغلاقات
                 TextColumn::make('wait_hours')
                     ->label('زمن انتظار الاستلام/الرد')
                     ->formatStateUsing(function ($state, ProductionRequest $record) {
-                        // إن وُجِد استلام فعلي نعرض 0
                         if ($record->received_by_owner_at) {
                             return '0 س';
                         }
@@ -118,7 +116,6 @@ class DelayedRequestsTable extends TableWidget
                         return $n . ' س';
                     })
                     ->color(function ($state, ProductionRequest $record) {
-                        // لو تم الاستلام فعلاً يكون صفر (رمادي)
                         if ($record->received_by_owner_at) {
                             return 'gray';
                         }
@@ -307,29 +304,39 @@ class DelayedRequestsTable extends TableWidget
             ->with([
                 'client:client_id,client_name',
             ])
-            // أعمدة محسوبة تُضاف إلى نتيجة الاستعلام لتكون قابلة للترتيب مباشرة
             ->addSelect([
                 "{$table}.*",
+
                 'wait_hours' => DB::raw("
-                    CASE
-                        WHEN {$table}.received_by_owner_at IS NOT NULL THEN 0
-                        ELSE COALESCE(
-                            TIMESTAMPDIFF(
-                                HOUR,
-                                COALESCE({$table}.sent_to_owner_at, {$table}.submitted_at),
-                                NOW()
-                            ),
-                            0
+                CASE
+                    WHEN {$table}.received_by_owner_at IS NOT NULL THEN 0
+                    WHEN COALESCE({$table}.sent_to_owner_at, {$table}.submitted_at) IS NULL THEN 0
+                    ELSE GREATEST(
+                        0,
+                        TIMESTAMPDIFF(
+                            HOUR,
+                            COALESCE({$table}.sent_to_owner_at, {$table}.submitted_at),
+                            NOW()
                         )
-                    END
-                "),
+                    )
+                END
+            "),
+
                 'under_review_days' => DB::raw("
-                    CASE
-                        WHEN {$table}.status = 'under_review' AND {$table}.submitted_at IS NOT NULL
-                            THEN TIMESTAMPDIFF(DAY, {$table}.submitted_at, NOW())
-                        ELSE 0
-                    END
-                "),
+                CASE
+                    WHEN {$table}.status = 'under_review'
+                         AND {$table}.submitted_at IS NOT NULL
+                    THEN GREATEST(
+                        0,
+                        TIMESTAMPDIFF(
+                            DAY,
+                            {$table}.submitted_at,
+                            NOW()
+                        )
+                    )
+                    ELSE 0
+                END
+            "),
             ])
             ->where(function (Builder $q) use ($table) {
                 $q->whereNull("{$table}.received_by_owner_at")
@@ -339,4 +346,5 @@ class DelayedRequestsTable extends TableWidget
                     });
             });
     }
+
 }
