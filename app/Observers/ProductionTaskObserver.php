@@ -83,6 +83,8 @@ class ProductionTaskObserver
 
     public function updated(ProductionTask $task): void
     {
+        $notifier = app(TaskNotifier::class);
+
         if ($task->wasChanged('assigned_to_employee_id')) {
             $task->forceFill(['assigned_at' => now()])->saveQuietly();
 
@@ -152,29 +154,26 @@ class ProductionTaskObserver
 
             if ($isDeptManagerOwnership) {
                 if (!$task->employee || $task->employee->user_id !== $task->current_owner_user_id) {
-                    $tmp = clone $task;
-                    $tmp->setRelation('department', $task->department()->first());
                     $dept = $task->department()->with(['managerUser'])->first();
                     $targets = collect([$dept?->managerUser])->filter();
-                    if ($targets->isNotEmpty()) {
-                        foreach ($targets as $user) {
-                            FNotification::make()
-                                ->title('تم نقل ملكية مهمة إلى قسمك')
-                                ->body("تم تعيين المهمة #{$task->id} كمسؤولية قسمك.")
-                                ->success()
-                                ->sendToDatabase($user);
-                        }
+                    foreach ($targets as $user) {
+                        FNotification::make()
+                            ->title('تم نقل ملكية مهمة إلى قسمك')
+                            ->body("تم تعيين المهمة #{$task->id} كمسؤولية قسمك.")
+                            ->success()
+                            ->sendToDatabase($user);
                     }
                 }
             }
 
-            $notifier = app(TaskNotifier::class);
-            $title    = "تسليم مهمة #{$task->id}";
-            $body     = "تم تحويل ملكية المهمة إلى {$task->current_owner_role}.";
-
-            if (in_array($task->current_owner_role, ['purchasing_manager', 'quality_manager'], true)) {
-                $notifier->notifyCriticalForEvent('OwnerHandoffSLA', $task, $title, $body);
-            } elseif ($task->current_owner_role) {
+            try {
+                $title = "تسليم مهمة #{$task->id}";
+                $body  = "تم تحويل ملكية المهمة إلى {$task->current_owner_role}.";
+                if (in_array($task->current_owner_role, ['purchasing_manager', 'quality_manager'], true)) {
+                    $notifier->notifyCriticalForEvent('OwnerHandoffSLA', $task, $title, $body);
+                }
+            } catch (\Throwable $e) {
+                // لا تعطل حفظ المهمة بسبب فشل إشعار
             }
         }
 
@@ -228,53 +227,55 @@ class ProductionTaskObserver
                 $task->forceFill(['closed_at' => now()])->saveQuietly();
             }
 
-            $notifier = app(TaskNotifier::class);
+            try {
+                switch ($to) {
+                    case 'materials_wait':
+                        $notifier->notifyCriticalForEvent(
+                            'MaterialsRequested',
+                            $task,
+                            "طلب خامات لمهمة #{$task->id}",
+                            "المطلوب تجهيز خامات لهذه المهمة."
+                        );
+                        break;
 
-            switch ($to) {
-                case 'materials_wait':
-                    $notifier->notifyCriticalForEvent(
-                        'MaterialsRequested',
-                        $task,
-                        "طلب خامات لمهمة #{$task->id}",
-                        "المطلوب تجهيز خامات لهذه المهمة."
-                    );
-                    break;
+                    case 'materials_done':
+                        $notifier->notifyCriticalForEvent(
+                            'MaterialsProvided',
+                            $task,
+                            "توريد خامات لمهمة #{$task->id}",
+                            "تم توريد الخامات المطلوبة."
+                        );
+                        break;
 
-                case 'materials_done':
-                    $notifier->notifyCriticalForEvent(
-                        'MaterialsProvided',
-                        $task,
-                        "توريد خامات لمهمة #{$task->id}",
-                        "تم توريد الخامات المطلوبة."
-                    );
-                    break;
+                    case 'approved':
+                        $notifier->notifyCriticalForEvent(
+                            'QAApproved',
+                            $task,
+                            "اعتماد الجودة لمهمة #{$task->id}",
+                            "تم اعتماد نتيجة الجودة."
+                        );
+                        break;
 
-                case 'approved':
-                    $notifier->notifyCriticalForEvent(
-                        'QAApproved',
-                        $task,
-                        "اعتماد الجودة لمهمة #{$task->id}",
-                        "تم اعتماد نتيجة الجودة."
-                    );
-                    break;
+                    case 'rejected':
+                        $notifier->notifyCriticalForEvent(
+                            'QARejected',
+                            $task,
+                            "رفض الجودة لمهمة #{$task->id}",
+                            "يرجى مراجعة الملاحظات وإعادة العمل."
+                        );
+                        break;
 
-                case 'rejected':
-                    $notifier->notifyCriticalForEvent(
-                        'QARejected',
-                        $task,
-                        "رفض الجودة لمهمة #{$task->id}",
-                        "يرجى مراجعة الملاحظات وإعادة العمل."
-                    );
-                    break;
-
-                case 'completed':
-                    $notifier->notifyCriticalForEvent(
-                        'TaskCompleted',
-                        $task,
-                        "اكتمال مهمة #{$task->id}",
-                        "تم إنهاء المهمة بنجاح."
-                    );
-                    break;
+                    case 'completed':
+                        $notifier->notifyCriticalForEvent(
+                            'TaskCompleted',
+                            $task,
+                            "اكتمال مهمة #{$task->id}",
+                            "تم إنهاء المهمة بنجاح."
+                        );
+                        break;
+                }
+            } catch (\Throwable $e) {
+                // لا تعطل حفظ المهمة بسبب فشل إشعار
             }
         }
 
@@ -309,19 +310,16 @@ class ProductionTaskObserver
             $dept = $task->department()->with(['managerUser', 'headUser'])->first();
             $targets = collect([$dept?->managerUser, $dept?->headUser])->filter();
 
-            if ($targets->isNotEmpty()) {
-                $url = \App\Filament\Resources\ProjectResource::getUrl('view', ['record' => $task->project_id]);
-                foreach ($targets as $user) {
-                    FNotification::make()
-                        ->title('مهمة انتقلت إلى قسمك')
-                        ->body("المهمة (#{$task->id}) على المشروع #{$task->project_id}")
-                        ->icon('heroicon-o-arrow-right')
-                        ->info()
-                        ->actions([
-                            FAction::make('عرض المشروع')->button()->url($url),
-                        ])
-                        ->sendToDatabase($user);
-                }
+            foreach ($targets as $user) {
+                FNotification::make()
+                    ->title('مهمة انتقلت إلى قسمك')
+                    ->body("المهمة (#{$task->id}) على المشروع #{$task->project_id}")
+                    ->icon('heroicon-o-arrow-right')
+                    ->info()
+                    ->actions([
+                        FAction::make('عرض المشروع')->button()->url(\App\Filament\Resources\ProjectResource::getUrl('view', ['record' => $task->project_id])),
+                    ])
+                    ->sendToDatabase($user);
             }
 
             $task->logs()->create([
