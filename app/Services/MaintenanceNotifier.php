@@ -1,78 +1,169 @@
 <?php
 
-
 namespace App\Services;
 
 use App\Models\MaintenanceRequest;
 use App\Models\User;
 use App\Notifications\MaintenanceRequestStatusChanged;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
 
 class MaintenanceNotifier
 {
-    /** إنشاء طلب جديد → factory_manager فقط */
+    /** إنشاء طلب جديد → تنبيه مدير المصنع */
     public function notifyNewRequest(MaintenanceRequest $request): void
     {
-        $this->sendToFactoryManagers($request, 'new_request');
-    }
+        $actor       = Auth::user();
+        $recipients  = $this->factoryManagers();
 
-    /** إغلاق الطلب → صاحب الطلب فقط */
-    public function notifyCompletedToOwner(MaintenanceRequest $request, ?string $note = null): void
-    {
-        if ($owner = $this->resolveOwner($request)) {
-            Notification::send([$owner], new MaintenanceRequestStatusChanged($request, 'completed', $note));
+        if ($recipients->isEmpty()) {
+            return;
         }
+
+        Notification::send(
+            $recipients,
+            new MaintenanceRequestStatusChanged(
+                request: $request,
+                action: 'new_request',
+                actor:  $actor,
+            )
+        );
     }
 
+    /** تأكيد استلام الطلب من مدير المصنع */
+    public function notifyReceiptConfirmed(MaintenanceRequest $request): void
+    {
+        $actor      = Auth::user();
+        $recipient  = $this->createdByOrOwner($request);
+
+        if (! $recipient) {
+            return;
+        }
+
+        $recipient->notify(
+            new MaintenanceRequestStatusChanged(
+                request: $request,
+                action: 'receipt_confirmed',
+                actor:  $actor,
+            )
+        );
+    }
+
+    /** بدء الصيانة الفعلي */
+    public function notifyStarted(MaintenanceRequest $request): void
+    {
+        $actor      = Auth::user();
+        $recipient  = $this->createdByOrOwner($request);
+
+        if (! $recipient) {
+            return;
+        }
+
+        $recipient->notify(
+            new MaintenanceRequestStatusChanged(
+                request: $request,
+                action: 'started',
+                actor:  $actor,
+            )
+        );
+    }
+
+    /** إنهاء الصيانة وإغلاق الطلب */
+    public function notifyCompleted(MaintenanceRequest $request): void
+    {
+        $actor = Auth::user();
+
+        $targets = collect();
+
+        if ($created = $this->createdBy($request)) {
+            $targets->push($created);
+        }
+
+        if ($owner = $this->currentOwner($request)) {
+            $targets->push($owner);
+        }
+
+        $targets = $targets->unique('id')->filter();
+
+        if ($targets->isEmpty()) {
+            return;
+        }
+
+        Notification::send(
+            $targets,
+            new MaintenanceRequestStatusChanged(
+                request: $request,
+                action: 'completed',
+                actor:  $actor,
+            )
+        );
+    }
+
+    /** إضافة ملاحظة */
     public function notifyComment(MaintenanceRequest $request, string $note): void
     {
-        $actor = Auth::user();
-        if ($this->isFactoryManager($actor)) {
-            if ($owner = $this->resolveOwner($request, fallbackToActor: false)) {
-                Notification::send([$owner], new MaintenanceRequestStatusChanged($request, 'note_added', $note));
-            }
+        $actor   = Auth::user();
+
+        $targets = collect();
+
+        if ($created = $this->createdBy($request)) {
+            $targets->push($created);
+        }
+
+        if ($owner = $this->currentOwner($request)) {
+            $targets->push($owner);
+        }
+
+        // لا ترسل الإشعار لنفس الشخص الذي كتب الملاحظة
+        $targets = $targets
+            ->filter()
+            ->unique('id')
+            ->reject(fn (User $u) => $actor && $u->id === $actor->id);
+
+        if ($targets->isEmpty()) {
             return;
         }
-        $this->sendToFactoryManagers($request, 'note_added', $note);
+
+        Notification::send(
+            $targets,
+            new MaintenanceRequestStatusChanged(
+                request: $request,
+                action: 'note_added',
+                actor:  $actor,
+                extra:  ['note' => $note],
+            )
+        );
     }
 
-    public function notifyStatusChange(MaintenanceRequest $request, string $action, ?string $note = null): void
+    /* ================== Helpers ================== */
+
+    /** جميع المستخدمين الذين لهم دور factory_manager */
+    protected function factoryManagers(): Collection
     {
-        $actor = Auth::user();
-        if ($this->isFactoryManager($actor)) {
-            if ($owner = $this->resolveOwner($request, fallbackToActor: false)) {
-                Notification::send([$owner], new MaintenanceRequestStatusChanged($request, $action, $note));
-            }
-            return;
-        }
-        $this->sendToFactoryManagers($request, $action, $note);
+        return User::role('factory_manager')->get();
     }
 
-    /* ================= Helpers ================= */
-
-    protected function sendToFactoryManagers(MaintenanceRequest $request, string $action, ?string $note = null): void
+    protected function createdBy(MaintenanceRequest $request): ?User
     {
-        $recipients = User::role('factory_manager')->get();
-        if ($recipients->isNotEmpty()) {
-            Notification::send($recipients, new MaintenanceRequestStatusChanged($request, $action, $note));
-        }
-    }
-
-    protected function resolveOwner(MaintenanceRequest $request, bool $fallbackToActor = true): ?\Illuminate\Contracts\Auth\Authenticatable
-    {
-        if (method_exists($request, 'createdByUser') && $request->createdByUser) {
+        if (! empty($request->created_by) && method_exists($request, 'createdByUser')) {
             return $request->createdByUser;
         }
-        // 2) current_owner_user_id
-        if (!empty($request->current_owner_user_id)) {
-            return User::find($request->current_owner_user_id);
-        }
-        return $fallbackToActor ? Auth::user() : null;
+
+        return null;
     }
 
-    protected function isFactoryManager(?User $user): bool
+    protected function currentOwner(MaintenanceRequest $request): ?User
     {
-        return $user?->hasRole('factory_manager') ?? false;
+        if (! empty($request->current_owner_user_id)) {
+            return User::find($request->current_owner_user_id);
+        }
+
+        return null;
+    }
+
+    protected function createdByOrOwner(MaintenanceRequest $request): \Illuminate\Contracts\Auth\Authenticatable
+    {
+        return $this->createdBy($request) ?? $this->currentOwner($request) ?? Auth::user();
     }
 }

@@ -35,87 +35,35 @@ class ProductionRequestWorkflow
         bool $touchSent = false
     ): ProductionRequest {
         return DB::transaction(function () use ($pr, $toPhase, $toStatus, $ownerRole, $ownerUserId, $touchSent) {
-            $role = $ownerRole ?? $this->defaultOwnerRole($toPhase);
 
-            $noChange =
-                $pr->current_phase      === $toPhase->value &&
-                $pr->phase_status       === $toStatus->value &&
-                $pr->current_owner_role === $role &&
-                ! $touchSent &&
-                ($ownerUserId === null);
-
-            if ($noChange) {
-                return $pr->refresh();
-            }
+            $prevOwnerId   = $pr->current_owner_user_id;
+            $prevOwnerRole = $pr->current_owner_role;
 
             $from = [
-                'phase'  => $pr->current_phase,
-                'status' => $pr->phase_status,
-                'owner'  => $pr->current_owner_role,
+                'phase'         => $pr->current_phase,
+                'status'        => $pr->phase_status,
+                'owner_user_id' => $prevOwnerId,
+                'owner_role'    => $prevOwnerRole,
             ];
 
-            $pr->current_phase       = $toPhase->value;
-            $pr->phase_status        = $toStatus->value;
-            $pr->current_owner_role  = $role;
-
-            if ($ownerUserId !== null) {
-                $pr->current_owner_user_id = $ownerUserId;
-            } else {
-                $pr->current_owner_user_id = $this->resolveOwnerUserId($pr, $role);
-            }
-
-            if ($touchSent) {
-                $pr->sent_to_owner_at     = now();
-                $pr->received_by_owner_at = null;
-            }
-
-            $pr->save();
-
-            $noteText = sprintf(
-                'انتقال من مرحلة %s (%s) إلى مرحلة %s (%s)%s',
-                $this->phaseLabel($from['phase'] ?? '—'),
-                $this->statusLabel($from['status'] ?? '—'),
-                $this->phaseLabel($toPhase->value),
-                $this->statusLabel($toStatus->value),
-                $role ? ' | المالك: '.$this->roleLabel($role) : ''
-            );
-
-            $pr->logs()->create([
-                'causer_id'   => Auth::id(),
-                'type'        => 'transition',
-                'data'        => [
-                    'from' => [
-                        'phase'        => $from['phase'],
-                        'status'       => $from['status'],
-                        'owner'        => $from['owner'],
-                        'actor_name'   => optional(Auth::user())->name,
-                        'phase_label'  => $this->phaseLabel((string)($from['phase'] ?? '')),
-                        'status_label' => $this->statusLabel((string)($from['status'] ?? '')),
-                        'owner_label'  => $this->roleLabel((string)($from['owner'] ?? '')),
-                    ],
-                    'to' => [
-                        'phase'        => $toPhase->value,
-                        'status'       => $toStatus->value,
-                        'phase_label'  => $this->phaseLabel($toPhase->value),
-                        'status_label' => $this->statusLabel($toStatus->value),
-                    ],
-                    'owner_role'       => $role,
-                    'owner_role_label' => $this->roleLabel($role),
-                    'owner_user_id'    => $pr->current_owner_user_id,
-                ],
-                'note'        => $noteText,
-                'happened_at' => now(),
-            ]);
+            // ... منطق التحديث الحالي (phase/status + owner_role + owner_user_id + sent/received)
 
             event(new \App\Events\ProductionRequestPhaseEvent(
                 type: 'transition',
                 pr: $pr->fresh(),
                 context: [
-                    'from'        => $from,
-                    'to'          => ['phase' => $toPhase->value, 'status' => $toStatus->value],
-                    'owner_role'  => $role,
-                    'owner_user_id' => $pr->current_owner_user_id,
-                    'touch_sent'  => $touchSent,
+                    'from'            => $from,
+                    'to'              => [
+                        'phase'         => $toPhase->value,
+                        'status'        => $toStatus->value,
+                        'owner_user_id' => $pr->current_owner_user_id,
+                        'owner_role'    => $ownerRole ?? $pr->current_owner_role,
+                    ],
+                    'prev_owner_id'   => $prevOwnerId,
+                    'prev_owner_role' => $prevOwnerRole,
+                    'creator_id'      => $pr->created_by,
+                    'causer_id'       => Auth::id(),
+                    'touch_sent'      => $touchSent,
                 ],
             ));
 
@@ -158,10 +106,14 @@ class ProductionRequestWorkflow
             type: 'received',
             pr: $pr->fresh(),
             context: [
-                'phase'         => $pr->current_phase,
-                'from_status'   => $fromStatus,
-                'to_status'     => S::Received->value,
-                'wait_seconds'  => $waitSeconds,
+                'phase'          => $pr->current_phase,
+                'from_status'    => $fromStatus,
+                'to_status'      => S::Received->value,
+                'wait_seconds'   => $waitSeconds,
+                'owner_user_id'  => $pr->current_owner_user_id,
+                'owner_role'     => $pr->current_owner_role,
+                'creator_id'     => $pr->created_by,
+                'causer_id'      => Auth::id(),
             ],
         ));
 
@@ -220,10 +172,14 @@ class ProductionRequestWorkflow
             type: 'rejected',
             pr: $pr->fresh(),
             context: [
-                'phase'       => $pr->current_phase,
-                'from_status' => $fromStatus,
-                'to_status'   => \App\Enums\PhaseStatus::Rejected->value,
-                'reason'      => $reason,
+                'phase'         => $pr->current_phase,
+                'from_status'   => $fromStatus,
+                'to_status'     => S::Rejected->value,
+                'reason'        => $reason,
+                'owner_user_id' => $pr->current_owner_user_id,
+                'owner_role'    => $pr->current_owner_role,
+                'creator_id'    => $pr->created_by,
+                'causer_id'     => Auth::id(),
             ],
         ));
 

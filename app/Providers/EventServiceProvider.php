@@ -7,8 +7,11 @@ use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvi
 class EventServiceProvider extends ServiceProvider
 {
     protected $listen = [
+//        \App\Events\ProductionRequestPhaseEvent::class => [
+//            \App\Listeners\NotifyProductionPhaseStakeholders::class,
+//        ],
         \App\Events\ProductionRequestPhaseEvent::class => [
-            \App\Listeners\NotifyProductionPhaseStakeholders::class,
+            \App\Listeners\SendProductionPhaseNotification::class,
         ],
     ];
 }

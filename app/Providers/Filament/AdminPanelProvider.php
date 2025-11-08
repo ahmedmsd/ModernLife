@@ -242,6 +242,9 @@ class AdminPanelProvider extends PanelProvider
                                 NavigationItem::make('طلبات الصيانة ')
                                     ->url(\App\Filament\Resources\MaintenanceRequestResource::getUrl())
                                     ->visible(fn () => \App\Filament\Resources\MaintenanceRequestResource::canViewAny()),
+                                NavigationItem::make('تقويم الصيانة ')
+                                    ->url(\App\Filament\Pages\MaintenanceCalendar::getUrl())
+                                    ->visible(fn () => \App\Filament\Pages\MaintenanceCalendar::canAccess()),
                             ])
                     )
 
