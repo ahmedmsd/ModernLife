@@ -4,41 +4,57 @@ namespace App\Notifications;
 
 use App\Models\MaintenanceRequest;
 use App\Models\User;
+use App\Notifications\Concerns\AsFilamentDatabaseNotification;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
-use Illuminate\Notifications\Messages\DatabaseMessage;
 use Illuminate\Notifications\Messages\MailMessage;
 
 class MaintenanceRequestStatusChanged extends Notification
 {
     use Queueable;
+    use AsFilamentDatabaseNotification;
 
     public function __construct(
         public MaintenanceRequest $request,
-        public string $action,          // new_request, receipt_confirmed, started, completed, note_added
-        public ?User $actor = null,     // من قام بالفعل
-        public array $extra = []        // بيانات إضافية (مثلاً نص الملاحظة)
+        public string $action,
+        public ?User $actor = null,
+        public array $extra = []
     ) {
     }
 
     public function via(object $notifiable): array
     {
-        // تفعيل التنبيهات الداخلية + البريد
         return ['database', 'mail'];
     }
 
-    public function toDatabase(object $notifiable): DatabaseMessage
+    public function toDatabase(object $notifiable): array
     {
-        return new DatabaseMessage([
-            'request_id'   => $this->request->getKey(),
-            'client_id'    => $this->request->client_id,
-            'action'       => $this->action,
-            'message'      => $this->messageLine(),
-            'note'         => $this->extra['note'] ?? null,
-            'actor_id'     => $this->actor?->getKey(),
-            'actor_name'   => $this->actor?->name,
-            'status'       => $this->request->status,
-        ]);
+        $requestId  = $this->request->getKey();
+        $clientName = optional($this->request->client)->client_name ?? 'عميل';
+
+        $url = url(
+            route(
+                'filament.admin.resources.maintenance-requests.view',
+                ['record' => $requestId],
+                false
+            )
+        );
+
+        return $this->filamentDbMessage(
+            "طلب صيانة #{$requestId} - {$clientName}",
+            $this->messageLine(),
+            [
+                'request_id'   => $requestId,
+                'client_id'    => $this->request->client_id,
+                'action'       => $this->action,
+                'message'      => $this->messageLine(),
+                'note'         => $this->extra['note'] ?? null,
+                'actor_id'     => $this->actor?->getKey(),
+                'actor_name'   => $this->actor?->name,
+                'status'       => $this->request->status,
+                'url'          => $url,
+            ]
+        );
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -62,7 +78,7 @@ class MaintenanceRequestStatusChanged extends Notification
             ->line("رقم الطلب: {$requestId}")
             ->line("اسم العميل: {$clientName}");
 
-        if (!empty($this->extra['note'])) {
+        if (! empty($this->extra['note'])) {
             $mail->line('الملاحظة:')
                 ->line($this->extra['note']);
         }

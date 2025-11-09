@@ -12,13 +12,14 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // تذكير بعد 3 أيام من الإرسال بدون تأكيد الاستلام
         $schedule->command('workflow:remind-receipts')
             ->dailyAt('09:00')
             ->withoutOverlapping()
             ->onOneServer();
 
-        // $schedule->command('queue:work --stop-when-empty')->everyMinute()->withoutOverlapping();
+        $schedule->command('queue:work database --sleep=3 --tries=3 --timeout=120 --stop-when-empty')
+            ->everyMinute()
+            ->withoutOverlapping();
         // $schedule->command('backup:run')->dailyAt('02:30');
         // $schedule->command('horizon:snapshot')->everyFiveMinutes();
     }

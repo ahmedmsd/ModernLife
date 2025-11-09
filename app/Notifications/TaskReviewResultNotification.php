@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\ProductionTask;
+use App\Notifications\Concerns\AsFilamentDatabaseNotification;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
@@ -11,12 +12,14 @@ use Illuminate\Notifications\Messages\MailMessage;
 class TaskReviewResultNotification extends Notification implements ShouldQueue
 {
     use Queueable;
+    use AsFilamentDatabaseNotification;
 
     public function __construct(
         public ProductionTask $task,
         public bool $approved,
         public ?string $managerNote = null,
-    ) {}
+    ) {
+    }
 
     public function via(object $notifiable): array
     {
@@ -48,16 +51,23 @@ class TaskReviewResultNotification extends Notification implements ShouldQueue
     {
         $project = $this->task->project;
         $status  = $this->approved ? 'completed' : 'rework';
+        $title   = $this->approved ? 'تم اعتماد المهمة' : 'إعادة عمل للمهمة';
 
-        return [
-            'title'       => $this->approved ? 'تم اعتماد المهمة' : 'إعادة عمل للمهمة',
-            'body'        => 'المشروع: ' . ($project->project_name ?? ('#' . $project->id)) .
-                ' — الحالة الجديدة: ' . $status .
-                ($this->managerNote ? ' — ملاحظة: ' . $this->managerNote : ''),
-            'project_id'  => $project->id,
-            'task_id'     => $this->task->id,
-            'url'         => url("/admin/projects/{$this->task->project_id}/manage-tasks"),
-            'action_text' => 'فتح المهمة',
-        ];
+        $body = 'المشروع: ' . ($project->project_name ?? ('#' . $project->id)) .
+            ' — الحالة الجديدة: ' . $status .
+            ($this->managerNote ? ' — ملاحظة: ' . $this->managerNote : '');
+
+        $url = url("/admin/projects/{$this->task->project_id}/manage-tasks");
+
+        return $this->filamentDbMessage(
+            $title,
+            $body,
+            [
+                'project_id'  => $project->id,
+                'task_id'     => $this->task->id,
+                'url'         => $url,
+                'action_text' => 'فتح المهمة',
+            ]
+        );
     }
 }

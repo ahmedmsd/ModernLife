@@ -3,8 +3,9 @@
 namespace App\Filament\Resources\ProductionRequestResource\Pages;
 
 use App\Filament\Resources\ProductionRequestResource;
+use App\Models\ProductionRequest;
+use App\Services\ProductionRequestWorkflow;
 use Filament\Resources\Pages\CreateRecord;
-
 
 class CreateProductionRequest extends CreateRecord
 {
@@ -24,6 +25,7 @@ class CreateProductionRequest extends CreateRecord
         if ($type === 'direct' && ! $canDirect) {
             abort(403, 'ليست لديك صلاحية إنشاء طلب مباشر.');
         }
+
         if ($type === 'indirect' && ! $canIndirect) {
             abort(403, 'ليست لديك صلاحية إنشاء طلب غير مباشر.');
         }
@@ -32,22 +34,25 @@ class CreateProductionRequest extends CreateRecord
             $data['showroom_id'] = null;
         }
 
-        unset($data['current_phase'], $data['phase_status'], $data['current_owner_role'], $data['sent_to_owner_at'], $data['received_by_owner_at']);
+        unset(
+            $data['current_phase'],
+            $data['phase_status'],
+            $data['current_owner_role'],
+            $data['sent_to_owner_at'],
+            $data['received_by_owner_at']
+        );
 
         return $data;
     }
 
     protected function afterCreate(): void
     {
+        $record = $this->getRecord();
 
-//        \Filament\Notifications\Notification::make()
-//            ->title('تم إنشاء طلب التصنيع بنجاح')
-//            ->success()
-//            ->send();
+        if ($record instanceof ProductionRequest) {
+            app(ProductionRequestWorkflow::class)->start($record);
+        }
 
-        $this->redirect(\App\Filament\Resources\ProductionRequestResource::getUrl('index'));
-
-//        $record = $this->record->fresh();
-//        app(ProductionRequestWorkflow::class)->start($record);
+        $this->redirect(ProductionRequestResource::getUrl('index'));
     }
 }

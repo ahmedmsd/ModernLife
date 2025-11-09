@@ -55,7 +55,9 @@ class ViewProductionTimeline extends Page
 
     public static function canAccess(array $parameters = []): bool
     {
-        return Auth::user()?->can('access_view_production_timeline') ?? false;
+        return auth()->user()?->hasAnyRole([
+            'admin','super-admin','factory_manager','sales','showroom_manager','purchasing_manager',
+        ]) ?? false;
     }
 
     public function mount(ProductionRequest $record): void

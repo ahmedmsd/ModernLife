@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\MyNotifications;
 use App\Filament\Pages\SystemSettings;
 use App\Filament\Widgets\Showroom\ShowroomManagerCurrentTasks;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
@@ -101,6 +102,22 @@ class AdminPanelProvider extends PanelProvider
                             ->icon('heroicon-o-home')
                             ->sort(-1000)
                             ->visible(fn () => \Filament\Pages\Dashboard::canAccess()),
+                        NavigationItem::make('تنبيهاتي')
+                            ->icon('heroicon-o-bell')
+                            ->url(fn () => \App\Filament\Pages\MyNotifications::getUrl())
+                            ->visible(fn () => auth()->check())
+                            ->badge(function (): ?string {
+                                $user = auth()->user();
+
+                                if (! $user instanceof \App\Models\User) {
+                                    return null;
+                                }
+
+                                $count = $user->unreadNotifications()->count();
+
+                                return $count > 0 ? (string) $count : null;
+                            }),
+
                     ])
 
                     ->group(
