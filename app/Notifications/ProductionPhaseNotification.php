@@ -15,32 +15,33 @@ class ProductionPhaseNotification extends Notification implements ShouldQueue
     public function __construct(
         public int $prId,
         public string $event,
-        public array $context = []
+        public array $context = [],
     ) {
-        $this->afterCommit();
     }
 
     public function via($notifiable): array
     {
         $channels = ['database'];
-        if (!empty($notifiable->email)) {
+
+        if (! empty($notifiable->email)) {
             $channels[] = 'mail';
         }
+
         return $channels;
     }
 
     public function viaQueues(): array
     {
         return [
-            'mail' => 'mail',
+            'mail'     => 'mail',
             'database' => 'default',
         ];
     }
 
     public function toMail($notifiable): MailMessage
     {
-        $pr = $this->pr();
-        $url = $this->timelineUrl($pr);
+        $pr      = $this->pr();
+        $url     = $this->timelineUrl($pr);
         $subject = $this->mailSubject($pr);
 
         return (new MailMessage)
@@ -57,7 +58,7 @@ class ProductionPhaseNotification extends Notification implements ShouldQueue
 
         return [
             'pr_id'   => $pr->id,
-            'event'   => $this->event, // was: type
+            'event'   => $this->event,
             'context' => $this->context,
             'title'   => $this->dbTitle(),
             'body'    => $this->dbBody(),
@@ -65,11 +66,9 @@ class ProductionPhaseNotification extends Notification implements ShouldQueue
         ];
     }
 
-    /* ---------------- Helpers ---------------- */
-
     protected function pr(): ProductionRequest
     {
-        return (new \App\Models\ProductionRequest)->findOrFail($this->prId);
+        return ProductionRequest::findOrFail($this->prId);
     }
 
     protected function mailSubject(ProductionRequest $pr): string
@@ -107,12 +106,23 @@ class ProductionPhaseNotification extends Notification implements ShouldQueue
 
     protected function dbBody(): string
     {
-        return $this->mailLine();
+        if (! empty($this->context['note'])) {
+            return (string) $this->context['note'];
+        }
+
+        return match ($this->event) {
+            'transition'        => 'تم نقل الطلب بين المراحل.',
+            'received'          => 'تم تأكيد استلام الطلب في المرحلة الحالية.',
+            'rejected'          => 'تم رفض الطلب من الجهة المسؤولة.',
+            'project_bootstrap' => 'تم إنشاء مشروع ومهام مرتبطة بهذا الطلب.',
+            default             => 'لديك إشعار جديد يخص طلب التصنيع.',
+        };
     }
 
     protected function timelineUrl(ProductionRequest $pr): string
     {
         $base = config('app.url') ?: url('/');
+
         return rtrim($base, '/') . "/admin/production-requests/{$pr->id}/timeline";
     }
 }
