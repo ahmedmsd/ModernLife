@@ -14,6 +14,7 @@ class MaintenanceRequest extends Model
     protected $fillable = [
         'project_id',
         'client_id',
+        'showroom_id',
         'requested_by',
         'request_date',
         'details',
@@ -55,11 +56,12 @@ class MaintenanceRequest extends Model
     {
         return $this->belongsTo(\App\Models\User::class, 'created_by');
     }
+    public function showroom(): BelongsTo
+    {
+        return $this->belongsTo(Showroom::class, 'showroom_id', 'id');
+    }
 
-    /**
-     * @param string[] $casts
-     * @return MaintenanceRequest
-     */
+
     public function setCasts(array $casts): MaintenanceRequest
     {
         $this->casts = $casts;

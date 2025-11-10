@@ -17,11 +17,9 @@ class MaintenanceCalendar extends Page
     protected static ?string $slug            = 'maintenance-calendar';
     protected static string $view             = 'filament.pages.maintenance-calendar';
 
-    // نطاق التاريخ
     public ?string $from = null;
     public ?string $to   = null;
 
-    // إعادة جدولة
     public ?int    $rescheduleRequestId = null;
     public ?string $newMaintenanceDate  = null;
     public ?string $rescheduleNote      = null;
@@ -49,31 +47,23 @@ class MaintenanceCalendar extends Page
         $this->to   = $today->copy()->endOfMonth()->toDateString();
     }
 
-    /**
-     * ترجع الطلبات مجمعة حسب اليوم (تستخدم في الـ Blade).
-     */
     public function groupedByDate(): array
     {
         $requests = $this->baseQueryForTable()
             ->orderBy('expected_start_at')
-            ->orderBy('request_date')
+            ->orderBy('actual_start_at')
             ->get();
 
         return $requests
             ->groupBy(function (MaintenanceRequest $r) {
-                $date = $r->expected_start_at
-                    ?? $r->actual_start_at
-                    ?? $r->request_date;
+                $date = $r->expected_start_at ?? $r->actual_start_at;
 
-                return Carbon::parse($date)->toDateString();
+                return \Illuminate\Support\Carbon::parse($date)->toDateString();
             })
             ->map(fn ($group) => $group->values()->all())
             ->toArray();
     }
 
-    /**
-     * الاستعلام الأساسي لطلبات الصيانة التي تظهر في التقويم.
-     */
     protected function baseQueryForTable(): Builder
     {
         $startAt = $this->from
@@ -87,22 +77,23 @@ class MaintenanceCalendar extends Page
         $q = MaintenanceRequest::query()
             ->with([
                 'client',
+                'showroom',
                 'project.productionRequest.showroom',
                 'requester',
                 'ownerUser',
             ])
-            ->whereBetween(
-                \DB::raw('COALESCE(expected_start_at, request_date)'),
-                [$startAt, $endAt]
-            )
+            ->whereNotNull('expected_start_at')
+            ->orWhereNotNull('actual_start_at');
+
+        $q->whereBetween(
+            \DB::raw('COALESCE(expected_start_at, actual_start_at)'),
+            [$startAt, $endAt]
+        )
             ->whereNotIn('status', ['cancelled']);
 
         return $this->applyRoleScope($q);
     }
 
-    /**
-     * حصر النتائج حسب دور المستخدم الحالي.
-     */
     protected function applyRoleScope(Builder $q): Builder
     {
         $u = auth()->user();
@@ -111,20 +102,17 @@ class MaintenanceCalendar extends Page
             return $q->whereRaw('1=0');
         }
 
-        // الأدمن + السوبر أدمن + مدير المصنع يرون الكل
         if ($u->hasAnyRole(['admin', 'super-admin', 'factory_manager'])) {
             return $q;
         }
 
-        // مدير المعرض: الطلبات التابعة لمعارضه
+        // مدير المعرض: الطلبات التابعة لمعارضه (حسب showroom_id الجديد)
         if ($u->hasRole('showroom_manager')) {
             $employeeId = $u->employee?->getKey();
             if (! $employeeId) {
-                // لا يوجد Employee مرتبط → لا شيء
                 return $q->whereRaw('1=0');
             }
 
-            // المعارض التي يديرها هذا الـ Employee
             $showroomIds = Showroom::query()
                 ->where('manager_id', $employeeId)
                 ->pluck('id');
@@ -133,17 +121,13 @@ class MaintenanceCalendar extends Page
                 return $q->whereRaw('1=0');
             }
 
-            $q->whereHas('project.productionRequest', function (Builder $qq) use ($showroomIds) {
-                $qq->whereIn('showroom_id', $showroomIds);
-            });
+            $q->whereIn('showroom_id', $showroomIds);
         }
 
-        // المبيعات: الطلبات التي طلبها أو أنشأها
         if ($u->hasRole('sales')) {
             $q->where(function (Builder $qq) use ($u) {
                 $qq->where('requested_by', $u->id);
 
-                // لو لديك عمود created_by فعلياً يمكنك إبقاء هذا السطر
                 if (\Schema::hasColumn('maintenance_requests', 'created_by')) {
                     $qq->orWhere('created_by', $u->id);
                 }
@@ -161,12 +145,10 @@ class MaintenanceCalendar extends Page
             return false;
         }
 
-        // الأدمن ومدير المصنع: يمكنهم التعديل ما دام الطلب غير مكتمل/ملغي
         if ($u->hasAnyRole(['admin', 'super-admin', 'factory_manager'])) {
             return ! in_array($request->status, ['completed', 'cancelled'], true);
         }
 
-        // مدير المعرض: لو الطلب تابع لأحد معارضه وفي حالة new أو in_progress
         if ($u->hasRole('showroom_manager')) {
             $employeeId = $u->employee?->getKey();
             if (! $employeeId) {
@@ -177,7 +159,7 @@ class MaintenanceCalendar extends Page
                 ->where('manager_id', $employeeId)
                 ->pluck('id');
 
-            $requestShowroomId = $request->project?->productionRequest?->showroom_id;
+            $requestShowroomId = $request->showroom_id;
 
             if (! $requestShowroomId || $showroomIds->isEmpty()) {
                 return false;
@@ -187,16 +169,12 @@ class MaintenanceCalendar extends Page
                 && in_array($request->status, ['new', 'in_progress'], true);
         }
 
-        // بقية الأدوار: عرض فقط
         return false;
     }
 
-    /**
-     * فتح مودال تعديل موعد الصيانة.
-     */
     public function openRescheduleModal(int $requestId): void
     {
-        $request = MaintenanceRequest::with(['project.productionRequest.showroom'])->findOrFail($requestId);
+        $request = MaintenanceRequest::with(['showroom'])->findOrFail($requestId);
 
         if (! $this->canReschedule($request)) {
             throw ValidationException::withMessages([
@@ -214,9 +192,6 @@ class MaintenanceCalendar extends Page
         $this->dispatch('open-modal', id: 'reschedule-modal');
     }
 
-    /**
-     * حفظ تعديل موعد الصيانة.
-     */
     public function saveReschedule(): void
     {
         $this->validate([
@@ -226,7 +201,7 @@ class MaintenanceCalendar extends Page
             'newMaintenanceDate' => 'تاريخ الصيانة الجديد',
         ]);
 
-        $request = MaintenanceRequest::with(['project.productionRequest.showroom'])
+        $request = MaintenanceRequest::with(['showroom'])
             ->findOrFail($this->rescheduleRequestId);
 
         if (! $this->canReschedule($request)) {
@@ -241,8 +216,6 @@ class MaintenanceCalendar extends Page
 
         $request->expected_start_at = Carbon::parse($this->newMaintenanceDate)->startOfDay();
         $request->save();
-
-        // يمكن لاحقاً إضافة Log + تنبيه باستخدام MaintenanceNotifier
 
         $this->dispatch('close-modal', id: 'reschedule-modal');
         $this->dispatch(

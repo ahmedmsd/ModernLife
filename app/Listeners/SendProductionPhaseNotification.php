@@ -86,7 +86,6 @@ class SendProductionPhaseNotification
             return;
         }
 
-        // 6) بناء نص التنبيه من كلاس ProductionPhaseNotification (بدون استخدامه كنوتيف Laravel)
         $phaseNotification = new ProductionPhaseNotification(
             prId: $pr->id,
             event: $type,

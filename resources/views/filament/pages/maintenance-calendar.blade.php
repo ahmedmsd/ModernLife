@@ -71,8 +71,7 @@
                                 default       => (string) $r->status,
                             };
 
-                            $showroomName = $r->project?->productionRequest?->showroom?->name
-                                ?? $r->client?->showroom?->name
+                            $showroomName = $r->showroom?->name
                                 ?? '—';
 
                             $clientName = $r->client?->client_name ?? '—';
@@ -80,7 +79,7 @@
 
                             $maintenanceDate = $r->expected_start_at
                                 ?? $r->actual_start_at
-                                ?? $r->request_date;
+                                ?? '-';
                         @endphp
 
                         <tr class="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-900 dark:even:bg-gray-800">

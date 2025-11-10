@@ -12,7 +12,9 @@ use App\Models\Client;
 use App\Models\MaintenanceRequest;
 use App\Models\Project;
 use Filament\Forms;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -50,26 +52,31 @@ class MaintenanceRequestResource extends Resource
             Forms\Components\Section::make('بيانات الطلب')
                 ->columns(2)
                 ->schema([
-                    Forms\Components\Select::make('project_id')
-                        ->label('المشروع')
-                        ->options(fn () => Project::query()
-                            ->select('id', 'project_name')
-                            ->orderBy('project_name')
-                            ->get()
-                            ->mapWithKeys(fn ($p) => [(string) $p->id => (string) $p->project_name])
-                            ->all()
-                        )
+//                    Forms\Components\Select::make('project_id')
+//                        ->label('المشروع')
+//                        ->options(fn () => Project::query()
+//                            ->select('id', 'project_name')
+//                            ->orderBy('project_name')
+//                            ->get()
+//                            ->mapWithKeys(fn ($p) => [(string) $p->id => (string) $p->project_name])
+//                            ->all()
+//                        )
+//                        ->searchable()
+//                        ->preload()
+////                        ->required()
+//                        ->reactive()
+//                        ->afterStateUpdated(function ($state, callable $set) {
+//                            $project = $state
+//                                ? Project::with('client:client_id,client_name')->find($state)
+//                                : null;
+//                            $set('client_id', $project?->client?->client_id ?: null);
+//                        }),
+                    Select::make('showroom_id')
+                        ->label('المعرض')
+                        ->options(\App\Models\Showroom::pluck('name', 'id'))
                         ->searchable()
-                        ->preload()
-//                        ->required()
-                        ->reactive()
-                        ->afterStateUpdated(function ($state, callable $set) {
-                            $project = $state
-                                ? Project::with('client:client_id,client_name')->find($state)
-                                : null;
-                            $set('client_id', $project?->client?->client_id ?: null);
-                        }),
-
+                        ->required()
+                        ->preload(),
                     Forms\Components\Select::make('client_id')
                         ->label('العميل')
                         ->options(fn () => Client::query()
@@ -118,10 +125,15 @@ class MaintenanceRequestResource extends Resource
                     ->label('#')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('project.project_name')
-                    ->label('المشروع')
+//                Tables\Columns\TextColumn::make('project.project_name')
+//                    ->label('المشروع')
+//                    ->searchable(),
+                Tables\Columns\TextColumn::make('showroom.name')
+                    ->label('المعرض')
                     ->searchable(),
-
+                Tables\Columns\TextColumn::make('createdByUser.name')
+                    ->label('بواسطة')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('client.client_name')
                     ->label('العميل')
                     ->searchable(),
@@ -190,19 +202,4 @@ class MaintenanceRequestResource extends Resource
         ];
     }
 
-    public static function afterCreate(\App\Models\MaintenanceRequest $record): void
-    {
-        $record->update([
-            'current_owner_role'    => 'factory_manager',
-            'current_owner_user_id' => null,
-            'sent_to_owner_at'      => now(),
-        ]);
-
-        app(\App\Services\MaintenanceNotifier::class)->notifyNewRequest($record);
-
-        \Filament\Notifications\Notification::make()
-            ->title('تم إنشاء طلب صيانة جديد وإبلاغ مدير المصنع')
-            ->success()
-            ->send();
-    }
 }
