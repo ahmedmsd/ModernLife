@@ -114,17 +114,21 @@ class DelayedTasksTable extends TableWidget
                     ->date()
                     ->sortable()
                     ->toggleable(),
+                TextColumn::make('wait_days_for_owner')
+                    ->label('أيام الانتظار لدى المالك')
+                    ->state(function (ProductionTask $r) {
+                        $start = $r->sent_to_owner_at ?? $r->assigned_at;
+                        if (! $start) return '—';
 
-                TextColumn::make('delay_hours_calc')
-                    ->label('ساعات الانتظار لدى المالك')
-                    ->state(fn ($record) =>
-                    is_null($record->delay_hours_calc)
-                        ? '—'
-                        : ((int) $record->delay_hours_calc . ' س')
-                    )
-                    ->sortable()
-                    ->toggleable(),
+                        $startC = $start instanceof Carbon ? $start : Carbon::parse($start);
+                        $endC   = $r->received_by_owner_at
+                            ? ($r->received_by_owner_at instanceof Carbon ? $r->received_by_owner_at : Carbon::parse($r->received_by_owner_at))
+                            : now();
 
+                        $days = $startC->diffInDays($endC);
+                        return intval($days) . ' يوم';
+                    })
+                    ->toggleable(isToggledHiddenByDefault: false),
                 TextColumn::make('overdue_days_calc')
                     ->label('تأخير التسليم')
                     ->state(fn ($record) => ((int) $record->overdue_days_calc) . ' ي')
@@ -161,7 +165,7 @@ class DelayedTasksTable extends TableWidget
                     ]),
 
                 Filter::make('overdue_only')
-                    ->label('متأخرة عن التسليم')
+                    ->label('متأخرة عن التسليم (٣ أيام فأكثر)')
                     ->toggle()
                     ->query(function (Builder $q) {
                         $table = $q->getModel()->getTable();
@@ -175,7 +179,7 @@ class DelayedTasksTable extends TableWidget
                                     COALESCE({$table}.completed_at, NOW())
                                 ),
                                 0
-                            ) > 0
+                            ) >= 3
                         ");
                     }),
 
@@ -298,7 +302,6 @@ class DelayedTasksTable extends TableWidget
 
     protected function defaultTaskMsg(ProductionTask $r): string
     {
-        // مدة الانتظار = من sent_to_owner_at أو assigned_at إلى received_by_owner_at (أو الآن إن لم تُستلم بعد)
         $start = $r->sent_to_owner_at ?? $r->assigned_at;
         $waitH = 0;
 
@@ -311,7 +314,6 @@ class DelayedTasksTable extends TableWidget
             $waitH = $startC->diffInHours($endC);
         }
 
-        // تأخير التسليم = من due_date إلى completed_at أو الآن
         $over = 0;
         if ($r->due_date) {
             $dueC = $r->due_date instanceof Carbon ? $r->due_date : Carbon::parse($r->due_date);
@@ -343,22 +345,6 @@ class DelayedTasksTable extends TableWidget
                 'currentOwnerUser',
             ])
             ->addSelect([
-                // ساعات الانتظار لدى المالك (دقيقة حتى بعد الاستلام)
-                'delay_hours_calc' => DB::raw("
-                    CASE
-                        WHEN ({$table}.sent_to_owner_at IS NOT NULL OR {$table}.assigned_at IS NOT NULL) THEN
-                            GREATEST(
-                                TIMESTAMPDIFF(
-                                    HOUR,
-                                    COALESCE({$table}.sent_to_owner_at, {$table}.assigned_at),
-                                    COALESCE({$table}.received_by_owner_at, NOW())
-                                ),
-                                0
-                            )
-                        ELSE NULL
-                    END
-                "),
-                // تأخير التسليم بالأيام، سواء كانت المهمة مكتملة أو لا
                 'overdue_days_calc' => DB::raw("
                     CASE
                         WHEN {$table}.due_date IS NULL THEN 0
@@ -375,7 +361,6 @@ class DelayedTasksTable extends TableWidget
             ])
             ->where(function (Builder $q) use ($table) {
                 $q
-                    // انتظار استلام المالك الحالي
                     ->where(function (Builder $w) use ($table) {
                         $w->whereNull("{$table}.received_by_owner_at")
                             ->where(function (Builder $ww) use ($table) {
@@ -383,7 +368,6 @@ class DelayedTasksTable extends TableWidget
                                     ->orWhereNotNull("{$table}.assigned_at");
                             });
                     })
-                    // أو أي تأخير تسليم (حتى لو المهمة مكتملة)
                     ->orWhereRaw("
                         {$table}.due_date IS NOT NULL
                         AND GREATEST(
@@ -393,7 +377,7 @@ class DelayedTasksTable extends TableWidget
                                 COALESCE({$table}.completed_at, NOW())
                             ),
                             0
-                        ) > 0
+                        ) >= 3
                     ");
             });
     }

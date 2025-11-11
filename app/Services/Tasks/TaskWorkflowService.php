@@ -7,6 +7,7 @@ use App\Models\ProductionTask;
 use App\Models\TaskLog;
 use App\Models\MaterialRequest;
 use App\Models\Employee;
+use App\Models\User;
 use App\Services\ProductionRequestWorkflow;
 use App\Services\Notifications\TaskNotifier;
 use Illuminate\Support\Arr;
@@ -72,7 +73,17 @@ class TaskWorkflowService
             ]);
 
             $task->update(['status' => 'materials_wait']);
+            $pmUserId = $this->resolvePurchasingManagerUserId($task);
 
+            if ($pmUserId) {
+                $this->setOwner(
+                    $task,
+                    'purchasing_manager',
+                    userId: $pmUserId,
+                    touchSent: true,
+                    note: 'فتح طلب خامات — تحويل للمشتريات'
+                );
+            }
             $this->log($task, 'materials_request_opened', ['by' => Auth::id()]);
             $this->notifier->notifyActor('تم إرسال طلب الخامات', "المهمة #{$task->id}", $task);
         });
@@ -163,6 +174,21 @@ class TaskWorkflowService
             ]);
 
             $this->markOwnerReceived($task, 'استلام الخامات — جاهز لبدء التصنيع');
+
+            $deptManagerId = $task->department?->manager_user_id
+                ?? $task->department?->head_user_id
+                ?? $task->assigned_to_employee?->user_id
+                ?? null;
+
+            if ($deptManagerId) {
+                $this->setOwner(
+                    $task,
+                    'department_manager',
+                    userId: $deptManagerId,
+                    touchSent: false,
+                    note: 'جاهز لبدء التصنيع بعد استلام الخامات'
+                );
+            }
         });
     }
 
@@ -194,6 +220,21 @@ class TaskWorkflowService
             ]);
 
             $this->markOwnerReceived($task, 'استلام جزئي (مع السماح بالبدء)');
+
+            $deptManagerId = $task->department?->manager_user_id
+                ?? $task->department?->head_user_id
+                ?? $task->assigned_to_employee?->user_id
+                ?? null;
+
+            if ($deptManagerId) {
+                $this->setOwner(
+                    $task,
+                    'department_manager',
+                    userId: $deptManagerId,
+                    touchSent: false,
+                    note: 'استلام جزئي للخامات — يمكن بدء التصنيع'
+                );
+            }
         });
     }
 
@@ -214,7 +255,7 @@ class TaskWorkflowService
                 'by'          => Auth::id(),
             ]);
 
-            $this->setOwner($task, 'purchasing_manager', userId: null, touchSent: true, note: 'نواقص خامات — انتظار توريد تكميلي');
+            $this->setOwner($task, 'purchasing_manager', userId: $this->resolvePurchasingManagerUserId($task), touchSent: true, note: 'نواقص خامات — انتظار توريد تكميلي');
         });
     }
 
@@ -233,7 +274,7 @@ class TaskWorkflowService
             }
 
             $task->update(['status' => 'on_hold']);
-            $this->setOwner($task, 'purchasing_manager', userId: null, touchSent: true, note: 'مشكلة في الخامات — انتظار المعالجة');
+            $this->setOwner($task, 'purchasing_manager', userId: $this->resolvePurchasingManagerUserId($task), touchSent: true, note: 'مشكلة في الخامات — انتظار المعالجة');
 
             $this->log($task, 'materials_received_issue', [
                 'mr_id'  => $mr?->id,
@@ -814,5 +855,19 @@ class TaskWorkflowService
 
     return $log;
 }
+
+    protected function resolvePurchasingManagerUserId(ProductionTask $task): ?int
+    {
+        $user = User::role('purchasing_manager')->first();
+
+        return $user?->id;
+    }
+
+    protected function resolveQualityManagerUserId(ProductionTask $task): ?int
+    {
+        $user = User::role('quality_manager')->first();
+
+        return $user?->id;
+    }
 
 }
