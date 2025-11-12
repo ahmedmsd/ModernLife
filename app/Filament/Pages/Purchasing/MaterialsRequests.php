@@ -3,244 +3,118 @@
 namespace App\Filament\Pages\Purchasing;
 
 use App\Models\MaterialRequest;
-use App\Models\SystemSetting;
-use App\Models\ProductionTask;
-use App\Support\Filament\HasShieldAccess;
-use Filament\Forms;
-use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Tables;
-use Filament\Tables\Actions\Action;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
+use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Table;
-use Illuminate\Http\UploadedFile;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Forms;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
+use Filament\Infolists;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Tables\Actions\Action;
 use Illuminate\Support\Facades\Storage;
-use Spatie\Permission\Models\Role;
-
 
 class MaterialsRequests extends Page implements HasTable
 {
     use InteractsWithTable;
-//    use HasShieldAccess;
 
-    protected static ?string $navigationIcon  = 'heroicon-o-truck';
-    protected static ?string $navigationLabel = 'طلبات الخامات';
-    protected static ?string $title           = 'طلبات الخامات (المشتريات)';
-    protected static ?string $slug            = 'purchasing/materials-requests';
+    protected static ?string $navigationIcon  = 'heroicon-o-archive-box';
+    protected static ?string $navigationLabel = 'طلبات خامات (جارية)';
+    protected static ?string $title           = 'طلبات خامات قيد المعالجة';
     protected static ?string $navigationGroup = 'المشتريات';
-    protected static ?int    $navigationSort  = 10;
-
     protected static string $view = 'filament.pages.purchasing.materials-requests';
 
     public static function canAccess(): bool
     {
-        return auth()->check() && auth()->user()->hasAnyRole(['purchasing_manager','admin','super-admin']);
-    }
-
-    public static function shouldRegisterNavigation(): bool
-    {
-        return static::canAccess();
+        $u = Auth::user();
+        return $u && $u->hasAnyRole(['super-admin','admin', 'purchasing_manager', 'factory_manager', 'department_manager']);
     }
 
     public static function getNavigationBadge(): ?string
     {
-        return (string) MaterialRequest::query()
+        $q = static::baseQuery();
+        if (Auth::user()?->hasRole('department_manager')) {
+            $q->where('requested_by', Auth::id());
+        }
+        return (string) $q->count();
+    }
+
+    protected static function baseQuery(): Builder
+    {
+        return MaterialRequest::query()
             ->whereNull('provided_at')
-            ->whereIn('status', ['requested', 'approved'])
-            ->count();
+            ->whereIn('status', ['requested', 'approved']);
     }
 
     public function table(Table $table): Table
     {
-        return $table
-            ->heading('طلبات خامات قيد المعالجة')
-            ->query(
-                MaterialRequest::query()
-                    ->whereNull('provided_at')
-                    ->whereIn('status', ['requested', 'approved'])
-                    ->with([
-                        'task.project.productionRequest',
-                        'department',
-                        'requestedBy',
-                    ])
+        $query = static::baseQuery()
+            ->when(
+                Auth::user()?->hasRole('department_manager'),
+                fn (Builder $q) => $q->where('requested_by', Auth::id())
             )
+            ->with([
+                'task',
+                'department',
+                'requestedBy',
+                'approvedBy',
+                'providedBy',
+            ]);
+
+        return $table
+            ->query($query)
             ->columns([
-                TextColumn::make('id')->label('#')->sortable(),
-
-                TextColumn::make('task.id')
-                    ->label('المهمة')
-                    ->sortable(),
-
-                TextColumn::make('department.dept_name')
-                    ->label('القسم')
-                    ->sortable()
-                    ->searchable(),
-
-                TextColumn::make('task.project.project_name')
-                    ->label('المشروع')
-                    ->searchable(),
-
-                TextColumn::make('requester')
-                    ->label('مقدّم الطلب')
-                    ->state(fn (MaterialRequest $record) =>
-                        ($record->requestedBy?->name)
-                        ?? ($record->task?->employee?->employee_name)
-                        ?? '—'
-                    )
-                    ->searchable(),
-
-                TextColumn::make('note')
-                    ->label('المطلوبات')
-                    ->wrap()
-                    ->limit(120),
-                TextColumn::make('estimated_cost')
-                    ->label('الميزانية '),
-                TextColumn::make('requested_at')
-                    ->label('تاريخ الطلب')
-                    ->dateTime('Y-m-d H:i')
-                    ->sortable(),
-
-                TextColumn::make('expected_delivery_at')
-                    ->label('موعد التوريد (متوقّع)')
-                    ->dateTime('Y-m-d H:i')
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-                TextColumn::make('status')
-                    ->label('حالة طلب الخامات')
-                    ->badge()
-                    ->formatStateUsing(fn (?string $state) => match ($state) {
-                        'requested' => 'بانتظار اعتماد المشتريات',
-                        'approved'  => 'بانتظار التوريد',
-                        'fulfilled' => 'مورَّد',
-                        'cancelled' => 'ملغى',
-                        default     => '—',
-                    })
-                    ->color(fn (?string $state) => match ($state) {
+                TextColumn::make('id')->label('رقم')->sortable()->searchable(),
+                TextColumn::make('status')->label('الحالة')->badge()
+                    ->color(fn (string $state) => match ($state) {
                         'requested' => 'warning',
-                        'approved'  => 'info',
-                        'fulfilled' => 'success',
-                        'cancelled' => 'gray',
-                        default     => 'secondary',
+                        'approved'  => 'success',
+                        default     => 'gray',
+                    })
+                    ->formatStateUsing(fn ($state) => match ($state) {
+                        'requested' => 'قيد الطلب',
+                        'approved'  => 'معتمد',
+                        default     => $state,
                     }),
+                TextColumn::make('department.dept_name')->label('القسم')->toggleable()->searchable(),
+                TextColumn::make('task_id')->label('مهمة #')->sortable()->toggleable(),
+                TextColumn::make('requestedBy.name')->label('أنشأه')->searchable(),
+                TextColumn::make('po_file')
+                    ->label('أمر الشراء')
+                    ->formatStateUsing(fn($state) => $state ? 'تحميل' : '—')
+                    ->badge()
+                    ->color(fn($state) => $state ? 'primary' : 'gray')
+                    ->url(fn($record) => $record->po_file && Storage::disk('public')->exists($record->po_file)
+                        ? Storage::disk('public')->url($record->po_file)
+                        : null
+                    )
+                    ->openUrlInNewTab()
+                    ->tooltip('تحميل ملف أمر الشراء إن وُجد'),
+                TextColumn::make('requested_at')->label('تاريخ الطلب')->dateTime()->sortable(),
+                TextColumn::make('expected_delivery_at')->label('تسليم متوقع')->dateTime()->sortable(),
+                TextColumn::make('estimated_cost')->label('التكلفة المتوقعة')->money('sar', true)->sortable(),
+                TextColumn::make('note')->label('ملاحظة')->limit(40)->toggleable(),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('department_id')
-                    ->label('القسم')
-                    ->relationship('department', 'dept_name'),
-
                 Tables\Filters\SelectFilter::make('status')
                     ->label('الحالة')
                     ->options([
-                        'requested' => 'بانتظار اعتماد المشتريات',
-                        'approved'  => 'بانتظار التوريد',
+                        'requested' => 'قيد الطلب',
+                        'approved'  => 'معتمد',
                     ]),
-            ])
-            ->actions([
-                // عرض تفاصيل الطلب
-                Action::make('viewDetails')
-                    ->label('عرض ')
-                    ->icon('heroicon-o-eye')
-                    ->url(fn (MaterialRequest $record) => ViewMaterialRequest::getUrl(['record' => $record])),
-            ])
-            ->bulkActions([
-
-                Tables\Actions\BulkAction::make('bulkConfirm')
-                    ->label('تأكيد توفير (مجمع)')
-                    ->icon('heroicon-o-check')
-                    ->color('success')
-                    ->requiresConfirmation()
-                    ->action(function ($records) {
-                        foreach ($records as $record) {
-                            /** @var MaterialRequest $record */
-                            DB::transaction(function () use ($record) {
-                                if ($record->status !== 'approved' || $record->provided_at) {
-                                    return;
-                                }
-
-                                $record->update([
-                                    'status'      => 'fulfilled',
-                                    'provided_by' => Auth::id(),
-                                    'provided_at' => now(),
-                                ]);
-
-                                /** @var ProductionTask|null $task */
-                                $task = $record->task()->lockForUpdate()->first();
-                                if (! $task || in_array($task->status, ['completed','cancelled'])) {
-                                    return;
-                                }
-
-                                $dept            = $task->department;
-                                $departmentOwner = $dept?->manager_id ?? $dept?->head_user_id ?? null;
-
-                                $this->updateTaskStateAndOwnership($task, [
-                                    'status'             => 'materials_done',
-                                    'current_owner_role' => 'department_manager',
-                                    'current_owner_user' => $departmentOwner,
-                                ]);
-                            });
-                        }
-
-                        Notification::make()
-                            ->title('تم تأكيد التوفير للمهام المحددة')
-                            ->success()
-                            ->send();
+                Tables\Filters\Filter::make('date_range')
+                    ->form([
+                        Forms\Components\DatePicker::make('from')->label('من'),
+                        Forms\Components\DatePicker::make('to')->label('إلى'),
+                    ])
+                    ->query(function (Builder $q, array $data) {
+                        if (!empty($data['from'])) $q->whereDate('requested_at', '>=', $data['from']);
+                        if (!empty($data['to']))   $q->whereDate('requested_at', '<=', $data['to']);
                     }),
             ])
-            ->emptyStateHeading('لا توجد طلبات خامات قيد المعالجة');
-    }
-
-    /**
-     *
-     * @param ProductionTask $task
-     * @param array{
-     *   status?: string,
-     *   current_owner_role?: string,
-     *   current_owner_user?: int|null
-     * } $values
-     */
-    protected function updateTaskStateAndOwnership(ProductionTask $task, array $values): void
-    {
-        $payload = [];
-
-        if (isset($values['status'])) {
-            $payload['status'] = $values['status'];
-        }
-
-        if (
-            isset($values['current_owner_role']) &&
-            Schema::hasColumn($task->getTable(), 'current_owner_role')
-        ) {
-            $payload['current_owner_role'] = $values['current_owner_role'];
-        }
-
-        if (
-            array_key_exists('current_owner_user', $values) &&
-            Schema::hasColumn($task->getTable(), 'current_owner_user_id')
-        ) {
-            $payload['current_owner_user_id'] = $values['current_owner_user'];
-        }
-
-        if (! empty($payload)) {
-            $task->update($payload);
-        }
-    }
-
-    protected function notifyRole(string $roleName, string $title, string $body): void
-    {
-        try {
-            $role = Role::findByName($roleName);
-            foreach ($role->users as $user) {
-                Notification::make()
-                    ->title($title)
-                    ->body($body)
-                    ->sendToDatabase($user);
-            }
-        } catch (\Throwable $e) {
-        }
+            ->defaultSort('requested_at', 'desc');
     }
 }

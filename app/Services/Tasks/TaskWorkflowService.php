@@ -2,872 +2,655 @@
 
 namespace App\Services\Tasks;
 
-use App\Enums\TaskStatus;
 use App\Models\ProductionTask;
-use App\Models\TaskLog;
-use App\Models\MaterialRequest;
-use App\Models\Employee;
 use App\Models\User;
-use App\Services\ProductionRequestWorkflow;
-use App\Services\Notifications\TaskNotifier;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Carbon;
 
 class TaskWorkflowService
 {
-    public function __construct(
-        protected TaskNotifier $notifier,
-    ) {}
+    /*
+     * ======================= حركات رئيسية في دورة المهمة =======================
+     */
 
-
-
-    /** إسناد المهمة لمدير القسم وتعيين المالك */
-    public function assignToDeptManager(ProductionTask $task, int $employeeId, string $dueDate): void
-    {
-        DB::transaction(function () use ($task, $employeeId, $dueDate) {
-            $emp         = Employee::with('user:id')->findOrFail($employeeId);
-            $ownerUserId = $emp?->user?->id;
-
-            $task->forceFill([
-                'assigned_to_employee_id' => $employeeId,
-                'status'                  => 'pending',
-                'assigned_at'             => now(),
-                'due_date'                => $dueDate,
-            ])->save();
-
-            $this->setOwner($task, 'department_manager', $ownerUserId, touchSent: true, note: 'إسناد من المصنع');
-
-            $this->notifier->notifyActor('تم إسناد المهمة لمدير القسم', "رقم المهمة #{$task->id}", $task);
-        });
-    }
-
-    /** مدير القسم يؤكد استلام المهمة */
-    public function deptAcknowledge(ProductionTask $task, ?string $note = null): void
+    /**
+     * إسناد المهمة لمدير القسم لأول مرة.
+     */
+    public function assignToDeptManager(ProductionTask $task, ?string $note = null): void
     {
         DB::transaction(function () use ($task, $note) {
-            $task->update([
-                'status'      => 'received',
-                'received_at' => now(),
-            ]);
+            $deptManagerId = $this->resolveDeptManagerUserId($task);
 
-            $this->markOwnerReceived($task, $note ?: 'تأكيد استلام المهمة (مدير القسم)');
-
-            $this->notifier->notifyActor('تم تأكيد استلام المهمة', "رقم المهمة #{$task->id}", $task);
-        });
-    }
-
-    public function requestMaterials(ProductionTask $task, string $note, string $poFilePath): void
-    {
-        DB::transaction(function () use ($task, $note, $poFilePath) {
-            \App\Models\MaterialRequest::create([
-                'task_id'       => $task->id,
-                'department_id' => $task->department_id,
-                'requested_by'  => Auth::id(),
-                'requested_at'  => now(),
-                'status'        => 'requested',
-                'note'          => $note,
-                'po_file'       => $poFilePath,
-            ]);
-
-            $task->update(['status' => 'materials_wait']);
-            $pmUserId = $this->resolvePurchasingManagerUserId($task);
-
-            if ($pmUserId) {
-                $this->setOwner(
-                    $task,
-                    'purchasing_manager',
-                    userId: $pmUserId,
-                    touchSent: true,
-                    note: 'فتح طلب خامات — تحويل للمشتريات'
-                );
-            }
-            $this->log($task, 'materials_request_opened', ['by' => Auth::id()]);
-            $this->notifier->notifyActor('تم إرسال طلب الخامات', "المهمة #{$task->id}", $task);
-        });
-    }
-
-    public function purchasingReceive(ProductionTask $task, array $data): void
-    {
-        DB::transaction(function () use ($task, $data) {
-            $mr = $task->materialRequests()->whereNull('provided_at')->latest()->firstOrFail();
-
-            $mr->update([
-                'po_number'            => $data['po_number']            ?? $mr->po_number,
-                'estimated_cost'       => $data['estimated_cost']       ?? $mr->estimated_cost,
-                'expected_delivery_at' => $data['expected_delivery_at'],
-                'note'                 => trim(($mr->note ? $mr->note . "\n" : '') . ($data['note'] ?? '')),
-                'status'               => 'approved',
-                'approved_at'          => now(),
-                'approved_by'          => Auth::id(),
-            ]);
-
-            $task->update(['status' => 'materials_prep']);
-
-            $this->log($task, 'purchasing_ack', ['by' => Auth::id()]);
-            $this->notifier->notifyActor('تم تسجيل استلام طلب الخامات', "المهمة #{$task->id}", $task);
-        });
-    }
-
-    public function materialsProvided(ProductionTask $task, float $actualCost, ?string $note = null, ?array $invoice = null): void
-    {
-        DB::transaction(function () use ($task, $actualCost, $note, $invoice) {
-            $mr = $task->materialRequests()
-                ->whereIn('status', ['approved','supplying']) // فقط الطلب “القابل للتوريد”
-                ->orderByDesc('id')
-                ->lockForUpdate()
-                ->firstOrFail();
-
-            $invoiceNo   = $invoice['invoice_no']   ?? null;
-            $invoiceDate = isset($invoice['invoice_date']) && $invoice['invoice_date']
-                ? \Illuminate\Support\Carbon::parse($invoice['invoice_date'])
-                : null;
-            $invoiceFile = $invoice['invoice_file'] ?? null;
-
-            $mr->update([
-                'actual_cost'  => $actualCost,
-                'invoice_no'   => $invoiceNo   ?? $mr->invoice_no,
-                'invoice_date' => $invoiceDate ?? $mr->invoice_date,
-                'invoice_file' => $invoiceFile ?? $mr->invoice_file,
-                'note'         => trim(($mr->note ? $mr->note . "\n" : '') . ($note ?? '')),
-                'provided_by'  => Auth::id(),
-                'provided_at'  => now(),
-                'status'       => 'fulfilled',
-            ]);
-
-            $task->update(['status' => 'materials_done']);
-
-
-            $this->log($task, 'materials_provided_note', [
-                'mr_id'       => $mr->id,
-                'actual_cost' => $actualCost,
-                'note'        => $note ? trim($note) : null,
-            ]);
-
-            $this->notifier->notifyActor('تم تأكيد توفر الخامات', "المهمة #{$task->id} جاهزة لاستلام القسم", $task);
-        });
-    }
-
-
-    public function materialsReceivedOk(
-        ProductionTask $task,
-        ?string $start = null,
-        ?string $end = null,
-        ?string $install = null,
-        ?string $note = null
-    ): void {
-        DB::transaction(function () use ($task, $start, $end, $install, $note) {
-            $payload = ['status' => 'waiting_production'];
-            if ($start)   $payload['planned_start_at']   = \Illuminate\Support\Carbon::parse($start);
-            if ($end)     $payload['planned_end_at']     = \Illuminate\Support\Carbon::parse($end);
-            if ($install) $payload['planned_install_at'] = \Illuminate\Support\Carbon::parse($install);
-            $task->update($payload);
-
-            $this->log($task, 'materials_received_ok', [
-                'planned_start_at'   => optional($task->planned_start_at)->toDateTimeString(),
-                'planned_end_at'     => optional($task->planned_end_at)->toDateTimeString(),
-                'planned_install_at' => optional($task->planned_install_at)->toDateTimeString(),
-                'note'               => $note ? trim($note) : null,
-                'by'                 => Auth::id(),
-            ]);
-
-            $this->markOwnerReceived($task, 'استلام الخامات — جاهز لبدء التصنيع');
-
-            $deptManagerId = $task->department?->manager_user_id
-                ?? $task->department?->head_user_id
-                ?? $task->assigned_to_employee?->user_id
-                ?? null;
-
-            if ($deptManagerId) {
-                $this->setOwner(
-                    $task,
-                    'department_manager',
-                    userId: $deptManagerId,
-                    touchSent: false,
-                    note: 'جاهز لبدء التصنيع بعد استلام الخامات'
-                );
-            }
-        });
-    }
-
-    public function materialsReceivedPartialAllowStart(
-        ProductionTask $task,
-        ?string $start,
-        ?string $end,
-        ?string $install,
-        ?string $note,
-        ?string $missingItemsNote = null
-    ): void {
-        DB::transaction(function () use ($task, $start, $end, $install, $note, $missingItemsNote) {
-            $this->openFollowupMaterialsRequest($task, $missingItemsNote);
-
-            $payload = ['status' => 'waiting_production'];
-            if ($start)   $payload['planned_start_at']   = \Illuminate\Support\Carbon::parse($start);
-            if ($end)     $payload['planned_end_at']     = \Illuminate\Support\Carbon::parse($end);
-            if ($install) $payload['planned_install_at'] = \Illuminate\Support\Carbon::parse($install);
-            $task->update($payload);
-
-            $this->log($task, 'materials_received_partial', [
-                'allow_start'        => true,
-                'planned_start_at'   => optional($task->planned_start_at)->toDateTimeString(),
-                'planned_end_at'     => optional($task->planned_end_at)->toDateTimeString(),
-                'planned_install_at' => optional($task->planned_install_at)->toDateTimeString(),
-                'note'               => $note ? trim($note) : null,
-                'missing'            => $missingItemsNote ? trim($missingItemsNote) : null,
-                'by'                 => Auth::id(),
-            ]);
-
-            $this->markOwnerReceived($task, 'استلام جزئي (مع السماح بالبدء)');
-
-            $deptManagerId = $task->department?->manager_user_id
-                ?? $task->department?->head_user_id
-                ?? $task->assigned_to_employee?->user_id
-                ?? null;
-
-            if ($deptManagerId) {
-                $this->setOwner(
-                    $task,
-                    'department_manager',
-                    userId: $deptManagerId,
-                    touchSent: false,
-                    note: 'استلام جزئي للخامات — يمكن بدء التصنيع'
-                );
-            }
-        });
-    }
-
-    public function materialsReceivedPartialHold(
-        ProductionTask $task,
-        ?string $note,
-        ?string $missingItemsNote = null
-    ): void {
-        DB::transaction(function () use ($task, $note, $missingItemsNote) {
-            $this->openFollowupMaterialsRequest($task, $missingItemsNote);
-
-            $task->update(['status' => 'on_hold']);
-
-            $this->log($task, 'materials_received_partial', [
-                'allow_start' => false,
-                'note'        => $note ? trim($note) : null,
-                'missing'     => $missingItemsNote ? trim($missingItemsNote) : null,
-                'by'          => Auth::id(),
-            ]);
-
-            $this->setOwner($task, 'purchasing_manager', userId: $this->resolvePurchasingManagerUserId($task), touchSent: true, note: 'نواقص خامات — انتظار توريد تكميلي');
-        });
-    }
-
-    public function materialsReceivedIssue(ProductionTask $task, ?string $note, ?string $issueDetails = null): void
-    {
-        DB::transaction(function () use ($task, $note, $issueDetails) {
-            // ابحث عن أقرب طلب هو سبب التوريد الأخير (fulfilled أو supplying أو approved)
-            $mr = $task->materialRequests()
-                ->whereIn('status', ['fulfilled','supplying','approved'])
-                ->orderByDesc('id')
-                ->lockForUpdate()
-                ->first();
-
-            if ($mr) {
-                $mr->update(['status' => 'issue_reported']);
-            }
-
-            $task->update(['status' => 'on_hold']);
-            $this->setOwner($task, 'purchasing_manager', userId: $this->resolvePurchasingManagerUserId($task), touchSent: true, note: 'مشكلة في الخامات — انتظار المعالجة');
-
-            $this->log($task, 'materials_received_issue', [
-                'mr_id'  => $mr?->id,
-                'note'   => $note ? trim($note) : null,
-                'issues' => $issueDetails ? trim($issueDetails) : null,
-                'by'     => Auth::id(),
-            ]);
-        });
-    }
-
-
-    protected function openFollowupMaterialsRequest(ProductionTask $task, ?string $missingItemsNote): void
-    {
-        $prevMr = $task->materialRequests()->latest()->first();
-
-        $mr = \App\Models\MaterialRequest::create([
-            'task_id'       => $task->id,
-            'department_id' => $task->department_id,
-            'requested_by'  => Auth::id(),
-            'requested_at'  => now(),
-            'status'        => 'requested',
-            'note'          => 'طلب تكميلي لبنود ناقصة.' . ($missingItemsNote ? ("\n\nالبنود الناقصة:\n" . trim($missingItemsNote)) : ''),
-            'po_file'       => $prevMr?->po_file,
-            'parent_id'     => $prevMr?->id, // يعتمد على الحقل الذي أضفته يدويًا
-        ]);
-
-        $this->log($task, 'materials_followup_opened', [
-            'by'    => Auth::id(),
-            'mr_id' => $mr->id,
-        ]);
-    }
-
-
-    public function startProduction(ProductionTask $task, string $startedAt, ?string $note = null): void
-    {
-        DB::transaction(function () use ($task, $startedAt, $note) {
-            $start = Carbon::parse($startedAt);
-
-            $update = ['status' => 'in_progress'];
-            if (Schema::hasColumn($task->getTable(), 'actual_start_at')) {
-                $update['actual_start_at'] = $start;
-            } elseif (Schema::hasColumn($task->getTable(), 'started_at')) {
-                $update['started_at'] = $start;
-            }
-            $task->update($update);
-
-            $deptManagerId = $task->department?->manager_user_id
-                ?? $task->department?->head_user_id
-                ?? Auth::id();
+            $task->status      = 'pending';
+            $task->assigned_at = $task->assigned_at ?: now();
+            $task->save();
 
             $this->setOwner(
-                $task,
-                'department_manager',
+                task: $task,
+                role: 'department_manager',
                 userId: $deptManagerId,
                 touchSent: true,
-                note: 'بدء التصنيع (تاريخ فعلي)'
+                note: 'إسناد المهمة لمدير القسم' . ($note ? ' - ' . $note : '')
             );
 
-            $this->log($task, 'manufacturing_started', [
-                'by'         => Auth::id(),
-                'started_at' => $start->toDateTimeString(),
-                'note'       => trim((string) ($note ?? '')),
-            ]);
-
-            $this->notifier->notifyActor('بدأ التصنيع (تاريخ فعلي)', "المهمة #{$task->id}", $task);
-        });
-    }
-
-    public function finishManufacturingAndSendToQA(\App\Models\ProductionTask $task, string $actualFinishedAt, ?string $note = null): void
-    {
-        DB::transaction(function () use ($task, $actualFinishedAt, $note) {
-            $end = \Illuminate\Support\Carbon::parse($actualFinishedAt);
-
-            $update = ['status' => 'under_review'];
-            if (\Illuminate\Support\Facades\Schema::hasColumn($task->getTable(), 'actual_end_at')) {
-                $update['actual_end_at'] = $end;
-            } elseif (\Illuminate\Support\Facades\Schema::hasColumn($task->getTable(), 'finished_at')) {
-                $update['finished_at'] = $end;
-            }
-            $task->update($update);
-
-            $this->log($task, 'manufacturing_finished', [
-                'by'          => \Illuminate\Support\Facades\Auth::id(),
-                'finished_at' => $end->toDateTimeString(),
-                'note'        => trim((string) ($note ?? '')),
-            ]);
-
-            $qaManagerId = $task->department?->quality_manager_user_id
-                ?? $task->department?->qa_head_user_id
-                ?? null;
-
-            $this->setOwner(
-                $task,
-                'quality_manager',
-                userId: $qaManagerId,
-                touchSent: true,
-                note: 'استلام للمراجعة بعد التصنيع'
-            );
-
-            $this->log($task, 'manufacturing_sent_to_qa', [
-                'by'          => \Illuminate\Support\Facades\Auth::id(),
-                'finished_at' => $end->toDateTimeString(),
-                'note'        => trim((string) ($note ?? '')),
-            ]);
-
-            $this->notifier->notifyActor('إنهاء التصنيع — تحويل للجودة', "المهمة #{$task->id}", $task);
-        });
-    }
-
-
-    public function qaAcknowledgeManufacturing(ProductionTask $task): void
-    {
-        DB::transaction(function () use ($task) {
-            $this->markOwnerReceived($task, 'تأكيد استلام الجودة (بعد التصنيع)');
-
-            $this->log($task, 'qa_ack_manufacturing', [
-                'by'   => Auth::id(),
-                'role' => 'quality_manager',
-            ]);
-
-            $this->notifier->notifyActor(
-                'تم تأكيد استلام الجودة (بعد التصنيع)',
-                "المهمة #{$task->id}",
-                $task
-            );
-        });
-    }
-
-    public function approveManufacturingQA(ProductionTask $task, ?string $note = null): void
-    {
-        DB::transaction(function () use ($task, $note) {
-            $this->log($task, 'qa_approved_manufacturing', [
-                'by'   => Auth::id(),
-                'note' => trim((string) ($note ?? '')),
-            ]);
-
-            $task->update([
-                'status'                 => 'approved',
-                'current_owner_role'     => 'installation_manager',
-                'current_owner_user_id'  => null,
-                'sent_to_owner_at'       => now(),
-                'received_by_owner_at'   => null,
-            ]);
-
-            $this->notifier->handoffToOwner(
-                $task,
-                toRole: 'installation_manager',
-                toUserId: null,
-                title: 'مهمة جاهزة للتركيب',
-                body: $this->notifier->defaultHandoffBody($note)
-            );
-
-            $this->notifier->notifyActor('تم اعتماد الجودة وتحويل المهمة للتركيب', "المهمة #{$task->id}", $task);
-        });
-    }
-
-    public function rejectManufacturingQA(ProductionTask $task, string $reason): void
-    {
-        DB::transaction(function () use ($task, $reason) {
-            // أحداث دومينية فقط
-            $this->log($task, 'qa_rejected_manufacturing', ['by' => Auth::id(), 'reason' => trim($reason)]);
-            $this->log($task, 'sent_back_to_manufacturing', ['by' => Auth::id()]);
-
-            $task->update([
-                'status'                 => 'rework',
-                'current_owner_role'     => 'department_manager',
-                'current_owner_user_id'  => null,
-                'sent_to_owner_at'       => now(),
-                'received_by_owner_at'   => null,
-            ]);
-
-            $this->notifier->handoffToOwner(
-                $task,
-                toRole: 'department_manager',
-                toUserId: null,
-                title: 'مهمة مُعادة للتصنيع (رفض جودة)',
-                body: $this->notifier->defaultHandoffBody("سبب الرفض: {$reason}")
-            );
-
-            $this->notifier->notifyActor('تم رفض الجودة وإرجاع المهمة للتصنيع', "المهمة #{$task->id}", $task);
-        });
-    }
-
-    public function installationAcknowledge(ProductionTask $task): void
-    {
-
-        DB::transaction(function () use ($task) {
-            $task->update(['received_by_owner_at' => now()]);
-            $this->markOwnerReceived($task, 'تأكيد استلام التركيب)');
-
-            $this->log($task, 'install_acknowledged', [
-                'by'   => Auth::id(),
-                'role' => 'installation_manager',
-            ]);
-
-            $this->notifier->notifyActor(
-                'تم تأكيد استلام التركيب',
-                "المهمة #{$task->id}",
-                $task
-            );
-        });
-
-    }
-
-    public function startInstallation(ProductionTask $task, string $startedAt, ?string $note = null): void
-    {
-        DB::transaction(function () use ($task, $startedAt, $note) {
-            $task->update(['status' => 'in_progress']);
-
-            $this->log($task, 'installation_started', [
-                'by'         => Auth::id(),
-                'started_at' => $startedAt,
-                'note'       => trim((string) ($note ?? '')),
-            ]);
-
-            $this->notifier->notifyActor('تم بدء التركيب', "المهمة #{$task->id}", $task);
-        });
-    }
-
-    /** إنهاء التركيب وإرساله للجودة */
-    public function finishInstallationToQA(ProductionTask $task, string $finishedAt, ?string $note = null): void
-    {
-        DB::transaction(function () use ($task, $finishedAt, $note) {
-            $this->log($task, 'installation_sent_to_qa', [
-                'by'          => Auth::id(),
-                'finished_at' => $finishedAt,
-                'note'        => trim((string) ($note ?? '')),
-            ]);
-
-            $task->update([
-                'status'                => 'under_review',
-                'current_owner_role'    => 'quality_manager',
-                'current_owner_user_id' => null,
-                'sent_to_owner_at'      => now(),
-                'received_by_owner_at'  => null,
-            ]);
-
-            $this->notifier->handoffToOwner(
-                $task,
-                toRole: 'quality_manager',
-                toUserId: null,
-                title: 'مهمة تركيب بانتظار فحص الجودة',
-                body: $this->notifier->defaultHandoffBody($note)
-            );
-
-            $this->notifier->notifyActor('تم إرسال التركيب للجودة', "المهمة #{$task->id}", $task);
-        });
-    }
-
-    public function qaAcknowledgeInstallation(ProductionTask $task): void
-    {
-        $this->log($task, 'qa_ack_installation', [
-            'by'          => Auth::id(),
-            'note'        => trim((string) ($note ?? '')),
-        ]);
-        DB::transaction(function () use ($task) {
-            $task->update(['received_by_owner_at' => now()]);
-            $this->notifier->notifyActor('تم تأكيد استلام الجودة (بعد التركيب)', "المهمة #{$task->id}", $task);
-        });
-    }
-
-    /** الجودة تعتمد بعد التركيب */
-    public function approveInstallationQA(ProductionTask $task, ?string $note = null): void
-    {
-        DB::transaction(function () use ($task, $note) {
-            $this->log($task, 'qa_approved_installation', ['by' => Auth::id(), 'note' => trim((string) ($note ?? ''))]);
-
-            $task->update([
-                'status'                => 'approved',
-                'current_owner_role'    => null,
-                'current_owner_user_id' => null,
-                'received_by_owner_at'  => now(),
-            ]);
-
-            $this->notifier->notifyActor('تم اعتماد الجودة لما بعد التركيب', "المهمة #{$task->id}", $task);
-        });
-    }
-
-    /** الجودة ترفض بعد التركيب وتعيد للتركيب */
-    public function rejectInstallationQA(ProductionTask $task, string $reason): void
-    {
-        DB::transaction(function () use ($task, $reason) {
-            $this->log($task, 'qa_rejected_installation', ['by' => Auth::id(), 'reason' => trim($reason)]);
-            $this->log($task, 'sent_back_to_install', ['by' => Auth::id()]);
-
-            $task->update([
-                'status'                => 'rework',
-                'current_owner_role'    => 'installation_manager',
-                'current_owner_user_id' => null,
-                'sent_to_owner_at'      => now(),
-                'received_by_owner_at'  => null,
-            ]);
-
-            $this->notifier->handoffToOwner(
-                $task,
-                toRole: 'installation_manager',
-                toUserId: null,
-                title: 'مهمة مُعادة للتركيب (رفض جودة)',
-                body: $this->notifier->defaultHandoffBody("سبب الرفض: {$reason}")
-            );
-
-            $this->notifier->notifyActor('تم رفض الجودة وإرجاع المهمة للتركيب', "المهمة #{$task->id}", $task);
-        });
-    }
-
-    /** التصنيع يؤكد استلامه بعد الرفض */
-    public function manufacturingAcknowledgeRework(\App\Models\ProductionTask $task, ?string $note = null): void
-    {
-        \Illuminate\Support\Facades\DB::transaction(function () use ($task, $note) {
-            $this->markOwnerReceived($task, 'تأكيد استلام التصنيع (إعادة عمل)');
-
-            $this->log($task, 'manufacturing_ack_rework', [
-                'by'   => \Illuminate\Support\Facades\Auth::id(),
-                'note' => $note ? trim($note) : null,
-            ]);
-
-            $status = strtolower((string) $task->status);
-            if ($status !== 'waiting_production') {
-                $task->forceFill(['status' => 'waiting_production'])->save();
-            }
-
-            $deptManagerUserId = $task->department?->manager_user_id
-                ?? $task->department?->head_user_id
-                ?? null;
-
-            $task->forceFill([
-                'current_owner_role'    => 'department_manager',
-                'current_owner_user_id' => $deptManagerUserId, // أو اتركه null لو لا تريد تقييده بشخص
-            ])->save();
-        });
-    }
-
-    public function installationAcknowledgeRework(\App\Models\ProductionTask $task, ?string $note = null): void
-    {
-        \Illuminate\Support\Facades\DB::transaction(function () use ($task, $note) {
-            $this->markOwnerReceived($task, 'تأكيد استلام التركيب (إعادة عمل)');
-
-            $this->log($task, 'install_ack_rework', [
-                'by'   => \Illuminate\Support\Facades\Auth::id(),
+            $this->log($task, 'assign_to_dept_manager', [
                 'note' => $note,
             ]);
         });
     }
 
-
-    public function uploadClientReceiptAndComplete(ProductionTask $task, ?string $receiptPath, ?string $actualFinishedAt, ?string $note = null): void
+    /**
+     * تأكيد استلام مدير القسم للمهمة.
+     */
+    public function deptAcknowledge(ProductionTask $task, ?string $note = null): void
     {
-        DB::transaction(function () use ($task, $receiptPath, $actualFinishedAt, $note) {
-            $update = ['status' => 'completed'];
+        DB::transaction(function () use ($task, $note) {
+            $task->status = 'received';
+            $task->save();
 
-            if (!empty($receiptPath) && Schema::hasColumn($task->getTable(), 'client_receipt')) {
-                $update['client_receipt'] = $receiptPath;
-            }
+            $this->markOwnerReceived($task, 'استلام مدير القسم للمهمة' . ($note ? ' - ' . $note : ''));
 
-            if (!empty($actualFinishedAt)) {
-                $end = Carbon::parse($actualFinishedAt);
-                if (Schema::hasColumn($task->getTable(), 'actual_end_at')) {
-                    $update['actual_end_at'] = $end;
-                } elseif (Schema::hasColumn($task->getTable(), 'finished_at')) {
-                    $update['finished_at'] = $end;
-                }
-            }
-
-            $task->update($update);
-
-            $this->log($task, 'client_receipt_uploaded', [
-                'by'   => Auth::id(),
-                'path' => $receiptPath,
+            $this->log($task, 'dept_acknowledge', [
+                'note' => $note,
             ]);
-
-            if (!empty($actualFinishedAt)) {
-                $this->log($task, 'task_completed', [
-                    'by'          => Auth::id(),
-                    'finished_at' => Carbon::parse($actualFinishedAt)->toDateTimeString(),
-                    'note'        => trim((string) ($note ?? '')),
-                ]);
-            }
-
-            $finalStatuses = ['completed', 'cancelled', 'closed'];
-
-            $project = $task->project()
-                ->withCount(['tasks as open_tasks_count' => function ($q) use ($finalStatuses) {
-                    $q->whereNotIn('status', $finalStatuses);
-                }])
-                ->first();
-
-            if ($project && (int) $project->open_tasks_count === 0) {
-                $projUpdate = ['status' => 'completed'];
-                if (Schema::hasColumn($project->getTable(), 'completed_at')) {
-                    $projUpdate['completed_at'] = now();
-                } elseif (Schema::hasColumn($project->getTable(), 'closed_at')) {
-                    $projUpdate['closed_at'] = now();
-                }
-                $project->update($projUpdate);
-
-                $this->log($task, 'project_completed', [
-                    'project_id' => $project->id,
-                    'by'         => Auth::id(),
-                ]);
-
-                $pr = $project->productionRequest ?? null;
-                if ($pr) {
-                    $prUpdate = [];
-                    if (Schema::hasColumn($pr->getTable(), 'current_phase')) {
-                        $prUpdate['current_phase'] = 'closed';
-                    }
-                    if (Schema::hasColumn($pr->getTable(), 'phase_status')) {
-                        $prUpdate['phase_status'] = 'completed';
-                    }
-                    if (Schema::hasColumn($pr->getTable(), 'status')) {
-                        $prUpdate['status'] = 'completed';
-                    }
-                    if (Schema::hasColumn($pr->getTable(), 'closed_at')) {
-                        $prUpdate['closed_at'] = now();
-                    } elseif (Schema::hasColumn($pr->getTable(), 'completed_at')) {
-                        $prUpdate['completed_at'] = now();
-                    }
-                    if (!empty($prUpdate)) {
-                        $pr->update($prUpdate);
-                    }
-
-                    $this->log($task, 'production_request_closed', [
-                        'production_request_id' => $pr->id,
-                        'by'                    => Auth::id(),
-                    ]);
-                }
-
-                $this->notifier->notifyActor(
-                    'اكتمل المشروع والطلب — لا توجد مهام مفتوحة',
-                    "المشروع #{$project->id}" . ($pr ? " — الطلب #{$pr->id}" : ''),
-                    $task
-                );
-            }
-
-            $this->notifier->notifyActor('تم إكمال المهمة واستلام العميل', "المهمة #{$task->id}", $task);
         });
     }
 
+    public function deptRejectToFactory(ProductionTask $task, string $reason): void
+    {
+        DB::transaction(function () use ($task, $reason) {
+            $task->status = 'returned_to_factory';
+            $task->save();
 
-    public function setOwner(
+            $this->markOwnerReceived($task, 'رفض مدير القسم للمهمة وإعادتها للمصنع');
+
+            // تحويل الملكية لمدير المصنع
+            $factoryUserId = $this->resolveFactoryManagerUserId();
+            $this->setOwner(
+                task: $task,
+                role: 'factory_manager',
+                userId: $factoryUserId,
+                touchSent: true,
+                note: 'إعادة من مدير القسم للمصنع'
+            );
+
+            $this->log($task, 'dept_reject_to_factory', [
+                'reason' => $reason,
+            ]);
+        });
+    }
+
+    /**
+     * فتح طلب خامات: تتحول المهمة لحالة materials_wait والمالك يصبح المشتريات.
+     */
+    public function requestMaterials(ProductionTask $task, ?string $note = null): void
+    {
+        DB::transaction(function () use ($task, $note) {
+            // هنا يبقى منطق إنشاء سجلات طلب الخامات كما هو في مشروعك
+
+            $task->status = 'materials_wait';
+            $task->save();
+
+            $purchasingUserId = $this->resolvePurchasingManagerUserId();
+
+            $this->setOwner(
+                task: $task,
+                role: 'purchasing_manager',
+                userId: $purchasingUserId,
+                touchSent: true,
+                note: 'فتح طلب خامات - تحويل للمشتريات' . ($note ? ' - ' . $note : '')
+            );
+
+            $this->log($task, 'request_materials', [
+                'note' => $note,
+            ]);
+        });
+    }
+
+    /**
+     * استلام المشتريات للمهمة.
+     */
+    public function purchasingReceive(ProductionTask $task, ?string $note = null): void
+    {
+        DB::transaction(function () use ($task, $note) {
+            $this->markOwnerReceived($task, 'استلام المشتريات للمهمة' . ($note ? ' - ' . $note : ''));
+
+            $this->log($task, 'purchasing_receive', [
+                'note' => $note,
+            ]);
+        });
+    }
+
+    /**
+     * تجهيز الخامات بالكامل (ما زالت عند المشتريات حتى استلام القسم).
+     */
+    public function materialsProvided(ProductionTask $task, ?string $note = null): void
+    {
+        DB::transaction(function () use ($task, $note) {
+            $task->status = 'materials_prep';
+            $task->save();
+
+            $this->log($task, 'materials_provided', [
+                'note' => $note,
+            ]);
+        });
+    }
+
+    /**
+     * استلام الخامات بالكامل من القسم - يسمح بالبدء في التصنيع.
+     * المالك ينتقل من المشتريات إلى مدير القسم.
+     */
+    public function materialsReceivedOk(
         ProductionTask $task,
-        ?string $role,
-        ?int $userId = null,
-        bool $touchSent = true,
         ?string $note = null
     ): void {
-        $payload = [
-            'current_owner_role'    => $role,
-            'current_owner_user_id' => $userId,
-        ];
+        DB::transaction(function () use ($task, $note) {
+            $task->status = 'waiting_production';
+            $task->save();
+
+            $this->markOwnerReceived($task, 'استلام الخامات بالكامل - جاهز لبدء التصنيع');
+
+            $deptManagerId = $this->resolveDeptManagerUserId($task);
+
+            $this->setOwner(
+                task: $task,
+                role: 'department_manager',
+                userId: $deptManagerId,
+                touchSent: false,
+                note: 'جاهز لبدء التصنيع بعد استلام الخامات'
+            );
+
+            $this->log($task, 'materials_received_ok', [
+                'note' => $note,
+            ]);
+        });
+    }
+
+    /**
+     * استلام جزئي مع السماح بالبدء (جزء من الخامات متوفر) - يسلّم للقسم.
+     */
+    public function materialsReceivedPartialAllowStart(
+        ProductionTask $task,
+        ?string $note = null,
+        ?string $missingItemsNote = null
+    ): void {
+        DB::transaction(function () use ($task, $note, $missingItemsNote) {
+            $task->status = 'waiting_production';
+            $task->save();
+
+            $this->markOwnerReceived($task, 'استلام جزئي مع السماح بالبدء');
+
+            $deptManagerId = $this->resolveDeptManagerUserId($task);
+
+            $this->setOwner(
+                task: $task,
+                role: 'department_manager',
+                userId: $deptManagerId,
+                touchSent: false,
+                note: 'استلام جزئي للخامات - يسمح ببدء التصنيع ضمن المتاح'
+            );
+
+            $this->log($task, 'materials_received_partial_allow_start', [
+                'note'    => $note,
+                'missing' => $missingItemsNote,
+            ]);
+        });
+    }
+
+    /**
+     * استلام جزئي مع إيقاف البدء - تبقى عند المشتريات حتى استكمال الناقص.
+     */
+    public function materialsReceivedPartialHold(
+        ProductionTask $task,
+        ?string $note = null,
+        ?string $missingItemsNote = null
+    ): void {
+        DB::transaction(function () use ($task, $note, $missingItemsNote) {
+            $task->status = 'materials_wait';
+            $task->save();
+
+            $this->markOwnerReceived($task, 'استلام جزئي مع إيقاف البدء');
+
+            $purchasingUserId = $this->resolvePurchasingManagerUserId();
+
+            $this->setOwner(
+                task: $task,
+                role: 'purchasing_manager',
+                userId: $purchasingUserId,
+                touchSent: false,
+                note: 'نواقص خامات - انتظار توريد تكميلي'
+            );
+
+            $this->log($task, 'materials_received_partial_hold', [
+                'note'    => $note,
+                'missing' => $missingItemsNote,
+            ]);
+        });
+    }
+
+    /**
+     * مشكلة في الخامات - تبقى تحت مسؤولية المشتريات حتى المعالجة.
+     */
+    public function materialsReceivedIssue(ProductionTask $task, ?string $note = null): void
+    {
+        DB::transaction(function () use ($task, $note) {
+            $task->status = 'materials_issue';
+            $task->save();
+
+            $this->markOwnerReceived($task, 'مشكلة في الخامات');
+
+            $purchasingUserId = $this->resolvePurchasingManagerUserId();
+
+            $this->setOwner(
+                task: $task,
+                role: 'purchasing_manager',
+                userId: $purchasingUserId,
+                touchSent: false,
+                note: 'مشكلة في الخامات - انتظار المعالجة'
+            );
+
+            $this->log($task, 'materials_issue', [
+                'note' => $note,
+            ]);
+        });
+    }
+
+    /**
+     * بدء التصنيع.
+     */
+    public function startProduction(ProductionTask $task, ?string $note = null): void
+    {
+        DB::transaction(function () use ($task, $note) {
+            $task->status          = 'in_progress';
+            $task->actual_start_at = $task->actual_start_at ?: now();
+            $task->save();
+
+            $deptManagerId = $this->resolveDeptManagerUserId($task);
+
+            $this->setOwner(
+                task: $task,
+                role: 'department_manager',
+                userId: $deptManagerId,
+                touchSent: false,
+                note: 'بدء التصنيع' . ($note ? ' - ' . $note : '')
+            );
+
+            $this->log($task, 'start_production', [
+                'note' => $note,
+            ]);
+        });
+    }
+
+    /**
+     * إنهاء التصنيع وإرسال المهمة للجودة بعد التصنيع.
+     */
+    public function finishManufacturingAndSendToQA(ProductionTask $task, ?string $note = null): void
+    {
+        DB::transaction(function () use ($task, $note) {
+            $task->status       = 'under_review';
+            $task->actual_end_at = $task->actual_end_at ?: now();
+            $task->save();
+
+            $qaUserId = $this->resolveQualityManagerUserId();
+
+            $this->setOwner(
+                task: $task,
+                role: 'quality_manager',
+                userId: $qaUserId,
+                touchSent: true,
+                note: 'إرسال للجودة بعد التصنيع'
+            );
+
+            $this->log($task, 'finish_manufacturing_to_qa', [
+                'note' => $note,
+            ]);
+        });
+    }
+
+    /**
+     * استلام الجودة لمهمة ما بعد التصنيع.
+     */
+    public function qaAcknowledgeManufacturing(ProductionTask $task, ?string $note = null): void
+    {
+        DB::transaction(function () use ($task, $note) {
+            $this->markOwnerReceived($task, 'استلام الجودة بعد التصنيع' . ($note ? ' - ' . $note : ''));
+
+            $this->log($task, 'qa_acknowledge_manufacturing', [
+                'note' => $note,
+            ]);
+        });
+    }
+
+    /**
+     * اعتماد جودة التصنيع - تحويل للتركيب (مدير التركيب = نفس مدير القسم).
+     */
+    public function approveManufacturingQA(ProductionTask $task, ?string $note = null): void
+    {
+        DB::transaction(function () use ($task, $note) {
+            $task->status = 'approved';
+            $task->save();
+
+            $installUserId = $this->resolveInstallationManagerUserId($task);
+
+            $this->setOwner(
+                task: $task,
+                role: 'installation_manager',
+                userId: $installUserId,
+                touchSent: true,
+                note: 'اعتماد الجودة بعد التصنيع - تحويل للتركيب'
+            );
+
+            $this->log($task, 'approve_manufacturing_qa', [
+                'note' => $note,
+            ]);
+        });
+    }
+
+    /**
+     * رفض جودة التصنيع - إعادة المهمة للتصنيع.
+     */
+    public function rejectManufacturingQA(ProductionTask $task, ?string $note = null): void
+    {
+        DB::transaction(function () use ($task, $note) {
+            $task->status = 'rework';
+            $task->save();
+
+            $deptManagerId = $this->resolveDeptManagerUserId($task);
+
+            $this->setOwner(
+                task: $task,
+                role: 'department_manager',
+                userId: $deptManagerId,
+                touchSent: true,
+                note: 'رفض الجودة بعد التصنيع - إعادة للتصنيع'
+            );
+
+            $this->log($task, 'reject_manufacturing_qa', [
+                'note' => $note,
+            ]);
+        });
+    }
+
+    /**
+     * استلام مسؤول التركيب للمهمة.
+     */
+    public function installationAcknowledge(ProductionTask $task, ?string $note = null): void
+    {
+        DB::transaction(function () use ($task, $note) {
+            $this->markOwnerReceived($task, 'استلام مسؤول التركيب للمهمة' . ($note ? ' - ' . $note : ''));
+
+            $this->log($task, 'installation_acknowledge', [
+                'note' => $note,
+            ]);
+        });
+    }
+
+    /**
+     * بدء التركيب.
+     */
+    public function startInstallation(ProductionTask $task, ?string $note = null): void
+    {
+        DB::transaction(function () use ($task, $note) {
+            $task->status = 'in_progress';
+            $task->save();
+
+            $installUserId = $this->resolveInstallationManagerUserId($task);
+
+            $this->setOwner(
+                task: $task,
+                role: 'installation_manager',
+                userId: $installUserId,
+                touchSent: false,
+                note: 'بدء أعمال التركيب' . ($note ? ' - ' . $note : '')
+            );
+
+            $this->log($task, 'start_installation', [
+                'note' => $note,
+            ]);
+        });
+    }
+
+    /**
+     * إنهاء التركيب وإرسال للجودة بعد التركيب.
+     */
+    public function finishInstallationToQA(ProductionTask $task, ?string $note = null): void
+    {
+        DB::transaction(function () use ($task, $note) {
+            $task->status = 'under_review';
+            $task->save();
+
+            $qaUserId = $this->resolveQualityManagerUserId();
+
+            $this->setOwner(
+                task: $task,
+                role: 'quality_manager',
+                userId: $qaUserId,
+                touchSent: true,
+                note: 'إنهاء التركيب - تحويل للجودة بعد التركيب'
+            );
+
+            $this->log($task, 'finish_installation_to_qa', [
+                'note' => $note,
+            ]);
+        });
+    }
+
+    /**
+     * استلام الجودة للمهمة بعد التركيب.
+     */
+    public function qaAcknowledgeInstallation(ProductionTask $task, ?string $note = null): void
+    {
+        DB::transaction(function () use ($task, $note) {
+            $this->markOwnerReceived($task, 'استلام الجودة بعد التركيب' . ($note ? ' - ' . $note : ''));
+
+            $this->log($task, 'qa_acknowledge_installation', [
+                'note' => $note,
+            ]);
+        });
+    }
+
+    /**
+     * اعتماد الجودة بعد التركيب.
+     */
+    public function approveInstallationQA(ProductionTask $task, ?string $note = null): void
+    {
+        DB::transaction(function () use ($task, $note) {
+            $task->status                = 'qa_approved';
+            $task->current_owner_role    = null;
+            $task->current_owner_user_id = null;
+            $task->received_by_owner_at  = now();
+            $task->save();
+
+            $this->log($task, 'approve_installation_qa', [
+                'note' => $note,
+            ]);
+        });
+    }
+
+    /**
+     * رفض الجودة بعد التركيب - إعادة للتركيب (نفس مدير القسم).
+     */
+    public function rejectInstallationQA(ProductionTask $task, ?string $note = null): void
+    {
+        DB::transaction(function () use ($task, $note) {
+            $task->status = 'rework';
+            $task->save();
+
+            $installUserId = $this->resolveInstallationManagerUserId($task);
+
+            $this->setOwner(
+                task: $task,
+                role: 'installation_manager',
+                userId: $installUserId,
+                touchSent: true,
+                note: 'رفض الجودة بعد التركيب - إعادة للتركيب'
+            );
+
+            $this->log($task, 'reject_installation_qa', [
+                'note' => $note,
+            ]);
+        });
+    }
+
+    /**
+     * استلام عمل مُعاد في التصنيع.
+     */
+    public function manufacturingAcknowledgeRework(ProductionTask $task, ?string $note = null): void
+    {
+        DB::transaction(function () use ($task, $note) {
+            $this->markOwnerReceived($task, 'استلام العمل المُعاد في التصنيع' . ($note ? ' - ' . $note : ''));
+
+            $this->log($task, 'manufacturing_acknowledge_rework', [
+                'note' => $note,
+            ]);
+        });
+    }
+
+    /**
+     * استلام عمل مُعاد في التركيب.
+     */
+    public function installationAcknowledgeRework(ProductionTask $task, ?string $note = null): void
+    {
+        DB::transaction(function () use ($task, $note) {
+            $this->markOwnerReceived($task, 'استلام العمل المُعاد في التركيب' . ($note ? ' - ' . $note : ''));
+
+            $this->log($task, 'installation_acknowledge_rework', [
+                'note' => $note,
+            ]);
+        });
+    }
+
+    /**
+     * إكمال المهمة بعد رفع مستند تأكيد العميل.
+     */
+    public function uploadClientReceiptAndComplete(ProductionTask $task, ?string $note = null): void
+    {
+        DB::transaction(function () use ($task, $note) {
+            // منطق حفظ ملف تأكيد العميل تبقيه كما هو في مشروعك
+
+            $task->status                = 'completed';
+            $task->completed_at          = $task->completed_at ?: now();
+            $task->current_owner_role    = null;
+            $task->current_owner_user_id = null;
+            $task->save();
+
+            $this->log($task, 'upload_client_receipt_and_complete', [
+                'note' => $note,
+            ]);
+
+            // منطق إغلاق المشروع/طلب الإنتاج عند اكتمال كل المهام يضاف هنا عند الحاجة
+        });
+    }
+
+    /*
+     * ======================= Helpers: المالك واللوج =======================
+     */
+
+    protected function setOwner(
+        ProductionTask $task,
+        ?string $role,
+        ?int $userId,
+        bool $touchSent = false,
+        ?string $note = null
+    ): void {
+        $task->current_owner_role    = $role;
+        $task->current_owner_user_id = $userId;
 
         if ($touchSent) {
-            $payload['sent_to_owner_at']     = now();
-            $payload['received_by_owner_at'] = null;
+            $task->sent_to_owner_at     = now();
+            $task->received_by_owner_at = null;
         }
 
-        $task->forceFill($payload)->save();
+        $task->save();
 
-        $this->notifier->handoffToOwner(
-            $task,
-            toRole: $role,
-            toUserId: $userId,
-            title: 'لديك مهمة بانتظار الإجراء',
-            body: $this->notifier->defaultHandoffBody($note)
-        );
+        $this->log($task, 'owner_changed', [
+            'role'    => $role,
+            'user_id' => $userId,
+            'note'    => $note,
+        ]);
     }
 
-    public function markOwnerReceived(ProductionTask $task, ?string $note = null): void
+    protected function markOwnerReceived(ProductionTask $task, ?string $reason = null): void
     {
-        $task->update(['received_by_owner_at' => now()]);
-        if ($note && trim($note) !== '') {
-            $this->log($task, 'owner_receive_note', ['note' => trim($note)]);
+        $task->received_by_owner_at = now();
+        $task->save();
+
+        $this->log($task, 'owner_received', [
+            'reason' => $reason,
+        ]);
+    }
+
+    protected function resolveDeptManagerUserId(ProductionTask $task): ?int
+    {
+        $dept = $task->department;
+
+        if (! $dept) {
+            return null;
         }
-    }
 
-    public function hasOpenMaterialsRequest(ProductionTask $task): bool
-    {
-        return $task->materialRequests()
-            ->whereNull('provided_at')
-            ->whereIn('status', ['requested', 'approved'])
-            ->exists();
-    }
+        if (method_exists($dept, 'managerUser') && $dept->managerUser) {
+            $manager = $dept->managerUser;
 
-    public function finalizeIfProjectDone(ProductionTask $task): void
-    {
-        $proj = $task->project;
-        if (!$proj) return;
-
-        $hasOpen = $proj->tasks()
-            ->whereNotIn('status', ['completed', 'cancelled'])
-            ->exists();
-
-        if (!$hasOpen) {
-            if (Schema::hasColumn('projects', 'status')) {
-                $proj->update(['status' => 'completed']);
+            if (property_exists($manager, 'user_id') && $manager->user_id) {
+                return $manager->user_id;
             }
 
-            try {
-                if (method_exists($proj, 'productionRequest') && $proj->productionRequest) {
-                    app(ProductionRequestWorkflow::class)->finalizeRequestAfterProjectDone($proj->productionRequest);
-                }
-            } catch (\Throwable) {}
-        }
-    }
-
-    public function log(
-        ProductionTask $task,
-        string $type,
-        array|string $data = [],
-        ?string $note = null,
-        ?Carbon $at = null
-    ): TaskLog {
-        if (is_string($data) && $note === null) {
-            $note = trim($data);
-            $data = [];
+            if ($manager instanceof User && $manager->id) {
+                return $manager->id;
+            }
         }
 
-        $candidates = [
-            $note,
-            is_array($data) ? data_get($data, 'note') : null,
-            is_array($data) ? data_get($data, 'reason') : null,
-            is_array($data) ? data_get($data, 'reason_factory') : null,
-            is_array($data) ? data_get($data, 'reason_showroom') : null,
-        ];
-
-        $note = collect($candidates)
-            ->filter(fn ($v) => is_string($v) && trim($v) !== '')
-            ->map(fn ($v) => trim((string) $v))
-            ->first();
-
-        if (is_array($data)) {
-            unset($data['note'], $data['reason'], $data['reason_factory'], $data['reason_showroom']);
-        } else {
-            $data = [];
+        if (! empty($dept->manager_id)) {
+            return (int) $dept->manager_id;
         }
 
-        $causerId = \Illuminate\Support\Facades\Auth::id();
-        $when     = $at ?: now();
-
-        $fingerprint = sha1(json_encode([
-            'task' => $task->getKey(),
-            'type' => $type,
-            'note' => $note,
-            'data' => $data,
-        ], JSON_UNESCAPED_UNICODE));
-
-        $data['_fp'] = $fingerprint;
-
-        $exists = TaskLog::query()
-            ->where('task_id', $task->getKey())
-            ->where('type', $type)
-            ->where('causer_id', $causerId)
-            ->where('happened_at', '>=', $when->copy()->subSeconds(1))
-            ->where('data->_fp', $fingerprint)->exists();
-
-    if ($exists) {
-        return TaskLog::query()
-            ->where('task_id', $task->getKey())
-            ->where('type', $type)
-            ->where('causer_id', $causerId)
-            ->orderByDesc('id')
-            ->first() ?? new TaskLog();
+        return null;
     }
 
-    $log = TaskLog::create([
-        'task_id'     => $task->getKey(),
-        'type'        => $type,
-        'data'        => $data,
-        'note'        => $note,
-        'causer_id'   => $causerId,
-        'happened_at' => $when,
-    ]);
-
-    if ($task->relationLoaded('logs')) {
-        $task->unsetRelation('logs');
-        $task->load('logs');
+    /**
+     * مدير التركيب = نفس مدير القسم.
+     */
+    protected function resolveInstallationManagerUserId(ProductionTask $task): ?int
+    {
+        return $this->resolveDeptManagerUserId($task);
     }
 
-    return $log;
-}
-
-    protected function resolvePurchasingManagerUserId(ProductionTask $task): ?int
+    /**
+     * مدير المشتريات: أول مستخدم له دور purchasing_manager.
+     */
+    protected function resolvePurchasingManagerUserId(): ?int
     {
         $user = User::role('purchasing_manager')->first();
 
         return $user?->id;
     }
 
-    protected function resolveQualityManagerUserId(ProductionTask $task): ?int
+    protected function resolveFactoryManagerUserId(): ?int
+    {
+        $u = User::role('factory_manager')->first();
+        return $u?->id;
+    }
+
+    protected function resolveQualityManagerUserId(): ?int
     {
         $user = User::role('quality_manager')->first();
 
         return $user?->id;
     }
 
+    protected function log(ProductionTask $task, string $type, array $data = []): void
+    {
+        $payload = [
+            'type'      => $type,
+            'data'      => $data,
+            'causer_id' => Auth::id(),
+        ];
+
+        if (method_exists($task, 'logs')) {
+            $task->logs()->create($payload);
+        } elseif (method_exists($task, 'taskLogs')) {
+            $task->taskLogs()->create($payload);
+        }
+    }
 }

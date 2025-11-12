@@ -153,15 +153,20 @@ class ProductionTaskObserver
                 !empty($task->current_owner_user_id);
 
             if ($isDeptManagerOwnership) {
-                if (!$task->employee || $task->employee->user_id !== $task->current_owner_user_id) {
-                    $dept = $task->department()->with(['managerUser'])->first();
-                    $targets = collect([$dept?->managerUser])->filter();
-                    foreach ($targets as $user) {
+                $task->loadMissing('department.managerUser');
+
+                $intendedOwner = $task->department?->managerUser;      // User|null
+                $intendedId    = $intendedOwner?->id;                  // int|null
+                $currentId     = $task->current_owner_user_id;         // int|null
+                $actorId       = Auth::id();
+
+                if ($intendedId && $intendedId !== $currentId) {
+                    if ($actorId !== $intendedId) {
                         FNotification::make()
                             ->title('تم نقل ملكية مهمة إلى قسمك')
                             ->body("تم تعيين المهمة #{$task->id} كمسؤولية قسمك.")
                             ->success()
-                            ->sendToDatabase($user);
+                            ->sendToDatabase($intendedOwner);
                     }
                 }
             }
@@ -173,7 +178,6 @@ class ProductionTaskObserver
                     $notifier->notifyCriticalForEvent('OwnerHandoffSLA', $task, $title, $body);
                 }
             } catch (\Throwable $e) {
-                // لا تعطل حفظ المهمة بسبب فشل إشعار
             }
         }
 

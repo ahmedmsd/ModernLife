@@ -171,6 +171,13 @@ class TaskPageHelper
             && $statusOk && $ownerRoleOk && $notReceivedYet && $userIsOwner;
     }
 
+    public function canDeptReject(ProductionTask $t, ?Authenticatable $u): bool
+    {
+        return $this->userHasAnyRole($u, ['department_manager','admin','super-admin'])
+            && ($this->statusVal($t) === 'received' || $this->statusVal($t) === 'on_hold')
+            && $this->ownerIs($t, 'department_manager');
+    }
+
     public function canRequestMaterials(ProductionTask $t, ?Authenticatable $u): bool
     {
         return $this->userHasAnyRole($u, ['department_manager','admin','super-admin'])

@@ -4,11 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 
 class Department extends Model
 {
     protected $table = 'departments';
     protected $primaryKey = 'dept_id';
+    public $incrementing = true;
+    protected $keyType = 'int';
 
     protected $fillable = [
         'dept_name',
@@ -33,28 +36,37 @@ class Department extends Model
     return $this->belongsTo(Department::class, 'parent_dept_id', 'dept_id');
     }
 
-    public $incrementing = true;
-    protected $keyType = 'int';
-
     public function employees(): Department|\Illuminate\Database\Eloquent\Relations\HasMany
     {
 
         return $this->hasMany(Employee::class, 'department_id', 'dept_id');
     }
 
-    public function managerUser(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'manager_id');
-    }
-
     public function managerEmployee(): BelongsTo
     {
-        return $this->belongsTo(Employee::class, 'manager_employee_id');
+        return $this->belongsTo(Employee::class, 'manager_id', 'employee_id');
     }
 
+    public function managerUser(): HasOneThrough
+    {
+        return $this->hasOneThrough(
+            User::class,
+            Employee::class,
+            'employee_id',
+            'id',
+            'manager_id',
+            'user_id'
+        );
+    }
 
     public function manager(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Employee::class, 'manager_id', 'employee_id');
+        return $this->managerEmployee();
     }
+
+    public function getManagerUserIdAttribute(): ?int
+    {
+        return $this->managerUser?->id;
+    }
+
 }

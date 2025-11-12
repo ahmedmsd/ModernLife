@@ -389,8 +389,8 @@ class ProductionRequestWorkflow
                     ]
                 );
 
-                $dept = $task->department()->with(['manager.user', 'managerEmployee.user'])->first();
-                $notifyUser = $dept?->manager?->user ?? $dept?->managerEmployee?->user;
+                $dept = $task->department()->with(['manager.user'])->first();
+                $notifyUser = $dept?->manager?->user;
 
                 if ($notifyUser) {
                     $url = \App\Filament\Resources\ProjectResource::getUrl('view', ['record' => $project->id]);

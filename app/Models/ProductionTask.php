@@ -21,7 +21,7 @@ class ProductionTask extends Model
         'project_id','department_id','estimated_cost','assigned_to_employee_id',
         'file_path','due_date','status','notes','assigned_at','received_at',
         'completed_at','closed_at','planned_start_at','planned_end_at',
-        'planned_install_at','client_receipt','current_owner_role',
+        'planned_install_at','actual_start_at', 'actual_end_at', 'client_receipt','current_owner_role',
         'current_owner_user_id','sent_to_owner_at','received_by_owner_at',
     ];
 
@@ -33,6 +33,8 @@ class ProductionTask extends Model
         'closed_at'            => 'datetime',
         'planned_start_at'     => 'datetime',
         'planned_end_at'       => 'datetime',
+        'actual_start_at'      => 'datetime',
+        'actual_end_at'        => 'datetime',
         'planned_install_at'   => 'datetime',
         'sent_to_owner_at'     => 'datetime',
         'received_by_owner_at' => 'datetime',

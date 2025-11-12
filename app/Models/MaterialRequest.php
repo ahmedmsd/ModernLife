@@ -53,6 +53,11 @@ class MaterialRequest extends Model
     {
         return $this->belongsTo(User::class, 'provided_by', 'id');
     }
+
+    public function approvedBy(): BelongsTo
+    { return $this->belongsTo(\App\Models\User::class, 'approved_by'); }
+
+
     public function task(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(ProductionTask::class, 'task_id');

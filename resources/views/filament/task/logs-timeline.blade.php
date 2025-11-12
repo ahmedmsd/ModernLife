@@ -7,7 +7,7 @@
 
     $colorFor = function (?string $type): string {
         return match ($type) {
-            'qa_rejected_manufacturing', 'qa_rejected_installation' => '#dc2626', // أحمر
+            'qa_rejected_manufacturing', 'qa_rejected_installation','dept_reject_to_factory' => '#dc2626', // أحمر
             'completed', 'qa_approved_manufacturing', 'qa_approved_installation' => '#16a34a', // أخضر
             'materials_requested', 'installation_sent_to_qa', 'manufacturing_sent_to_qa' => '#d97706', // برتقالي
             default => '#2563eb', // أزرق
@@ -53,6 +53,7 @@
             'due_changed'           => 'تغيير تاريخ التسليم',
             'plan_set'              => 'تحديد المواعيد المخططة',
 
+            'returned_to_factory' => 'مُعاد لمدير المصنع',
             'manufacturing_sent_to_qa' => 'إرسال التصنيع للجودة',
             'installation_sent_to_qa'  => 'إرسال التركيب للجودة',
 
@@ -77,7 +78,6 @@
 
         @foreach ($logs as $log)
             @php
-                /** @var \App\Models\TaskLog $log */
                 $type = $log->type ?? null;
                 $clr  = $colorFor($type);
 
@@ -129,6 +129,9 @@
                             $from = $data['from'] ?? null;
                             $to   = $data['to']   ?? null;
                             $showRows[] = 'من الحالة: <b>'.$statusLabel($from).'</b> &nbsp; → &nbsp; إلى: <b>'.$statusLabel($to).'</b>';
+                            if ($r = data_get($data, 'reason')) {
+                                $showRows[] = 'السبب: <b>'.e($r).'</b>';
+                            }
                         }
 
                         // 2) تغيير الملكية
@@ -180,6 +183,16 @@
                                 $showRows[] = 'السبب: <b>'.e($r).'</b>';
                             }
                         }
+
+                        if (in_array($type, ['dept_reject_to_factory'], true)) {
+                            if ($s = data_get($data, 'status')) {
+                                $showRows[] = 'الحالة بعد القرار: <b>'.$statusLabel($s).'</b>';
+                            }
+                            if ($r = data_get($data, 'reason')) {
+                                $showRows[] = 'السبب: <b>'.e($r).'</b>';
+                            }
+                        }
+
 
                         // 8) المشتريات / الخامات
                         if (in_array($type, ['materials_request_opened','materials_received_ok','materials_received_partial','materials_request_cancelled','purchasing_ack','purchasing_ack_hint','materials_provided_note'], true)) {
