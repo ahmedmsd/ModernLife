@@ -81,7 +81,7 @@ enum TaskStatus: string
             self::MaterialsDone       => 'success',
             self::MaterialsIssue      => 'danger',
 
-            self::WaitingProduction   => 'secondary',
+            self::WaitingProduction   => 'info',
 
             self::UnderReview         => 'purple',
             self::QaReviewManufacture => 'purple',

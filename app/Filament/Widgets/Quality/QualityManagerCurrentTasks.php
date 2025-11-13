@@ -32,7 +32,7 @@ class QualityManagerCurrentTasks extends TableWidget
                     ->whereIn('status', [
                         'pending','in_progress','under_review',
                         'materials_wait','materials_prep','materials_done',
-                        'waiting_production','on_hold',
+                        'waiting_production','on_hold','qa_approved',
                         'quality_check','quality_after_manufacture','quality_after_installation',
                     ])
                     ->latest('id')

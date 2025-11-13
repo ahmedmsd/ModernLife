@@ -3,259 +3,393 @@
 namespace App\Support\Tasks;
 
 use App\Models\ProductionTask;
+use App\Models\TaskLog;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Carbon;
 
 class TaskPageHelper
 {
-    /* ===== Normalization ===== */
-    public function norm(?string $v): ?string
-    {
-        return is_null($v) ? null : strtolower(trim($v));
-    }
+    /* ========================================================================
+     |  Status helpers
+     |=========================================================================*/
 
-    public function normalizeStatus(mixed $s): ?string
+    public function normalizeStatus(?string $status): string
     {
-        if (is_array($s)) $s = $s['status'] ?? $s['to'] ?? $s['from'] ?? null;
-        if ($s instanceof \BackedEnum) $s = $s->value;
-        if ($s === null) return null;
-        $s = (string) $s;
+        $status = strtolower((string) $status);
 
-        return match ($s) {
-            'assigned'     => 'pending',
-            'acknowledged' => 'received',
-            'blocked'      => 'on_hold',
-            'closed'       => 'completed',
-            default        => $s,
+        return match ($status) {
+            'waiting_production', 'waiting-production', 'waitingproduction' => 'waiting_production',
+            'in_progress', 'in-progress', 'inprogress'                      => 'in_progress',
+            'under_review', 'under-review', 'underreview'                   => 'under_review',
+            'approved'                                                      => 'approved',
+            'rejected'                                                      => 'rejected',
+            'rework', 're_work'                                             => 'rework',
+            'on_hold', 'hold'                                               => 'on_hold',
+            'closed', 'done', 'finished'                                    => 'closed',
+            default                                                         => $status,
         };
     }
 
-    public function statusVal(ProductionTask $t): ?string
+    /**
+     * إرجاع قيمة الـ status الموحّدة سواء استلمنا Task أو نص.
+     */
+    public function statusVal(ProductionTask|string|null $taskOrStatus): string
     {
-        return $this->normalizeStatus($t->status);
+        if ($taskOrStatus instanceof ProductionTask) {
+            $raw = $taskOrStatus->status ?? '';
+        } else {
+            $raw = (string) $taskOrStatus;
+        }
+
+        return $this->normalizeStatus($raw);
     }
 
-    public function statusAr(?string $val): ?string
+    /**
+     * ترجمة حالة المهمة إلى نص عربي، يمكن تمرير Task أو سترينج.
+     */
+    public function statusAr(ProductionTask|string|null $taskOrStatus): string
     {
-        if ($val === null) return null;
-        $val = $this->normalizeStatus($val);
-        return match ($val) {
-            'draft'              => 'مسودة',
-            'submitted'          => 'مرسل',
-            'received'           => 'تم الاستلام',
-            'pending'            => 'بالانتظار ',
-            'waiting_production' => 'بانتظار بدء التصنيع',
-            'in_progress'        => 'قيد التنفيذ',
-            'materials_wait'     => 'بانتظار الخامات',
-            'materials_prep'     => 'تجهيز الخامات',
-            'materials_done'     => 'الخامات جاهزة',
+        $status = $this->statusVal($taskOrStatus);
+
+        return match ($status) {
+            'waiting_production' => 'في انتظار بدء التصنيع',
+            'in_progress'        => 'جاري التنفيذ',
             'under_review'       => 'قيد المراجعة',
             'approved'           => 'معتمد',
             'rejected'           => 'مرفوض',
+            'rework'             => 'إعادة عمل',
             'on_hold'            => 'موقوف مؤقتاً',
-            'rework'             => 'مطلوب إعادة تنفيذ',
-            'completed'          => 'مكتملة',
-            'cancelled'          => 'ملغاة',
-            'assigned_changed'            => 'تغيير الإسناد',
-            'ownership_changed'           => 'تغيير الملكية (الدور)',
-            'owner_changed'               => 'تغيير المالك (المستخدم)',
-            'status_changed'              => 'تغيير الحالة العامة',
-            'ownership_received'          => 'تأكيد استلام الملكية',
-            'owner_received'              => 'تأكيد استلام المالك',
-            'plan_set'                    => 'تحديد الخطة',
-            'planning_set'                => 'تحديد المواعيد',
-            'planning_hint_set'           => 'تحديد مواعيد (مبدئية)',
-
-            'manufacturing_started'       => 'بدء التصنيع (فعلي)',
-            'manufacturing_finished'      => 'نهاية التصنيع (فعلي)',
-            'manufacturing_sent_to_qa'    => 'إرسال للجودة',
-            'qa_ack_manufacturing'        => 'تأكيد استلام الجودة للتصنيع',
-            'qa_approved_manufacturing'   => 'اعتماد الجودة للتصنيع',
-
-            'sent_to_install'             => 'إرسال للتركيب',
-            'install_acknowledged'        => 'تأكيد استلام التركيب',
-            'installation_started'        => 'بدء التركيب',
-            'installation_sent_to_qa'     => 'إرسال للجودة بعد التركيب',
-            'qa_ack_installation'         => 'تأكيد استلام الجودة للتركيب',
-            'qa_approved_installation'    => 'اعتماد التركيب',
-
-            'materials_requested'         => 'تم طلب الخامات',
-            'materials_expected'          => 'تحديد تاريخ التوريد المتوقع',
-            'materials_approved'          => 'تم اعتماد طلب الخامات',
-            'materials_provided'          => 'تم توريد الخامات',
-            'materials_received_ok'       => 'تم استلام الخامات',
-
-            'client_receipt_uploaded'     => 'رفع سند استلام العميل',
-            'task_completed'              => 'اكتمال المهمة',
-            'project_completed'           => 'اكتمال المشروع',
-            'production_request_closed', 'request_finalized' => 'إقفال طلب التصنيع',
-            default              => $val,
+            'closed'             => 'مغلقة',
+            default              => $status !== '' ? $status : '-',
         };
     }
 
-    public function statusColor(?string $val): string
+    /**
+     * لون Filament للحالة – يقبل Task أو سترينج.
+     */
+    public function statusColor(ProductionTask|string|null $taskOrStatus): string
     {
-        $val = $this->normalizeStatus($val);
-        return match ($val) {
-            'pending'            => 'warning',
-            'received'           => 'info',
+        $status = $this->statusVal($taskOrStatus);
+
+        return match ($status) {
             'waiting_production' => 'warning',
-            'under_review'       => 'cyan',
+            'in_progress'        => 'primary',
+            'under_review'       => 'info',
             'approved'           => 'success',
             'rejected'           => 'danger',
-            'rework'             => '#f97316',
-            'in_progress'        => 'primary',
-            'materials_wait'     => 'warning',
-            'materials_prep'     => 'primary',
-            'materials_done'     => 'success',
+            'rework'             => 'danger',
             'on_hold'            => 'gray',
-            'completed'          => 'success',
-            'cancelled'          => 'gray',
+            'closed'             => 'secondary',
             default              => 'secondary',
         };
     }
 
-    public function statusHex(?string $status): string
+    /**
+     * اللون الهكس للحالة – يقبل Task أو سترينج.
+     */
+    public function statusHex(ProductionTask|string|null $taskOrStatus): string
     {
-        $status = $this->normalizeStatus($status);
+        $status = $this->statusVal($taskOrStatus);
+
         return match ($status) {
-            'pending'            => '#f59e0b',
-            'received'           => '#3b82f6',
-            'waiting_production' => '#f59e0b',
-            'under_review'       => '#06b6d4',
-            'approved'           => '#10b981',
-            'rejected'           => '#ef4444',
-            'in_progress'        => '#0ea5e9',
-            'materials_wait'     => '#f59e0b',
-            'materials_prep'     => '#0ea5e9',
-            'materials_done'     => '#22c55e',
-            'on_hold'            => '#6b7280',
-            'completed'          => '#22c55e',
-            'cancelled'          => '#9ca3af',
-            default              => '#6b7280',
+            'waiting_production' => '#f59e0b', // amber
+            'in_progress'        => '#3b82f6', // blue
+            'under_review'       => '#0ea5e9', // sky
+            'approved'           => '#22c55e', // green
+            'rejected'           => '#ef4444', // red
+            'rework'             => '#dc2626', // red-700
+            'on_hold'            => '#6b7280', // gray
+            'closed'             => '#4b5563', // gray-700
+            default              => '#9ca3af', // gray-400
         };
     }
 
-    /* ===== Ownership ===== */
-    public function ownerRole(ProductionTask $t): ?string
-    {
-        return $this->norm($t->current_owner_role);
-    }
-    public function ownerUserId(ProductionTask $t): ?int
-    {
-        return $t->current_owner_user_id;
-    }
-    public function ownerIs(ProductionTask $t, string $role): bool
-    {
-        return $this->ownerRole($t) === $this->norm($role);
-    }
+    /* ========================================================================
+     |  Ownership & Roles helpers
+     |=========================================================================*/
 
-    public function userHasAnyRole(?Authenticatable $u, array $roles): bool
+    public function userHasAnyRole(?Authenticatable $user, array $roles): bool
     {
-        if (!$u) return false;
-        if (method_exists($u, 'hasAnyRole')) return (bool) $u->hasAnyRole($roles);
-        try {
-            $names = method_exists($u, 'roles') ? $u->roles->pluck('name')->map(fn($n)=>strtolower(trim($n)))->all() : [];
-            return (bool) array_intersect($names, array_map('strtolower', $roles));
-        } catch (\Throwable) { return false; }
-    }
+        if (! $user) {
+            return false;
+        }
 
-    /* ===== Button visibility guards ===== */
-    public function canDeptAcknowledge(ProductionTask $t, ?Authenticatable $u): bool
-    {
-        $statusOk       = in_array($this->statusVal($t), ['pending','assigned'], true);
-        $ownerRoleOk    = $this->ownerIs($t, 'department_manager');
-        $notReceivedYet = blank($t->received_at);
-        $userIsOwner    = !$this->ownerUserId($t) || $this->ownerUserId($t) === ($u?->id);
-        return $this->userHasAnyRole($u, ['department_manager','admin','super-admin'])
-            && $statusOk && $ownerRoleOk && $notReceivedYet && $userIsOwner;
-    }
+        if (method_exists($user, 'hasAnyRole')) {
+            return $user->hasAnyRole($roles);
+        }
 
-    public function canDeptReject(ProductionTask $t, ?Authenticatable $u): bool
-    {
-        return $this->userHasAnyRole($u, ['department_manager','admin','super-admin'])
-            && ($this->statusVal($t) === 'received' || $this->statusVal($t) === 'on_hold')
-            && $this->ownerIs($t, 'department_manager');
-    }
+        if (method_exists($user, 'hasRole')) {
+            foreach ($roles as $role) {
+                if ($user->hasRole($role)) {
+                    return true;
+                }
+            }
+        }
 
-    public function canRequestMaterials(ProductionTask $t, ?Authenticatable $u): bool
-    {
-        return $this->userHasAnyRole($u, ['department_manager','admin','super-admin'])
-            && ($this->statusVal($t) === 'received' || $this->statusVal($t) === 'on_hold')
-            && !$this->hasOpenMaterialsRequest($t)
-            && $this->ownerIs($t, 'department_manager');
-    }
-
-    public function canPurchasingReceive(ProductionTask $t, ?Authenticatable $u): bool
-    {
-        if (!$this->userHasAnyRole($u, ['purchasing_manager','admin','super-admin'])) return false;
-        if ($this->statusVal($t) !== 'materials_wait') return false;
-        if (!$this->ownerIs($t, 'purchasing_manager')) return false;
-
-        $mr = $t->materialRequests()->whereNull('provided_at')->latest()->first();
-        return $mr && ($mr->status === 'requested' || $mr->status === null);
-    }
-    public function canMaterialsProvided(ProductionTask $t, ?Authenticatable $u): bool
-    {
-        if (! $this->userHasAnyRole($u, ['purchasing_manager','admin','super-admin'])) return false;
-        if ($this->statusVal($t) !== 'materials_wait') return false;
-        if (! $this->ownerIs($t, 'purchasing_manager')) return false;
-
-        return $t->materialRequests()
-            ->whereNull('provided_at')
-            ->whereIn('status',['approved','supplying'])
-            ->exists();
-    }
-
-    public function canMaterialsReceivedOk(ProductionTask $t, ?Authenticatable $u): bool
-    {
-        return $this->userHasAnyRole($u, ['department_manager','admin','super-admin'])
-            && $this->statusVal($t) === 'materials_done'
-            && $this->ownerIs($t, 'department_manager');
-    }
-
-
-    public function canProductionAcknowledge(ProductionTask $t, ?Authenticatable $u): bool
-    {
         return false;
     }
 
-
-    public function canStartProduction(ProductionTask $t, ?Authenticatable $u): bool
+    public function ownerIs(ProductionTask $task, ?string $role): bool
     {
-        return $this->userHasAnyRole($u, ['department_manager','admin','super-admin'])
-            && ($this->statusVal($t) === 'waiting_production' || $this->statusVal($t) === 'rework')
-            && $this->ownerIs($t, 'department_manager')
-            && ! $this->hasLog($t, 'manufacturing_started');
+        return ($task->current_owner_role ?? null) === $role;
     }
-    public function canFinishManufacturing(\App\Models\ProductionTask $t, ?\Illuminate\Contracts\Auth\Authenticatable $u): bool
+
+    public function isOwnerUser(ProductionTask $task, ?Authenticatable $user): bool
     {
-        if ($this->isClosedOrCompleted($t)) {
+        if (! $user) {
             return false;
         }
 
-        // أدوار مسموح لها
-        if (! $this->userHasAnyRole($u, ['department_manager','admin','super-admin'])) {
+        if (blank($task->current_owner_user_id)) {
+            return true;
+        }
+
+        return (int) $task->current_owner_user_id === (int) $user->id;
+    }
+
+    /* ========================================================================
+     |  Actions visibility – القسم / المواد / التصنيع
+     |=========================================================================*/
+
+    public function canDeptAcknowledge(ProductionTask $task, ?Authenticatable $user): bool
+    {
+        if (! $this->userHasAnyRole($user, ['department_manager'])) {
             return false;
         }
 
-        if (! $this->ownerIs($t, 'department_manager')) {
+        if (! $this->ownerIs($task, 'department_manager')) {
             return false;
         }
 
-        // الحالة يجب أن تكون in_progress
-        if ($this->statusVal($t) !== 'in_progress') {
+        $status = $this->statusVal($task);
+        if (! in_array($status, ['waiting_production', 'rework'], true)) {
             return false;
         }
 
-        // لازم يكون في manufacturing_started سابق
-        if (! $this->hasLog($t, 'manufacturing_started')) {
+        $anchor = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->whereIn('type', [
+                'assigned_to_dept',
+                'sent_back_to_manufacturing',
+            ])
+            ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
+            ->first();
+
+        if (! $anchor) {
             return false;
         }
 
-        // منع التكرار: لا بد من عدم وجود manufacturing_sent_to_qa بعد آخر manufacturing_started
-        $lastStart = \App\Models\TaskLog::query()
-            ->where('task_id', $t->id)
+        $t  = $anchor->happened_at ?? $anchor->created_at;
+        $id = $anchor->id;
+
+        $ackAfter = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->where('type', 'dept_acknowledged')
+            ->where(function ($q) use ($t, $id) {
+                $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
+                    ->orWhere(function ($q2) use ($t, $id) {
+                        $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$t])
+                            ->where('id', '>', $id);
+                    });
+            })
+            ->exists();
+
+        return ! $ackAfter;
+    }
+
+    public function canDeptReject(ProductionTask $task, ?Authenticatable $user): bool
+    {
+        if (! $this->userHasAnyRole($user, ['department_manager'])) {
+            return false;
+        }
+
+        if (! $this->ownerIs($task, 'department_manager')) {
+            return false;
+        }
+
+        $status = $this->statusVal($task);
+        if (! in_array($status, ['waiting_production', 'rework'], true)) {
+            return false;
+        }
+
+        $lastAck = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->whereIn('type', ['dept_acknowledged'])
+            ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
+            ->first();
+
+        if (! $lastAck) {
+            return false;
+        }
+
+        $t  = $lastAck->happened_at ?? $lastAck->created_at;
+        $id = $lastAck->id;
+
+        $rejectedAfter = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->where('type', 'dept_rejected_to_factory')
+            ->where(function ($q) use ($t, $id) {
+                $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
+                    ->orWhere(function ($q2) use ($t, $id) {
+                        $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$t])
+                            ->where('id', '>', $id);
+                    });
+            })
+            ->exists();
+
+        return ! $rejectedAfter;
+    }
+
+    public function canRequestMaterials(ProductionTask $task, ?Authenticatable $user): bool
+    {
+        if (! $this->userHasAnyRole($user, ['department_manager'])) {
+            return false;
+        }
+
+        if (! $this->ownerIs($task, 'department_manager')) {
+            return false;
+        }
+
+        if ($this->hasOpenMaterialsRequest($task)) {
+            return false;
+        }
+
+        $status = $this->statusVal($task);
+        if (! in_array($status, ['waiting_production', 'rework'], true)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public function canPurchasingReceive(ProductionTask $task, ?Authenticatable $user): bool
+    {
+        if (! $this->userHasAnyRole($user, ['purchasing_manager'])) {
+            return false;
+        }
+
+        if (! $this->ownerIs($task, 'purchasing_manager')) {
+            return false;
+        }
+
+        if (! $this->hasOpenMaterialsRequest($task)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public function canMaterialsProvided(ProductionTask $task, ?Authenticatable $user): bool
+    {
+        if (! $this->userHasAnyRole($user, ['purchasing_manager'])) {
+            return false;
+        }
+
+        if (! $this->ownerIs($task, 'purchasing_manager')) {
+            return false;
+        }
+
+        if (! $this->hasOpenMaterialsRequest($task)) {
+            return false;
+        }
+
+        // لا يوجد شرط إضافي من اللوج، فقط أن الطلب مفتوح تحت المشتريات
+        return true;
+    }
+
+    public function canMaterialsReceivedOk(ProductionTask $task, ?Authenticatable $user): bool
+    {
+        if (! $this->userHasAnyRole($user, ['department_manager'])) {
+            return false;
+        }
+
+        if (! $this->ownerIs($task, 'department_manager')) {
+            return false;
+        }
+
+        if (! $this->hasOpenMaterialsRequest($task)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public function canStartProduction(ProductionTask $task, ?Authenticatable $user): bool
+    {
+        if (! $this->userHasAnyRole($user, ['department_manager'])) {
+            return false;
+        }
+
+        if (! $this->ownerIs($task, 'department_manager')) {
+            return false;
+        }
+
+        $status = $this->statusVal($task);
+        if (! in_array($status, ['waiting_production', 'rework'], true)) {
+            return false;
+        }
+
+        // منطق الـ anchor كما في ViewTask (ack_rework أو materials_received أو planning_hint)
+        $anchor = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->where('type', 'manufacturing_ack_rework')
+            ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
+            ->first();
+
+        if (! $anchor) {
+            $anchor = TaskLog::query()
+                ->where('task_id', $task->id)
+                ->where(function ($q) {
+                    $q->where('type', 'materials_received_ok')
+                        ->orWhere(function ($q2) {
+                            $q2->where('type', 'materials_received_partial')
+                                ->where('data->allow_start', true);
+                        })
+                        ->orWhere('type', 'planning_hint_set');
+                })
+                ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
+                ->first();
+        }
+
+        if (! $anchor) {
+            return false;
+        }
+
+        $anchorTime = $anchor->happened_at ?? $anchor->created_at;
+        $anchorId   = $anchor->id;
+
+        $startedAfter = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->where('type', 'manufacturing_started')
+            ->where(function ($q) use ($anchorTime, $anchorId) {
+                $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$anchorTime])
+                    ->orWhere(function ($q2) use ($anchorTime, $anchorId) {
+                        $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$anchorTime])
+                            ->where('id', '>', $anchorId);
+                    });
+            })
+            ->exists();
+
+        return ! $startedAfter;
+    }
+
+    public function canFinishManufacturing(ProductionTask $task, ?Authenticatable $user): bool
+    {
+        if (! $this->userHasAnyRole($user, ['department_manager'])) {
+            return false;
+        }
+
+        if (! $this->ownerIs($task, 'department_manager')) {
+            return false;
+        }
+
+        $status = $this->statusVal($task);
+        if (! in_array($status, ['waiting_production', 'rework', 'in_progress'], true)) {
+            return false;
+        }
+
+        $lastStart = TaskLog::query()
+            ->where('task_id', $task->id)
             ->where('type', 'manufacturing_started')
             ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
             ->first();
@@ -264,16 +398,340 @@ class TaskPageHelper
             return false;
         }
 
-        $stAt = $lastStart->happened_at ?? $lastStart->created_at;
+        $t  = $lastStart->happened_at ?? $lastStart->created_at;
+        $id = $lastStart->id;
 
-        $sentAfter = \App\Models\TaskLog::query()
-            ->where('task_id', $t->id)
+        // لم يتم الإرسال للجودة بعد هذا الـ start
+        $sentAfter = TaskLog::query()
+            ->where('task_id', $task->id)
             ->where('type', 'manufacturing_sent_to_qa')
-            ->where(function ($q) use ($stAt, $lastStart) {
-                $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$stAt])
-                    ->orWhere(function ($q2) use ($stAt, $lastStart) {
-                        $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$stAt])
-                            ->where('id', '>', $lastStart->id);
+            ->where(function ($q) use ($t, $id) {
+                $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
+                    ->orWhere(function ($q2) use ($t, $id) {
+                        $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$t])
+                            ->where('id', '>', $id);
+                    });
+            })
+            ->exists();
+
+        return ! $sentAfter;
+    }
+
+    /* ========================================================================
+     |  Actions visibility – QA بعد التصنيع
+     |=========================================================================*/
+
+    public function canQaAcknowledgeManufacturing(ProductionTask $task, ?Authenticatable $user): bool
+    {
+        if (! $this->userHasAnyRole($user, ['quality_manager'])) {
+            return false;
+        }
+
+        if (! $this->ownerIs($task, 'quality_manager')) {
+            return false;
+        }
+
+        $lastHandoff = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->whereIn('type', ['manufacturing_sent_to_qa', 'installation_sent_to_qa', 'sent_to_quality'])
+            ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
+            ->first();
+
+        if (! $lastHandoff || $lastHandoff->type !== 'manufacturing_sent_to_qa') {
+            return false;
+        }
+
+        $t  = $lastHandoff->happened_at ?? $lastHandoff->created_at;
+        $id = $lastHandoff->id;
+
+        $ackExistsAfter = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->where('type', 'qa_ack_manufacturing')
+            ->where(function ($q) use ($t, $id) {
+                $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
+                    ->orWhere(function ($q2) use ($t, $id) {
+                        $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$t])
+                            ->where('id', '>', $id);
+                    });
+            })
+            ->exists();
+
+        return ! $ackExistsAfter;
+    }
+
+    public function canApproveManufacturingQA(ProductionTask $task, ?Authenticatable $user): bool
+    {
+        if (! $this->userHasAnyRole($user, ['quality_manager'])) {
+            return false;
+        }
+
+        if (! $this->ownerIs($task, 'quality_manager')) {
+            return false;
+        }
+
+        $lastHandoff = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->whereIn('type', ['manufacturing_sent_to_qa', 'installation_sent_to_qa', 'sent_to_quality'])
+            ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
+            ->first();
+
+        if (! $lastHandoff || $lastHandoff->type !== 'manufacturing_sent_to_qa') {
+            return false;
+        }
+
+        $t  = $lastHandoff->happened_at ?? $lastHandoff->created_at;
+        $id = $lastHandoff->id;
+
+        $ackAfter = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->where('type', 'qa_ack_manufacturing')
+            ->where(function ($q) use ($t, $id) {
+                $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
+                    ->orWhere(function ($q2) use ($t, $id) {
+                        $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$t])
+                            ->where('id', '>', $id);
+                    });
+            })
+            ->exists();
+
+        if (! $ackAfter) {
+            return false;
+        }
+
+        $decisionExistsAfter = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->whereIn('type', ['qa_approved_manufacturing', 'qa_rejected_manufacturing'])
+            ->where(function ($q) use ($t, $id) {
+                $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
+                    ->orWhere(function ($q2) use ($t, $id) {
+                        $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$t])
+                            ->where('id', '>', $id);
+                    });
+            })
+            ->exists();
+
+        return ! $decisionExistsAfter;
+    }
+
+    public function canRejectManufacturingQA(ProductionTask $task, ?Authenticatable $user): bool
+    {
+        if (! $this->userHasAnyRole($user, ['quality_manager'])) {
+            return false;
+        }
+
+        if (! $this->ownerIs($task, 'quality_manager')) {
+            return false;
+        }
+
+        $lastHandoff = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->whereIn('type', ['manufacturing_sent_to_qa', 'installation_sent_to_qa', 'sent_to_quality'])
+            ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
+            ->first();
+
+        if (! $lastHandoff || $lastHandoff->type !== 'manufacturing_sent_to_qa') {
+            return false;
+        }
+
+        $t  = $lastHandoff->happened_at ?? $lastHandoff->created_at;
+        $id = $lastHandoff->id;
+
+        $ackAfter = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->where('type', 'qa_ack_manufacturing')
+            ->where(function ($q) use ($t, $id) {
+                $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
+                    ->orWhere(function ($q2) use ($t, $id) {
+                        $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$t])
+                            ->where('id', '>', $id);
+                    });
+            })
+            ->exists();
+
+        if (! $ackAfter) {
+            return false;
+        }
+
+        $decisionAfter = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->whereIn('type', ['qa_approved_manufacturing', 'qa_rejected_manufacturing'])
+            ->where(function ($q) use ($t, $id) {
+                $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
+                    ->orWhere(function ($q2) use ($t, $id) {
+                        $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$t])
+                            ->where('id', '>', $id);
+                    });
+            })
+            ->exists();
+
+        return ! $decisionAfter;
+    }
+
+    public function canManufacturingAcknowledgeRework(ProductionTask $task, ?Authenticatable $user): bool
+    {
+        if (! $this->ownerIs($task, 'department_manager')) {
+            return false;
+        }
+
+        $lastBack = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->where('type', 'sent_back_to_manufacturing')
+            ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
+            ->first();
+
+        if (! $lastBack) {
+            return false;
+        }
+
+        $t  = $lastBack->happened_at ?? $lastBack->created_at;
+        $id = $lastBack->id;
+
+        $ackReworkAfter = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->where('type', 'manufacturing_ack_rework')
+            ->where(function ($q) use ($t, $id) {
+                $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
+                    ->orWhere(function ($q2) use ($t, $id) {
+                        $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$t])
+                            ->where('id', '>', $id);
+                    });
+            })
+            ->exists();
+
+        return ! $ackReworkAfter;
+    }
+
+    /* ========================================================================
+     |  Actions visibility – التركيب و QA بعد التركيب
+     |=========================================================================*/
+
+    public function canInstallationAcknowledgeAfterQAApprove(ProductionTask $task, ?Authenticatable $user): bool
+    {
+        if (! $this->ownerIs($task, 'installation_manager')) {
+            return false;
+        }
+
+        $lastApprove = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->where('type', 'qa_approved_manufacturing')
+            ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
+            ->first();
+
+        if (! $lastApprove) {
+            return false;
+        }
+
+        $t  = $lastApprove->happened_at ?? $lastApprove->created_at;
+        $id = $lastApprove->id;
+
+        $ackInstallAfter = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->where('type', 'install_acknowledged')
+            ->where(function ($q) use ($t, $id) {
+                $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
+                    ->orWhere(function ($q2) use ($t, $id) {
+                        $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$t])
+                            ->where('id', '>', $id);
+                    });
+            })
+            ->exists();
+
+        return ! $ackInstallAfter;
+    }
+
+    public function canStartInstallation(ProductionTask $task, ?Authenticatable $user): bool
+    {
+        if (! $user || ! $this->userHasAnyRole($user, ['installation_manager'])) {
+            return false;
+        }
+
+        if (! $this->ownerIs($task, 'installation_manager') || ! $this->isOwnerUser($task, $user)) {
+            return false;
+        }
+
+        $lastAck = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->whereIn('type', ['install_acknowledged', 'install_ack_rework'])
+            ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
+            ->first();
+
+        if (! $lastAck) {
+            return false;
+        }
+
+        $t  = $lastAck->happened_at ?? $lastAck->created_at;
+        $id = $lastAck->id;
+
+        $startedAfter = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->where('type', 'installation_started')
+            ->where(function ($q) use ($t, $id) {
+                $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
+                    ->orWhere(function ($q2) use ($t, $id) {
+                        $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$t])
+                            ->where('id', '>', $id);
+                    });
+            })
+            ->exists();
+
+        return ! $startedAfter;
+    }
+
+    public function canFinishInstallationToQA(ProductionTask $task, ?Authenticatable $user): bool
+    {
+        if (! $user || ! $this->userHasAnyRole($user, ['installation_manager'])) {
+            return false;
+        }
+
+        if (! $this->ownerIs($task, 'installation_manager') || ! $this->isOwnerUser($task, $user)) {
+            return false;
+        }
+
+        // آخر استلام تركيب (قديم + جديد)
+        $lastAck = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->whereIn('type', [
+                'install_acknowledged',
+                'installation_acknowledge',
+                'install_ack_rework',
+                'installation_acknowledge_rework',
+            ])
+            ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
+            ->first();
+
+        if (! $lastAck) return false;
+
+        $t = $lastAck->happened_at ?? $lastAck->created_at;
+        $id = $lastAck->id;
+
+        $startedAfter = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->whereIn('type', [
+                'installation_started',
+                'start_installation',
+            ])
+            ->where(function ($q) use ($t, $id) {
+                $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
+                    ->orWhere(function ($q2) use ($t, $id) {
+                        $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$t])
+                            ->where('id', '>', $id);
+                    });
+            })
+            ->exists();
+
+        if (! $startedAfter) return false;
+
+        $sentAfter = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->whereIn('type', [
+                'installation_sent_to_qa',
+                'finish_installation_to_qa',
+            ])
+            ->where(function ($q) use ($t, $id) {
+                $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
+                    ->orWhere(function ($q2) use ($t, $id) {
+                        $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$t])
+                            ->where('id', '>', $id);
                     });
             })
             ->exists();
@@ -282,167 +740,362 @@ class TaskPageHelper
     }
 
 
-    /* ===== Logs / Requests helpers ===== */
-    public function hasLog(ProductionTask $t, string $type): bool
+    public function canQaAcknowledgeInstallation(ProductionTask $task, ?Authenticatable $user): bool
     {
-        $logs = $t->relationLoaded('logs') ? $t->logs : $t->logs()->get();
-        return $logs->contains(fn ($l) => $l->type === $type);
+        if (! $user || ! $this->userHasAnyRole($user, ['quality_manager'])) {
+            return false;
+        }
+
+        if (! $this->ownerIs($task, 'quality_manager')) {
+            return false;
+        }
+
+        if ($this->statusVal($task) !== 'under_review') {
+            return false;
+        }
+
+        // آخر ارسال (جديد + قديم)
+        $lastInstall = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->whereIn('type', [
+                'installation_sent_to_qa',
+                'finish_installation_to_qa',
+            ])
+            ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
+            ->first();
+
+        if (! $lastInstall) return false;
+
+        $iAt = $lastInstall->happened_at ?? $lastInstall->created_at;
+        $iId = $lastInstall->id;
+
+        // منع التكرار (قديم + جديد)
+        $ackExists = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->whereIn('type', [
+                'qa_ack_installation',
+                'qa_acknowledge_installation',
+            ])
+            ->where(function ($q) use ($iAt, $iId) {
+                $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$iAt])
+                    ->orWhere(function ($q2) use ($iAt, $iId) {
+                        $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$iAt])
+                            ->where('id', '>', $iId);
+                    });
+            })
+            ->exists();
+
+        return ! $ackExists;
     }
 
-    public function hasOpenMaterialsRequest(ProductionTask $t): bool
+
+    public function canApproveInstallationQA(ProductionTask $task, ?Authenticatable $user): bool
     {
-        return $t->materialRequests()
-            ->whereNull('provided_at')
-            ->whereIn('status', ['requested','approved'])
+        if (! $user || ! $this->userHasAnyRole($user, ['quality_manager'])) {
+            return false;
+        }
+
+        if (! $this->ownerIs($task, 'quality_manager')) {
+            return false;
+        }
+
+        if ($this->statusVal($task) !== 'under_review') {
+            return false;
+        }
+
+        // إرسال (قديم + جديد)
+        $lastInstall = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->whereIn('type', [
+                'installation_sent_to_qa',
+                'finish_installation_to_qa',
+            ])
+            ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
+            ->first();
+
+        if (! $lastInstall) return false;
+
+        $iAt = $lastInstall->happened_at ?? $lastInstall->created_at;
+        $iId = $lastInstall->id;
+
+        // استلام الجودة (قديم + جديد)
+        $ackAfter = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->whereIn('type', [
+                'qa_ack_installation',
+                'qa_acknowledge_installation',
+            ])
+            ->where(function ($q) use ($iAt, $iId) {
+                $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$iAt])
+                    ->orWhere(function ($q2) use ($iAt, $iId) {
+                        $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$iAt])
+                            ->where('id', '>', $iId);
+                    });
+            })
+            ->exists();
+
+        if (! $ackAfter) return false;
+
+        // عدم وجود قرار سابق
+        $decisionAfter = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->whereIn('type', [
+                'qa_approved_installation',
+                'qa_rejected_installation',
+            ])
+            ->where(function ($q) use ($iAt, $iId) {
+                $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$iAt])
+                    ->orWhere(function ($q2) use ($iAt, $iId) {
+                        $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$iAt])
+                            ->where('id', '>', $iId);
+                    });
+            })
+            ->exists();
+
+        return ! $decisionAfter;
+    }
+
+
+    public function canRejectInstallationQA(ProductionTask $task, ?Authenticatable $user): bool
+    {
+        if (! $user || ! $this->userHasAnyRole($user, ['quality_manager'])) {
+            return false;
+        }
+
+        if (! $this->ownerIs($task, 'quality_manager')) {
+            return false;
+        }
+
+        $status = $this->statusVal($task);
+        if ($status !== 'under_review') {
+            return false;
+        }
+
+        $lastInstall = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->where('type', 'installation_sent_to_qa')
+            ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
+            ->first();
+
+        if (! $lastInstall) {
+            return false;
+        }
+
+        $lastMfg = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->where('type', 'manufacturing_sent_to_qa')
+            ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
+            ->first();
+
+        $iAt = $lastInstall->happened_at ?? $lastInstall->created_at;
+        $mAt = $lastMfg?->happened_at ?? $lastMfg?->created_at;
+
+        $installIsLatest = ! $lastMfg
+            || ($iAt > $mAt)
+            || ($iAt == $mAt && $lastInstall->id > $lastMfg->id);
+
+        if (! $installIsLatest) {
+            return false;
+        }
+
+        $ackAfter = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->where('type', 'qa_ack_installation')
+            ->where(function ($q) use ($iAt, $lastInstall) {
+                $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$iAt])
+                    ->orWhere(function ($q2) use ($iAt, $lastInstall) {
+                        $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$iAt])
+                            ->where('id', '>', $lastInstall->id);
+                    });
+            })
+            ->exists();
+
+        if (! $ackAfter) {
+            return false;
+        }
+
+        $decisionAfter = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->whereIn('type', ['qa_approved_installation', 'qa_rejected_installation'])
+            ->where(function ($q) use ($iAt, $lastInstall) {
+                $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$iAt])
+                    ->orWhere(function ($q2) use ($iAt, $lastInstall) {
+                        $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$iAt])
+                            ->where('id', '>', $lastInstall->id);
+                    });
+            })
+            ->exists();
+
+        return ! $decisionAfter;
+    }
+
+    public function canInstallationAcknowledgeRework(ProductionTask $task, ?Authenticatable $user): bool
+    {
+        if (! $this->ownerIs($task, 'installation_manager')) {
+            return false;
+        }
+
+        $lastBack = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->where('type', 'sent_back_to_install')
+            ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
+            ->first();
+
+        if (! $lastBack) {
+            return false;
+        }
+
+        $t  = $lastBack->happened_at ?? $lastBack->created_at;
+        $id = $lastBack->id;
+
+        $ackReworkAfter = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->where('type', 'install_ack_rework')
+            ->where(function ($q) use ($t, $id) {
+                $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
+                    ->orWhere(function ($q2) use ($t, $id) {
+                        $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$t])
+                            ->where('id', '>', $id);
+                    });
+            })
+            ->exists();
+
+        return ! $ackReworkAfter;
+    }
+
+    /* ========================================================================
+     |  Logs / Requests helpers
+     |=========================================================================*/
+
+    public function hasOpenMaterialsRequest(ProductionTask $task): bool
+    {
+        return \App\Models\MaterialRequest::query()
+            ->where('task_id', $task->id)
+            ->whereNotIn('status', ['cancelled', 'closed'])
             ->exists();
     }
 
-    public function isClosedOrCompleted(ProductionTask $t): bool
+    public function hasLog(ProductionTask $task, string $type): bool
     {
-        $s = (string) $t->status;
-        return in_array($s, ['completed', 'closed', 'cancelled'], true);
+        return TaskLog::query()
+            ->where('task_id', $task->id)
+            ->where('type', $type)
+            ->exists();
     }
 
-    /* ===== Stage durations (render) ===== */
-    public function buildStageDurations(ProductionTask $task): array
+    public function lastLogTime(ProductionTask $task, string $type): ?Carbon
     {
-        $logs = $task->logs()->orderBy('happened_at')->get(['type','data','happened_at','created_at']);
+        $log = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->where('type', $type)
+            ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
+            ->first();
 
-        $start = $task->created_at ? Carbon::parse($task->created_at)
-            : ($logs->first()?->happened_at ? Carbon::parse($logs->first()->happened_at) : now());
+        return $log ? ($log->happened_at ?? $log->created_at) : null;
+    }
 
-        $endRaw = $task->completed_at ?? $logs->last()?->happened_at ?? now();
-        $end    = $endRaw instanceof Carbon ? $endRaw : Carbon::parse($endRaw);
+    /* ========================================================================
+     |  Durations / Timeline helpers
+     |=========================================================================*/
 
-        $firstChange = $logs->firstWhere('type', 'status_changed');
-        $initial     = is_array($firstChange?->data ?? null) ? ($this->normalizeStatus($firstChange->data['from'] ?? null)) : null;
-        $current     = $initial ?? $this->normalizeStatus($task->status) ?? 'pending';
+    public function computeStageDurations(ProductionTask $task): array
+    {
+        $logs = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->orderByRaw('COALESCE(happened_at, created_at), id')
+            ->get();
 
-        $cursor  = $start->clone();
-        $seconds = [];
-
-        $add = function (?string $status, Carbon $from, Carbon $to) use (&$seconds) {
-            $status = $status ?: 'unknown';
-            $delta  = max(0, $from->diffInSeconds($to));
-            $seconds[$status] = ($seconds[$status] ?? 0) + $delta;
-        };
+        $result = [];
 
         foreach ($logs as $log) {
-            $tRaw = $log->happened_at ?? $log->created_at;
-            if (!$tRaw) continue;
-            $t = $tRaw instanceof Carbon ? $tRaw : Carbon::parse($tRaw);
-            if ($t->lessThan($cursor)) continue;
+            $time = $log->happened_at ?? $log->created_at;
+            $type = $log->type;
 
-            $add($current, $cursor, $t);
-            $cursor = $t->clone();
-
-            if ($log->type === 'status_changed' && is_array($log->data ?? null)) {
-                $to = $this->normalizeStatus($log->data['to'] ?? null);
-                if ($to) $current = $to;
-            }
+            $result[] = [
+                'type' => $type,
+                'at'   => $time,
+            ];
         }
 
-        if ($end->greaterThan($cursor)) $add($current, $cursor, $end);
-
-        $total = array_sum($seconds);
-
-        $order = [
-            'pending','received','materials_wait','materials_prep','materials_done',
-            'waiting_production','in_progress','under_review','approved',
-            'rejected','on_hold','completed','cancelled','unknown'
-        ];
-
-        $rows = collect($seconds)->map(fn($sec,$status)=>[
-            'status'=>$status, 'label'=>$this->statusAr($status) ?? $status, 'seconds'=>$sec,
-        ])->sortBy(fn($row)=>($i=array_search($row['status'],$order,true))===false?999:$i)->values()
-            ->map(function($row) use($total){
-                $row['human']   = $row['seconds']>0? Carbon::now()->subSeconds($row['seconds'])->diffForHumans(null,true):'0 ث';
-                $row['percent'] = $total>0? round($row['seconds']*100/$total,1):0.0;
-                return $row;
-            })->all();
-
-        return compact('rows','total','start','end');
+        return $result;
     }
 
     public function renderStageDurationsHtml(ProductionTask $task): string
     {
-        $stats = $this->buildStageDurations($task);
-        $rows  = $stats['rows'];
-        $totalH = $stats['start']->diffForHumans($stats['end'], true);
-        $start  = $stats['start']->format('Y-m-d H:i');
-        $end    = $stats['end']->format('Y-m-d H:i');
+        $statusHex = $this->statusHex($task);
+        $durations = $this->computeStageDurations($task);
 
-        ob_start(); ?>
-        <div class="w-full">
-            <div class="rounded-xl border bg-white/80 dark:bg-gray-900/70 shadow-sm">
-                <div class="px-4 py-3 border-b bg-gray-50/60 dark:bg-gray-800/60 rounded-t-xl">
-                    <div class="flex flex-wrap items-center gap-3 text-sm">
-                        <div class="font-semibold">الإجمالي منذ الإنشاء حتى الإغلاق/الآن:</div>
-                        <div class="px-2 py-0.5 rounded-full bg-gray-900 text-white text-xs dark:bg-white dark:text-gray-900">
-                            <?= e($totalH) ?>
-                        </div>
-                        <div class="ms-auto text-xs text-gray-500 dark:text-gray-400">
-                            من <?= e($start) ?> إلى <?= e($end) ?>
-                        </div>
-                    </div>
-                </div>
-                <div class="px-4 py-6">
-                    <div class="overflow-x-auto">
-                        <table class="w-full table-auto text-sm rtl:text-right">
-                            <thead class="bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
-                            <tr>
-                                <th class="px-3 py-2 text-right">المرحلة</th>
-                                <th class="px-3 py-2 text-right">المدة</th>
-                                <th class="px-3 py-2 text-right">النسبة</th>
-                                <th class="px-3 py-2 text-right">تقدّم</th>
-                            </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-                            <?php foreach ($rows as $r):
-                                $hex     = $this->statusHex($r['status'] ?? null);
-                                $label   = $r['label'] ?? ($r['status'] ?? '—');
-                                $human   = $r['human'] ?? '—';
-                                $percent = isset($r['percent']) ? (float)$r['percent'] : 0.0;
-                                ?>
-                                <tr class="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-900 dark:even:bg-gray-800">
-                                    <td class="px-3 py-2 whitespace-nowrap">
-                                        <span class="inline-flex items-center gap-2">
-                                            <span class="inline-block w-2.5 h-2.5 rounded-full" style="background-color: <?= e($hex) ?>;"></span>
-                                            <span class="px-2 py-0.5 rounded text-white text-xs" style="background-color: <?= e($hex) ?>;">
-                                                <?= e($label) ?>
-                                            </span>
-                                        </span>
-                                    </td>
-                                    <td class="px-3 py-2"><?= e($human) ?></td>
-                                    <td class="px-3 py-2"><?= e(number_format($percent, 1)) ?>%</td>
-                                    <td class="px-3 py-2 w-64">
-                                        <div class="w-full h-2 rounded bg-gray-200 dark:bg-gray-700 overflow-hidden">
-                                            <div class="h-2 rounded" style="width: <?= e(max(0,min(100,$percent))) ?>%; background-color: <?= e($hex) ?>;"></div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <?php return (string) ob_get_clean();
+        if (empty($durations)) {
+            return '<span class="text-muted">لا توجد بيانات زمنية كافية</span>';
+        }
+
+        $items = [];
+        foreach ($durations as $d) {
+            $timeStr = $d['at'] instanceof Carbon
+                ? $d['at']->format('Y-m-d H:i')
+                : (string) $d['at'];
+
+            $items[] = sprintf(
+                '<li><strong>%s</strong> - <span class="text-xs text-gray-500">%s</span></li>',
+                e($d['type']),
+                e($timeStr)
+            );
+        }
+
+        return <<<HTML
+<div style="border-radius: .5rem; border: 1px solid {$statusHex}33; padding: .55rem .75rem; background: {$statusHex}08;">
+    <div style="font-size: .8rem; font-weight: 600; margin-bottom: .25rem; color: {$statusHex};">
+        التسلسل الزمني للمهمة
+    </div>
+    <ul style="padding-left: 1.1rem; margin: 0; font-size: .78rem; line-height: 1.25;">
+        {implode('', $items)}
+    </ul>
+</div>
+HTML;
     }
 
-    /* ===== Navigation helpers ===== */
-    public function parentTasksUrl(?Authenticatable $u, ProductionTask $t): string
+    /* ========================================================================
+     |  Navigation helpers
+     |=========================================================================*/
+
+    public function parentTasksUrl($a = null, $b = null): string
     {
-        if ($u && method_exists($u, 'hasAnyRole') && $u->hasAnyRole(['super-admin','admin','project_manager'])) {
-            return $t->project_id ? url("/admin/projects/{$t->project_id}/manage-tasks") : url('/admin/tasks');
+        $u = $a instanceof \Illuminate\Contracts\Auth\Authenticatable ? $a : null;
+        $t = $a instanceof \App\Models\ProductionTask ? $a : ($b instanceof \App\Models\ProductionTask ? $b : null);
+
+        if (! $t) {
+            // fallback آمن
+            return url('/admin/tasks');
         }
+
+        if ($u && method_exists($u, 'hasAnyRole') && $u->hasAnyRole(['super-admin','admin','project_manager'])) {
+            return $t->project_id
+                ? url("/admin/projects/{$t->project_id}/manage-tasks")
+                : url('/admin/tasks');
+        }
+
         return url('/admin/tasks/active');
     }
 
-    public function parentTasksLabel(?Authenticatable $u): string
+    public function parentTasksLabel($a = null, $b = null): string
     {
-        return ($u && method_exists($u,'hasAnyRole') && $u->hasAnyRole(['super-admin','admin','factory_manager']))
-            ? 'مهام المشروع' : 'مهامي';
+        // تحديد الكائنات بشكل مرن مثل parentTasksUrl()
+        $u = $a instanceof \Illuminate\Contracts\Auth\Authenticatable ? $a : null;
+        $t = $a instanceof \App\Models\ProductionTask ? $a : ($b instanceof \App\Models\ProductionTask ? $b : null);
+
+        if (! $t) {
+            return 'جميع المهام';
+        }
+
+        if ($t->project_id) {
+            return 'مهام المشروع';
+        }
+
+        return 'جميع المهام';
+    }
+
+    public function isClosedOrCompleted(ProductionTask $task): bool
+    {
+        return in_array($this->statusVal($task), ['approved', 'rejected', 'closed'], true);
     }
 }

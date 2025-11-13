@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Schema;
 
 class TaskWorkflowService
 {
@@ -65,7 +66,6 @@ class TaskWorkflowService
 
             $this->markOwnerReceived($task, 'رفض مدير القسم للمهمة وإعادتها للمصنع');
 
-            // تحويل الملكية لمدير المصنع
             $factoryUserId = $this->resolveFactoryManagerUserId();
             $this->setOwner(
                 task: $task,
@@ -81,13 +81,13 @@ class TaskWorkflowService
         });
     }
 
-    /**
-     * فتح طلب خامات: تتحول المهمة لحالة materials_wait والمالك يصبح المشتريات.
-     */
-    public function requestMaterials(ProductionTask $task, ?string $note = null): void
-    {
-        DB::transaction(function () use ($task, $note) {
-            // هنا يبقى منطق إنشاء سجلات طلب الخامات كما هو في مشروعك
+
+    public function requestMaterials(
+        ProductionTask $task,
+        ?string $note = null,
+        ?string $poFilePath = null,
+    ): void {
+        DB::transaction(function () use ($task, $note, $poFilePath) {
 
             $task->status = 'materials_wait';
             $task->save();
@@ -103,50 +103,71 @@ class TaskWorkflowService
             );
 
             $this->log($task, 'request_materials', [
-                'note' => $note,
+                'note'     => $note,
+                'po_file'  => $poFilePath,
             ]);
         });
     }
 
-    /**
-     * استلام المشتريات للمهمة.
-     */
-    public function purchasingReceive(ProductionTask $task, ?string $note = null): void
+
+    public function purchasingReceive(ProductionTask $task, array $data): void
     {
-        DB::transaction(function () use ($task, $note) {
+        DB::transaction(function () use ($task, $data) {
+            $note = $data['note'] ?? null;
+
             $this->markOwnerReceived($task, 'استلام المشتريات للمهمة' . ($note ? ' - ' . $note : ''));
 
             $this->log($task, 'purchasing_receive', [
-                'note' => $note,
+                'note'                => $note,
+                'po_number'           => $data['po_number']          ?? null,
+                'expected_delivery_at'=> $data['expected_delivery_at'] ?? null,
+                'estimated_cost'      => $data['estimated_cost']     ?? null,
             ]);
         });
     }
 
-    /**
-     * تجهيز الخامات بالكامل (ما زالت عند المشتريات حتى استلام القسم).
-     */
-    public function materialsProvided(ProductionTask $task, ?string $note = null): void
-    {
-        DB::transaction(function () use ($task, $note) {
+    public function materialsProvided(
+        ProductionTask $task,
+        ?float $actualCost = null,
+        ?string $note = null,
+    ): void {
+        DB::transaction(function () use ($task, $actualCost, $note) {
             $task->status = 'materials_prep';
+
+            if ($actualCost !== null && property_exists($task, 'estimated_cost')) {
+                $task->estimated_cost = $actualCost;
+            }
+
             $task->save();
 
             $this->log($task, 'materials_provided', [
-                'note' => $note,
+                'note'        => $note,
+                'actual_cost' => $actualCost,
             ]);
         });
     }
 
-    /**
-     * استلام الخامات بالكامل من القسم - يسمح بالبدء في التصنيع.
-     * المالك ينتقل من المشتريات إلى مدير القسم.
-     */
+
     public function materialsReceivedOk(
         ProductionTask $task,
-        ?string $note = null
+        ?string $plannedStart = null,
+        ?string $plannedEnd = null,
+        ?string $plannedInstall = null,
+        ?string $note = null,
     ): void {
-        DB::transaction(function () use ($task, $note) {
+        DB::transaction(function () use ($task, $plannedStart, $plannedEnd, $plannedInstall, $note) {
             $task->status = 'waiting_production';
+
+            if ($plannedStart !== null) {
+                $task->planned_start_at = $plannedStart;
+            }
+            if ($plannedEnd !== null) {
+                $task->planned_end_at = $plannedEnd;
+            }
+            if ($plannedInstall !== null) {
+                $task->planned_install_at = $plannedInstall;
+            }
+
             $task->save();
 
             $this->markOwnerReceived($task, 'استلام الخامات بالكامل - جاهز لبدء التصنيع');
@@ -162,21 +183,36 @@ class TaskWorkflowService
             );
 
             $this->log($task, 'materials_received_ok', [
-                'note' => $note,
+                'note'           => $note,
+                'planned_start'  => $plannedStart,
+                'planned_end'    => $plannedEnd,
+                'planned_install'=> $plannedInstall,
             ]);
         });
     }
 
-    /**
-     * استلام جزئي مع السماح بالبدء (جزء من الخامات متوفر) - يسلّم للقسم.
-     */
+
     public function materialsReceivedPartialAllowStart(
         ProductionTask $task,
+        ?string $plannedStart = null,
+        ?string $plannedEnd = null,
+        ?string $plannedInstall = null,
         ?string $note = null,
-        ?string $missingItemsNote = null
+        ?string $missingItemsNote = null,
     ): void {
-        DB::transaction(function () use ($task, $note, $missingItemsNote) {
+        DB::transaction(function () use ($task, $plannedStart, $plannedEnd, $plannedInstall, $note, $missingItemsNote) {
             $task->status = 'waiting_production';
+
+            if ($plannedStart !== null) {
+                $task->planned_start_at = $plannedStart;
+            }
+            if ($plannedEnd !== null) {
+                $task->planned_end_at = $plannedEnd;
+            }
+            if ($plannedInstall !== null) {
+                $task->planned_install_at = $plannedInstall;
+            }
+
             $task->save();
 
             $this->markOwnerReceived($task, 'استلام جزئي مع السماح بالبدء');
@@ -192,15 +228,16 @@ class TaskWorkflowService
             );
 
             $this->log($task, 'materials_received_partial_allow_start', [
-                'note'    => $note,
-                'missing' => $missingItemsNote,
+                'note'           => $note,
+                'missing'        => $missingItemsNote,
+                'planned_start'  => $plannedStart,
+                'planned_end'    => $plannedEnd,
+                'planned_install'=> $plannedInstall,
+                'allow_start'    => true,
             ]);
         });
     }
 
-    /**
-     * استلام جزئي مع إيقاف البدء - تبقى عند المشتريات حتى استكمال الناقص.
-     */
     public function materialsReceivedPartialHold(
         ProductionTask $task,
         ?string $note = null,
@@ -229,12 +266,12 @@ class TaskWorkflowService
         });
     }
 
-    /**
-     * مشكلة في الخامات - تبقى تحت مسؤولية المشتريات حتى المعالجة.
-     */
-    public function materialsReceivedIssue(ProductionTask $task, ?string $note = null): void
-    {
-        DB::transaction(function () use ($task, $note) {
+    public function materialsReceivedIssue(
+        ProductionTask $task,
+        ?string $note = null,
+        ?string $issueDetails = null,
+    ): void {
+        DB::transaction(function () use ($task, $note, $issueDetails) {
             $task->status = 'materials_issue';
             $task->save();
 
@@ -251,7 +288,8 @@ class TaskWorkflowService
             );
 
             $this->log($task, 'materials_issue', [
-                'note' => $note,
+                'note'          => $note,
+                'issue_details' => $issueDetails,
             ]);
         });
     }
@@ -259,11 +297,16 @@ class TaskWorkflowService
     /**
      * بدء التصنيع.
      */
-    public function startProduction(ProductionTask $task, ?string $note = null): void
-    {
-        DB::transaction(function () use ($task, $note) {
-            $task->status          = 'in_progress';
-            $task->actual_start_at = $task->actual_start_at ?: now();
+    public function startProduction(
+        ProductionTask $task,
+        ?string $startedAt = null,
+        ?string $note = null
+    ): void {
+        DB::transaction(function () use ($task, $startedAt, $note) {
+            $task->status         = 'in_progress';
+            $task->actual_start_at = $task->actual_start_at ?: (
+            $startedAt ? Carbon::parse($startedAt) : now()
+            );
             $task->save();
 
             $deptManagerId = $this->resolveDeptManagerUserId($task);
@@ -276,8 +319,9 @@ class TaskWorkflowService
                 note: 'بدء التصنيع' . ($note ? ' - ' . $note : '')
             );
 
-            $this->log($task, 'start_production', [
-                'note' => $note,
+            $this->log($task, 'manufacturing_started', [
+                'note'       => $note,
+                'started_at' => $task->actual_start_at?->toDateTimeString(),
             ]);
         });
     }
@@ -285,11 +329,16 @@ class TaskWorkflowService
     /**
      * إنهاء التصنيع وإرسال المهمة للجودة بعد التصنيع.
      */
-    public function finishManufacturingAndSendToQA(ProductionTask $task, ?string $note = null): void
-    {
-        DB::transaction(function () use ($task, $note) {
-            $task->status       = 'under_review';
-            $task->actual_end_at = $task->actual_end_at ?: now();
+    public function finishManufacturingAndSendToQA(
+        ProductionTask $task,
+        ?string $finishedAt = null,
+        ?string $note = null
+    ): void {
+        DB::transaction(function () use ($task, $finishedAt, $note) {
+            $task->status        = 'under_review';
+            $task->actual_end_at = $task->actual_end_at ?: (
+            $finishedAt ? Carbon::parse($finishedAt) : now()
+            );
             $task->save();
 
             $qaUserId = $this->resolveQualityManagerUserId();
@@ -302,29 +351,24 @@ class TaskWorkflowService
                 note: 'إرسال للجودة بعد التصنيع'
             );
 
-            $this->log($task, 'finish_manufacturing_to_qa', [
-                'note' => $note,
+            $this->log($task, 'manufacturing_sent_to_qa', [
+                'note'        => $note,
+                'finished_at' => $task->actual_end_at?->toDateTimeString(),
             ]);
         });
     }
 
-    /**
-     * استلام الجودة لمهمة ما بعد التصنيع.
-     */
     public function qaAcknowledgeManufacturing(ProductionTask $task, ?string $note = null): void
     {
         DB::transaction(function () use ($task, $note) {
             $this->markOwnerReceived($task, 'استلام الجودة بعد التصنيع' . ($note ? ' - ' . $note : ''));
 
-            $this->log($task, 'qa_acknowledge_manufacturing', [
+            $this->log($task, 'qa_ack_manufacturing', [
                 'note' => $note,
             ]);
         });
     }
 
-    /**
-     * اعتماد جودة التصنيع - تحويل للتركيب (مدير التركيب = نفس مدير القسم).
-     */
     public function approveManufacturingQA(ProductionTask $task, ?string $note = null): void
     {
         DB::transaction(function () use ($task, $note) {
@@ -341,15 +385,12 @@ class TaskWorkflowService
                 note: 'اعتماد الجودة بعد التصنيع - تحويل للتركيب'
             );
 
-            $this->log($task, 'approve_manufacturing_qa', [
+            $this->log($task, 'qa_approved_manufacturing', [
                 'note' => $note,
             ]);
         });
     }
 
-    /**
-     * رفض جودة التصنيع - إعادة المهمة للتصنيع.
-     */
     public function rejectManufacturingQA(ProductionTask $task, ?string $note = null): void
     {
         DB::transaction(function () use ($task, $note) {
@@ -366,12 +407,11 @@ class TaskWorkflowService
                 note: 'رفض الجودة بعد التصنيع - إعادة للتصنيع'
             );
 
-            $this->log($task, 'reject_manufacturing_qa', [
+            $this->log($task, 'qa_rejected_manufacturing', [
                 'note' => $note,
             ]);
         });
     }
-
     /**
      * استلام مسؤول التركيب للمهمة.
      */
@@ -380,7 +420,7 @@ class TaskWorkflowService
         DB::transaction(function () use ($task, $note) {
             $this->markOwnerReceived($task, 'استلام مسؤول التركيب للمهمة' . ($note ? ' - ' . $note : ''));
 
-            $this->log($task, 'installation_acknowledge', [
+            $this->log($task, 'install_acknowledged', [
                 'note' => $note,
             ]);
         });
@@ -389,9 +429,12 @@ class TaskWorkflowService
     /**
      * بدء التركيب.
      */
-    public function startInstallation(ProductionTask $task, ?string $note = null): void
-    {
-        DB::transaction(function () use ($task, $note) {
+    public function startInstallation(
+        ProductionTask $task,
+        ?string $startedAt = null,
+        ?string $note = null
+    ): void {
+        DB::transaction(function () use ($task, $startedAt, $note) {
             $task->status = 'in_progress';
             $task->save();
 
@@ -405,8 +448,9 @@ class TaskWorkflowService
                 note: 'بدء أعمال التركيب' . ($note ? ' - ' . $note : '')
             );
 
-            $this->log($task, 'start_installation', [
-                'note' => $note,
+            $this->log($task, 'installation_started', [
+                'note'       => $note,
+                'started_at' => $startedAt,
             ]);
         });
     }
@@ -414,9 +458,12 @@ class TaskWorkflowService
     /**
      * إنهاء التركيب وإرسال للجودة بعد التركيب.
      */
-    public function finishInstallationToQA(ProductionTask $task, ?string $note = null): void
-    {
-        DB::transaction(function () use ($task, $note) {
+    public function finishInstallationToQA(
+        ProductionTask $task,
+        ?string $finishedAt = null,
+        ?string $note = null
+    ): void {
+        DB::transaction(function () use ($task, $finishedAt, $note) {
             $task->status = 'under_review';
             $task->save();
 
@@ -430,8 +477,9 @@ class TaskWorkflowService
                 note: 'إنهاء التركيب - تحويل للجودة بعد التركيب'
             );
 
-            $this->log($task, 'finish_installation_to_qa', [
-                'note' => $note,
+            $this->log($task, 'installation_sent_to_qa', [
+                'note'        => $note,
+                'finished_at' => $finishedAt,
             ]);
         });
     }
@@ -444,33 +492,37 @@ class TaskWorkflowService
         DB::transaction(function () use ($task, $note) {
             $this->markOwnerReceived($task, 'استلام الجودة بعد التركيب' . ($note ? ' - ' . $note : ''));
 
-            $this->log($task, 'qa_acknowledge_installation', [
+            $this->log($task, 'qa_ack_installation', [
                 'note' => $note,
             ]);
         });
     }
 
-    /**
-     * اعتماد الجودة بعد التركيب.
-     */
     public function approveInstallationQA(ProductionTask $task, ?string $note = null): void
     {
         DB::transaction(function () use ($task, $note) {
             $task->status                = 'qa_approved';
-            $task->current_owner_role    = null;
+            $task->current_owner_role    = 'quality_manager';
             $task->current_owner_user_id = null;
             $task->received_by_owner_at  = now();
             $task->save();
 
-            $this->log($task, 'approve_installation_qa', [
+            $qaUserId = $this->resolveQualityManagerUserId();
+
+            $this->setOwner(
+                task: $task,
+                role: 'quality_manager',
+                userId: $qaUserId,
+                touchSent: true,
+                note: 'اعتماد الجودة للتركيب'
+            );
+
+            $this->log($task, 'qa_approved_installation', [
                 'note' => $note,
             ]);
         });
     }
 
-    /**
-     * رفض الجودة بعد التركيب - إعادة للتركيب (نفس مدير القسم).
-     */
     public function rejectInstallationQA(ProductionTask $task, ?string $note = null): void
     {
         DB::transaction(function () use ($task, $note) {
@@ -487,7 +539,7 @@ class TaskWorkflowService
                 note: 'رفض الجودة بعد التركيب - إعادة للتركيب'
             );
 
-            $this->log($task, 'reject_installation_qa', [
+            $this->log($task, 'qa_rejected_installation', [
                 'note' => $note,
             ]);
         });
@@ -501,7 +553,7 @@ class TaskWorkflowService
         DB::transaction(function () use ($task, $note) {
             $this->markOwnerReceived($task, 'استلام العمل المُعاد في التصنيع' . ($note ? ' - ' . $note : ''));
 
-            $this->log($task, 'manufacturing_acknowledge_rework', [
+            $this->log($task, 'manufacturing_ack_rework', [
                 'note' => $note,
             ]);
         });
@@ -515,7 +567,7 @@ class TaskWorkflowService
         DB::transaction(function () use ($task, $note) {
             $this->markOwnerReceived($task, 'استلام العمل المُعاد في التركيب' . ($note ? ' - ' . $note : ''));
 
-            $this->log($task, 'installation_acknowledge_rework', [
+            $this->log($task, 'install_ack_rework', [
                 'note' => $note,
             ]);
         });
@@ -524,22 +576,87 @@ class TaskWorkflowService
     /**
      * إكمال المهمة بعد رفع مستند تأكيد العميل.
      */
-    public function uploadClientReceiptAndComplete(ProductionTask $task, ?string $note = null): void
-    {
-        DB::transaction(function () use ($task, $note) {
-            // منطق حفظ ملف تأكيد العميل تبقيه كما هو في مشروعك
+    public function uploadClientReceiptAndComplete(
+        ProductionTask $task,
+        ?string $clientReceiptPath = null,
+        ?string $completedAt = null,
+        ?string $note = null
+    ): void {
+        DB::transaction(function () use ($task, $clientReceiptPath, $completedAt, $note) {
+            if (! empty($clientReceiptPath)) {
+                $task->client_receipt = $clientReceiptPath;
+            }
+
+            if ($completedAt) {
+                $task->completed_at = Carbon::parse($completedAt);
+            } elseif (! $task->completed_at) {
+                $task->completed_at = now();
+            }
 
             $task->status                = 'completed';
-            $task->completed_at          = $task->completed_at ?: now();
             $task->current_owner_role    = null;
             $task->current_owner_user_id = null;
             $task->save();
 
             $this->log($task, 'upload_client_receipt_and_complete', [
-                'note' => $note,
+                'note'           => $note,
+                'client_receipt' => $clientReceiptPath,
+                'completed_at'   => $task->completed_at?->toDateTimeString(),
             ]);
 
-            // منطق إغلاق المشروع/طلب الإنتاج عند اكتمال كل المهام يضاف هنا عند الحاجة
+            // إقفال المشروع/الطلب إن لم تبقَ مهام مفتوحة
+            $finalStatuses = ['completed', 'cancelled', 'closed'];
+
+            $project = $task->project()
+                ->withCount(['tasks as open_tasks_count' => function ($q) use ($finalStatuses) {
+                    $q->whereNotIn('status', $finalStatuses);
+                }])
+                ->first();
+
+            if ($project && (int) $project->open_tasks_count === 0) {
+                $projUpdate = ['status' => 'completed'];
+                if (Schema::hasColumn($project->getTable(), 'completed_at')) {
+                    $projUpdate['completed_at'] = now();
+                } elseif (Schema::hasColumn($project->getTable(), 'closed_at')) {
+                    $projUpdate['closed_at'] = now();
+                }
+                $project->update($projUpdate);
+
+                $this->log($task, 'project_completed', [
+                    'project_id' => $project->id,
+                    'by'         => Auth::id(),
+                ]);
+
+                $pr = $project->productionRequest ?? null;
+                if ($pr) {
+                    $prUpdate = [];
+                    if (Schema::hasColumn($pr->getTable(), 'current_phase')) {
+                        $prUpdate['current_phase'] = 'closed';
+                    }
+                    if (Schema::hasColumn($pr->getTable(), 'phase_status')) {
+                        $prUpdate['phase_status'] = 'completed';
+                    }
+                    if (Schema::hasColumn($pr->getTable(), 'status')) {
+                        $prUpdate['status'] = 'completed';
+                    }
+                    if (Schema::hasColumn($pr->getTable(), 'closed_at')) {
+                        $prUpdate['closed_at'] = now();
+                    } elseif (Schema::hasColumn($pr->getTable(), 'completed_at')) {
+                        $prUpdate['completed_at'] = now();
+                    }
+                    if (!empty($prUpdate)) {
+                        $pr->update($prUpdate);
+                    }
+
+                    $this->log($task, 'production_request_closed', [
+                        'production_request_id' => $pr->id,
+                        'by'                    => Auth::id(),
+                    ]);
+                }
+
+
+            }
+
         });
     }
 
