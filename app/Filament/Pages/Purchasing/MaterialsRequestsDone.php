@@ -75,6 +75,7 @@ class MaterialsRequestsDone extends Page implements HasTable
                     ->formatStateUsing(fn ($state) => $state === 'fulfilled' ? 'مُنفّذ' : $state),
                 TextColumn::make('department.dept_name')->label('القسم')->toggleable()->searchable(),
                 TextColumn::make('task_id')->label('مهمة #')->sortable()->toggleable(),
+                TextColumn::make('task.project.client.client_name')->label(' العميل')->sortable()->toggleable(),
                 TextColumn::make('requestedBy.name')->label('أنشأه')->searchable(),
                 TextColumn::make('po_file')
                     ->label('أمر الشراء')

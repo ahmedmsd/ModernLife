@@ -226,16 +226,24 @@ class ViewTask extends ViewRecord
                 }),
 
             /* طلب خامات */
-            Action::make('requestMaterials')
-                ->label('طلب الخامات')
-                ->icon('heroicon-o-shopping-bag')
+            Action::make('request_materials')
+                ->label('طلب خامات')->icon('heroicon-o-truck')->color('info')
                 ->visible(fn () => $this->helper()->canRequestMaterials($this->record, Auth::user()))
+                ->form([
+                    Textarea::make('note')->label('ملاحظات / تفاصيل المطلوب')->rows(3)->required(),
+                    Forms\Components\FileUpload::make('po_file')
+                        ->label('ملف أمر الشراء (PO) المُعتمد من مدير المصنع')->disk('public')
+                        ->directory('purchase_orders/' . now()->format('Y/m'))
+                        ->acceptedFileTypes(['application/pdf','image/*'])->maxSize(20_480)
+                        ->openable()->downloadable()->moveFiles()->visibility('public')->required(),
+                ])
                 ->requiresConfirmation()
-                ->action(function ($record) {
-                    $this->workflow()->requestMaterials($record, 'طلب الخامات من مدير القسم');
-                    FNotification::make()->title('تم فتح طلب الخامات وتحويلها للمشتريات')->success()->send();
-                    $this->redirect(request()->header('Referer') ?? url()->current());
+                ->action(function (array $data) {
+                    $this->workflow()->requestMaterials($this->record, $data['note'], $data['po_file']);
+                    FNotification::make()->success()->title('تم إرسال طلب الخامات')->send();
+                    $this->redirect($this->getRedirectUrl());
                 }),
+
 
             Action::make('deptRejectToFactory')
                 ->label('رفض المهمة وإعادتها للمصنع')
