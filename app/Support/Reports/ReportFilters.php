@@ -60,7 +60,7 @@ class ReportFilters
         return $query
             ->when($d['branch_id']   ?? null, fn ($q, $v) => $q->where('showroom_id', $v))
             ->when($d['dept_id']     ?? null, fn ($q, $v) => $q->where('department_id', $v))
-            ->when($d['employee_id'] ?? null, fn ($q, $v) => $q->where('assigned_to_employee_id', $v))
+            ->when($d['employee_id'] ?? null, fn ($q, $v) => $q->where('assigned_to_user_id', $v))
             ->when($d['status']      ?? null, fn ($q, $v) => $q->where($tasksTable . '.status', $v));
     }
 

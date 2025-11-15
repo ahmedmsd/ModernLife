@@ -55,7 +55,7 @@ class AssignedTasks extends Page implements HasTable
             ->heading('المهام المسندة إليّ')
             ->query(fn (): Builder => ProductionTask::query()
                 ->with(['project', 'department'])
-                ->when($employeeId, fn ($q) => $q->where('assigned_to_employee_id', $employeeId))
+                ->when($employeeId, fn ($q) => $q->where('assigned_to_user_id', $employeeId))
                 ->latest('assigned_at')
             )
             ->recordUrl(fn (ProductionTask $r) => route('filament.admin.resources.tasks.view', $r))

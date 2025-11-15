@@ -8,6 +8,7 @@ use App\Filament\Resources\DepartmentResource\Pages\EditDepartment;
 use App\Filament\Resources\DepartmentResource\Pages\ListDepartments;
 use App\Models\Department;
 use App\Models\Employee;
+use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Tables;
@@ -57,7 +58,6 @@ class DepartmentResource extends Resource
                     ->getOptionLabelUsing(fn ($value) =>
                         Employee::query()->where('employee_id', $value)->value('employee_name') ?? '—'
                     )
-                    ->nullable()
                     ->hint('يظهر فقط الموظفون الحاصلون على دور department_manager'),
 
                 Forms\Components\TextInput::make('location')
@@ -91,7 +91,7 @@ class DepartmentResource extends Resource
                 Tables\Columns\TextColumn::make('dept_code')->label('الكود')->sortable(),
                 Tables\Columns\TextColumn::make('category.category_name')->label('نوع القسم')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('parentDepartment.dept_name')->label('القسم التابع له')->sortable(),
-                Tables\Columns\TextColumn::make('manager.employee_name')
+                Tables\Columns\TextColumn::make('managerUser.name')
                     ->label('مدير القسم')
                     ->formatStateUsing(fn ($state) => $state ?: '—')
                     ->sortable()
@@ -135,22 +135,32 @@ class DepartmentResource extends Resource
 
     protected static function departmentManagerOptions(?string $term = null): array
     {
-        $guard = config('auth.defaults.guard', 'web');
+        $query = User::query()
+            ->role('department_manager')
+            ->with('employee');
 
-        return \App\Models\Employee::query()
-            ->select('employees.employee_id', 'employees.employee_name')
-            ->join('users', 'users.id', '=', 'employees.user_id')
-            ->join('model_has_roles', function ($j) {
-                $j->on('model_has_roles.model_id', '=', 'users.id')
-                    ->where('model_has_roles.model_type', '=', \App\Models\User::class); // ← الأدوار على User
+        if ($term) {
+            $query->where(function ($q) use ($term) {
+                $q->where('name', 'like', "%{$term}%")
+                    ->orWhere('email', 'like', "%{$term}%")
+                    ->orWhereHas('employee', function ($q2) use ($term) {
+                        $q2->where('employee_name', 'like', "%{$term}%");
+                    });
+            });
+        }
+
+        return $query
+            ->orderBy('name')
+            ->get()
+            ->mapWithKeys(function (User $user) {
+                $label = $user->employee->employee_name
+                    ?? $user->name
+                    ?? $user->email
+                    ?? ('User #' . $user->id);
+
+                return [$user->id => $label];
             })
-            ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
-            ->where('roles.name', 'department_manager')
-            ->where('roles.guard_name', $guard)
-            ->when($term, fn ($q) => $q->where('employees.employee_name', 'like', '%' . $term . '%'))
-            ->orderBy('employees.employee_name')
-            ->distinct()
-            ->pluck('employees.employee_name', 'employees.employee_id')
-            ->all();
+            ->toArray();
     }
+
 }

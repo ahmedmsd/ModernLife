@@ -18,7 +18,7 @@ class TaskCommentObserver
             $recipients->push($task->creator);
         }
 
-        if (property_exists($task, 'assigned_to_employee_id') && $task->assigned_to_employee_id && $task->assignedToUser) {
+        if (property_exists($task, 'assigned_to_user_id') && $task->assigned_to_user_id && $task->assignedToUser) {
             $recipients->push($task->assignedToUser);
         }
 

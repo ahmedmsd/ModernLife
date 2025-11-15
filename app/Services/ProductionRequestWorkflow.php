@@ -383,7 +383,7 @@ class ProductionRequestWorkflow
                     [
                         'notes'                   => 'تم إنشاؤها تلقائيًا من ملف الطلب.',
                         'status'                  => 'pending',
-                        'assigned_to_employee_id' => null,
+                        'assigned_to_user_id' => null,
                         'estimated_cost'          => (float) ($reqFile->estimated_cost ?? 0),
                         'due_date'                => null,
                     ]

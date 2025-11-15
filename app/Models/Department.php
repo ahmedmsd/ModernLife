@@ -42,26 +42,19 @@ class Department extends Model
         return $this->hasMany(Employee::class, 'department_id', 'dept_id');
     }
 
-    public function managerEmployee(): BelongsTo
-    {
-        return $this->belongsTo(Employee::class, 'manager_id', 'employee_id');
-    }
+//    public function managerEmployee(): BelongsTo
+//    {
+//        return $this->belongsTo(Employee::class, 'manager_id', 'employee_id');
+//    }
 
-    public function managerUser(): HasOneThrough
+    public function managerUser(): BelongsTo
     {
-        return $this->hasOneThrough(
-            User::class,
-            Employee::class,
-            'employee_id',
-            'id',
-            'manager_id',
-            'user_id'
-        );
+        return $this->belongsTo(User::class, 'manager_id', 'id');
     }
 
     public function manager(): BelongsTo
     {
-        return $this->managerEmployee();
+        return $this->managerUser();
     }
 
     public function getManagerUserIdAttribute(): ?int

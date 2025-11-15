@@ -162,7 +162,7 @@ class TaskPageHelper
         }
 
         $status = $this->statusVal($task);
-        if (! in_array($status, ['waiting_production', 'rework'], true)) {
+        if (! in_array($status, ['pending','waiting_production', 'rework'], true)) {
             return false;
         }
 
@@ -170,6 +170,8 @@ class TaskPageHelper
             ->where('task_id', $task->id)
             ->whereIn('type', [
                 'assigned_to_dept',
+                'assigned_to_dept_manager',
+                'sent_to_department',
                 'sent_back_to_manufacturing',
             ])
             ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')

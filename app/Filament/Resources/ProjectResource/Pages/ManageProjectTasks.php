@@ -16,7 +16,6 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ManageProjectTasks extends ManageRelatedRecords
 {
-
     protected static string $resource     = ProjectResource::class;
     protected static string $relationship = 'tasks';
 
@@ -50,8 +49,12 @@ class ManageProjectTasks extends ManageRelatedRecords
                 ->helperText('يمكنك رفع ملف جديد للمهمة أو الإبقاء على الملف المنشأ تلقائيًا.')
                 ->nullable(),
 
-            Forms\Components\Select::make('assigned_to_employee_id')
-                ->relationship('employee', 'employee_name')
+            Forms\Components\Select::make('assigned_to_user_id')
+                ->relationship(
+                    name: 'assignedUser',
+                    titleAttribute: 'name',
+                    modifyQueryUsing: fn (Builder $query) => $query->role('department_manager')
+                )
                 ->label('الموظف المسؤول')
                 ->searchable()
                 ->preload()
@@ -101,8 +104,12 @@ class ManageProjectTasks extends ManageRelatedRecords
                 ->helperText('يمكنك رفع ملف جديد للمهمة أو الإبقاء على الملف المنشأ تلقائيًا.')
                 ->nullable(),
 
-            Forms\Components\Select::make('assigned_to_employee_id')
-                ->relationship('employee', 'employee_name')
+            Forms\Components\Select::make('assigned_to_user_id')
+                ->relationship(
+                    name: 'assignedUser',
+                    titleAttribute: 'name',
+                    modifyQueryUsing: fn (Builder $query) => $query->role('department_manager')
+                )
                 ->label('الموظف المسؤول')
                 ->searchable()
                 ->preload()
@@ -145,9 +152,9 @@ class ManageProjectTasks extends ManageRelatedRecords
                         ->first();
 
                     if ($emp) {
-                        $query->where(function (Builder $q) use ($emp) {
+                        $query->where(function (Builder $q) use ($emp, $user) {
                             $q->where('department_id', $emp->department_id)
-                                ->orWhere('assigned_to_employee_id', $emp->employee_id);
+                                ->orWhere('assigned_to_user_id', $user->id);
                         });
                     } else {
                         $query->whereRaw('1 = 0');
@@ -160,7 +167,7 @@ class ManageProjectTasks extends ManageRelatedRecords
                     ->sortable()
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('employee.employee_name')
+                Tables\Columns\TextColumn::make('assignedUser.name')
                     ->label('الموظف المسؤول')
                     ->toggleable(),
 
@@ -199,21 +206,19 @@ class ManageProjectTasks extends ManageRelatedRecords
                     ->modalSubmitActionLabel('حفظ المهمة')
                     ->modalCancelActionLabel('إلغاء')
                     ->after(function (ProductionTask $record, array $data): void {
-                        if (!empty($data['assigned_to_employee_id'])) {
-                            $emp = Employee::query()
-                                ->select('user_id')
-                                ->find($data['assigned_to_employee_id']);
+                        if (! empty($data['assigned_to_user_id'])) {
+                            $assignedUserId = (int) $data['assigned_to_user_id'];
 
                             $record->forceFill([
-                                'current_owner_user_id' => $emp?->user_id,
+                                'current_owner_user_id' => $assignedUserId,
                                 'current_owner_role'    => 'department_manager',
                             ])->save();
 
                             $record->logs()->create([
                                 'type'        => 'assigned_to_department_manager',
                                 'data'        => [
-                                    'employee_id' => (int) $data['assigned_to_employee_id'],
-                                    'source'      => 'project_tasks_create_action',
+                                    'user_id' => $assignedUserId,
+                                    'source'  => 'project_tasks_create_action',
                                 ],
                                 'causer_id'   => auth()->id(),
                                 'happened_at' => now(),
@@ -223,7 +228,8 @@ class ManageProjectTasks extends ManageRelatedRecords
                                 'current_owner_user_id' => null,
                                 'current_owner_role'    => 'department_manager',
                             ])->save();
-                        }})
+                        }
+                    })
                     ->form($this->getCreateFormSchema()),
             ])
             ->actions([

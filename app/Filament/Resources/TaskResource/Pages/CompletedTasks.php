@@ -28,30 +28,30 @@ class CompletedTasks extends Page implements HasTable
     protected function isAdminLike(): bool
     {
         $u = Auth::user();
-        return (bool)$u?->hasAnyRole(['admin', 'super-admin', 'factory_manager']);
+        return (bool) $u?->hasAnyRole(['admin', 'super-admin', 'factory_manager']);
     }
 
     protected function isDepartmentManager(): bool
     {
         $u = Auth::user();
-        return (bool)$u?->hasRole('department_manager');
+        return (bool) $u?->hasRole('department_manager');
     }
 
     protected function isShowroomManager(): bool
     {
         $u = Auth::user();
-        return (bool)$u?->hasRole('showroom_manager');
+        return (bool) $u?->hasRole('showroom_manager');
     }
 
     protected function isQualityManager(): bool
     {
         $u = Auth::user();
-        return (bool)$u?->hasRole('quality_manager');
+        return (bool) $u?->hasRole('quality_manager');
     }
 
     public static function canAccess(array $parameters = []): bool
     {
-        if (!Auth::check()) return false;
+        if (! Auth::check()) return false;
 
         $u = Auth::user();
         if ($u->hasAnyRole(['sales', 'purchasing_manager'])) {
@@ -68,6 +68,7 @@ class CompletedTasks extends Page implements HasTable
         $managedShowroomIds = [];
 
         if ($u instanceof User) {
+            // ما زلنا نستخدم employee فقط لاستخراج قسم المستخدم والمعارض التي يديرها
             $u->loadMissing('employee');
             $deptId = $u->employee?->department_id;
 
@@ -95,9 +96,8 @@ class CompletedTasks extends Page implements HasTable
                         'project.productionRequest:id,showroom_id',
                         'project.productionRequest.showroom:id,name',
                         'department:dept_id,dept_name',
-                        'employee:employee_id,employee_name',
+                        'assignedUser:id,name',
                     ])
-                    // ->orderByRaw('COALESCE(completed_at, updated_at, created_at) DESC');
                     ->latest('completed_at');
 
                 // 1) Admin-like => الكل
@@ -105,14 +105,14 @@ class CompletedTasks extends Page implements HasTable
                     return $q;
                 }
 
-                // 2) Quality Manager => الكل (لا يوجد needs action هنا)
+                // 2) Quality Manager => الكل
                 if ($this->isQualityManager()) {
                     return $q;
                 }
 
-                // 3) Showroom Manager => مهام معارضي
+                // 3) Showroom Manager => مهام المعارض التي يديرها فعلاً
                 if ($this->isShowroomManager()) {
-                    if (!empty($managedShowroomIds)) {
+                    if (! empty($managedShowroomIds)) {
                         return $q->whereHas('project.productionRequest', function (Builder $w) use ($managedShowroomIds) {
                             $w->whereIn('showroom_id', $managedShowroomIds);
                         });
@@ -137,25 +137,32 @@ class CompletedTasks extends Page implements HasTable
                 Tables\Columns\TextColumn::make('project.productionRequest.showroom.name')
                     ->label('المعرض'),
                 Tables\Columns\TextColumn::make('department.dept_name')->label('القسم')->sortable(),
-                Tables\Columns\TextColumn::make('employee.employee_name')->label('المسؤول')->sortable(),
+
+                Tables\Columns\TextColumn::make('assignedUser.name')
+                    ->label('المسؤول')
+                    ->sortable(),
+
                 Tables\Columns\TextColumn::make('status')
                     ->label('الحالة')->badge()
-                    ->formatStateUsing(fn($state) => TaskStatus::fromScalar($state)?->ar() ?? '—')
-                    ->color(fn($state) => TaskStatus::fromScalar($state)?->color() ?? 'gray'),
+                    ->formatStateUsing(fn ($state) => TaskStatus::fromScalar($state)?->ar() ?? '—')
+                    ->color(fn ($state) => TaskStatus::fromScalar($state)?->color() ?? 'gray'),
                 Tables\Columns\TextColumn::make('created_at')->label('أُنشئت')->since()->sortable(),
                 Tables\Columns\TextColumn::make('completed_at')->label('أُكتملت')->since()->sortable()->placeholder('—'),
                 Tables\Columns\TextColumn::make('cycle_time')
                     ->label('مدة الإنجاز')
                     ->state(function (ProductionTask $r) {
-                        if (!$r->created_at || !$r->completed_at) return '—';
-                        $mins = $r->created_at->diffInMinutes($r->completed_at);
-                        $days = intdiv($mins, 1440);
+                        if (! $r->created_at || ! $r->completed_at) return '—';
+
+                        $mins  = $r->created_at->diffInMinutes($r->completed_at);
+                        $days  = intdiv($mins, 1440);
                         $hours = intdiv($mins % 1440, 60);
-                        $m = $mins % 60;
+                        $m     = $mins % 60;
+
                         $parts = [];
-                        if ($days) $parts[] = $days . ' يوم';
+                        if ($days)  $parts[] = $days . ' يوم';
                         if ($hours) $parts[] = $hours . ' ساعة';
-                        if ($m || (!$days && !$hours)) $parts[] = $m . ' دقيقة';
+                        if ($m || (! $days && ! $hours)) $parts[] = $m . ' دقيقة';
+
                         return implode(' و ', $parts);
                     }),
             ])
@@ -163,29 +170,34 @@ class CompletedTasks extends Page implements HasTable
                 Tables\Filters\SelectFilter::make('department_id')
                     ->label('القسم')
                     ->relationship('department', 'dept_name')
-                    ->visible(!$this->isDepartmentManager()),
-                Tables\Filters\SelectFilter::make('assigned_to_employee_id')
+                    ->visible(! $this->isDepartmentManager()),
+
+                // ⬅️ فلتر المسؤول بالاعتماد على المستخدم
+                Tables\Filters\SelectFilter::make('assigned_to_user_id')
                     ->label('المسؤول')
-                    ->relationship('employee', 'employee_name')
+                    ->relationship('assignedUser', 'name')
                     ->searchable()
-                    ->visible(!$this->isDepartmentManager() && !$this->isShowroomManager()),
-                // فلتر المعرض عبر السلسلة Task -> Project -> ProductionRequest -> showroom_id
+                    ->visible(! $this->isDepartmentManager() && ! $this->isShowroomManager()),
+
+                // فلتر المعرض
                 Filter::make('showroom_id')
                     ->label('المعرض')
                     ->form([
                         Forms\Components\Select::make('showroom_id')
                             ->label('اختر المعرض')
-                            ->options(fn() => Showroom::query()->orderBy('name')->pluck('name', 'id')->all())
+                            ->options(fn () => Showroom::query()->orderBy('name')->pluck('name', 'id')->all())
                             ->searchable(),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         $sid = $data['showroom_id'] ?? null;
-                        if (!$sid) return $query;
+                        if (! $sid) return $query;
+
                         return $query->whereHas('project.productionRequest', function (Builder $w) use ($sid) {
                             $w->where('showroom_id', $sid);
                         });
                     })
-                    ->visible(!$this->isShowroomManager()),
+                    ->visible(! $this->isShowroomManager()),
+
                 Filter::make('period')
                     ->label('الفترة (تاريخ الإكمال)')
                     ->form([
@@ -194,16 +206,17 @@ class CompletedTasks extends Page implements HasTable
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         $from = $data['from'] ?? null;
-                        $to = $data['to'] ?? null;
+                        $to   = $data['to']   ?? null;
+
                         return $query
-                            ->when($from, fn(Builder $q) => $q->whereDate('completed_at', '>=', $from))
-                            ->when($to, fn(Builder $q) => $q->whereDate('completed_at', '<=', $to));
+                            ->when($from, fn (Builder $q) => $q->whereDate('completed_at', '>=', $from))
+                            ->when($to,   fn (Builder $q) => $q->whereDate('completed_at', '<=', $to));
                     }),
             ])
-            ->recordUrl(fn(ProductionTask $record) => TaskResource::getUrl('view', ['record' => $record]))
+            ->recordUrl(fn (ProductionTask $record) => TaskResource::getUrl('view', ['record' => $record]))
             ->actions([
                 Tables\Actions\Action::make('view')->label('عرض')->icon('heroicon-o-eye')
-                    ->url(fn(ProductionTask $record) => TaskResource::getUrl('view', ['record' => $record])),
+                    ->url(fn (ProductionTask $record) => TaskResource::getUrl('view', ['record' => $record])),
             ])
             ->paginated([25, 50, 100])
             ->emptyStateHeading('لا توجد مهام مكتملة ضمن الشروط الحالية');

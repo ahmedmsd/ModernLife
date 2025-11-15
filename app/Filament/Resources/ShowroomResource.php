@@ -49,7 +49,7 @@ class ShowroomResource extends Resource
 
             Forms\Components\Select::make('manager_id')
                 ->label('مدير المعرض')
-                ->relationship('manager', 'employee_name')
+                ->relationship('manager', 'name')
                 ->searchable()
                 ->preload(),
         ]);
@@ -62,7 +62,7 @@ class ShowroomResource extends Resource
                 Tables\Columns\TextColumn::make('name')->label('اسم المعرض')->searchable(),
                 Tables\Columns\TextColumn::make('city.name')->label('المدينة'),
                 Tables\Columns\TextColumn::make('phone')->label('الهاتف'),
-                Tables\Columns\TextColumn::make('manager.employee_name')->label('مدير المعرض'),
+                Tables\Columns\TextColumn::make('manager.name')->label('مدير المعرض'),
             ])
             ->actions([
                 // Tables\Actions\ViewAction::make(),

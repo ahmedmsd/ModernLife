@@ -56,8 +56,18 @@ class ViewProject extends ViewRecord
                         ->options(fn()=> \App\Models\Department::orderBy('dept_name')->pluck('dept_name','dept_id')->all())
                         ->searchable()->placeholder('الكل'),
                     \Filament\Forms\Components\Select::make('emp_id')->label('المسؤول')
-                        ->options(fn()=> \App\Models\Employee::orderBy('employee_name')->pluck('employee_name','employee_id')->all())
-                        ->searchable()->placeholder('الكل'),
+                        ->options(function () {
+                            return \App\Models\Employee::query()
+                                ->whereHas('user', function ($q) {
+                                    $q->role('department_manager');
+                                })
+                                ->orderBy('employee_name')
+                                ->pluck('employee_name', 'employee_id')
+                                ->all();
+                        })
+                        ->searchable()
+                        ->placeholder('الكل'),
+
                 ])
                 ->action(function (array $data) {
                     $this->filterStatus = $data['status'] ?? null;
@@ -185,10 +195,10 @@ class ViewProject extends ViewRecord
             ->where('project_id', $this->record->id)
             ->when($this->filterStatus, fn ($q, $v) => $q->where('status', $v))
             ->when($this->filterDeptId, fn ($q, $v) => $q->where('department_id', $v))
-            ->when($this->filterEmpId,  fn ($q, $v) => $q->where('assigned_to_employee_id', $v))
+            ->when($this->filterEmpId,  fn ($q, $v) => $q->where('assigned_to_user_id', $v))
             ->with([
                 'department:dept_id,dept_name',
-                'employee:employee_id,employee_name',
+                'assignedUser:id,name',
                 'logs' => fn ($q) => $q->orderBy('happened_at')
                     ->select('id','task_id','type','data','happened_at','created_at'),
                 'materialRequests' => fn ($q) => $q->select([
@@ -286,7 +296,7 @@ class ViewProject extends ViewRecord
             return [
                 'id'        => $t->id,
                 'dept'      => $t->department->dept_name ?? '—',
-                'emp'       => $t->employee->employee_name ?? '—',
+                'emp'       => $t->assignedUser->name ?? '—',
                 'status'    => $t->status ?? 'unknown',
                 'status_ar' => $this->statusAr($t->status ?? 'unknown'),
                 'sec'       => $sec,
@@ -329,7 +339,7 @@ class ViewProject extends ViewRecord
                 return [
                     'id' => $t->id,
                     'dept' => $t->department->dept_name ?? '—',
-                    'emp' => $t->employee->employee_name ?? '—',
+                    'emp' => $t->assignedUser->name ?? '—',
                     'days_late' => $daysLate,
                 ];
             })

@@ -32,7 +32,7 @@ class CreateTasksFromRequest
                 $task = ProductionTask::create([
                     'project_id'              => $project->id,
                     'department_id'           => $file->department_id,
-                    'assigned_to_employee_id' => $managerEmployeeId, // يُسند لمدير القسم إن وُجد
+                    'assigned_to_user_id'     => $managerEmployeeId, // يُسند لمدير القسم إن وُجد
                     'estimated_cost'          => $file->estimated_cost ?: 0, // يمكن لاحقًا تخصيص ميزانية لكل مهمة
                     'file_path'               => $file->file_path,
                     'status'                  => $managerEmployeeId ? 'assigned' : 'pending',

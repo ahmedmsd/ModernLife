@@ -22,12 +22,9 @@ class ProductionTaskObserver
 
     public function updating(ProductionTask $task): void
     {
-        if ($task->isDirty('assigned_to_employee_id')) {
-            $ownerUserId = null;
-            if ($task->assigned_to_employee_id) {
-                $emp = Employee::with('user:id')->find($task->assigned_to_employee_id);
-                $ownerUserId = $emp?->user?->id;
-            }
+        if ($task->isDirty('assigned_to_user_id')) {
+            $ownerUserId = $task->assigned_to_user_id ?: null;
+
             $task->current_owner_role    = 'department_manager';
             $task->current_owner_user_id = $ownerUserId;
         }
@@ -35,21 +32,30 @@ class ProductionTaskObserver
 
     public function created(ProductionTask $task): void
     {
-        if ($task->assigned_to_employee_id) {
+        if ($task->assigned_to_user_id) {
+            // تأكيد وقت الإسناد
             if (blank($task->assigned_at)) {
                 $task->forceFill(['assigned_at' => now()])->saveQuietly();
             }
 
-            if ($task->employee?->routeNotificationForMail(null)) {
-                $task->employee->notify(new TaskAssignedNotification($task, false));
+            // المستخدم المسؤول
+            $assignedUser = $task->assignedUser;            // User|null
+            $employee     = $assignedUser?->employee;       // Employee|null
+
+            // إشعار البريد (على الموظف)
+            if ($employee && $employee->routeNotificationForMail(null)) {
+                $employee->notify(new TaskAssignedNotification($task, false));
             }
 
-            if ($user = $task->employee?->user) {
-                $user->notify(new TaskAssignedInAppNotification($task, false));
+            // إشعار داخل النظام (على المستخدم)
+            if ($assignedUser) {
+                $assignedUser->notify(new TaskAssignedInAppNotification($task, false));
             }
 
+            // ضبط المالك الحالي إن لم يكن مضبوطًا
             if (blank($task->current_owner_role)) {
-                $ownerUserId = $task->employee?->user?->id;
+                $ownerUserId = $task->assigned_to_user_id;
+
                 $task->forceFill([
                     'current_owner_role'    => 'department_manager',
                     'current_owner_user_id' => $ownerUserId,
@@ -85,27 +91,33 @@ class ProductionTaskObserver
     {
         $notifier = app(TaskNotifier::class);
 
-        if ($task->wasChanged('assigned_to_employee_id')) {
+        // تغيير الإسناد (من مستخدم إلى مستخدم)
+        if ($task->wasChanged('assigned_to_user_id')) {
             $task->forceFill(['assigned_at' => now()])->saveQuietly();
 
-            if ($task->assigned_to_employee_id && $task->employee?->routeNotificationForMail(null)) {
-                $task->employee->notify(new TaskAssignedNotification($task, true));
+            $assignedUser = $task->assignedUser;      // User|null
+            $employee     = $assignedUser?->employee; // Employee|null
+
+            if ($employee && $employee->routeNotificationForMail(null)) {
+                $employee->notify(new TaskAssignedNotification($task, true));
             }
-            if ($user = $task->employee?->user) {
-                $user->notify(new TaskAssignedInAppNotification($task, true));
+
+            if ($assignedUser) {
+                $assignedUser->notify(new TaskAssignedInAppNotification($task, true));
             }
 
             $task->logs()->create([
                 'type'        => 'assigned_changed',
                 'data'        => [
-                    'from' => $task->getOriginal('assigned_to_employee_id'),
-                    'to'   => $task->assigned_to_employee_id,
+                    'from' => $task->getOriginal('assigned_to_user_id'),
+                    'to'   => $task->assigned_to_user_id,
                 ],
                 'causer_id'   => Auth::id(),
                 'happened_at' => now(),
             ]);
         }
 
+        // تغيير المالك الحالي
         if ($task->wasChanged('current_owner_role') || $task->wasChanged('current_owner_user_id')) {
             $from = [
                 'role' => $task->getOriginal('current_owner_role'),
@@ -128,7 +140,7 @@ class ProductionTaskObserver
                 'happened_at' => now(),
             ]);
 
-            $toRole = $task->current_owner_role;
+            $toRole   = $task->current_owner_role;
             $sentType = match ($toRole) {
                 'showroom_manager'      => 'sent_to_showroom',
                 'factory_manager'       => 'sent_to_factory',
@@ -150,7 +162,7 @@ class ProductionTaskObserver
 
             $isDeptManagerOwnership =
                 ($task->current_owner_role === 'department_manager') &&
-                !empty($task->current_owner_user_id);
+                ! empty($task->current_owner_user_id);
 
             if ($isDeptManagerOwnership) {
                 $task->loadMissing('department.managerUser');
@@ -279,7 +291,6 @@ class ProductionTaskObserver
                         break;
                 }
             } catch (\Throwable $e) {
-                // لا تعطل حفظ المهمة بسبب فشل إشعار
             }
         }
 
@@ -311,7 +322,7 @@ class ProductionTaskObserver
         }
 
         if ($task->wasChanged('department_id')) {
-            $dept = $task->department()->with(['managerUser', 'headUser'])->first();
+            $dept    = $task->department()->with(['managerUser', 'headUser'])->first();
             $targets = collect([$dept?->managerUser, $dept?->headUser])->filter();
 
             foreach ($targets as $user) {
@@ -321,7 +332,9 @@ class ProductionTaskObserver
                     ->icon('heroicon-o-arrow-right')
                     ->info()
                     ->actions([
-                        FAction::make('عرض المشروع')->button()->url(\App\Filament\Resources\ProjectResource::getUrl('view', ['record' => $task->project_id])),
+                        FAction::make('عرض المشروع')
+                            ->button()
+                            ->url(\App\Filament\Resources\ProjectResource::getUrl('view', ['record' => $task->project_id])),
                     ])
                     ->sendToDatabase($user);
             }

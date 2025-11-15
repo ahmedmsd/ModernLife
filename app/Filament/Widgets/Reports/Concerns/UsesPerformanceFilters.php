@@ -29,7 +29,7 @@ trait UsesPerformanceFilters
             ->when($this->filters['date_to'],   fn($q, $v) => $q->whereDate('created_at', '<=', $v))
             ->when($this->filters['branch_id'], fn($q, $v) => $q->whereHas('project.showroom', fn($qq)=>$qq->where('id', $v)))
             ->when($this->filters['dept_id'],   fn($q, $v) => $q->where('department_id', $v))
-            ->when($this->filters['employee_id'], fn($q, $v) => $q->where('assigned_to_employee_id', $v))
+            ->when($this->filters['employee_id'], fn($q, $v) => $q->where('assigned_to_user_id', $v))
             ->when($this->filters['status'],    fn($q, $v) => $q->where('status', $v));
     }
 

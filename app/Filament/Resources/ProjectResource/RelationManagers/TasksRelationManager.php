@@ -32,8 +32,8 @@ class TasksRelationManager extends RelationManager
                 ->directory('production_files/' . now()->format('Y/m'))
                 ->required(),
 
-            Forms\Components\Select::make('assigned_to_employee_id')
-                ->relationship('employee', 'name')
+            Forms\Components\Select::make('assigned_to_user_id')
+                ->relationship('assignedUser', 'name')
                 ->label('الموظف المسؤول')
                 ->required(),
 

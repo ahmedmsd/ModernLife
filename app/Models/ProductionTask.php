@@ -18,7 +18,7 @@ class ProductionTask extends Model
     protected $guarded = [];
 
     protected $fillable = [
-        'project_id','department_id','estimated_cost','assigned_to_employee_id',
+        'project_id','department_id','estimated_cost','assigned_to_user_id',
         'file_path','due_date','status','notes','assigned_at','received_at',
         'completed_at','closed_at','planned_start_at','planned_end_at',
         'planned_install_at','actual_start_at', 'actual_end_at', 'client_receipt','current_owner_role',
@@ -52,7 +52,12 @@ class ProductionTask extends Model
 
     public function employee(): BelongsTo
     {
-        return $this->belongsTo(Employee::class, 'assigned_to_employee_id');
+        return $this->belongsTo(Employee::class, 'assigned_to_user_id');
+    }
+
+    public function assignedUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_to_user_id');
     }
 
     public function holds(): HasMany

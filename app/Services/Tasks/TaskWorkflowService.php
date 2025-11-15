@@ -702,58 +702,33 @@ class TaskWorkflowService
     {
         $dept = $task->department;
 
-        if (! $dept) {
+        if (! $dept || ! $dept->managerUser) {
             return null;
         }
 
-        if (method_exists($dept, 'managerUser') && $dept->managerUser) {
-            $manager = $dept->managerUser;
-
-            if (property_exists($manager, 'user_id') && $manager->user_id) {
-                return $manager->user_id;
-            }
-
-            if ($manager instanceof User && $manager->id) {
-                return $manager->id;
-            }
-        }
-
-        if (! empty($dept->manager_id)) {
-            return (int) $dept->manager_id;
-        }
-
-        return null;
+        return (int) $dept->managerUser->id;
     }
 
-    /**
-     * مدير التركيب = نفس مدير القسم.
-     */
+
     protected function resolveInstallationManagerUserId(ProductionTask $task): ?int
     {
         return $this->resolveDeptManagerUserId($task);
     }
 
-    /**
-     * مدير المشتريات: أول مستخدم له دور purchasing_manager.
-     */
+
     protected function resolvePurchasingManagerUserId(): ?int
     {
-        $user = User::role('purchasing_manager')->first();
-
-        return $user?->id;
+        return User::role('purchasing_manager')->value('id');
     }
 
     protected function resolveFactoryManagerUserId(): ?int
     {
-        $u = User::role('factory_manager')->first();
-        return $u?->id;
+        return User::role('factory_manager')->value('id');
     }
 
     protected function resolveQualityManagerUserId(): ?int
     {
-        $user = User::role('quality_manager')->first();
-
-        return $user?->id;
+        return User::role('quality_manager')->value('id');
     }
 
     protected function log(ProductionTask $task, string $type, array $data = []): void

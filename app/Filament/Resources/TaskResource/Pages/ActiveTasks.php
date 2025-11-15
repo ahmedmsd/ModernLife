@@ -28,30 +28,30 @@ class ActiveTasks extends Page implements HasTable
     protected function isAdminLike(): bool
     {
         $u = Auth::user();
-        return (bool)$u?->hasAnyRole(['admin', 'super-admin', 'factory_manager']);
+        return (bool) $u?->hasAnyRole(['admin', 'super-admin', 'factory_manager']);
     }
 
     protected function isDepartmentManager(): bool
     {
         $u = Auth::user();
-        return (bool)$u?->hasRole('department_manager');
+        return (bool) $u?->hasRole('department_manager');
     }
 
     protected function isShowroomManager(): bool
     {
         $u = Auth::user();
-        return (bool)$u?->hasRole('showroom_manager');
+        return (bool) $u?->hasRole('showroom_manager');
     }
 
     protected function isQualityManager(): bool
     {
         $u = Auth::user();
-        return (bool)$u?->hasRole('quality_manager');
+        return (bool) $u?->hasRole('quality_manager');
     }
 
     public static function canAccess(array $parameters = []): bool
     {
-        if (!Auth::check()) return false;
+        if (! Auth::check()) return false;
         $u = Auth::user();
         if ($u->hasAnyRole(['sales', 'purchasing'])) return false;
         return true;
@@ -73,8 +73,6 @@ class ActiveTasks extends Page implements HasTable
                     ->where('manager_id', $empId)
                     ->pluck('id')
                     ->all();
-
-
             }
         }
 
@@ -93,7 +91,7 @@ class ActiveTasks extends Page implements HasTable
                         'project.productionRequest:id,showroom_id',
                         'project.productionRequest.showroom:id,name',
                         'department:dept_id,dept_name',
-                        'employee:employee_id,employee_name',
+                        'assignedUser:id,name',
                     ])
                     ->latest('created_at');
 
@@ -109,7 +107,7 @@ class ActiveTasks extends Page implements HasTable
 
                 // 3) Showroom Manager => مهام المعارض التي يديرها فعلاً
                 if ($this->isShowroomManager()) {
-                    if (!empty($managedShowroomIds)) {
+                    if (! empty($managedShowroomIds)) {
                         return $q->whereHas('project.productionRequest', function (Builder $w) use ($managedShowroomIds) {
                             $w->whereIn('showroom_id', $managedShowroomIds);
                         });
@@ -134,11 +132,17 @@ class ActiveTasks extends Page implements HasTable
                 Tables\Columns\TextColumn::make('project.productionRequest.showroom.name')
                     ->label('المعرض'),
                 Tables\Columns\TextColumn::make('department.dept_name')->label('القسم')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('employee.employee_name')->label('المسؤول')->searchable()->sortable(),
+
+                // ⬅️ عرض المسؤول من المستخدم لا الموظف
+                Tables\Columns\TextColumn::make('assignedUser.name')
+                    ->label('المسؤول')
+                    ->searchable()
+                    ->sortable(),
+
                 Tables\Columns\TextColumn::make('status')
                     ->label('الحالة')->badge()
-                    ->formatStateUsing(fn($state) => TaskStatus::fromScalar($state)?->ar() ?? '—')
-                    ->color(fn($state) => TaskStatus::fromScalar($state)?->color() ?? 'gray'),
+                    ->formatStateUsing(fn ($state) => TaskStatus::fromScalar($state)?->ar() ?? '—')
+                    ->color(fn ($state) => TaskStatus::fromScalar($state)?->color() ?? 'gray'),
                 Tables\Columns\TextColumn::make('due_date')->label('تاريخ التسليم')->date()->sortable()->placeholder('—'),
                 Tables\Columns\TextColumn::make('created_at')->label('أُنشئت')->since()->sortable(),
             ])
@@ -146,40 +150,43 @@ class ActiveTasks extends Page implements HasTable
                 Tables\Filters\SelectFilter::make('status')
                     ->label('الحالة')
                     ->options([
-                        'pending' => 'قيد الإنشاء',
-                        'assigned' => 'مُسندة',
-                        'acknowledged' => 'تأكيد الاستلام',
-                        'in_progress' => 'قيد التنفيذ',
-                        'blocked' => 'متوقفة',
-                        'under_review' => 'قيد المراجعة',
-                        'rework' => 'إعادة عمل',
+                        'pending'       => 'قيد الإنشاء',
+                        'assigned'      => 'مُسندة',
+                        'acknowledged'  => 'تأكيد الاستلام',
+                        'in_progress'   => 'قيد التنفيذ',
+                        'blocked'       => 'متوقفة',
+                        'under_review'  => 'قيد المراجعة',
+                        'rework'        => 'إعادة عمل',
                     ]),
                 Tables\Filters\SelectFilter::make('department_id')
                     ->label('القسم')
                     ->relationship('department', 'dept_name')
-                    ->visible(!$this->isDepartmentManager()),
-                Tables\Filters\SelectFilter::make('assigned_to_employee_id')
+                    ->visible(! $this->isDepartmentManager()),
+
+                Tables\Filters\SelectFilter::make('assigned_to_user_id')
                     ->label('المسؤول')
-                    ->relationship('employee', 'employee_name')
+                    ->relationship('assignedUser', 'name')
                     ->searchable()
-                    ->visible(!$this->isDepartmentManager() && !$this->isShowroomManager()),
-                // فلتر المعرض اختياري (يظهر لغير مديري المعارض):
+                    ->visible(! $this->isDepartmentManager() && ! $this->isShowroomManager()),
+
+                // فلتر المعرض
                 Filter::make('showroom_id')
                     ->label('المعرض')
                     ->form([
                         Forms\Components\Select::make('showroom_id')
                             ->label('اختر المعرض')
-                            ->options(fn() => Showroom::query()->orderBy('name')->pluck('name', 'id')->all())
+                            ->options(fn () => Showroom::query()->orderBy('name')->pluck('name', 'id')->all())
                             ->searchable(),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         $sid = $data['showroom_id'] ?? null;
-                        if (!$sid) return $query;
+                        if (! $sid) return $query;
                         return $query->whereHas('project.productionRequest', function (Builder $w) use ($sid) {
                             $w->where('showroom_id', $sid);
                         });
                     })
-                    ->visible(!$this->isShowroomManager()),
+                    ->visible(! $this->isShowroomManager()),
+
                 Filter::make('period')
                     ->label('الفترة (تاريخ الإنشاء)')
                     ->form([
@@ -188,16 +195,16 @@ class ActiveTasks extends Page implements HasTable
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         $from = $data['from'] ?? null;
-                        $to = $data['to'] ?? null;
+                        $to   = $data['to']   ?? null;
                         return $query
-                            ->when($from, fn(Builder $q) => $q->whereDate('created_at', '>=', $from))
-                            ->when($to, fn(Builder $q) => $q->whereDate('created_at', '<=', $to));
+                            ->when($from, fn (Builder $q) => $q->whereDate('created_at', '>=', $from))
+                            ->when($to,   fn (Builder $q) => $q->whereDate('created_at', '<=', $to));
                     }),
             ])
-            ->recordUrl(fn(ProductionTask $record) => TaskResource::getUrl('view', ['record' => $record]))
+            ->recordUrl(fn (ProductionTask $record) => TaskResource::getUrl('view', ['record' => $record]))
             ->actions([
                 Tables\Actions\Action::make('view')->label('عرض')->icon('heroicon-o-eye')
-                    ->url(fn(ProductionTask $record) => TaskResource::getUrl('view', ['record' => $record])),
+                    ->url(fn (ProductionTask $record) => TaskResource::getUrl('view', ['record' => $record])),
             ])
             ->paginated([25, 50, 100])
             ->emptyStateHeading('لا توجد مهام جارية حالياً');

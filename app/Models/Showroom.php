@@ -22,6 +22,6 @@ class Showroom extends Model
     }
     public function manager(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Employee::class, 'manager_id' ,'employee_id');
+        return $this->belongsTo(\App\Models\User::class, 'manager_id' ,'id');
     }
 }
