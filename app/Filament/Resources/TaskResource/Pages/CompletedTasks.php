@@ -68,11 +68,10 @@ class CompletedTasks extends Page implements HasTable
         $managedShowroomIds = [];
 
         if ($u instanceof User) {
-            // ما زلنا نستخدم employee فقط لاستخراج قسم المستخدم والمعارض التي يديرها
             $u->loadMissing('employee');
             $deptId = $u->employee?->department_id;
 
-            $empId = $u->employee?->employee_id;
+            $empId = $u->id;
             if ($empId) {
                 $managedShowroomIds = Showroom::query()
                     ->where('manager_id', $empId)

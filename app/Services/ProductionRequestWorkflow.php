@@ -389,7 +389,7 @@ class ProductionRequestWorkflow
                     ]
                 );
 
-                $dept = $task->department()->with(['manager.user'])->first();
+                $dept = $task->department()->with(['managerUser'])->first();
                 $notifyUser = $dept?->manager?->user;
 
                 if ($notifyUser) {
@@ -471,9 +471,9 @@ class ProductionRequestWorkflow
         }
 
         $byRelation = match ($role) {
-            'showroom_manager'      => optional($pr->showroom?->manager?->user)->id,
-            'factory_manager'       => optional($pr->factory?->manager?->user)->id ?? null,
-            'purchasing_manager'    => optional($pr->purchasingDepartment?->manager?->user)->id ?? null,
+            'showroom_manager'      => optional($pr->showroom?->manager)->id,
+            'factory_manager'       => optional($pr->factory?->manager)->id ?? null,
+            'purchasing_manager'    => optional($pr->purchasingDepartment?->manager)->id ?? null,
             'department_manager'    => null,
             'quality_manager'       => null,
             'installation_manager'  => null,

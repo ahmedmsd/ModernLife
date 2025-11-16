@@ -178,7 +178,7 @@ class TaskNotifier
     }
     public function resolveShowroomManagerUsers(ProductionTask $task): Collection
     {
-        $task->loadMissing('project.productionRequest.showroom.manager.user');
+        $task->loadMissing('project.productionRequest.showroom.manager');
 
         $employee = optional(
             optional(

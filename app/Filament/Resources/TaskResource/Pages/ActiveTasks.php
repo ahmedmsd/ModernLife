@@ -67,7 +67,7 @@ class ActiveTasks extends Page implements HasTable
             $u->loadMissing('employee');
             $deptId = $u->employee?->department_id;
 
-            $empId = $u->employee?->employee_id;
+            $empId = $u->id;
             if ($empId) {
                 $managedShowroomIds = Showroom::query()
                     ->where('manager_id', $empId)

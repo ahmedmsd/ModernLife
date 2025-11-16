@@ -30,7 +30,7 @@ class ShowroomManagerNeedsResponse extends TableWidget
 
         if ($u instanceof User) {
             $u->loadMissing('employee');
-            $empId = $u->employee?->employee_id;
+            $empId = $u->id;
 
             if ($empId) {
                 $managedShowroomIds = Showroom::query()

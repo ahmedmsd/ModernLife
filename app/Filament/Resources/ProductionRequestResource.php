@@ -58,7 +58,7 @@ class ProductionRequestResource extends Resource
         }
 
         if ($user->hasRole('showroom_manager')) {
-            $employeeId = $user->employee?->getKey();
+            $employeeId = $user->id;
 
             if (! $employeeId) {
                 return $q->whereRaw('1 = 0');

@@ -12,8 +12,8 @@ class NotifyProductionPhaseStakeholders
     public function handle(ProductionRequestPhaseEvent $event): void
     {
         $pr = $event->pr->loadMissing([
-            'showroom.manager.user',
-            'project.tasks.department.manager.user',
+            'showroom.manager',
+            'project.tasks.department.managerUser',
         ]);
 
         $recipients = $this->resolveRecipients($pr, $event->type, $event->context);
@@ -48,7 +48,7 @@ class NotifyProductionPhaseStakeholders
 
         if ($role === 'showroom_manager') {
             if ($pr->showroom_id) {
-                $pr->loadMissing('showroom.manager.user');
+                $pr->loadMissing('showroom.manager');
                 $managerUser = optional(optional($pr->showroom)->manager)->user;
 
                 if ($managerUser) {

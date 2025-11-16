@@ -41,7 +41,7 @@ class TaskResource extends Resource
 
         if (! $isSuper) {
             $isShowroomManager = $user && method_exists($user, 'hasRole') && $user->hasRole('showroom_manager');
-            $employeeId = $user?->employee?->getKey();
+            $employeeId = $user?->id;
 
             if ($isShowroomManager) {
                 if (! $employeeId) {

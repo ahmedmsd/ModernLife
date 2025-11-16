@@ -106,8 +106,8 @@ class ViewTask extends ViewRecord
                     ]);
 
                     $this->record->loadMissing([
-                        'department.manager.user',
-                        'project.productionRequest.showroom.manager.user',
+                        'department.managerUser',
+                        'project.productionRequest.showroom.manager',
                     ]);
 
                     $taskUrl = \App\Filament\Resources\TaskResource::getUrl('view', ['record' => $this->record]);
