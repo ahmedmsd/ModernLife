@@ -187,9 +187,9 @@ class ViewTask extends ViewRecord
 
                             return User::query()
                                 ->role('department_manager')
-                                ->when($deptId, function ($q) use ($deptId) {
-                                    $q->whereHas('employee', fn ($q2) => $q2->where('department_id', $deptId));
-                                })
+//                                ->when($deptId, function ($q) use ($deptId) {
+//                                    $q->whereHas('employee', fn ($q2) => $q2->where('department_id', $deptId));
+//                                })
                                 ->orderBy('name')
                                 ->pluck('name', 'id')
                                 ->toArray();
@@ -201,7 +201,6 @@ class ViewTask extends ViewRecord
                 ])
                 ->requiresConfirmation()
                 ->action(function (array $data) {
-                    // يفترض أن دالة الـ workflow تم تعديلها لتستقبل user_id
                     $this->workflow()->assignToDeptManager(
                         $this->record,
                         (int) $data['user_id'],

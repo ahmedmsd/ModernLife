@@ -162,7 +162,7 @@ class TaskPageHelper
         }
 
         $status = $this->statusVal($task);
-        if (! in_array($status, ['pending','waiting_production', 'rework'], true)) {
+        if (! in_array($status, ['pending', 'rework'], true)) {
             return false;
         }
 
@@ -210,7 +210,7 @@ class TaskPageHelper
         }
 
         $status = $this->statusVal($task);
-        if (! in_array($status, ['waiting_production', 'rework'], true)) {
+        if (! in_array($status, ['pending', 'rework'], true)) {
             return false;
         }
 
@@ -257,7 +257,7 @@ class TaskPageHelper
         }
 
         $status = $this->statusVal($task);
-        if (! in_array($status, ['waiting_production', 'rework'], true)) {
+        if (! in_array($status, ['waiting_production', 'rework','received'], true)) {
             return false;
         }
 
@@ -295,7 +295,6 @@ class TaskPageHelper
             return false;
         }
 
-        // لا يوجد شرط إضافي من اللوج، فقط أن الطلب مفتوح تحت المشتريات
         return true;
     }
 
@@ -309,12 +308,22 @@ class TaskPageHelper
             return false;
         }
 
-        if (! $this->hasOpenMaterialsRequest($task)) {
+        $status = $this->statusVal($task);
+        $allowedStatuses = ['materials_wait', 'materials_prep','materials_done', 'waiting_production', 'rework'];
+        if (! in_array($status, $allowedStatuses, true)) {
+            return false;
+        }
+
+        $hasOpenMr = $this->hasOpenMaterialsRequest($task);
+        $materialsState = $task->materials_state ?? 'none';
+
+        if (! $hasOpenMr && $materialsState !== 'full' && $materialsState !== 'partial_allow') {
             return false;
         }
 
         return true;
     }
+
 
     public function canStartProduction(ProductionTask $task, ?Authenticatable $user): bool
     {

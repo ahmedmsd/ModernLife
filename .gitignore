@@ -3,3 +3,8 @@ node_modules
 .env
 .env
 .env
+.env
+production_tasks.sql
+taskFiles.sql
+u499459033_modernlife.sql
+aelsayed_modernlife.sql
