@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets\Department;
 
 use App\Filament\Resources\TaskResource;
+use App\Models\Department;
 use App\Models\ProductionTask;
 use App\Models\User;
 use Filament\Tables;
@@ -25,11 +26,18 @@ class DepartmentManagerCurrentTasks extends TableWidget
     public function table(Table $table): Table
     {
         $u = Auth::user();
-        $deptId = null;
-
+        $managedDeptIds = [];
         if ($u instanceof User) {
+            $managedDeptIds = Department::query()
+                ->where('manager_id', $u->id)
+                ->pluck('dept_id')
+                ->toArray();
+
             $u->loadMissing('employee');
-            $deptId = $u->employee?->department_id;
+            $employeeDeptId = $u->employee?->department_id;
+            if ($employeeDeptId && ! in_array($employeeDeptId, $managedDeptIds, true)) {
+                $managedDeptIds[] = $employeeDeptId;
+            }
         }
 
         $activeStatuses = [
@@ -38,22 +46,22 @@ class DepartmentManagerCurrentTasks extends TableWidget
             'waiting_production', 'under_review', 'approved', 'rejected', 'blocked',
         ];
 
-        return $table
-            ->query(
-                ProductionTask::query()
-                    ->with([
-                        'project:id,project_name,production_request_id',
-                        'project.productionRequest:id,showroom_id',
-                        'project.productionRequest.showroom:id,name',
-                        'department:dept_id,dept_name',
-                    ])
-                    ->when($deptId,
-                        fn (Builder $q) => $q->where('department_id', $deptId),
-                        fn (Builder $q) => $q->whereRaw('1=0')
-                    )
-                    ->whereIn('status', $activeStatuses)
-                    ->latest('created_at')
+        $query = ProductionTask::query()
+            ->with([
+                'project:id,project_name,production_request_id',
+                'project.productionRequest:id,showroom_id',
+                'project.productionRequest.showroom:id,name',
+                'department:dept_id,dept_name',
+            ])
+            ->when(! empty($managedDeptIds),
+                fn (Builder $q) => $q->whereIn('department_id', $managedDeptIds),
+                fn (Builder $q) => $q->whereRaw('1=0')
             )
+            ->whereIn('status', $activeStatuses)
+            ->latest('created_at');
+
+        return $table
+            ->query($query)
             ->columns([
                 Tables\Columns\TextColumn::make('id')->label('#')->sortable(),
                 Tables\Columns\TextColumn::make('project.project_name')->label('المشروع')->searchable()->wrap(),

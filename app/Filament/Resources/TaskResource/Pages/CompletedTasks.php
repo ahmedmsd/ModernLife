@@ -7,6 +7,7 @@ use App\Filament\Resources\TaskResource;
 use App\Models\ProductionTask;
 use App\Models\Showroom;
 use App\Models\User;
+use App\Models\Department;
 use Filament\Resources\Pages\Page;
 use Filament\Tables;
 use Filament\Tables\Contracts\HasTable;
@@ -66,6 +67,7 @@ class CompletedTasks extends Page implements HasTable
         $u = Auth::user();
         $deptId = null;
         $managedShowroomIds = [];
+        $managedDeptIds = [];
 
         if ($u instanceof User) {
             $u->loadMissing('employee');
@@ -78,6 +80,17 @@ class CompletedTasks extends Page implements HasTable
                     ->pluck('id')
                     ->all();
             }
+
+            // أقسام يُديرها المستخدم (قد تكون أكثر من قسم)
+            $managedDeptIds = Department::query()
+                ->where('manager_id', $u->id)
+                ->pluck('dept_id')
+                ->toArray();
+
+            // fallback: أضف قسم الموظف إذا لم يكن للمستخدم أقسام مُدارة أصلاً
+            if (empty($managedDeptIds) && $deptId) {
+                $managedDeptIds[] = $deptId;
+            }
         }
 
         return $table
@@ -87,7 +100,7 @@ class CompletedTasks extends Page implements HasTable
                     : ($this->isShowroomManager() ? 'مهام المعارض التي أديرها (مكتملة)'
                         : ($this->isDepartmentManager() ? 'مهام قسمي المكتملة' : 'المهام المكتملة')))
             )
-            ->query(function () use ($deptId, $managedShowroomIds): Builder {
+            ->query(function () use ($managedDeptIds, $managedShowroomIds): Builder {
                 $q = ProductionTask::query()
                     ->whereIn('status', ['completed', 'closed'])
                     ->with([
@@ -119,11 +132,12 @@ class CompletedTasks extends Page implements HasTable
                     return $q->whereRaw('1=0'); // لا يدير أي معرض
                 }
 
-                // 4) Department Manager => قسمه فقط
+                // 4) Department Manager => كل الأقسام التي يديرها المستخدم
                 if ($this->isDepartmentManager()) {
-                    return $deptId
-                        ? $q->where('department_id', $deptId)
-                        : $q->whereRaw('1=0');
+                    if (! empty($managedDeptIds)) {
+                        return $q->whereIn('department_id', $managedDeptIds);
+                    }
+                    return $q->whereRaw('1=0');
                 }
 
                 // أدوار أخرى: لا شيء

@@ -6,7 +6,7 @@ enum TaskStatus: string
 {
     case Pending             = 'pending';
     case Assigned            = 'assigned';
-    case Acknowledged        = 'acknowledged';        // تأكيد الاستلام
+    case Acknowledged        = 'acknowledged';
     case Received            = 'received';
     case InProgress          = 'in_progress';
 

@@ -7,6 +7,7 @@ use App\Filament\Resources\TaskResource;
 use App\Models\ProductionTask;
 use App\Models\Showroom;
 use App\Models\User;
+use App\Models\Department;
 use Filament\Resources\Pages\Page;
 use Filament\Tables;
 use Filament\Tables\Contracts\HasTable;
@@ -62,6 +63,7 @@ class ActiveTasks extends Page implements HasTable
         $u = Auth::user();
         $deptId = null;
         $managedShowroomIds = [];
+        $managedDeptIds = [];
 
         if ($u instanceof User) {
             $u->loadMissing('employee');
@@ -74,6 +76,16 @@ class ActiveTasks extends Page implements HasTable
                     ->pluck('id')
                     ->all();
             }
+
+            $managedDeptIds = Department::query()
+                ->where('manager_id', $u->id)
+                ->pluck('dept_id')
+                ->toArray();
+
+            if (empty($managedDeptIds) && $deptId) {
+                $managedDeptIds[] = $deptId;
+            }
+            // =======================================================
         }
 
         return $table
@@ -83,7 +95,13 @@ class ActiveTasks extends Page implements HasTable
                     : ($this->isShowroomManager() ? 'مهام المعرض الجارية'
                         : ($this->isDepartmentManager() ? 'مهام قسمي الجارية' : 'المهام الجارية')))
             )
-            ->query(function () use ($deptId, $managedShowroomIds): Builder {
+            ->query(function () use ($managedDeptIds, $managedShowroomIds): Builder {
+                $activeStatuses = [
+                    'pending', 'assigned', 'received', 'in_progress',
+                    'materials_wait', 'materials_prep', 'materials_done',
+                    'waiting_production', 'under_review', 'approved', 'rejected', 'blocked',
+                ];
+
                 $q = ProductionTask::query()
                     ->whereNotIn('status', ['completed', 'closed', 'cancelled'])
                     ->with([
@@ -115,14 +133,14 @@ class ActiveTasks extends Page implements HasTable
                     return $q->whereRaw('1=0'); // لا يدير أي معرض
                 }
 
-                // 4) Department Manager => قسمه فقط
+                // 4) Department Manager => كل الأقسام التي يديرها المستخدم
                 if ($this->isDepartmentManager()) {
-                    return $deptId
-                        ? $q->where('department_id', $deptId)
-                        : $q->whereRaw('1=0');
+                    if (! empty($managedDeptIds)) {
+                        return $q->whereIn('department_id', $managedDeptIds);
+                    }
+                    return $q->whereRaw('1=0');
                 }
 
-                // أدوار أخرى: لا شيء
                 return $q->whereRaw('1=0');
             })
             ->defaultSort('created_at', 'desc')
@@ -133,7 +151,6 @@ class ActiveTasks extends Page implements HasTable
                     ->label('المعرض'),
                 Tables\Columns\TextColumn::make('department.dept_name')->label('القسم')->searchable()->sortable(),
 
-                // ⬅️ عرض المسؤول من المستخدم لا الموظف
                 Tables\Columns\TextColumn::make('assignedUser.name')
                     ->label('المسؤول')
                     ->searchable()
@@ -169,7 +186,6 @@ class ActiveTasks extends Page implements HasTable
                     ->searchable()
                     ->visible(! $this->isDepartmentManager() && ! $this->isShowroomManager()),
 
-                // فلتر المعرض
                 Filter::make('showroom_id')
                     ->label('المعرض')
                     ->form([

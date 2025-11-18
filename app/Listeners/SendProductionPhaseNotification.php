@@ -1,103 +1,95 @@
 <?php
 
-namespace App\Listeners;
+namespace App\Listeners\ProductionRequest;
 
-use App\Events\ProductionRequestPhaseEvent;
-use App\Enums\ProductionRequestPhase as Phase;
+use App\Events\ProductionRequest\ProductionPhaseChanged;
 use App\Models\User;
-use App\Notifications\ProductionPhaseNotification;
-use Filament\Notifications\Notification as FilamentNotification;
+use App\Services\Notifications\ProductionRequestNotifier;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 
 class SendProductionPhaseNotification
 {
-    public function handle(ProductionRequestPhaseEvent $event): void
-    {
-        $pr      = $event->pr;
-        $context = $event->context ?? [];
-        $type    = (string) $event->type;
+    public function __construct() {}
 
+    public function handle(ProductionPhaseChanged $event): void
+    {
+        $phaseNotification = $event->phaseNotification;
+        $pr = $event->productionRequest;
+        $context = $phaseNotification->getContext() ?? [];
+
+        $recipients = $this->resolveRecipients($pr, $context);
+
+        if ($recipients->isEmpty()) {
+            Log::warning('SendProductionPhaseNotification: no recipients resolved', [
+                'pr_id' => $pr->id,
+                'context' => $context,
+            ]);
+            return;
+        }
+
+        $notifier = app(ProductionRequestNotifier::class);
+
+        $notifier->notifyBatch(
+            recipients: $recipients,
+            pr: $pr,
+            title: $phaseNotification->getTitle(),
+            body: $phaseNotification->getBody(),
+            url: $phaseNotification->getUrl(),
+            event: $phaseNotification->getEvent() ?? 'transition',
+            sendMail: true
+        );
+    }
+
+    private function resolveRecipients($pr, array $context): Collection
+    {
         $recipients = collect();
 
-        // 1) المالك الحالي (مستخدم محدد)
-        $ownerUserId = $context['owner_user_id'] ?? $pr->current_owner_user_id ?? null;
-        if ($ownerUserId) {
-            $user = User::find($ownerUserId);
+        if (!empty($context['owner_user_id']) && (int)$context['owner_user_id'] > 0) {
+            $user = User::find($context['owner_user_id']);
             if ($user) {
                 $recipients->push($user);
             }
         }
 
-        // 2) دور المالك الحالي (مثلاً factory_manager, showroom_manager, sales)
-        $ownerRole = $context['owner_role'] ?? $pr->current_owner_role ?? null;
-        if (is_string($ownerRole) && $ownerRole !== '') {
-            $roleUsers = User::role($ownerRole)->get();
-            $recipients = $recipients->merge($roleUsers);
+        if ($recipients->isNotEmpty()) {
+            return $recipients;
         }
 
-        // 3) منشئ الطلب في حالات الرفض فقط (رفض عام أو رفض المصنع)
-        $creatorId = $context['creator_id'] ?? $pr->created_by ?? null;
-        if ($creatorId && in_array($type, ['rejected', 'factory_rejected'], true)) {
-            $creator = User::find($creatorId);
-            if ($creator) {
-                $recipients->push($creator);
+        if (!empty($context['owner_role'])) {
+            $users = User::role($context['owner_role'])->get();
+            if ($users->count()) {
+                $recipients = $recipients->merge($users);
             }
         }
 
-        // 4) تنبيه المبيعات عند قرار مدير المعرض (اعتماد أو رفض)
-        // قرار مدير المعرض = المرحلة ShowroomReview
-        $from      = $context['from'] ?? [];
-        $to        = $context['to'] ?? [];
-        $fromPhase = $from['phase'] ?? null;
-        $toPhase   = $to['phase'] ?? null;
-        $phase     = $context['phase'] ?? null;
+        if ($recipients->isNotEmpty()) {
+            return $recipients;
+        }
 
-        // حالة الاعتماد: انتقال داخل نفس المرحلة ShowroomReview من حالة إلى حالة Approved
-        $isShowroomApproval = $type === 'transition'
-            && $fromPhase === Phase::ShowroomReview->value
-            && $toPhase === Phase::ShowroomReview->value;
-
-        // حالة الرفض: حدث rejected والـ phase هي ShowroomReview
-        $isShowroomRejection = $type === 'rejected'
-            && $phase === Phase::ShowroomReview->value;
-
-        if ($isShowroomApproval || $isShowroomRejection) {
-            // المبيعات = من أنشأ الطلب (أو من قدّمه)
-            $salesId = $pr->created_by ?? $pr->submitted_by ?? null;
-            if ($salesId) {
-                $salesUser = User::find($salesId);
-                if ($salesUser) {
-                    $recipients->push($salesUser);
-                }
+        if ($pr->current_owner_user_id && $pr->current_owner_user_id > 0) {
+            $u = User::find($pr->current_owner_user_id);
+            if ($u) {
+                $recipients->push($u);
             }
         }
 
-        // 5) استبعاد منفّذ الحركة (إن وجد) + ترتيب القائمة
-        $causerId = $context['causer_id'] ?? auth()->id();
-
-        $recipients = $recipients
-            ->filter(fn ($user) => $user && $user->id)
-            ->unique('id');
-
-        if ($causerId) {
-            $recipients = $recipients->reject(fn ($user) => $user->id === $causerId);
+        if ($pr->current_owner_role) {
+            $us = User::role($pr->current_owner_role)->get();
+            if ($us->count()) {
+                $recipients = $recipients->merge($us);
+            }
         }
 
-        if ($recipients->isEmpty()) {
-            return;
+        if ($recipients->isNotEmpty()) {
+            return $recipients;
         }
 
-        $phaseNotification = new ProductionPhaseNotification(
-            prId: $pr->id,
-            event: $type,
-            context: $context,
-        );
+        $creator = User::find($pr->created_by);
+        if ($creator) {
+            $recipients->push($creator);
+        }
 
-        FilamentNotification::make()
-            ->title($phaseNotification->getTitle())
-            ->body($phaseNotification->getBody())
-            ->icon('heroicon-o-clipboard-document-check')
-            ->color($phaseNotification->getColor())
-//            ->url($phaseNotification->getUrl())
-            ->sendToDatabase($recipients);
+        return $recipients->unique('id');
     }
 }

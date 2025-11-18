@@ -39,6 +39,17 @@ class MainStats extends BaseWidget
             $deptId     = $u->employee?->department_id;
         }
 
+        // أقسام يديرها المستخدم (قد تكون أكثر من قسم)
+        $managedDeptIds = Department::query()
+            ->where('manager_id', $u->id)
+            ->pluck('dept_id')
+            ->toArray();
+
+        // fallback: أضف قسم الموظف إن لم يكن للمستخدم أقسام مُدارة أصلاً
+        if (empty($managedDeptIds) && $deptId) {
+            $managedDeptIds[] = $deptId;
+        }
+
         // معارض يديرها هذا الموظف: showrooms.manager_id = employee_id
         $managedShowroomIds = [];
         if ($employeeId) {
@@ -48,7 +59,7 @@ class MainStats extends BaseWidget
                 ->all();
         }
 
-        // القوائم المرجعية
+        // قوائم الحالات — سهل تعديلها إذا اختلفت في DB
         $terminalReqStatuses = ['completed','cancelled','rejected','approved_final','on_hold'];
         $activeTaskStatuses  = [
             'pending','assigned','received','under_review','approved','rejected',
@@ -59,40 +70,58 @@ class MainStats extends BaseWidget
 
         $stats = [];
 
-        /* =================== بطاقات شخصية لكل مستخدم =================== */
+        /*
+         * ------------- بطاقات عامة للمستخدم -------------
+         */
 
-        // طلباتي النشطة
-        $myRequests = ProductionRequest::query()
-            ->where(fn($q) => $q->where('created_by', $uid)->orWhere('current_owner_user_id', $uid))
-            ->whereNotIn('phase_status', $terminalReqStatuses)
-            ->count();
+        // استخدم cache قصير للطلبات المشتركة ثقيلة الحوسبة
+        $myRequests = cache()->remember("user:{$uid}:myRequests", 60, function() use ($uid, $terminalReqStatuses) {
+            return ProductionRequest::query()
+                ->where(fn($q) => $q->where('created_by', $uid)->orWhere('current_owner_user_id', $uid))
+                ->whereNotIn('phase_status', $terminalReqStatuses)
+                ->count();
+        });
 
-        // مهامي الحالية
-        $myTasks = ProductionTask::query()
-            ->where('current_owner_user_id', $uid)
-            ->whereIn('status', $activeTaskStatuses)
-            ->count();
+        $myTasks = cache()->remember("user:{$uid}:myTasks", 30, function() use ($uid, $activeTaskStatuses) {
+            return ProductionTask::query()
+                ->where('current_owner_user_id', $uid)
+                ->whereIn('status', $activeTaskStatuses)
+                ->count();
+        });
 
-        // مهامي المتأخرة
-        $myOverdue = ProductionTask::query()
-            ->where('current_owner_user_id', $uid)
-            ->whereIn('status', $activeTaskStatuses)
-            ->whereNotNull('due_date')
-            ->where('due_date', '<', $now)
-            ->count();
+        $myOverdue = cache()->remember("user:{$uid}:myOverdue", 30, function() use ($uid, $activeTaskStatuses, $now) {
+            return ProductionTask::query()
+                ->where('current_owner_user_id', $uid)
+                ->whereIn('status', $activeTaskStatuses)
+                ->whereNotNull('due_date')
+                ->where('due_date', '<', $now)
+                ->count();
+        });
 
-        // مهامي المكتملة
-        $myCompleted = ProductionTask::query()
-            ->where('current_owner_user_id', $uid)
-            ->whereIn('status', ['completed','closed'])
-            ->count();
+        $myCompleted = cache()->remember("user:{$uid}:myCompleted", 60, function() use ($uid) {
+            return ProductionTask::query()
+                ->where('current_owner_user_id', $uid)
+                ->whereIn('status', ['completed','closed'])
+                ->count();
+        });
 
-        // متوسط زمن إنجاز "مهامي"
-        $myAvgMins = (int) (ProductionTask::query()
-            ->where('current_owner_user_id', $uid)
-            ->whereNotNull('completed_at')
-            ->selectRaw('AVG(TIMESTAMPDIFF(MINUTE, created_at, completed_at)) as avg_mins')
-            ->value('avg_mins') ?? 0);
+        $myAvgMins = (int) cache()->remember("user:{$uid}:myAvgMins", 120, function() use ($uid) {
+            return (int) (ProductionTask::query()
+                ->where('current_owner_user_id', $uid)
+                ->whereNotNull('completed_at')
+                ->selectRaw('AVG(TIMESTAMPDIFF(MINUTE, created_at, completed_at)) as avg_mins')
+                ->value('avg_mins') ?? 0);
+        });
+
+        // متوسط زمن الاستجابة (time-to-ack) للمهمات التي استُدعي فيها ارسال/استلام
+        $myAvgTimeToAck = (int) cache()->remember("user:{$uid}:time_to_ack", 120, function() use ($uid) {
+            return (int) (ProductionTask::query()
+                ->where('current_owner_user_id', $uid)
+                ->whereNotNull('sent_to_owner_at')
+                ->whereNotNull('received_by_owner_at')
+                ->selectRaw('AVG(TIMESTAMPDIFF(MINUTE, sent_to_owner_at, received_by_owner_at)) as avg_mins')
+                ->value('avg_mins') ?? 0);
+        });
 
         $stats[] = Stat::make('طلباتي النشطة', $this->nf($myRequests))
             ->icon('heroicon-o-clipboard-document-list')->color('primary');
@@ -109,35 +138,54 @@ class MainStats extends BaseWidget
         $stats[] = Stat::make('متوسط زمن إنجاز مهامي', $this->fmtDuration($myAvgMins))
             ->icon('heroicon-o-clock')->color('gray');
 
-        /* =================== department_manager =================== */
+        $stats[] = Stat::make('متوسط استجابة الاستلام (دق)', $this->fmtDuration($myAvgTimeToAck))
+            ->icon('heroicon-o-clock')->color('secondary');
 
+        /*
+         * ------------- Department Manager -------------
+         */
         if ($u?->hasRole('department_manager')) {
-            // مهام القسم الجارية
-            $deptActive = ProductionTask::query()
-                ->when($deptId, fn($q) => $q->where('department_id', $deptId), fn($q) => $q->whereRaw('1=0'))
-                ->whereIn('status', $activeTaskStatuses)
-                ->count();
 
-            // مهام القسم المتأخرة
-            $deptOverdue = ProductionTask::query()
-                ->when($deptId, fn($q) => $q->where('department_id', $deptId), fn($q) => $q->whereRaw('1=0'))
-                ->whereIn('status', $activeTaskStatuses)
-                ->whereNotNull('due_date')
-                ->where('due_date', '<', $now)
-                ->count();
+            // استخدم managedDeptIds (قد يدير أكثر من قسم)
+            $deptIds = $managedDeptIds ?: [];
 
-            // مهام القسم المكتملة
-            $deptCompleted = ProductionTask::query()
-                ->when($deptId, fn($q) => $q->where('department_id', $deptId), fn($q) => $q->whereRaw('1=0'))
-                ->whereIn('status', ['completed','closed'])
-                ->count();
+            $deptScope = ProductionTask::query()
+                ->when(!empty($deptIds), fn($q) => $q->whereIn('department_id', $deptIds), fn($q) => $q->whereRaw('1=0'));
 
-            // متوسط زمن إنجاز مهام القسم
-            $deptAvgMins = (int) (ProductionTask::query()
-                ->when($deptId, fn($q) => $q->where('department_id', $deptId), fn($q) => $q->whereRaw('1=0'))
-                ->whereNotNull('completed_at')
-                ->selectRaw('AVG(TIMESTAMPDIFF(MINUTE, created_at, completed_at)) as avg_mins')
-                ->value('avg_mins') ?? 0);
+            $deptActive = cache()->remember("dept:".md5(implode(',', $deptIds)).":active", 60, function() use ($deptScope, $activeTaskStatuses) {
+                return (clone $deptScope)->whereIn('status', $activeTaskStatuses)->count();
+            });
+
+            $deptOverdue = cache()->remember("dept:".md5(implode(',', $deptIds)).":overdue", 60, function() use ($deptScope, $activeTaskStatuses, $now) {
+                return (clone $deptScope)
+                    ->whereIn('status', $activeTaskStatuses)
+                    ->whereNotNull('due_date')
+                    ->where('due_date', '<', $now)
+                    ->count();
+            });
+
+            $deptCompleted = cache()->remember("dept:".md5(implode(',', $deptIds)).":completed", 120, function() use ($deptScope) {
+                return (clone $deptScope)->whereIn('status', ['completed','closed'])->count();
+            });
+
+            $deptAvgMins = (int) cache()->remember("dept:".md5(implode(',', $deptIds)).":avg", 300, function() use ($deptScope) {
+                return (int) ((clone $deptScope)
+                    ->whereNotNull('completed_at')
+                    ->selectRaw('AVG(TIMESTAMPDIFF(MINUTE, created_at, completed_at)) as avg_mins')
+                    ->value('avg_mins') ?? 0);
+            });
+
+            // نسبة الإنجاز للقسم (completed / total)
+            $deptTotal = cache()->remember("dept:".md5(implode(',', $deptIds)).":total", 120, function() use ($deptScope) {
+                return (clone $deptScope)->count();
+            });
+
+            $deptPercentComplete = $deptTotal > 0 ? round($deptCompleted / $deptTotal * 100) : 0;
+
+            // rework indicators
+            $deptReworkCount = cache()->remember("dept:".md5(implode(',', $deptIds)).":rework_count", 120, function() use ($deptScope) {
+                return (clone $deptScope)->where('rework_cycle', '>', 0)->count();
+            });
 
             $stats[] = Stat::make('مهام القسم (جارية)', $this->nf($deptActive))
                 ->icon('heroicon-o-building-office-2')->color('info');
@@ -148,59 +196,86 @@ class MainStats extends BaseWidget
             $stats[] = Stat::make('مهام القسم (مكتملة)', $this->nf($deptCompleted))
                 ->icon('heroicon-o-check-badge')->color('success');
 
+            $stats[] = Stat::make('نسبة إتمام القسم', $deptPercentComplete . '%')
+                ->icon('heroicon-o-chart-pie')->color('secondary');
+
             $stats[] = Stat::make('متوسط زمن إنجاز القسم', $this->fmtDuration($deptAvgMins))
                 ->icon('heroicon-o-clock')->color('gray');
+
+            $stats[] = Stat::make('مهام القسم في إعادة عمل', $this->nf($deptReworkCount))
+                ->icon('heroicon-o-arrow-uturn-left')->color('warning');
         }
 
-        /* =================== showroom_manager =================== */
-
+        /*
+         * ------------- Showroom Manager -------------
+         */
         if ($u?->hasRole('showroom_manager')) {
-            // الطلبات الجارية للمعارض المُدارة
-            $showroomRequestsActive = ProductionRequest::query()
-                ->whereIn('showroom_id', $managedShowroomIds ?: [-1])
-                ->whereNotIn('phase_status', $terminalReqStatuses)
-                ->count();
 
-            // الطلبات المكتملة/منتهية
-            $showroomRequestsClosed = ProductionRequest::query()
-                ->whereIn('showroom_id', $managedShowroomIds ?: [-1])
-                ->whereIn('phase_status', $terminalReqStatuses)
-                ->count();
+            $srIds = $managedShowroomIds ?: [-1];
 
-            // المهام الجارية للمعارض
-            $showroomTasksActive = ProductionTask::query()
-                ->whereIn('status', $activeTaskStatuses)
-                ->whereHas('project.productionRequest', function (Builder $w) use ($managedShowroomIds) {
-                    $w->whereIn('showroom_id', $managedShowroomIds ?: [-1]);
-                })
-                ->count();
+            $showroomRequestsActive = cache()->remember("sr:".md5(implode(',', $srIds)).":requests_active", 60, function() use ($srIds, $terminalReqStatuses) {
+                return ProductionRequest::query()
+                    ->whereIn('showroom_id', $srIds)
+                    ->whereNotIn('phase_status', $terminalReqStatuses)
+                    ->count();
+            });
 
-            // المهام المتأخرة للمعارض
-            $showroomTasksOverdue = ProductionTask::query()
-                ->whereIn('status', $activeTaskStatuses)
-                ->whereNotNull('due_date')
-                ->where('due_date', '<', $now)
-                ->whereHas('project.productionRequest', function (Builder $w) use ($managedShowroomIds) {
-                    $w->whereIn('showroom_id', $managedShowroomIds ?: [-1]);
-                })
-                ->count();
+            $showroomRequestsClosed = cache()->remember("sr:".md5(implode(',', $srIds)).":requests_closed", 300, function() use ($srIds, $terminalReqStatuses) {
+                return ProductionRequest::query()
+                    ->whereIn('showroom_id', $srIds)
+                    ->whereIn('phase_status', $terminalReqStatuses)
+                    ->count();
+            });
 
-            // المهام المكتملة للمعارض
-            $showroomTasksCompleted = ProductionTask::query()
-                ->whereIn('status', ['completed','closed'])
-                ->whereHas('project.productionRequest', function (Builder $w) use ($managedShowroomIds) {
-                    $w->whereIn('showroom_id', $managedShowroomIds ?: [-1]);
-                })
-                ->count();
+            $showroomTasksActive = cache()->remember("sr:".md5(implode(',', $srIds)).":tasks_active", 60, function() use ($srIds, $activeTaskStatuses) {
+                return ProductionTask::query()
+                    ->whereIn('status', $activeTaskStatuses)
+                    ->whereHas('project.productionRequest', function (Builder $w) use ($srIds) {
+                        $w->whereIn('showroom_id', $srIds);
+                    })
+                    ->count();
+            });
 
-            // متوسط زمن إنجاز مهام المعارض
-            $showroomAvgMins = (int) (ProductionTask::query()
-                ->whereNotNull('completed_at')
-                ->whereHas('project.productionRequest', function (Builder $w) use ($managedShowroomIds) {
-                    $w->whereIn('showroom_id', $managedShowroomIds ?: [-1]);
-                })
-                ->selectRaw('AVG(TIMESTAMPDIFF(MINUTE, created_at, completed_at)) as avg_mins')
-                ->value('avg_mins') ?? 0);
+            $showroomTasksOverdue = cache()->remember("sr:".md5(implode(',', $srIds)).":tasks_overdue", 60, function() use ($srIds, $activeTaskStatuses, $now) {
+                return ProductionTask::query()
+                    ->whereIn('status', $activeTaskStatuses)
+                    ->whereNotNull('due_date')
+                    ->where('due_date', '<', $now)
+                    ->whereHas('project.productionRequest', function (Builder $w) use ($srIds) {
+                        $w->whereIn('showroom_id', $srIds);
+                    })
+                    ->count();
+            });
+
+            $showroomTasksCompleted = cache()->remember("sr:".md5(implode(',', $srIds)).":tasks_completed", 120, function() use ($srIds) {
+                return ProductionTask::query()
+                    ->whereIn('status', ['completed','closed'])
+                    ->whereHas('project.productionRequest', function (Builder $w) use ($srIds) {
+                        $w->whereIn('showroom_id', $srIds);
+                    })
+                    ->count();
+            });
+
+            $showroomAvgMins = (int) cache()->remember("sr:".md5(implode(',', $srIds)).":avg", 300, function() use ($srIds) {
+                return (int) (ProductionTask::query()
+                    ->whereNotNull('completed_at')
+                    ->whereHas('project.productionRequest', function (Builder $w) use ($srIds) {
+                        $w->whereIn('showroom_id', $srIds);
+                    })
+                    ->selectRaw('AVG(TIMESTAMPDIFF(MINUTE, created_at, completed_at)) as avg_mins')
+                    ->value('avg_mins') ?? 0);
+            });
+
+            // completed last 30 days (trend)
+            $showroomCompleted30d = cache()->remember("sr:".md5(implode(',', $srIds)).":completed_30d", 60, function() use ($srIds) {
+                return ProductionTask::query()
+                    ->whereIn('status', ['completed','closed'])
+                    ->whereHas('project.productionRequest', function (Builder $w) use ($srIds) {
+                        $w->whereIn('showroom_id', $srIds);
+                    })
+                    ->where('completed_at', '>=', Carbon::now()->subDays(30))
+                    ->count();
+            });
 
             $stats[] = Stat::make('طلبات المعارض (جارية)', $this->nf($showroomRequestsActive))
                 ->icon('heroicon-o-building-storefront')->color('primary');
@@ -219,63 +294,81 @@ class MainStats extends BaseWidget
 
             $stats[] = Stat::make('متوسط زمن مهام المعارض', $this->fmtDuration($showroomAvgMins))
                 ->icon('heroicon-o-clock')->color('gray');
+
+            $stats[] = Stat::make('إنجازات 30 يوم', $this->nf($showroomCompleted30d))
+                ->icon('heroicon-o-trending-up')->color('secondary');
         }
 
-        /* =================== quality_manager =================== */
-
+        /*
+         * ------------- Quality Manager -------------
+         */
         if ($u?->hasRole('quality_manager')) {
-            // المهام بانتظار الجودة (مالك حالي)
-            $qaPending = ProductionTask::query()
-                ->where('current_owner_role', 'quality_manager')
-                ->whereIn('status', $activeTaskStatuses)
-                ->count();
+            $qaPending = cache()->remember("qa:pending", 30, function() use ($activeTaskStatuses) {
+                return ProductionTask::query()
+                    ->where('current_owner_role', 'quality_manager')
+                    ->whereIn('status', $activeTaskStatuses)
+                    ->count();
+            });
 
-            // المهام المكتملة (بعد الجودة عادةً)
-            $qaCompleted = ProductionTask::query()
-                ->whereIn('status', ['completed','closed'])
-                ->count();
+            $qaCompleted = cache()->remember("qa:completed", 300, function() {
+                return ProductionTask::query()
+                    ->whereIn('status', ['completed','closed'])
+                    ->count();
+            });
 
-            // متوسط زمن الإنجاز العام (يمكن تخصيصه لمرحلة الجودة لاحقًا عبر TaskLog)
-            $qaAvgMins = (int) (ProductionTask::query()
-                ->whereNotNull('completed_at')
-                ->selectRaw('AVG(TIMESTAMPDIFF(MINUTE, created_at, completed_at)) as avg_mins')
-                ->value('avg_mins') ?? 0);
+            $qaAvgMins = (int) cache()->remember("qa:avg", 300, function() {
+                return (int) (ProductionTask::query()
+                    ->whereNotNull('completed_at')
+                    ->selectRaw('AVG(TIMESTAMPDIFF(MINUTE, created_at, completed_at)) as avg_mins')
+                    ->value('avg_mins') ?? 0);
+            });
 
             $stats[] = Stat::make('بانتظار إجراء الجودة', $this->nf($qaPending))
                 ->icon('heroicon-o-shield-check')->color('warning');
 
-            $stats[] = Stat::make('مهام أُنجزت (عامة)', $this->nf($qaCompleted))
+            $stats[] = Stat::make('مهام أُنجزت (عام)', $this->nf($qaCompleted))
                 ->icon('heroicon-o-check-badge')->color('success');
 
             $stats[] = Stat::make('متوسط زمن الإنجاز (عام)', $this->fmtDuration($qaAvgMins))
                 ->icon('heroicon-o-clock')->color('gray');
         }
 
-        /* =================== factory_manager =================== */
-
+        /*
+         * ------------- Factory Manager -------------
+         */
         if ($u?->hasRole('factory_manager')) {
-            $factoryRequestsActive = ProductionRequest::query()
-                ->whereNotIn('phase_status', $terminalReqStatuses)
-                ->count();
+            $factoryRequestsActive = cache()->remember("factory:requests_active", 60, function() use ($terminalReqStatuses) {
+                return ProductionRequest::query()
+                    ->whereNotIn('phase_status', $terminalReqStatuses)
+                    ->count();
+            });
 
-            $factoryTasksActive = ProductionTask::query()
-                ->whereIn('status', $activeTaskStatuses)
-                ->count();
+            $factoryTasksActive = cache()->remember("factory:tasks_active", 60, function() use ($activeTaskStatuses) {
+                return ProductionTask::query()
+                    ->whereIn('status', $activeTaskStatuses)
+                    ->count();
+            });
 
-            $factoryTasksOverdue = ProductionTask::query()
-                ->whereIn('status', $activeTaskStatuses)
-                ->whereNotNull('due_date')
-                ->where('due_date', '<', $now)
-                ->count();
+            $factoryTasksOverdue = cache()->remember("factory:tasks_overdue", 60, function() use ($activeTaskStatuses, $now) {
+                return ProductionTask::query()
+                    ->whereIn('status', $activeTaskStatuses)
+                    ->whereNotNull('due_date')
+                    ->where('due_date', '<', $now)
+                    ->count();
+            });
 
-            $factoryTasksCompleted = ProductionTask::query()
-                ->whereIn('status', ['completed','closed'])
-                ->count();
+            $factoryTasksCompleted = cache()->remember("factory:tasks_completed", 120, function() {
+                return ProductionTask::query()
+                    ->whereIn('status', ['completed','closed'])
+                    ->count();
+            });
 
-            $factoryAvgMins = (int) (ProductionTask::query()
-                ->whereNotNull('completed_at')
-                ->selectRaw('AVG(TIMESTAMPDIFF(MINUTE, created_at, completed_at)) as avg_mins')
-                ->value('avg_mins') ?? 0);
+            $factoryAvgMins = (int) cache()->remember("factory:avg", 300, function() {
+                return (int) (ProductionTask::query()
+                    ->whereNotNull('completed_at')
+                    ->selectRaw('AVG(TIMESTAMPDIFF(MINUTE, created_at, completed_at)) as avg_mins')
+                    ->value('avg_mins') ?? 0);
+            });
 
             $stats[] = Stat::make('طلبات المصنع (جارية)', $this->nf($factoryRequestsActive))
                 ->icon('heroicon-o-document-text')->color('secondary');
@@ -293,20 +386,24 @@ class MainStats extends BaseWidget
                 ->icon('heroicon-o-clock')->color('gray');
         }
 
-        /* =================== purchasing_manager =================== */
-
+        /*
+         * ------------- Purchasing Manager -------------
+         */
         if ($u?->hasRole('purchasing_manager')) {
-            $pendingMaterials = MaterialRequest::query()
-                ->whereIn('status', ['requested','approved'])
-                ->whereNull('provided_at')
-                ->count();
+            $pendingMaterials = cache()->remember("purchasing:pending_mat", 30, function() {
+                return MaterialRequest::query()
+                    ->whereIn('status', ['requested','approved'])
+                    ->whereNull('provided_at')
+                    ->count();
+            });
 
             $stats[] = Stat::make('طلبات خامات معلّقة', $this->nf($pendingMaterials))
                 ->icon('heroicon-o-truck')->color('warning');
         }
 
-        /* =================== admin / super-admin (كلّي) =================== */
-
+        /*
+         * ------------- Admin / Super-admin -------------
+         */
         if ($u?->hasAnyRole(['admin','super-admin'])) {
             $stats[] = Stat::make('الطلبات الكلية', $this->nf(ProductionRequest::count()))
                 ->icon('heroicon-o-document-text')->color('warning');

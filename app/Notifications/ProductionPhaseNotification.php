@@ -32,8 +32,13 @@ class ProductionPhaseNotification extends Notification implements ShouldQueue
 
     public function via($notifiable): array
     {
-        // حاليًا: إشعارات قاعدة البيانات فقط
-        return [];
+        $channels = ['database'];
+
+        if (! empty($notifiable->email)) {
+            $channels[] = 'mail';
+        }
+
+        return $channels;
     }
 
     public function toDatabase($notifiable): array
