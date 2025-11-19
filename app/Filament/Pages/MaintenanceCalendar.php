@@ -108,7 +108,7 @@ class MaintenanceCalendar extends Page
 
         // مدير المعرض: الطلبات التابعة لمعارضه (حسب showroom_id الجديد)
         if ($u->hasRole('showroom_manager')) {
-            $employeeId = $u->employee?->getKey();
+            $employeeId = $u->id;
             if (! $employeeId) {
                 return $q->whereRaw('1=0');
             }
@@ -150,7 +150,7 @@ class MaintenanceCalendar extends Page
         }
 
         if ($u->hasRole('showroom_manager')) {
-            $employeeId = $u->employee?->getKey();
+            $employeeId = $u->id;
             if (! $employeeId) {
                 return false;
             }

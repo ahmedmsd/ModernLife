@@ -6,6 +6,7 @@ use App\Filament\Resources\TaskResource\Pages;
 use App\Filament\Resources\TaskResource\Pages\ActiveTasks;
 use App\Filament\Resources\TaskResource\Pages\CompletedTasks;
 use App\Filament\Resources\TaskResource\Pages\ListTasks;
+use App\Filament\Resources\TaskResource\Pages\ReturnedToFactory;
 use App\Filament\Resources\TaskResource\Pages\ViewTask;
 use App\Models\ProductionTask;
 use App\Support\Tenancy\RoleScope;
@@ -109,6 +110,7 @@ class TaskResource extends Resource
     {
         return [
             'active'    => ActiveTasks::route('/active'),
+            'returned'  => ReturnedToFactory::route('/returned-to-factory'),
             'completed' => CompletedTasks::route('/completed'),
             'index'     => ListTasks::route('/'),
             'view'      => ViewTask::route('/{record}'),

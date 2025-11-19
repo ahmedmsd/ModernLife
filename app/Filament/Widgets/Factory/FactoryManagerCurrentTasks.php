@@ -33,7 +33,7 @@ class FactoryManagerCurrentTasks extends TableWidget
                     ->with(['project','department'])
                     ->where('current_owner_user_id', $uid)
                     ->whereIn('status', [
-                        'in_progress','materials_wait','materials_prep',
+                        'in_progress','materials_wait','materials_prep','returned_to_factory',
                         'materials_done','waiting_production','under_review'
                     ])
                     ->latest('id')

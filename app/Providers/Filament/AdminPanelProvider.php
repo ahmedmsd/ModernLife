@@ -224,6 +224,9 @@ class AdminPanelProvider extends PanelProvider
                                 NavigationItem::make('عرض المهام (الجارية)')
                                     ->url(\App\Filament\Resources\TaskResource::getUrl('active'))
                                     ->visible(fn () => \App\Filament\Resources\TaskResource\Pages\ActiveTasks::canAccess()),
+                                NavigationItem::make('المهام المرفوضة')
+                                    ->url(\App\Filament\Resources\TaskResource::getUrl('returned'))
+                                    ->visible(fn () => \App\Filament\Resources\TaskResource\Pages\ReturnedToFactory::canAccess()),
                                 NavigationItem::make('المهام المُنجزة')
                                     ->url(\App\Filament\Resources\TaskResource::getUrl('completed'))
                                     ->visible(fn () => \App\Filament\Resources\TaskResource\Pages\CompletedTasks::canAccess()),

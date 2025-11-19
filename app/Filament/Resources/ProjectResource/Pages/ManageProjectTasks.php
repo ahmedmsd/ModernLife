@@ -7,12 +7,14 @@ use App\Filament\Resources\ProjectResource;
 use App\Filament\Resources\TaskResource;
 use App\Models\Employee;
 use App\Models\ProductionTask;
+use App\Notifications\TaskSentForConfirmation;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Pages\ManageRelatedRecords;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\URL;
 
 class ManageProjectTasks extends ManageRelatedRecords
 {
@@ -241,8 +243,43 @@ class ManageProjectTasks extends ManageRelatedRecords
 
                 Tables\Actions\EditAction::make()
                     ->modalHeading('تعديل مهمة تصنيع')
-                    ->form($this->getEditFormSchema()),
+                    ->form($this->getEditFormSchema())
+                    ->after(function (ProductionTask $record, array $data): void {
+                        $department = $record->department()->first();
 
+                        $deptManagerUser = null;
+                        if ($department) {
+                            if (method_exists($department, 'managerUser')) {
+                                $deptManagerUser = $department->managerUser()->first();
+                            } elseif (! empty($department->manager_id)) {
+                                $deptManagerUser = \App\Models\User::find($department->manager_id);
+                            }
+                        }
+
+                        $record->forceFill([
+                            'current_owner_role'    => 'department_manager',
+                            'current_owner_user_id' => $deptManagerUser ? $deptManagerUser->id : null,
+                            'sent_to_owner_at'      => now(),
+                            'received_by_owner_at'  => null,
+                        ])->save();
+
+                        $record->logs()->create([
+                            'type'        => 'sent_to_department',
+                            'data'        => [
+                                'to'     => 'department_manager',
+                                'user'   => $deptManagerUser ? $deptManagerUser->id : null,
+                                'source' => 'project_tasks_edit_action',
+                            ],
+                            'note'        => 'تم تعديل المهمة وإرسالها لمدير القسم لتأكيد الاستلام.',
+                            'causer_id'   => auth()->id(),
+                            'happened_at' => now(),
+                        ]);
+
+                        if ($deptManagerUser) {
+                            $url = TaskResource::getUrl('view', ['record' => $record]);
+                            $deptManagerUser->notify(new TaskSentForConfirmation($record, $url));
+                        }
+                    }),
                 Tables\Actions\DeleteAction::make(),
             ])
             ->emptyStateHeading('لا توجد مهام تصنيع')

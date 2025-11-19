@@ -138,6 +138,21 @@ class ProductionPhaseNotification extends Notification implements ShouldQueue
         return rtrim($base, '/') . "/admin/production-requests/{$pr->id}/timeline";
     }
 
+    public function getEvent(): string
+    {
+        return $this->event;
+    }
+
+    public function getContext(): array
+    {
+        return $this->context;
+    }
+
+    public function getPrId(): int
+    {
+        return $this->prId;
+    }
+
     public function getTitle(): string
     {
         return $this->title($this->pr());

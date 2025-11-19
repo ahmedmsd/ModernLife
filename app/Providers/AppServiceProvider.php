@@ -13,6 +13,9 @@ use App\Observers\ProjectObserver;
 use Illuminate\Support\ServiceProvider;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use Illuminate\Database\Events\QueryExecuted;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -20,6 +23,16 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        DB::listen(function (QueryExecuted $query) {
+            Log::info('SQL Query Executed', [
+                'sql' => $query->sql,
+                'bindings' => $query->bindings,
+                'time_ms' => $query->time,
+                'connection' => $query->connectionName,
+            ]);
+        });
+
+
         ProductionRequest::observe(ProductionRequestObserver::class);
         ProductionTask::observe(ProductionTaskObserver::class);
         Project::observe(ProjectObserver::class);
@@ -28,7 +41,7 @@ class AppServiceProvider extends ServiceProvider
         \Carbon\Carbon::setLocale('ar');
 
         // Optional preload
-        Permission::get();
-        Role::get();
+//        Permission::get();
+//        Role::get();
     }
 }

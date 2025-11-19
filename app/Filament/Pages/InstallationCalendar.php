@@ -174,7 +174,7 @@ class InstallationCalendar extends Page
         }
 
         if ($u->hasRole('showroom_manager')) {
-            $employeeId = $u->employee?->getKey();
+            $employeeId = $u->id;
             if (! $employeeId) {
                 return $q->whereRaw('1=0');
             }

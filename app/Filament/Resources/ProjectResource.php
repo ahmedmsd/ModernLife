@@ -42,8 +42,27 @@ class ProjectResource extends Resource
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
         $q = parent::getEloquentQuery()
-            ->with(['productionRequest.showroom', 'client'])
-            ->latest('id');
+            ->select([
+                'projects.id',
+                'projects.project_name',
+                'projects.client_id',
+                'projects.status',
+                'projects.start_date',
+                'projects.end_date',
+                'projects.production_request_id',
+            ])
+            ->with([
+                'client' => function($q) {
+                    $q->select('client_id', 'client_name');
+                },
+                'productionRequest' => function($q) {
+                    $q->select('id', 'showroom_id');
+                },
+                'productionRequest.showroom' => function($q) {
+                    $q->select('id', 'name', 'manager_id');
+                },
+            ])
+            ->latest('projects.id');
 
         $user = auth()->user();
 

@@ -933,12 +933,7 @@ class ViewTask extends ViewRecord
                     ->badge()
                     ->color(fn ($state) => $h->statusColor($state instanceof \BackedEnum ? $state->value : $h->normalizeStatus((string) $state)))
                     ->placeholder('—'),
-                TextEntry::make('due_date')->label('تاريخ التسليم')->date()->badge()
-                    ->color(function ($state) {
-                        if (blank($state)) return 'gray';
-                        $due = $state instanceof Carbon ? $state : Carbon::parse($state);
-                        return now()->gt($due) ? 'danger' : 'success';
-                    }),
+                TextEntry::make('project.productionRequest.created_at')->label('تاريخ طلب التصنيع')->date()->badge()->color('success'),
                 TextEntry::make('assigned_at')->label('تاريخ الإسناد')->dateTime()->placeholder('—')->color('primary'),
                 TextEntry::make('planned_start_at')->label('بداية التصنيع (خطة)')->date()->placeholder('—')->color('primary'),
                 TextEntry::make('planned_end_at')->label('نهاية التصنيع (خطة)')->date()->placeholder('—')->color('primary'),

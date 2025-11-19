@@ -50,7 +50,6 @@ class MainStats extends BaseWidget
             $managedDeptIds[] = $deptId;
         }
 
-        // معارض يديرها هذا الموظف: showrooms.manager_id = employee_id
         $managedShowroomIds = [];
         if ($employeeId) {
             $managedShowroomIds = Showroom::query()
@@ -59,7 +58,6 @@ class MainStats extends BaseWidget
                 ->all();
         }
 
-        // قوائم الحالات — سهل تعديلها إذا اختلفت في DB
         $terminalReqStatuses = ['completed','cancelled','rejected','approved_final','on_hold'];
         $activeTaskStatuses  = [
             'pending','assigned','received','under_review','approved','rejected',
@@ -124,7 +122,7 @@ class MainStats extends BaseWidget
         });
 
         $stats[] = Stat::make('طلباتي النشطة', $this->nf($myRequests))
-            ->icon('heroicon-o-clipboard-document-list')->color('primary');
+            ->icon('heroicon-o-document-text')->color('primary');
 
         $stats[] = Stat::make('مهامي الحالية', $this->nf($myTasks))
             ->icon('heroicon-o-briefcase')->color('info');
@@ -296,7 +294,7 @@ class MainStats extends BaseWidget
                 ->icon('heroicon-o-clock')->color('gray');
 
             $stats[] = Stat::make('إنجازات 30 يوم', $this->nf($showroomCompleted30d))
-                ->icon('heroicon-o-trending-up')->color('secondary');
+                ->icon('heroicon-o-chart-bar')->color('secondary');
         }
 
         /*

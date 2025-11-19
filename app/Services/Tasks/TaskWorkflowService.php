@@ -753,7 +753,7 @@ class TaskWorkflowService
         return true;
     }
 
-    protected function setOwner(
+    public function setOwner(
         \App\Models\ProductionTask $task,
         ?string $role,
         ?int $userId,
@@ -774,7 +774,7 @@ class TaskWorkflowService
         ]);
     }
 
-    protected function resolveDeptManagerUserId(ProductionTask $task): ?int
+    public function resolveDeptManagerUserId(ProductionTask $task): ?int
     {
         $dept = $task->department;
 

@@ -44,14 +44,13 @@ class TaskPageHelper
         return $this->normalizeStatus($raw);
     }
 
-    /**
-     * ترجمة حالة المهمة إلى نص عربي، يمكن تمرير Task أو سترينج.
-     */
+
     public function statusAr(ProductionTask|string|null $taskOrStatus): string
     {
         $status = $this->statusVal($taskOrStatus);
 
         return match ($status) {
+            'pending'            => 'بالانتظار',
             'waiting_production' => 'في انتظار بدء التصنيع',
             'in_progress'        => 'جاري التنفيذ',
             'under_review'       => 'قيد المراجعة',
@@ -72,6 +71,7 @@ class TaskPageHelper
         $status = $this->statusVal($taskOrStatus);
 
         return match ($status) {
+            'pending'            => 'warning',
             'waiting_production' => 'warning',
             'in_progress'        => 'primary',
             'under_review'       => 'info',
@@ -92,6 +92,7 @@ class TaskPageHelper
         $status = $this->statusVal($taskOrStatus);
 
         return match ($status) {
+            'pending'            => '#f59e0b', // amber
             'waiting_production' => '#f59e0b', // amber
             'in_progress'        => '#3b82f6', // blue
             'under_review'       => '#0ea5e9', // sky
