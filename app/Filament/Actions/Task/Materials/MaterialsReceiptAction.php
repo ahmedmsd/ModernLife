@@ -96,7 +96,7 @@ class MaterialsReceiptAction
                 ->native(false)
                 ->visible(fn (Get $get) => in_array($get('receipt_type'), ['ok', 'partial_allow'], true))
                 ->required(fn (Get $get) => in_array($get('receipt_type'), ['ok', 'partial_allow'], true))
-                ->default(fn () use ($record) => optional($record->planned_start_at)->toDateString())
+                ->default(optional($record->planned_start_at)->toDateString())
                 ->afterStateHydrated(function (Get $get, Set $set, $state) use ($record) {
                     if (!$state && in_array($get('receipt_type'), ['ok', 'partial_allow'], true)) {
                         $val = optional($record->planned_start_at)->toDateString();
@@ -109,7 +109,7 @@ class MaterialsReceiptAction
                 ->native(false)
                 ->visible(fn (Get $get) => in_array($get('receipt_type'), ['ok', 'partial_allow'], true))
                 ->required(fn (Get $get) => in_array($get('receipt_type'), ['ok', 'partial_allow'], true))
-                ->default(fn () use ($record) => optional($record->planned_end_at)->toDateString())
+                ->default(optional($record->planned_end_at)->toDateString())
                 ->afterStateHydrated(function (Get $get, Set $set, $state) use ($record) {
                     if (!$state && in_array($get('receipt_type'), ['ok', 'partial_allow'], true)) {
                         $val = optional($record->planned_end_at)->toDateString();
@@ -122,7 +122,7 @@ class MaterialsReceiptAction
                 ->native(false)
                 ->visible(fn (Get $get) => in_array($get('receipt_type'), ['ok', 'partial_allow'], true))
                 ->required(fn (Get $get) => in_array($get('receipt_type'), ['ok', 'partial_allow'], true))
-                ->default(fn () use ($record) => optional($record->planned_install_at)->toDateString())
+                ->default(optional($record->planned_install_at)->toDateString())
                 ->afterStateHydrated(function (Get $get, Set $set, $state) use ($record) {
                     if (!$state && in_array($get('receipt_type'), ['ok', 'partial_allow'], true)) {
                         $val = optional($record->planned_install_at)->toDateString();

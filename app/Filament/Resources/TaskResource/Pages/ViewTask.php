@@ -34,6 +34,32 @@ use Illuminate\Support\Str;
 use Filament\Notifications\Actions\Action as NotificationAction;
 use Filament\Notifications\Notification as FNotification;
 
+// Task Action Classes
+use App\Filament\Actions\Task\Comment\AddCommentAction;
+use App\Filament\Actions\Task\Assignment\AssignToDeptManagerAction;
+use App\Filament\Actions\Task\DepartmentManager\AcknowledgeTaskAction;
+use App\Filament\Actions\Task\DepartmentManager\RejectToFactoryAction;
+use App\Filament\Actions\Task\Materials\RequestMaterialsAction;
+use App\Filament\Actions\Task\Materials\PurchasingReceiveAction;
+use App\Filament\Actions\Task\Materials\MaterialsProvidedAction;
+use App\Filament\Actions\Task\Materials\MaterialsReceiptAction;
+use App\Filament\Actions\Task\Manufacturing\StartProductionAction;
+use App\Filament\Actions\Task\Manufacturing\FinishManufacturingAction;
+use App\Filament\Actions\Task\Manufacturing\ManufacturingAcknowledgeReworkAction;
+use App\Filament\Actions\Task\QA\QAAcknowledgeManufacturingAction;
+use App\Filament\Actions\Task\QA\ApproveManufacturingQAAction;
+use App\Filament\Actions\Task\QA\RejectManufacturingQAAction;
+use App\Filament\Actions\Task\QA\QAAcknowledgeInstallationAction;
+use App\Filament\Actions\Task\QA\ApproveInstallationQAAction;
+use App\Filament\Actions\Task\QA\RejectInstallationQAAction;
+use App\Filament\Actions\Task\Installation\InstallationAcknowledgeAfterQAAction;
+use App\Filament\Actions\Task\Installation\StartInstallationAction;
+use App\Filament\Actions\Task\Installation\FinishInstallationAction;
+use App\Filament\Actions\Task\Installation\InstallationAcknowledgeReworkAction;
+use App\Filament\Actions\Task\TaskManagement\HoldTaskAction;
+use App\Filament\Actions\Task\TaskManagement\ResumeTaskAction;
+use App\Filament\Actions\Task\Completion\UploadClientReceiptAction;
+
 class ViewTask extends ViewRecord
 {
     use HasRelationManagers;
@@ -86,787 +112,56 @@ class ViewTask extends ViewRecord
 
     protected function getHeaderActions(): array
     {
-        $u = Auth::user();
+        $record = $this->record;
+        $redirectCallback = fn() => $this->redirect($this->getRedirectUrl());
 
         return [
-            /* تعليق سريع */
-            Action::make('addComment')
-                ->label('تعليق سريع')->icon('heroicon-m-chat-bubble-left-right')
-                ->form([
-                    Textarea::make('body')->label('نص التعليق')->required()->autosize(),
-                    FileUpload::make('attachments')->label('مرفقات (اختياري)')
-                        ->multiple()->directory('task-comments')->downloadable()->openable(),
-                ])
-                ->action(function (array $data) {
-                    $comment = TaskComment::create([
-                        'task_id'     => $this->record->id,
-                        'user_id'     => auth()->id(),
-                        'body'        => $data['body'],
-                        'attachments' => isset($data['attachments']) ? array_values((array) $data['attachments']) : null,
-                    ]);
-
-                    $this->record->loadMissing([
-                        'department.managerUser',
-                        'project.productionRequest.showroom.manager',
-                    ]);
-
-                    $taskUrl = \App\Filament\Resources\TaskResource::getUrl('view', ['record' => $this->record]);
-
-                    $recipients = collect();
-
-                    if ($this->record->created_by && ($u = User::find($this->record->created_by))) {
-                        $recipients->push($u);
-                    }
-
-                    if ($this->record->current_owner_user_id && ($owner = User::find($this->record->current_owner_user_id))) {
-                        $recipients->push($owner);
-                    }
-
-                    $deptManagerUser = optional(optional($this->record->department)->manager)->user;
-                    if ($deptManagerUser) {
-                        $recipients->push($deptManagerUser);
-                    }
-
-                    $showroomManagerUser = optional(
-                        optional(
-                            optional($this->record->project)->productionRequest
-                        )->showroom
-                    )->manager?->user;
-
-                    if ($showroomManagerUser) {
-                        $recipients->push($showroomManagerUser);
-                    }
-
-                    $factoryManagers = User::role('factory_manager')->get();
-                    if ($factoryManagers->isNotEmpty()) {
-                        $recipients = $recipients->merge($factoryManagers);
-                    }
-
-                    $recipients = $recipients
-                        ->filter()
-                        ->unique('id')
-                        ->reject(fn ($user) => (int) $user->id === (int) auth()->id())
-                        ->values();
-
-                    if ($recipients->isNotEmpty()) {
-                        \Filament\Notifications\Notification::make()
-                            ->title("تعليق جديد على المهمة #{$this->record->id}")
-                            ->icon('heroicon-m-chat-bubble-left-right')
-                            ->body(\Illuminate\Support\Str::limit(strip_tags((string) $data['body']), 180))
-                            ->actions([
-                                NotificationAction::make('عرض المهمة')
-                                    ->button()
-                                    ->url($taskUrl)
-                                    ->openUrlInNewTab(),
-                            ])
-                            ->sendToDatabase($recipients);
-                    }
-
-                    \Filament\Notifications\Notification::make()
-                        ->title('تم إضافة التعليق')
-                        ->success()
-                        ->send();
-                }),
-
-            /* إسناد لمدير القسم (بناءً على user_id) */
-            Action::make('assign_to_dept_manager')
-                ->label('إسناد لمدير القسم')
-                ->icon('heroicon-o-user-plus')
-                ->visible(function () {
-                    $u = Auth::user();
-                    return $u?->hasAnyRole(['factory_manager','admin','super-admin'])
-                        && blank($this->record->assigned_to_user_id);
-                })
-                ->form([
-                    Forms\Components\Select::make('user_id')
-                        ->label('المسؤول')
-                        ->searchable()
-                        ->preload()
-                        ->options(function () {
-                            $deptId = $this->record->department_id;
-
-                            return User::query()
-                                ->role('department_manager')
-//                                ->when($deptId, function ($q) use ($deptId) {
-//                                    $q->whereHas('employee', fn ($q2) => $q2->where('department_id', $deptId));
-//                                })
-                                ->orderBy('name')
-                                ->pluck('name', 'id')
-                                ->toArray();
-                        })
-                        ->required(),
-                    Forms\Components\DatePicker::make('due_date')
-                        ->label('تاريخ التسليم المتوقع')
-                        ->required(),
-                ])
-                ->requiresConfirmation()
-                ->action(function (array $data) {
-                    $this->workflow()->assignToDeptManager(
-                        $this->record,
-                        (int) $data['user_id'],
-                        $data['due_date']
-                    );
-                    \Filament\Notifications\Notification::make()->success()->title('تم الإسناد')->send();
-                    $this->redirect($this->getRedirectUrl());
-                }),
-
-            /* مدير القسم يؤكد الاستلام */
-            Action::make('acknowledge')
-                ->label('تأكيد استلام المهمة (مدير القسم)')->icon('heroicon-o-hand-thumb-up')->color('success')
-                ->visible(fn () => $this->helper()->canDeptAcknowledge($this->record, Auth::user()))
-                ->form([
-                    Textarea::make('note')->label('ملاحظات (اختياري)')->rows(3),
-                ])
-                ->requiresConfirmation()
-                ->action(function (array $data) {
-                    $this->workflow()->deptAcknowledge($this->record, $data['note'] ?? null);
-                    Notification::make()->success()->title('تم تأكيد الاستلام')->send();
-                    $this->redirect($this->getRedirectUrl());
-                }),
-
-            /* طلب خامات */
-            Action::make('request_materials')
-                ->label('طلب خامات')->icon('heroicon-o-truck')->color('info')
-                ->visible(fn () => $this->helper()->canRequestMaterials($this->record, Auth::user()))
-                ->form([
-                    Textarea::make('note')->label('ملاحظات / تفاصيل المطلوب')->rows(3)->required(),
-                    Forms\Components\FileUpload::make('po_file')
-                        ->label('ملف أمر الشراء (PO) المُعتمد من مدير المصنع')->disk('public')
-                        ->directory('purchase_orders/' . now()->format('Y/m'))
-                        ->acceptedFileTypes(['application/pdf','image/*'])->maxSize(20_480)
-                        ->openable()->downloadable()->moveFiles()->visibility('public')->required(),
-                ])
-                ->requiresConfirmation()
-                ->action(function (array $data) {
-                    $this->workflow()->requestMaterials($this->record, $data['note'], $data['po_file']);
-                    FNotification::make()->success()->title('تم إرسال طلب الخامات')->send();
-                    $this->redirect($this->getRedirectUrl());
-                }),
-
-            Action::make('deptRejectToFactory')
-                ->label('رفض المهمة وإعادتها للمصنع')
-                ->icon('heroicon-o-arrow-uturn-left')
-                ->color('danger')
-                ->visible(fn () => $this->helper()->canDeptReject($this->record, Auth::user()))
-                ->form([
-                    Forms\Components\Textarea::make('reason')
-                        ->label('سبب الإعادة')
-                        ->required()
-                        ->rows(3),
-                ])
-                ->action(function ($record, array $data) {
-                    $this->workflow()->deptRejectToFactory($record, (string) $data['reason']);
-                    FNotification::make()->title('تمت إعادة المهمة إلى مدير المصنع')->success()->send();
-                    $this->redirect(request()->header('Referer') ?? url()->current());
-                }),
-
-            /* المشتريات تؤكد التوريد */
-            Action::make('materials_provided')
-                ->label('تأكيد توفر الخامات')->icon('heroicon-o-archive-box')->color('success')
-                ->visible(fn () => $this->helper()->canMaterialsProvided($this->record, Auth::user()))
-                ->form([
-                    Forms\Components\TextInput::make('actual_cost')->label('قيمة الشراء الفعلية')->numeric()->required(),
-                    Textarea::make('note')->label('ملاحظات (اختياري)')->rows(3),
-                ])
-                ->requiresConfirmation()
-                ->action(function (array $data) {
-                    $this->workflow()->materialsProvided(
-                        $this->record,
-                        (float) $data['actual_cost'],
-                        $data['note'] ?? null
-                    );
-                    Notification::make()->success()->title('تم توفير الخامات')->send();
-                    $this->redirect($this->getRedirectUrl());
-                }),
-
-            /* المشتريات تؤكد الاستلام */
-            Action::make('purchasing_receive')
-                ->label('تأكيد استلام طلب الخامات (المشتريات)')->icon('heroicon-o-check-badge')->color('primary')
-                ->visible(fn () => $this->helper()->canPurchasingReceive($this->record, Auth::user()))
-                ->form([
-                    Forms\Components\TextInput::make('po_number')->label('رقم الطلب/المرجع'),
-                    Forms\Components\DateTimePicker::make('expected_delivery_at')->label('موعد التوريد المتوقع')->required(),
-                    Forms\Components\TextInput::make('estimated_cost')->label('التكلفة المتوقعة')->numeric(),
-                    Textarea::make('note')->label('ملاحظات (اختياري)')->rows(3),
-                ])
-                ->requiresConfirmation()
-                ->action(function (array $data) {
-                    $this->workflow()->purchasingReceive($this->record, $data);
-                    Notification::make()->success()->title('تم تسجيل استلام طلب الخامات')->send();
-                    $this->redirect($this->getRedirectUrl());
-                }),
-
-            Action::make('materials_receipt')
-                ->label('تسجيل استلام الخامات (مدير القسم)')
-                ->icon('heroicon-o-archive-box')
-                ->color('success')
-                ->visible(fn () => $this->helper()->canMaterialsReceivedOk($this->record, Auth::user()))
-                ->form([
-                    Forms\Components\Select::make('receipt_type')
-                        ->label('حالة الاستلام')
-                        ->options([
-                            'ok'             => 'استلام كلي (جاهز لبدء التصنيع)',
-                            'partial_allow'  => 'استلام جزئي — مع السماح ببدء التصنيع',
-                            'partial_hold'   => 'استلام جزئي — إيقاف حتى استكمال النواقص',
-                            'issue'          => 'استلام به مشكلة — إيقاف وتحويل للمشتريات',
-                        ])
-                        ->native(false)
-                        ->required()
-                        ->reactive()
-                        ->afterStateUpdated(function (Get $get, Set $set, ?string $state) {
-                            $needPlan = in_array($state, ['ok','partial_allow'], true);
-
-                            if (! $needPlan) {
-                                return;
-                            }
-
-                            $currentStart   = optional($this->record->planned_start_at)->toDateString();
-                            $currentEnd     = optional($this->record->planned_end_at)->toDateString();
-                            $currentInstall = optional($this->record->planned_install_at)->toDateString();
-
-                            if (!$get('planned_start') && $currentStart)   $set('planned_start', $currentStart);
-                            if (!$get('planned_end') && $currentEnd)       $set('planned_end', $currentEnd);
-                            if (!$get('planned_install') && $currentInstall) $set('planned_install', $currentInstall);
-                        }),
-
-                    Forms\Components\DatePicker::make('planned_start')
-                        ->label('بداية التصنيع (متوقعة)')
-                        ->native(false)
-                        ->visible(fn (Get $get) => in_array($get('receipt_type'), ['ok','partial_allow'], true))
-                        ->required(fn (Get $get) => in_array($get('receipt_type'), ['ok','partial_allow'], true))
-                        ->default(fn () => optional($this->record->planned_start_at)->toDateString())
-                        ->afterStateHydrated(function (Get $get, Set $set, $state) {
-                            if (!$state && in_array($get('receipt_type'), ['ok','partial_allow'], true)) {
-                                $val = optional($this->record->planned_start_at)->toDateString();
-                                if ($val) $set('planned_start', $val);
-                            }
-                        }),
-
-                    Forms\Components\DatePicker::make('planned_end')
-                        ->label('نهاية التصنيع (متوقعة)')
-                        ->native(false)
-                        ->visible(fn (Get $get) => in_array($get('receipt_type'), ['ok','partial_allow'], true))
-                        ->required(fn (Get $get) => in_array($get('receipt_type'), ['ok','partial_allow'], true))
-                        ->default(fn () => optional($this->record->planned_end_at)->toDateString())
-                        ->afterStateHydrated(function (Get $get, Set $set, $state) {
-                            if (!$state && in_array($get('receipt_type'), ['ok','partial_allow'], true)) {
-                                $val = optional($this->record->planned_end_at)->toDateString();
-                                if ($val) $set('planned_end', $val);
-                            }
-                        }),
-
-                    Forms\Components\DatePicker::make('planned_install')
-                        ->label('موعد التركيب (متوقع)')
-                        ->native(false)
-                        ->visible(fn (Get $get) => in_array($get('receipt_type'), ['ok','partial_allow'], true))
-                        ->required(fn (Get $get) => in_array($get('receipt_type'), ['ok','partial_allow'], true))
-                        ->default(fn () => optional($this->record->planned_install_at)->toDateString())
-                        ->afterStateHydrated(function (Get $get, Set $set, $state) {
-                            if (!$state && in_array($get('receipt_type'), ['ok','partial_allow'], true)) {
-                                $val = optional($this->record->planned_install_at)->toDateString();
-                                if ($val) $set('planned_install', $val);
-                            }
-                        }),
-
-                    Forms\Components\Textarea::make('note')
-                        ->label('ملاحظات (اختياري)')
-                        ->rows(3)
-                        ->maxLength(1000),
-
-                    Forms\Components\Textarea::make('missing_items')
-                        ->label('تفاصيل البنود الناقصة')
-                        ->rows(3)
-                        ->visible(fn (Get $get) => in_array($get('receipt_type'), ['partial_allow','partial_hold'], true)),
-
-                    Forms\Components\Textarea::make('issue_details')
-                        ->label('تفاصيل المشكلة')
-                        ->rows(3)
-                        ->visible(fn (Get $get) => $get('receipt_type') === 'issue'),
-                ])
-                ->requiresConfirmation()
-                ->action(function (array $data) {
-                    $type = $data['receipt_type'];
-
-                    $needPlan = in_array($type, ['ok','partial_allow'], true);
-                    if ($needPlan) {
-                        $start = Carbon::parse($data['planned_start']);
-                        $end   = Carbon::parse($data['planned_end']);
-                        $ins   = Carbon::parse($data['planned_install']);
-
-                        if ($end->lt($start) || $ins->lt($end)) {
-                            Notification::make()
-                                ->danger()
-                                ->title('تسلسل التواريخ غير صحيح')
-                                ->body('يجب أن تكون نهاية التصنيع بعد بدايته، وموعد التركيب بعد نهاية التصنيع.')
-                                ->send();
-                            return;
-                        }
-                    }
-
-                    switch ($type) {
-                        case 'ok':
-                            $this->workflow()->materialsReceivedOk(
-                                $this->record,
-                                $data['planned_start'],
-                                $data['planned_end'],
-                                $data['planned_install'],
-                                $data['note'] ?? null
-                            );
-                            Notification::make()
-                                ->success()->title('تم الاستلام الكلي — المهمة بانتظار بدء التصنيع')->send();
-                            break;
-
-                        case 'partial_allow':
-                            $this->workflow()->materialsReceivedPartialAllowStart(
-                                $this->record,
-                                $data['planned_start'],
-                                $data['planned_end'],
-                                $data['planned_install'],
-                                $data['note'] ?? null,
-                                $data['missing_items'] ?? null
-                            );
-                            Notification::make()
-                                ->success()->title('استلام جزئي (السماح بالبدء) — تم فتح طلب تكميلي')->send();
-                            break;
-
-                        case 'partial_hold':
-                            $this->workflow()->materialsReceivedPartialHold(
-                                $this->record,
-                                $data['note'] ?? null,
-                                $data['missing_items'] ?? null
-                            );
-                            Notification::make()
-                                ->warning()->title('استلام جزئي — المهمة موقوفة حتى استكمال النواقص')->send();
-                            break;
-
-                        case 'issue':
-                            $this->workflow()->materialsReceivedIssue(
-                                $this->record,
-                                $data['note'] ?? null,
-                                $data['issue_details'] ?? null
-                            );
-                            Notification::make()
-                                ->warning()->title('استلام به مشكلة — تم تحويل المهمة للمشتريات لمعالجة المشكلة')->send();
-                            break;
-                    }
-
-                    $this->redirect($this->getRedirectUrl());
-                }),
-
-            /* بدء التصنيع */
-            Action::make('start_production')
-                ->label('بدء التصنيع')
-                ->icon('heroicon-o-play')
-                ->color('info')
-                ->visible(function () {
-                    $u = auth()->user();
-                    if (! $u || ! $u->hasRole('department_manager','web')) return false;
-
-                    if (($this->record->current_owner_role ?? null) !== 'department_manager') return false;
-
-                    $status = strtolower((string) ($this->record->status ?? ''));
-                    if (! in_array($status, ['waiting_production','rework'], true)) return false;
-
-                    $anchor = \App\Models\TaskLog::query()
-                        ->where('task_id', $this->record->id)
-                        ->where('type', 'manufacturing_ack_rework')
-                        ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
-                        ->first();
-
-                    if (! $anchor) {
-                        $anchor = \App\Models\TaskLog::query()
-                            ->where('task_id', $this->record->id)
-                            ->where(function ($q) {
-                                $q->where('type', 'materials_received_ok')
-                                    ->orWhere(function ($q2) {
-                                        $q2->where('type', 'materials_received_partial')
-                                            ->where('data->allow_start', true);
-                                    })
-                                    ->orWhere('type','planning_hint_set');
-                            })
-                            ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
-                            ->first();
-                    }
-
-                    if (! $anchor) return false;
-
-                    $anchorTime = $anchor->happened_at ?? $anchor->created_at;
-                    $anchorId   = $anchor->id;
-
-                    $startedAfter = \App\Models\TaskLog::query()
-                        ->where('task_id', $this->record->id)
-                        ->where('type', 'manufacturing_started')
-                        ->where(function ($q) use ($anchorTime, $anchorId) {
-                            $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$anchorTime])
-                                ->orWhere(function ($q2) use ($anchorTime, $anchorId) {
-                                    $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$anchorTime])
-                                        ->where('id', '>', $anchorId);
-                                });
-                        })
-                        ->exists();
-
-                    return ! $startedAfter;
-                })
-                ->form([
-                    Forms\Components\DateTimePicker::make('started_at')->label('تاريخ البدء')->default(now())->required(),
-                    Forms\Components\Textarea::make('note')->label('ملاحظة')->rows(2),
-                ])
-                ->requiresConfirmation()
-                ->action(function (array $data) {
-                    $this->workflow()->startProduction($this->record, $data['started_at'], $data['note'] ?? null);
-                    Notification::make()->success()->title('تم بدء التصنيع')->send();
-                    $this->record->refresh();
-                }),
-
-            /* إنهاء التصنيع وإرسال للجودة */
-            Action::make('finish_manufacturing_send_to_qa')
-                ->label('إنهاء التصنيع وإرسال للجودة')
-                ->icon('heroicon-o-check-badge')
-                ->color('success')
-                ->visible(fn () => $this->helper()->canFinishManufacturing($this->record, Auth::user()))
-                ->form([
-                    Forms\Components\DateTimePicker::make('actual_finished_at')
-                        ->label('تاريخ/وقت الانتهاء الفعلي')
-                        ->native(false)
-                        ->default(now())
-                        ->required(),
-                    Forms\Components\Textarea::make('note')
-                        ->label('ملاحظات (اختياري)')
-                        ->rows(3),
-                ])
-                ->requiresConfirmation()
-                ->action(function (array $data) {
-                    $finished = Carbon::parse($data['actual_finished_at']);
-
-                    $startField = $this->record->actual_start_at
-                        ?? $this->record->started_at
-                        ?? null;
-
-                    if ($startField) {
-                        $started = $startField instanceof Carbon
-                            ? $startField
-                            : Carbon::parse($startField);
-                    } else {
-                        $startLog = \App\Models\TaskLog::query()
-                            ->where('task_id', $this->record->id)
-                            ->where('type', 'manufacturing_started')
-                            ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
-                            ->first();
-
-                        $started = $startLog
-                            ? (($startLog->data['started_at'] ?? null)
-                                ? Carbon::parse($startLog->data['started_at'])
-                                : ($startLog->happened_at ?? $startLog->created_at))
-                            : null;
-                    }
-
-                    if ($started && $finished->lt($started)) {
-                        Notification::make()
-                            ->danger()
-                            ->title('تاريخ الانتهاء أقدم من تاريخ البدء')
-                            ->body('يرجى ضبط وقت/تاريخ الانتهاء ليكون بعد وقت البدء.')
-                            ->send();
-                        return;
-                    }
-
-                    $this->workflow()->finishManufacturingAndSendToQA(
-                        $this->record,
-                        $data['actual_finished_at'],
-                        $data['note'] ?? null
-                    );
-
-                    Notification::make()
-                        ->success()
-                        ->title('تم إنهاء التصنيع وإرسال المهمة للجودة')
-                        ->send();
-
-                    $this->redirect($this->getRedirectUrl());
-                }),
-
-            /* QA (بعد التصنيع) */
-            Action::make('qaAcknowledgeManufacturing')
-                ->label('تأكيد استلام الجودة (بعد التصنيع)')
-                ->icon('heroicon-o-inbox-arrow-down')
-                ->color('primary')
-                ->visible(fn () => $this->helper()->canQaAcknowledgeManufacturing($this->record, Auth::user()))
-                ->requiresConfirmation()
-                ->action(function () {
-                    $this->workflow()->qaAcknowledgeManufacturing($this->record);
-                    Notification::make()->success()->title('تم تأكيد استلام الجودة')->send();
-                    $this->record->refresh();
-                    $this->dispatch('close-modal', id: 'filament.actions.modal');
-                    $this->js('$wire.$refresh()');
-                }),
-
-            Action::make('approveManufacturingQA')
-                ->label('اعتماد الجودة (بعد التصنيع)')->icon('heroicon-o-check-badge')->color('success')
-                ->visible(fn () => $this->helper()->canApproveManufacturingQA($this->record, Auth::user()))
-                ->form([
-                    Textarea::make('note')->label('ملاحظات (اختياري)')->rows(3),
-                ])
-                ->requiresConfirmation()
-                ->action(function (array $data) {
-                    $this->workflow()->approveManufacturingQA($this->record, $data['note'] ?? null);
-                    Notification::make()->success()->title('تم اعتماد الجودة وتحويل المهمة للتركيب')->send();
-                    $this->redirect($this->getRedirectUrl());
-                }),
-
-            Action::make('rejectManufacturingQA')
-                ->label('رفض الجودة (بعد التصنيع)')
-                ->icon('heroicon-o-x-circle')
-                ->color('danger')
-                ->visible(fn () => $this->helper()->canRejectManufacturingQA($this->record, Auth::user()))
-                ->form([
-                    Textarea::make('reason')->label('سبب الرفض')->rows(3)->required(),
-                ])
-                ->requiresConfirmation()
-                ->action(function(array $data){
-                    $this->workflow()->rejectManufacturingQA($this->record, $data['reason']);
-                    Notification::make()
-                        ->warning()->title('تم رفض الجودة وأعيدت للتصنيع')->send();
-                    $this->redirect($this->getRedirectUrl());
-                }),
-
-            /* تأكيد استلام التصنيع (إعادة عمل) */
-            Action::make('manufacturingAcknowledgeRework')
-                ->label('تأكيد استلام التصنيع (إعادة عمل)')
-                ->icon('heroicon-o-clipboard-document-check')
-                ->color('info')
-                ->visible(fn () => $this->helper()->canManufacturingAcknowledgeRework($this->record, Auth::user()))
-                ->form([
-                    Textarea::make('note')->label('ملاحظات (اختياري)')->rows(3),
-                ])
-                ->requiresConfirmation()
-                ->action(function (array $data) {
-                    $this->workflow()->manufacturingAcknowledgeRework($this->record, $data['note'] ?? null);
-
-                    Notification::make()
-                        ->success()->title('تم تأكيد استلام التصنيع (إعادة عمل)')->send();
-
-                    $this->record->refresh();
-                    $this->dispatch('close-modal', id: 'filament.actions.modal');
-                    $this->js('$wire.$refresh()');
-                }),
-
-            /* تأكيد استلام التركيب (بعد اعتماد جودة التصنيع) */
-            Action::make('installationAcknowledgeAfterQAApprove')
-                ->label('تأكيد استلام التركيب (بعد اعتماد جودة التصنيع)')
-                ->icon('heroicon-o-clipboard-document-check')
-                ->color('info')
-                ->visible(fn () => $this->helper()->canInstallationAcknowledgeAfterQAApprove($this->record, Auth::user()))
-                ->requiresConfirmation()
-                ->action(function () {
-                    $this->workflow()->installationAcknowledge($this->record);
-                    Notification::make()
-                        ->success()
-                        ->title('تم تأكيد استلام قسم التركيب')
-                        ->send();
-                }),
-
-            /* بدء التركيب */
-            Action::make('startInstallation')
-                ->label('بدء التركيب')->icon('heroicon-o-wrench-screwdriver')->color('info')
-                ->visible(fn () => $this->helper()->canStartInstallation($this->record, Auth::user()))
-                ->form([
-                    Forms\Components\DateTimePicker::make('started_at')->label('تاريخ/وقت البدء')->default(now())->required(),
-                    Textarea::make('note')->label('ملاحظات (اختياري)')->rows(3),
-                ])
-                ->requiresConfirmation()
-                ->action(function (array $data) {
-                    $this->workflow()->startInstallation($this->record, $data['started_at'], $data['note'] ?? null);
-                    Notification::make()->success()->title('تم بدء التركيب')->send();
-                    $this->record->refresh();
-                    $this->dispatch('close-modal', id: 'filament.actions.modal');
-                    $this->js('$wire.$refresh()');
-                }),
-
-            /* إنهاء التركيب وإرساله للجودة */
-            Action::make('finishInstallationAndSendQA')
-                ->label('إنهاء التركيب وإرسال للجودة')->icon('heroicon-o-paper-airplane')->color('success')
-                ->visible(fn () => $this->helper()->canFinishInstallationToQA($this->record, Auth::user()))
-                ->form([
-                    Forms\Components\DateTimePicker::make('finished_at')->label('تاريخ/وقت الإنهاء')->default(now())->required(),
-                    Textarea::make('note')->label('ملاحظات (اختياري)')->rows(3),
-                ])
-                ->requiresConfirmation()
-                ->action(function (array $data) {
-                    $this->workflow()->finishInstallationToQA($this->record, $data['finished_at'], $data['note'] ?? null);
-                    Notification::make()->success()->title('تم إرسال التركيب للجودة')->send();
-                    $this->redirect($this->getRedirectUrl());
-                }),
-
-            /* QA (بعد التركيب) */
-            Action::make('qaAcknowledgeInstallation')
-                ->label('تأكيد استلام الجودة (التركيب)')->icon('heroicon-o-inbox-arrow-down')->color('info')
-                ->visible(fn () => $this->helper()->canQaAcknowledgeInstallation($this->record, Auth::user()))
-                ->requiresConfirmation()
-                ->action(function () {
-                    $this->workflow()->qaAcknowledgeInstallation($this->record);
-                    Notification::make()->success()->title('تم تأكيد استلام الجودة للتركيب')->send();
-                }),
-
-            Action::make('approveInstallationQA')
-                ->label('اعتماد الجودة (بعد التركيب)')->icon('heroicon-o-check-badge')->color('success')
-                ->visible(fn () => $this->helper()->canApproveInstallationQA($this->record, Auth::user()))
-                ->form([
-                    Textarea::make('note')->label('ملاحظات (اختياري)')->rows(3),
-                ])
-                ->requiresConfirmation()
-                ->action(function (array $data) {
-                    $this->workflow()->approveInstallationQA($this->record, $data['note'] ?? null);
-                    Notification::make()->success()->title('تم اعتماد الجودة لما بعد التركيب')->send();
-                }),
-
-            Action::make('rejectInstallationQA')
-                ->label('رفض الجودة (التركيب)')
-                ->icon('heroicon-o-x-circle')
-                ->color('danger')
-                ->visible(fn () => $this->helper()->canRejectInstallationQA($this->record, Auth::user()))
-                ->form([
-                    Textarea::make('reason')->label('سبب الرفض')->rows(3)->required(),
-                ])
-                ->requiresConfirmation()
-                ->action(function (array $data) {
-                    $this->workflow()->rejectInstallationQA($this->record, $data['reason']);
-                    Notification::make()
-                        ->warning()->title('تم رفض الجودة وأُعيدت المهمة للتركيب')->send();
-                    $this->redirect($this->getRedirectUrl());
-                }),
-
-            /* تأكيد استلام التركيب (إعادة عمل) */
-            Action::make('installationAcknowledgeRework')
-                ->label('تأكيد استلام التركيب (إعادة عمل)')
-                ->icon('heroicon-o-clipboard-document-check')
-                ->color('info')
-                ->visible(fn () => $this->helper()->canInstallationAcknowledgeRework($this->record, Auth::user()))
-                ->form([
-                    Textarea::make('note')->label('ملاحظات (اختياري)')->rows(3),
-                ])
-                ->requiresConfirmation()
-                ->action(function (array $data) {
-                    $this->workflow()->installationAcknowledgeRework($this->record, $data['note'] ?? null);
-                    Notification::make()->success()->title('تم تأكيد استلام التركيب (إعادة عمل)')->send();
-                    $this->record->refresh();
-                    $this->dispatch('close-modal', id: 'filament.actions.modal');
-                    $this->js('$wire.$refresh()');
-                }),
-
-            Action::make('hold')
-                ->label('تعليق المهمة')
-                ->icon('heroicon-o-pause-circle')
-                ->color('warning')
-                ->visible(function (ProductionTask $record): bool {
-                    if (! auth()->check()) return false;
-                    $u = auth()->user();
-
-                    $isDeptManagerAndOwner =
-                        $u->hasRole('department_manager')
-                        && $record->current_owner_role === 'department_manager'
-                        && (int) $record->current_owner_user_id === (int) $u->id;
-
-                    $isPureFactoryManager =
-                        $u->hasRole('factory_manager')
-                        && $u->getRoleNames()->count() === 1;
-
-                    return ! in_array($record->status, ['completed','closed'])
-                        && ($isDeptManagerAndOwner || $isPureFactoryManager);
-                })
-                ->form([
-                    Forms\Components\Select::make('type')
-                        ->label('نوع التعليق')
-                        ->options([
-                            'awaiting_dependency' => 'بانتظار مهمة أخرى',
-                            'awaiting_materials'  => 'بانتظار خامات',
-                            'client_feedback'     => 'بانتظار رد العميل',
-                            'other'               => 'أخرى',
-                        ])->required(),
-                    Forms\Components\Select::make('related_task_id')
-                        ->label('المهمة المرتبطة')
-                        ->searchable()
-                        ->preload()
-                        ->options(ProductionTask::query()
-                            ->orderByDesc('id')
-                            ->limit(200)->pluck('id','id'))
-                        ->visible(fn ($get) => $get('type') === 'awaiting_dependency'),
-                    Forms\Components\Textarea::make('reason')->label('السبب')->rows(2),
-                    Forms\Components\Textarea::make('note')->label('ملاحظة')->rows(2),
-                ])
-                ->action(function (array $data, ProductionTask $record) {
-                    $data['created_by'] = auth()->id();
-                    app(TaskTimerService::class)->startHold($record, $data);
-
-                    Notification::make()
-                        ->title('تم تعليق المهمة وإيقاف العدّ.')
-                        ->success()
-                        ->send();
-                }),
-
-            Action::make('resume')
-                ->label('استئناف المهمة')
-                ->icon('heroicon-o-play-circle')
-                ->color('success')
-                ->visible(function (ProductionTask $record): bool {
-                    if (! auth()->check()) return false;
-                    $u = auth()->user();
-
-                    $isDeptManagerAndOwner =
-                        $u->hasRole('department_manager')
-                        && $record->current_owner_role === 'department_manager'
-                        && (int) $record->current_owner_user_id === (int) $u->id;
-
-                    $isPureFactoryManager =
-                        $u->hasRole('factory_manager')
-                        && $u->getRoleNames()->count() === 1;
-
-                    return in_array($record->status, ['on_hold','blocked'])
-                        && ($isDeptManagerAndOwner || $isPureFactoryManager);
-                })
-                ->action(function (ProductionTask $record) {
-                    app(TaskTimerService::class)->endHold($record, 'Manual resume');
-
-                    Notification::make()
-                        ->title('تم استئناف المهمة وتشغيل العدّ.')
-                        ->success()
-                        ->send();
-                }),
-
-            /* سند استلام العميل → اكتمال */
-            Action::make('uploadClientReceipt')
-                ->label('رفع سند استلام العميل وإكمال المهمة')
-                ->icon('heroicon-o-arrow-up-on-square')
-                ->color('success')
-                ->visible(fn () =>
-                    Auth::user()?->hasRole('quality_manager')
-                    && ! $this->helper()->isClosedOrCompleted($this->record)
-                    && $this->helper()->hasLog($this->record, 'qa_approved_installation')
-                    && empty($this->record->client_receipt)
-                )
-                ->form([
-                    Forms\Components\FileUpload::make('client_receipt')
-                        ->label('سند استلام العميل')
-                        ->disk('public')
-                        ->directory(fn () => 'client-receipts/' . now()->format('Y/m'))
-                        ->downloadable()
-                        ->openable()
-                        ->acceptedFileTypes(['application/pdf', 'image/*'])
-                        ->maxSize(10240)
-                        ->required(),
-                    Forms\Components\DateTimePicker::make('actual_finished_at')->label('تاريخ/وقت الانتهاء الفعلي للمهمة')->native(false)->default(now())->required(),
-                    Textarea::make('note')->label('ملاحظات (اختياري)')->rows(3),
-                ])
-                ->requiresConfirmation()
-                ->action(function (array $data) {
-                    $this->workflow()->uploadClientReceiptAndComplete(
-                        $this->record,
-                        Arr::get($data, 'client_receipt'),
-                        Arr::get($data, 'actual_finished_at'),
-                        Arr::get($data, 'note')
-                    );
-                    Notification::make()->success()->title('اكتملت المهمة')->send();
-                    $this->redirect($this->getRedirectUrl());
-                }),
+            // Comment
+            AddCommentAction::make($record),
+
+            // Assignment
+            AssignToDeptManagerAction::make($record, $redirectCallback),
+
+            // Department Manager
+            AcknowledgeTaskAction::make($record, $redirectCallback),
+            RejectToFactoryAction::make($record, $redirectCallback),
+
+            // Materials
+            RequestMaterialsAction::make($record, $redirectCallback),
+            PurchasingReceiveAction::make($record, $redirectCallback),
+            MaterialsProvidedAction::make($record, $redirectCallback),
+            MaterialsReceiptAction::make($record, $redirectCallback),
+
+            // Manufacturing
+            StartProductionAction::make($record),
+            FinishManufacturingAction::make($record, $redirectCallback),
+            ManufacturingAcknowledgeReworkAction::make($record),
+
+            // QA - Manufacturing
+            QAAcknowledgeManufacturingAction::make($record),
+            ApproveManufacturingQAAction::make($record, $redirectCallback),
+            RejectManufacturingQAAction::make($record, $redirectCallback),
+
+            // Installation
+            InstallationAcknowledgeAfterQAAction::make($record),
+            StartInstallationAction::make($record),
+            FinishInstallationAction::make($record, $redirectCallback),
+            InstallationAcknowledgeReworkAction::make($record),
+
+            // QA - Installation
+            QAAcknowledgeInstallationAction::make($record),
+            ApproveInstallationQAAction::make($record),
+            RejectInstallationQAAction::make($record, $redirectCallback),
+
+            // Task Management
+            HoldTaskAction::make($record),
+            ResumeTaskAction::make($record),
+
+            // Completion
+            UploadClientReceiptAction::make($record, $redirectCallback),
         ];
     }
+
 
     public function infolist(Infolist $infolist): Infolist
     {
