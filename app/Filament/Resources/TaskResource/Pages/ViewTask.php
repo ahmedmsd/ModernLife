@@ -65,7 +65,7 @@ class ViewTask extends ViewRecord
             'project.productionRequest.showroom',
             'project.client',
             'department',
-            'assignedUser.employee',   // بدل employee مباشرة
+            'assignedUser.employee',    
             'logs.causer',
             'materialRequests',
         ]);
