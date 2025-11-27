@@ -5,7 +5,9 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, HasManyThrough, MorphMany};
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Carbon;
 use App\Models\Concerns\HasStatusScopes;
 
@@ -76,7 +78,6 @@ class Project extends Model
         );
     }
 
-    /* ===================== ملحقات عملية ===================== */
 
     public function getDueDateAttribute(): ?Carbon
     {
@@ -96,7 +97,6 @@ class Project extends Model
         return $this->materialRequests()->whereNull('provided_at');
     }
 
-    /* ===================== Scopes اختيارية ===================== */
 
     public function scopeStatus($query, ?string $status)
     {

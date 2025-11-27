@@ -91,7 +91,7 @@ class ViewTask extends ViewRecord
             'project.productionRequest.showroom',
             'project.client',
             'department',
-            'assignedUser.employee',    
+            'assignedUser.employee',
             'logs.causer',
             'materialRequests',
         ]);
@@ -253,20 +253,19 @@ class ViewTask extends ViewRecord
                     ViewEntry::make('logs_timeline')
                         ->view('filament.task.logs-timeline')
                         ->state(function (ProductionTask $record) {
-                            $logs = TaskLog::query()
-                                ->where('task_id', $record->id)
-                                ->core()
+                            $logs = \App\Models\TaskLog::where('task_id', $record->id)
                                 ->with('causer')
                                 ->orderByRaw('COALESCE(happened_at, created_at) DESC')
                                 ->take(500)
                                 ->get();
 
-                            $deduped = $logs->unique(function ($log) {
-                                $sec = optional($log->happened_at ?: $log->created_at)->format('Y-m-d H:i:s');
-                                return "{$log->type}|{$log->causer_id}|{$sec}";
-                            })->values();
+                            \Log::channel('single')->info('TaskLogs debug', [
+                                'task_id' => $record->id,
+                                'count' => $logs->count(),
+                                'ids' => $logs->pluck('id')->take(50)->values()->toArray(),
+                            ]);
 
-                            return $deduped;
+                            return $logs; // تأكد من إرجاع Collection
                         }),
                 ])
                 ->columnSpanFull(),

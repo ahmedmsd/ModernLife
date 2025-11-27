@@ -9,6 +9,7 @@ use Filament\Pages\Page;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Arr;
 use App\Support\Filament\HasShieldAccess;
@@ -244,7 +245,7 @@ class SystemSettings extends Page implements Forms\Contracts\HasForms
                 ])
                 ->action(function (array $data) {
                     try {
-                        \Mail::raw('اختبار إعدادات البريد في النظام', function ($m) use ($data) {
+                        Mail::raw('اختبار إعدادات البريد في النظام', function ($m) use ($data) {
                             $m->to($data['to'])->subject('رسالة اختبار');
                         });
                         Notification::make()->title('تم إرسال البريد بنجاح')->success()->send();

@@ -63,8 +63,54 @@
             'purchasing_ack_hint'        => 'إشارة استلام المشتريات',
         ][$s] ?? $s;
     };
+function isLikelyNoteString($s): bool {
+    if (!is_string($s)) return false;
+    $s = trim($s);
+    if ($s === '') return false;
+    if (strlen($s) < 3) return false;
+    if (preg_match('/^[\p{L}\p{N}_]+$/u', $s) && !preg_match('/\s/u', $s)) {
+        return false;
+    }
+    return (bool) preg_match('/[\p{L}\p{Arabic}]/u', $s) || preg_match('/\s/', $s) || preg_match('/[.,؟!?-]/u', $s);
+}
 
-    $fmt = function ($v) {
+function extractLogNote($log) {
+    if (filled($log->note)) return trim((string)$log->note);
+
+    $data = $log->data;
+    if (!is_array($data)) {
+        $data = @json_decode($data ?? '[]', true) ?: [];
+    }
+
+    $candidates = [
+        'note','message','comment','reason','reason_factory','reason_showroom','text','mr.note','payload.note'
+    ];
+    foreach ($candidates as $k) {
+        $v = data_get($data, $k);
+        if (is_scalar($v) && isLikelyNoteString((string)$v)) return trim((string)$v);
+        if (is_array($v)) {
+            $sub = data_get($v, 'note') ?? data_get($v, 'message');
+            if (is_scalar($sub) && isLikelyNoteString((string)$sub)) return trim((string)$sub);
+        }
+    }
+
+    $stack = [$data];
+    while (!empty($stack)) {
+        $cur = array_pop($stack);
+        if (is_array($cur)) {
+            foreach ($cur as $val) {
+                if (is_string($val) && isLikelyNoteString($val)) {
+                    return trim($val);
+                }
+                if (is_array($val)) $stack[] = $val;
+            }
+        }
+    }
+
+    return null;
+}
+
+$fmt = function ($v) {
         if (!$v) return '—';
         try { return \Illuminate\Support\Carbon::parse($v)->format('Y-m-d H:i'); } catch (\Throwable $e) { return (string) $v; }
     };
@@ -100,7 +146,7 @@
 
                 <div style="flex:1;background:#fff;border:1px solid #e5e7eb;border-radius:.75rem;padding:.75rem 1rem;box-shadow:0 1px 2px rgba(0,0,0,0.03)">
                     <div style="display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-bottom:.35rem">
-                        <strong style="color:#111827">{{ $log->typeLabel }}</strong>
+                        <strong style="color:#111827">{{ $log->typeLabel }} {{ $log->id }}</strong>
                         <span style="font-size:.85rem;color:#6b7280">
                             @if($when)
                                 {{ $when->format('Y-m-d H:i') }}
@@ -220,21 +266,10 @@
                     @endif
 
                     @php
-                        $rawNote = $log->note
-                        ?? data_get($data, 'note')
-                        ?? data_get($data, 'reason')
-                        ?? data_get($data, 'reason_factory')
-                        ?? data_get($data, 'reason_showroom');
-
-                        $noteHtml = e($rawNote);
-
-                        $noteHtml = preg_replace(
-                            '~(https?://[^\s<]+)~i',
-                            '<a href="$1" target="_blank" rel="noopener" class="underline">$1</a>',
-                            $noteHtml
-                        );
-
-                        $noteHtml = nl2br($noteHtml);
+                        $rawNote = extractLogNote($log);
+        $noteHtml = e($rawNote ?? '');
+        $noteHtml = preg_replace('~(https?://[^\s<]+)~i', '<a href="$1" target="_blank" rel="noopener" class="underline">$1</a>', $noteHtml);
+        $noteHtml = nl2br($noteHtml);
                     @endphp
 
                     @if (filled($rawNote))
@@ -243,6 +278,7 @@
                             <div class="font-medium leading-relaxed">{!! $noteHtml !!}</div>
                         </div>
                     @endif
+
                 </div>
             </div>
         @endforeach

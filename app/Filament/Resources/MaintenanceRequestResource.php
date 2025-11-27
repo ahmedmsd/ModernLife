@@ -32,7 +32,6 @@ class MaintenanceRequestResource extends Resource
     protected static ?string $pluralModelLabel = 'طلبات الصيانة';
     protected static ?string $modelLabel       = 'طلب صيانة';
     protected static ?int    $navigationSort   = 50;
-
     protected static bool $shouldAuthorizeResource = false;
     public static function canAccess(): bool
     {

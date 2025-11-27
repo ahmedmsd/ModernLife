@@ -23,14 +23,15 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        DB::listen(function (QueryExecuted $query) {
-            Log::info('SQL Query Executed', [
-                'sql' => $query->sql,
-                'bindings' => $query->bindings,
-                'time_ms' => $query->time,
-                'connection' => $query->connectionName,
-            ]);
-        });
+        // DB logging disabled - was causing circular dependency during boot
+        // DB::listen(function (QueryExecuted $query) {
+        //     Log::info('SQL Query Executed', [
+        //         'sql' => $query->sql,
+        //         'bindings' => $query->bindings,
+        //         'time_ms' => $query->time,
+        //         'connection' => $query->connectionName,
+        //     ]);
+        // });
 
 
         ProductionRequest::observe(ProductionRequestObserver::class);

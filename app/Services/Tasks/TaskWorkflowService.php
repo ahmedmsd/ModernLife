@@ -733,7 +733,6 @@ class TaskWorkflowService
         $task->current_owner_user_id = $userId;
 
         if ($touchSent) {
-
             if (blank($task->sent_to_owner_at) || ! ($sameRole && $sameUser)) {
                 $task->sent_to_owner_at = now();
             }
@@ -743,7 +742,6 @@ class TaskWorkflowService
 
         $task->save();
 
-        // Log the ownership change (only once per actual change)
         $this->log($task, 'ownership_changed', [
             'role'    => $role,
             'user_id' => $userId,
@@ -807,12 +805,22 @@ class TaskWorkflowService
         return User::role('quality_manager')->value('id');
     }
 
-    protected function log(ProductionTask $task, string $type, array $data = []): void
+    protected function log(ProductionTask $task, string $type, array $data = [], ?string $note = null, ?int $causerId = null): void
     {
+        // If note is in data but not passed explicitly, extract it
+        if ($note === null && isset($data['note'])) {
+            $note = $data['note'];
+            unset($data['note']);
+        }
+
+        // If causer_id is not passed, use Auth::id()
+        $causerId = $causerId ?? Auth::id();
+
         $payload = [
             'type'      => $type,
             'data'      => $data,
-            'causer_id' => Auth::id(),
+            'causer_id' => $causerId,
+            'note'      => $note,
         ];
 
         if (method_exists($task, 'logs')) {

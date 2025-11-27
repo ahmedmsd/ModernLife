@@ -1,20 +1,24 @@
 <?php
-// app/Helpers/ProductionRequestHelper.php
+
 namespace App\Helpers;
 
 use App\Enums\ProductionRequestStatus;
 
-class ProductionRequestHelper {
-    public static function statusColor(ProductionRequestStatus|string|null $status): string {
-        function getStatusColor($status): string {
-            return match ($status?->value ?? $status) {
-                'draft' => '#6b7280', // رمادي
-                'submitted' => '#3b82f6', // أزرق
-                'under_review' => '#f59e0b', // أصفر
-                'approved' => '#10b981', // أخضر
-                'rejected' => '#ef4444', // أحمر
-                default => '#9ca3af',     // رمادي افتراضي
-            };
-        }
+class ProductionRequestHelper
+{
+    public static function statusColor(ProductionRequestStatus|string|null $status): string
+    {
+        $value = $status instanceof ProductionRequestStatus
+            ? $status->value
+            : $status;
+
+        return match ($value) {
+            'draft'        => '#6b7280',
+            'submitted'    => '#3b82f6',
+            'under_review' => '#f59e0b',
+            'approved'     => '#10b981',
+            'rejected'     => '#ef4444',
+            default        => '#9ca3af',
+        };
     }
 }

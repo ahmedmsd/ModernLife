@@ -7,6 +7,8 @@ use App\Models\Showroom;
 use Filament\Pages\Page;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 
 class MaintenanceCalendar extends Page
@@ -86,7 +88,7 @@ class MaintenanceCalendar extends Page
             ->orWhereNotNull('actual_start_at');
 
         $q->whereBetween(
-            \DB::raw('COALESCE(expected_start_at, actual_start_at)'),
+            DB::raw('COALESCE(expected_start_at, actual_start_at)'),
             [$startAt, $endAt]
         )
             ->whereNotIn('status', ['cancelled']);
@@ -106,7 +108,6 @@ class MaintenanceCalendar extends Page
             return $q;
         }
 
-        // مدير المعرض: الطلبات التابعة لمعارضه (حسب showroom_id الجديد)
         if ($u->hasRole('showroom_manager')) {
             $employeeId = $u->id;
             if (! $employeeId) {
@@ -128,7 +129,7 @@ class MaintenanceCalendar extends Page
             $q->where(function (Builder $qq) use ($u) {
                 $qq->where('requested_by', $u->id);
 
-                if (\Schema::hasColumn('maintenance_requests', 'created_by')) {
+                if (Schema::hasColumn('maintenance_requests', 'created_by')) {
                     $qq->orWhere('created_by', $u->id);
                 }
             });

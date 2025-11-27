@@ -9,6 +9,7 @@ use App\Models\MaterialRequest;
 use App\Models\Project;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Infolists\Infolist;
+use Illuminate\Support\Facades\Storage;
 use Filament\Infolists\Components\{Section, TextEntry, Tabs};
 use Filament\Infolists\Components\Tabs\Tab;
 use Filament\Support\Enums\MaxWidth;
@@ -16,7 +17,7 @@ use Filament\Actions\Action;
 use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\FacadesStorage;
 use Illuminate\Support\Str;
 use ZipArchive;
 
@@ -448,14 +449,14 @@ class ViewProject extends ViewRecord
         }
 
         try {
-            if (\Storage::exists($path)) {
-                return $this->encodeUrlPath(\Storage::url($path));
+            if (Storage::exists($path)) {
+                return $this->encodeUrlPath(Storage::url($path));
             }
         } catch (\Throwable $e) {}
 
         try {
-            if (\Storage::disk('public')->exists($path)) {
-                return $this->encodeUrlPath(\Storage::disk('public')->url($path));
+            if (Storage::disk('public')->exists($path)) {
+                return $this->encodeUrlPath(Storage::disk('public')->url($path));
             }
         } catch (\Throwable $e) {}
 

@@ -20,6 +20,7 @@ use Filament\Notifications\Notification;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Storage;
 
 class ViewMaterialRequest extends Page implements HasInfolists
 {
@@ -79,11 +80,11 @@ class ViewMaterialRequest extends Page implements HasInfolists
             return $this->encodeUrlPath($path);
         }
         try {
-            if (\Storage::disk('public')->exists($path)) {
-                return $this->encodeUrlPath(\Storage::disk('public')->url($path));
+            if (Storage::disk('public')->exists($path)) {
+                return $this->encodeUrlPath(Storage::disk('public')->url($path));
             }
-            if (\Storage::exists($path)) {
-                return $this->encodeUrlPath(\Storage::url($path));
+            if (Storage::exists($path)) {
+                return $this->encodeUrlPath(Storage::url($path));
             }
         } catch (\Throwable $e) {}
         return null;
@@ -483,7 +484,7 @@ class ViewMaterialRequest extends Page implements HasInfolists
                             ->formatStateUsing(fn ($state) => $this->statusLabel($state)),
                         TextEntry::make('po_file')->label('ملف أمر الشراء المُعتمد من مدير المصنع')
                             ->formatStateUsing(fn ($state) => $state ? 'تنزيل' : '—')
-                            ->url(fn ($state) => $state ? \Storage::url($state) : null, true)
+                            ->url(fn ($state) => $state ? Storage::url($state) : null, true)
                             ->icon(fn ($state) => $state ? 'heroicon-o-arrow-down-tray' : null)->badge(),
                         TextEntry::make('note')->label('المطلوبات/ملاحظات')->columnSpanFull()->markdown()->color('primary'),
                     ]),
@@ -780,7 +781,7 @@ class ViewMaterialRequest extends Page implements HasInfolists
                             ->label('ملف الفاتورة')
                             ->getStateUsing(fn (MaterialRequest $r) => $r->invoice_file ? 'عرض / تنزيل' : '—')
                             ->icon(fn (MaterialRequest $r) => $r->invoice_file ? 'heroicon-o-arrow-down-tray' : 'heroicon-o-document')
-                            ->url(fn (MaterialRequest $r) => $r->invoice_file ? \Storage::url($r->invoice_file) : null, true),
+                            ->url(fn (MaterialRequest $r) => $r->invoice_file ? Storage::url($r->invoice_file) : null, true),
                     ])->visible(fn () => filled($this->record->invoice_no)
                         || filled($this->record->invoice_date)
                         || filled($this->record->actual_cost)
