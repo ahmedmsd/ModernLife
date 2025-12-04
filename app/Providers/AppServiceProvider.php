@@ -6,10 +6,12 @@ use App\Models\Employee;
 use App\Models\ProductionRequest;
 use App\Models\ProductionTask;
 use App\Models\Project;
+use App\Models\SystemSetting;
 use App\Observers\EmployeeObserver;
 use App\Observers\ProductionRequestObserver;
 use App\Observers\ProductionTaskObserver;
 use App\Observers\ProjectObserver;
+use App\Observers\SystemSettingObserver;
 use Illuminate\Support\ServiceProvider;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -38,6 +40,7 @@ class AppServiceProvider extends ServiceProvider
         ProductionTask::observe(ProductionTaskObserver::class);
         Project::observe(ProjectObserver::class);
         Employee::observe(EmployeeObserver::class);
+        SystemSetting::observe(SystemSettingObserver::class);
 
         \Carbon\Carbon::setLocale('ar');
 

@@ -1,61 +1,245 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# ModernLife - Production Management System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A comprehensive Laravel-based production management system built with Filament for managing production requests, projects, tasks, and workflows.
 
-## About Laravel
+## Features
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **Production Request Workflow**: Multi-phase workflow management (Showroom Review → Factory Intake → Department Assignment → Manufacturing → Quality → Installation)
+- **Project Management**: Track projects from request to completion
+- **Task Management**: Assign and track tasks across departments
+- **Role-Based Access Control**: Comprehensive permissions system using Spatie Laravel Permission
+- **File Management**: Secure file upload and access control
+- **Zoho CRM Integration**: OAuth-based integration with Zoho CRM
+- **Notifications**: Real-time notifications for workflow events
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Requirements
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- PHP >= 8.3
+- Composer
+- Node.js >= 18.x and npm
+- MySQL/MariaDB
+- Redis (recommended for caching and queues)
 
-## Learning Laravel
+## Installation
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd ModernLife
+   ```
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+2. **Install PHP dependencies**
+   ```bash
+   composer install
+   ```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+3. **Install Node dependencies**
+   ```bash
+   npm install
+   ```
 
-## Laravel Sponsors
+4. **Environment setup**
+   ```bash
+   cp .env.example .env
+   php artisan key:generate
+   ```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+5. **Configure `.env` file**
+   - Set database credentials
+   - Configure Redis for caching (optional but recommended)
+   - Set up Zoho CRM credentials (if using Zoho integration):
+     ```
+     ZOHO_CLIENT_ID=your_client_id
+     ZOHO_CLIENT_SECRET=your_client_secret
+     ZOHO_REFRESH_TOKEN=your_refresh_token
+     ZOHO_ACCOUNTS_BASE=https://accounts.zoho.com
+     ZOHO_API_BASE=https://www.zohoapis.com
+     ```
 
-### Premium Partners
+6. **Run migrations**
+   ```bash
+   php artisan migrate
+   ```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+7. **Seed the database** (optional)
+   ```bash
+   php artisan db:seed
+   ```
+
+8. **Build frontend assets**
+   ```bash
+   npm run build
+   ```
+
+## Development
+
+### Running the development server
+
+Use the convenient dev script that runs server, queue worker, and Vite:
+
+```bash
+composer dev
+```
+
+Or run individually:
+
+```bash
+# Terminal 1: Laravel server
+php artisan serve
+
+# Terminal 2: Queue worker
+php artisan queue:listen --tries=1
+
+# Terminal 3: Vite dev server
+npm run dev
+```
+
+### Code Quality
+
+The project includes PHPStan and Laravel Pint for code quality:
+
+```bash
+# Run Pint (code formatting)
+./vendor/bin/pint
+
+# Run PHPStan (static analysis)
+./vendor/bin/phpstan analyse
+```
+
+### Testing
+
+```bash
+# Run all tests
+composer test
+
+# Or directly
+php artisan test
+```
+
+## Security Considerations
+
+### File Access
+
+- All file access routes require authentication
+- Files are protected by policy checks to ensure users can only access files for production requests they have permission to view
+- Use signed URLs for temporary file access if needed
+
+### Debug Routes
+
+- Debug and development routes (`/dev/*`, `/test-notif`) are only available in non-production environments
+- Admin-only routes (`/admin/perm-cache-reset`) require admin or super-admin roles
+
+### Zoho Integration
+
+- Zoho OAuth credentials should be kept secure in `.env`
+- Never commit `.env` file to version control
+- Rotate refresh tokens periodically
+- The OAuth callback route is public but should be protected by Zoho's redirect URI validation
+
+## Workflow Overview
+
+### Production Request Flow
+
+1. **Request Creation**: Sales or Showroom Manager creates a production request
+2. **Showroom Review** (Indirect requests only): Showroom Manager reviews and approves
+3. **Factory Intake**: Factory Manager reviews the request
+4. **Department Assignment**: Factory Manager assigns to departments
+5. **Purchasing**: Purchasing Manager handles material procurement
+6. **Manufacturing**: Department Managers oversee production
+7. **Quality Checks**: Quality Manager verifies at multiple stages
+8. **Installation**: Installation Manager handles on-site work
+9. **Completion**: Request is closed when project is complete
+
+### Request Types
+
+- **Direct**: Goes straight from Sales to Factory Intake
+- **Indirect**: Goes through Showroom Review first
+
+## Key Models
+
+- `ProductionRequest`: Main workflow entity
+- `Project`: Created from approved production requests
+- `ProductionTask`: Tasks within projects
+- `Client`: Customer information
+- `Department`: Organizational departments
+- `Employee`: Employee records linked to users
+
+## Permissions
+
+The system uses Spatie Laravel Permission. Key roles:
+
+- `super-admin`: Full system access
+- `admin`: Administrative access
+- `factory_manager`: Factory operations
+- `showroom_manager`: Showroom operations
+- `department_manager`: Department-specific access
+- `quality_manager`: Quality control access
+- `purchasing_manager`: Purchasing access
+- `installation_manager`: Installation access
+- `sales`: Sales team access
+
+## Caching
+
+- System settings are cached using Laravel's cache system
+- Cache is automatically cleared when settings are updated
+- Use `setting_clear('key')` or `setting_clear_all()` to manually clear cache
+
+## Queue Configuration
+
+The application uses queues for background jobs. Configure your queue driver in `.env`:
+
+```env
+QUEUE_CONNECTION=redis  # or database, sync, etc.
+```
+
+Make sure to run a queue worker:
+
+```bash
+php artisan queue:work
+```
+
+## Troubleshooting
+
+### Permission Cache Issues
+
+If permissions aren't updating, clear the cache:
+
+```bash
+# Via route (requires admin access)
+GET /admin/perm-cache-reset
+
+# Or via artisan
+php artisan permission:cache-reset
+```
+
+### Settings Not Updating
+
+Settings are cached. Clear the cache:
+
+```php
+setting_clear('setting_key');
+// or
+setting_clear_all();
+```
+
+### File Access Issues
+
+- Ensure files are stored in `storage/app/public`
+- Run `php artisan storage:link` to create the symlink
+- Check file permissions on the storage directory
 
 ## Contributing
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+1. Create a feature branch
+2. Make your changes
+3. Run tests: `composer test`
+4. Run code quality tools: `./vendor/bin/pint && ./vendor/bin/phpstan analyse`
+5. Submit a pull request
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+This project is proprietary software.
+
+## Support
+
+For issues and questions, please contact the development team.

@@ -37,7 +37,8 @@ class User extends Authenticatable implements FilamentUser
 
     }
 
-    protected $appends = ['all_permissions']; // Important for permission checks
+    // Removed $appends = ['all_permissions'] to avoid N+1 queries
+    // Use $user->getAllPermissions() or $user->can() instead
 
     protected function casts(): array
     {
@@ -62,30 +63,12 @@ class User extends Authenticatable implements FilamentUser
         )->withTimestamps();
     }
 
-    public function getAllPermissionsAttribute()
-    {
-        $permissions = $this->getDirectPermissions();
-
-        foreach ($this->roles as $role) {
-            $permissions = $permissions->merge($role->permissions);
-        }
-
-        return $permissions->unique('id');
-    }
-
-    public function roles(): BelongsToMany
-    {
-        return $this->morphToMany(
-            config('permission.models.role'),
-            'model',
-            config('permission.table_names.model_has_roles'),
-            config('permission.column_names.model_morph_key'),
-            'role_id'
-        );
-    }
-
+    /**
+     * Check if user has a specific permission
+     * Uses Spatie's built-in can() method which is properly cached
+     */
     public function hasPermission(string $permissionName): bool
     {
-        return $this->all_permissions->contains('name', $permissionName);
+        return $this->can($permissionName);
     }
 }

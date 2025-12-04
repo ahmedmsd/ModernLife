@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ZohoOauthController;
 use Filament\Facades\Filament;
 use Illuminate\Notifications\Notification as BaseNotif;
+use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\PermissionRegistrar;
 use Illuminate\Support\Facades\Storage;
 use App\Models\ProductionRequestFile;
@@ -17,30 +18,42 @@ Route::get('/', function () {
 
 
 
-Route::get('/files/{file}', function (ProductionRequestFile $file) {
-    $path = ltrim($file->file_path, '/');
-    abort_unless(Storage::disk('public')->exists($path), 404);
-    return Storage::disk('public')->response($path);
-})->name('files.show');
+// Secure file access routes - require authentication and authorization
+Route::middleware(['auth'])->group(function () {
+    Route::get('/files/{file}', [App\Http\Controllers\ProductionRequestFileController::class, 'show'])
+        ->name('files.show');
+    Route::get('/files/{file}/download', [App\Http\Controllers\ProductionRequestFileController::class, 'download'])
+        ->name('files.download');
+});
 
-Route::get('/admin/perm-cache-reset', function () {
-    app(PermissionRegistrar::class)->forgetCachedPermissions();
-    return 'Permission cache reset.';
-})->middleware(['auth']);
+// Admin-only utility routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/admin/perm-cache-reset', function () {
+        // Only allow admins to reset permission cache
+        abort_unless(auth()->user()?->hasAnyRole(['admin', 'super-admin']), 403);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        return 'Permission cache reset.';
+    })->name('admin.perm-cache-reset');
+});
 
-Route::get('/test-notif', function () {
-    $user = Filament::auth()->user() ?? auth()->user();
-    abort_unless($user, 401);
+// Development/testing routes - protect with environment check
+if (app()->environment(['local', 'testing'])) {
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/test-notif', function () {
+            $user = Filament::auth()->user() ?? auth()->user();
+            abort_unless($user, 401);
 
-    Notification::send($user, new class extends BaseNotif {
-        public function via($n): array
-        { return ['database']; }
-        public function toDatabase($n): array
-        { return ['title'=>'تنبيه تجريبي','url'=>url('/')]; }
+            Notification::send($user, new class extends BaseNotif {
+                public function via($n): array
+                { return ['database']; }
+                public function toDatabase($n): array
+                { return ['title'=>'تنبيه تجريبي','url'=>url('/')]; }
+            });
+
+            return 'OK';
+        })->name('test-notif');
     });
-
-    return 'OK';
-})->middleware('auth');
+}
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/files/legacy/{file}', [LegacyFileController::class, 'show'])
@@ -50,83 +63,83 @@ Route::middleware(['auth'])->group(function () {
         ->name('legacy-files.download');
 });
 
-Route::get('/dev/zoho-perm-test', function () {
-    $accounts = rtrim(env('ZOHO_ACCOUNTS_BASE', 'https://accounts.zoho.com'), '/');
-    $api      = rtrim(env('ZOHO_API_BASE',      'https://www.zohoapis.com'), '/');
+// Zoho integration routes - only available in non-production environments
+if (!app()->environment('production')) {
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/dev/zoho-perm-test', function () {
+            // Only allow admins to test Zoho permissions
+            abort_unless(auth()->user()?->hasAnyRole(['admin', 'super-admin']), 403);
+            
+            $accounts = rtrim(env('ZOHO_ACCOUNTS_BASE', 'https://accounts.zoho.com'), '/');
+            $api      = rtrim(env('ZOHO_API_BASE',      'https://www.zohoapis.com'), '/');
 
-    // جدّد access_token
-    $tok = Http::asForm()->post($accounts.'/oauth/v2/token', [
-        'grant_type'    => 'refresh_token',
-        'client_id'     => env('ZOHO_CLIENT_ID'),
-        'client_secret' => env('ZOHO_CLIENT_SECRET'),
-        'refresh_token' => env('ZOHO_REFRESH_TOKEN'),
-    ])->throw()->json();
+            // جدّد access_token
+            $tok = Http::asForm()->post($accounts.'/oauth/v2/token', [
+                'grant_type'    => 'refresh_token',
+                'client_id'     => env('ZOHO_CLIENT_ID'),
+                'client_secret' => env('ZOHO_CLIENT_SECRET'),
+                'refresh_token' => env('ZOHO_REFRESH_TOKEN'),
+            ])->throw()->json();
 
-    $access = $tok['access_token'] ?? null;
-    $H = ['Authorization' => 'Zoho-oauthtoken '.$access, 'Accept'=>'application/json'];
+            $access = $tok['access_token'] ?? null;
+            $H = ['Authorization' => 'Zoho-oauthtoken '.$access, 'Accept'=>'application/json'];
 
-    $check = function($path) use ($api, $H) {
-        try {
-            $r = Http::withHeaders($H)->get($api.'/crm/v3/'.$path, ['per_page'=>1]);
-            return ['ok' => $r->successful(), 'status' => $r->status(), 'body' => $r->json()];
-        } catch (\Throwable $e) {
-            return ['ok' => false, 'error' => $e->getMessage()];
-        }
-    };
+            $check = function($path) use ($api, $H) {
+                try {
+                    $r = Http::withHeaders($H)->get($api.'/crm/v3/'.$path, ['per_page'=>1]);
+                    return ['ok' => $r->successful(), 'status' => $r->status(), 'body' => $r->json()];
+                } catch (\Throwable $e) {
+                    return ['ok' => false, 'error' => $e->getMessage()];
+                }
+            };
 
-    return [
-        'Quotes'   => $check('Quotes'),
-        'Accounts' => $check('Accounts'),
-        'Contacts' => $check('Contacts'),
-        'Products' => $check('Products'),
-    ];
-});
+            return [
+                'Quotes'   => $check('Quotes'),
+                'Accounts' => $check('Accounts'),
+                'Contacts' => $check('Contacts'),
+                'Products' => $check('Products'),
+            ];
+        })->name('dev.zoho-perm-test');
+    });
+}
 
-Route::get('/oauth/zoho/callback', function (Request $r) {
-    $code = $r->query('code');
-    if (!$code) return response('Missing ?code', 400);
+// Zoho OAuth callback - should be handled by a proper controller
+Route::get('/oauth/zoho/callback', [ZohoOauthController::class, 'callback'])
+    ->name('oauth.zoho.callback');
 
-    $accounts = rtrim($r->query('accounts-server', env('ZOHO_ACCOUNTS_BASE', 'https://accounts.zoho.com')), '/');
-    $verify   = storage_path('certs/cacert.pem');
+// Zoho test route - only in non-production
+if (!app()->environment('production')) {
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/dev/zoho-test', function () {
+            // Only allow admins
+            abort_unless(auth()->user()?->hasAnyRole(['admin', 'super-admin']), 403);
+            
+            $accounts = rtrim(env('ZOHO_ACCOUNTS_BASE', 'https://accounts.zoho.com'), '/');
+            $api      = rtrim(env('ZOHO_API_BASE',      'https://www.zohoapis.com'), '/');
+            $verify   = storage_path('certs/cacert.pem');
 
-    $res = Http::withOptions(['verify' => $verify])   // ← مهم
-    ->asForm()
-        ->post($accounts . '/oauth/v2/token', [
-            'grant_type'    => 'authorization_code',
-            'client_id'     => env('ZOHO_CLIENT_ID'),
-            'client_secret' => env('ZOHO_CLIENT_SECRET'),
-            'redirect_uri'  => 'http://localhost:8000/oauth/zoho/callback',
-            'code'          => $code,
-        ])->throw()->json();
+            // 1) refresh token
+            $tok = Http::withOptions(['verify' => $verify])   // ← مهم
+            ->asForm()
+                ->post($accounts . '/oauth/v2/token', [
+                    'grant_type'    => 'refresh_token',
+                    'client_id'     => env('ZOHO_CLIENT_ID'),
+                    'client_secret' => env('ZOHO_CLIENT_SECRET'),
+                    'refresh_token' => env('ZOHO_REFRESH_TOKEN'),
+                ])->throw()->json();
 
-    return response()->json($res);
-});
+            $access = $tok['access_token'] ?? null;
+            if (!$access) return response()->json(['error'=>'no access_token','raw'=>$tok], 500);
 
-Route::get('/dev/zoho-test', function () {
-    $accounts = rtrim(env('ZOHO_ACCOUNTS_BASE', 'https://accounts.zoho.com'), '/');
-    $api      = rtrim(env('ZOHO_API_BASE',      'https://www.zohoapis.com'), '/');
-    $verify   = storage_path('certs/cacert.pem');
+            // 2) call API
+            $resp = Http::withOptions(['verify' => $verify])  // ← مهم
+            ->withHeaders([
+                'Authorization' => 'Zoho-oauthtoken ' . $access,
+                'Accept'        => 'application/json',
+            ])->get($api . '/crm/v3/Quotes', ['per_page' => 1])
+                ->throw()->json();
 
-    // 1) refresh token
-    $tok = Http::withOptions(['verify' => $verify])   // ← مهم
-    ->asForm()
-        ->post($accounts . '/oauth/v2/token', [
-            'grant_type'    => 'refresh_token',
-            'client_id'     => env('ZOHO_CLIENT_ID'),
-            'client_secret' => env('ZOHO_CLIENT_SECRET'),
-            'refresh_token' => env('ZOHO_REFRESH_TOKEN'),
-        ])->throw()->json();
-
-    $access = $tok['access_token'] ?? null;
-    if (!$access) return response()->json(['error'=>'no access_token','raw'=>$tok], 500);
-
-    // 2) call API
-    $resp = Http::withOptions(['verify' => $verify])  // ← مهم
-    ->withHeaders([
-        'Authorization' => 'Zoho-oauthtoken ' . $access,
-        'Accept'        => 'application/json',
-    ])->get($api . '/crm/v3/Quotes', ['per_page' => 1])
-        ->throw()->json();
-
-    return ['ok'=>true, 'sample'=>$resp];
-});
+            return ['ok'=>true, 'sample'=>$resp];
+        })->name('dev.zoho-test');
+    });
+}

@@ -28,7 +28,8 @@ class SystemSetting extends Model
     }
 
     public static function put(string $key, $value): void {
-        static::updateOrCreate(['setting_key' => $key], ['setting_value' => $value]);
+        $setting = static::updateOrCreate(['setting_key' => $key], ['setting_value' => $value]);
+        // Cache will be cleared by SystemSettingObserver
     }
 
 }
