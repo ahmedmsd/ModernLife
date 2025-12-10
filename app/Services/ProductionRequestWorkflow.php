@@ -472,12 +472,8 @@ class ProductionRequestWorkflow
 
         $byRelation = match ($role) {
             'showroom_manager'      => optional($pr->showroom?->manager)->id,
-            'factory_manager'       => optional($pr->factory?->manager)->id ?? null,
-            'purchasing_manager'    => optional($pr->purchasingDepartment?->manager)->id ?? null,
-            'department_manager'    => null,
-            'quality_manager'       => null,
-            'installation_manager'  => null,
-            'sales'         => null,
+            // 'factory_manager' -> will use fallback
+            // 'purchasing_manager' -> will use fallback
             default                 => null,
         };
 

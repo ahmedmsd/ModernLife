@@ -215,6 +215,7 @@ class ProductionRequestResource extends Resource
     {
         return $table
             ->columns([
+                TextColumn::make('id')->label('#')->sortable(),
                 TextColumn::make('project_name')
                     ->label('اسم المشروع')
                     ->searchable(),

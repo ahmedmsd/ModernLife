@@ -259,12 +259,6 @@ class ViewTask extends ViewRecord
                                 ->take(500)
                                 ->get();
 
-                            \Log::channel('single')->info('TaskLogs debug', [
-                                'task_id' => $record->id,
-                                'count' => $logs->count(),
-                                'ids' => $logs->pluck('id')->take(50)->values()->toArray(),
-                            ]);
-
                             return $logs; // تأكد من إرجاع Collection
                         }),
                 ])

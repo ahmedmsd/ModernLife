@@ -81,6 +81,7 @@ class DelayedTasksTable extends TableWidget
                 TextColumn::make('status')
                     ->label('الحالة')
                     ->badge()
+                    ->formatStateUsing(fn ($state) => app(\App\Support\Tasks\TaskPageHelper::class)->statusAr($state))
                     ->color(fn (string $state) => match ($state) {
                         'completed','closed' => 'success',
                         'in_progress'        => 'warning',

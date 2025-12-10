@@ -3,7 +3,7 @@
 namespace App\Filament\Actions\Task\Completion;
 
 use App\Models\ProductionTask;
-use App\Services\Tasks\TaskWorkflowService;
+use App\Services\Tasks\Workflow\CompletionWorkflowService;
 use App\Support\Tasks\TaskPageHelper;
 use Filament\Actions\Action;
 use Filament\Forms;
@@ -94,8 +94,8 @@ class UploadClientReceiptAction
      */
     protected static function handle(ProductionTask $record, array $data): void
     {
-        /** @var TaskWorkflowService $workflow */
-        $workflow = app(TaskWorkflowService::class);
+        /** @var CompletionWorkflowService $workflow */
+        $workflow = app(CompletionWorkflowService::class);
         
         $workflow->uploadClientReceiptAndComplete(
             $record,

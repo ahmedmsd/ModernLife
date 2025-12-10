@@ -3,7 +3,7 @@
 namespace App\Filament\Actions\Task\Materials;
 
 use App\Models\ProductionTask;
-use App\Services\Tasks\TaskWorkflowService;
+use App\Services\Tasks\Workflow\MaterialsWorkflowService;
 use App\Support\Tasks\TaskPageHelper;
 use Filament\Actions\Action;
 use Filament\Forms;
@@ -175,8 +175,8 @@ class MaterialsReceiptAction
             }
         }
 
-        /** @var TaskWorkflowService $workflow */
-        $workflow = app(TaskWorkflowService::class);
+        /** @var MaterialsWorkflowService $workflow */
+        $workflow = app(MaterialsWorkflowService::class);
 
         switch ($type) {
             case 'ok':

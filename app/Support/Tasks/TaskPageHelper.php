@@ -58,6 +58,9 @@ class TaskPageHelper
             'rejected'           => 'مرفوض',
             'rework'             => 'إعادة عمل',
             'on_hold'            => 'موقوف مؤقتاً',
+            'materials_wait'     => 'بانتظار الخامات',
+            'materials_prep'     => 'تجهيز الخامات',
+            'materials_done'     => 'الخامات جاهزة',
             'closed'             => 'مغلقة',
             default              => $status !== '' ? $status : '-',
         };
@@ -245,24 +248,36 @@ class TaskPageHelper
 
     public function canRequestMaterials(ProductionTask $task, ?Authenticatable $user): bool
     {
+        // Check Roles first
         if (! $this->userHasAnyRole($user, ['department_manager'])) {
             return false;
         }
 
-        if (! $this->ownerIs($task, 'department_manager')) {
-            return false;
-        }
-
-        if ($this->hasOpenMaterialsRequest($task)) {
-            return false;
-        }
-
         $status = $this->statusVal($task);
-        if (! in_array($status, ['waiting_production', 'rework','received'], true)) {
+
+        // Define valid statuses
+        // We add 'materials_wait', 'materials_prep', 'materials_done' to allow supplementary requests
+        $validStatuses = [
+            'waiting_production', 'rework', 'received',
+            'materials_wait', 'materials_prep', 'materials_done'
+        ];
+
+        if (! in_array($status, $validStatuses, true)) {
             return false;
         }
 
-        return true;
+        // Ownership logic:
+        // 1. If currently with Department Manager -> OK
+        if ($this->ownerIs($task, 'department_manager')) {
+            return true;
+        }
+
+        // 2. If it is with Purchasing Manager (and in materials phase) -> OK (Supplementary)
+        if ($this->ownerIs($task, 'purchasing_manager') && in_array($status, ['materials_wait', 'materials_prep', 'materials_done'], true)) {
+            return true;
+        }
+
+        return false;
     }
 
     public function canPurchasingReceive(ProductionTask $task, ?Authenticatable $user): bool
@@ -619,7 +634,7 @@ class TaskPageHelper
 
     public function canInstallationAcknowledgeAfterQAApprove(ProductionTask $task, ?Authenticatable $user): bool
     {
-        if (! $this->ownerIs($task, 'installation_manager')) {
+        if (! ($this->ownerIs($task, 'installation_manager') || $this->ownerIs($task, 'department_manager'))) {
             return false;
         }
 
@@ -657,7 +672,7 @@ class TaskPageHelper
             return false;
         }
 
-        if (! $this->ownerIs($task, 'installation_manager') || ! $this->isOwnerUser($task, $user)) {
+        if (! ($this->ownerIs($task, 'installation_manager') || $this->ownerIs($task, 'department_manager')) || ! $this->isOwnerUser($task, $user)) {
             return false;
         }
 
@@ -695,7 +710,7 @@ class TaskPageHelper
             return false;
         }
 
-        if (! $this->ownerIs($task, 'installation_manager') || ! $this->isOwnerUser($task, $user)) {
+        if (! ($this->ownerIs($task, 'installation_manager') || $this->ownerIs($task, 'department_manager')) || ! $this->isOwnerUser($task, $user)) {
             return false;
         }
 

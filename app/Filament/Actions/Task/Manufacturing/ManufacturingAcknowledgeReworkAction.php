@@ -3,7 +3,7 @@
 namespace App\Filament\Actions\Task\Manufacturing;
 
 use App\Models\ProductionTask;
-use App\Services\Tasks\TaskWorkflowService;
+use App\Services\Tasks\Workflow\ManufacturingWorkflowService;
 use App\Support\Tasks\TaskPageHelper;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
@@ -67,8 +67,8 @@ class ManufacturingAcknowledgeReworkAction
      */
     protected static function handle(ProductionTask $record, array $data): void
     {
-        /** @var TaskWorkflowService $workflow */
-        $workflow = app(TaskWorkflowService::class);
+        /** @var ManufacturingWorkflowService $workflow */
+        $workflow = app(ManufacturingWorkflowService::class);
         
         $workflow->manufacturingAcknowledgeRework($record, $data['note'] ?? null);
 

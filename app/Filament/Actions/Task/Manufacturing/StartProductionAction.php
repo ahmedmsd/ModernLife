@@ -4,7 +4,7 @@ namespace App\Filament\Actions\Task\Manufacturing;
 
 use App\Models\ProductionTask;
 use App\Models\TaskLog;
-use App\Services\Tasks\TaskWorkflowService;
+use App\Services\Tasks\Workflow\ManufacturingWorkflowService;
 use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Notifications\Notification;
@@ -89,7 +89,7 @@ class StartProductionAction
 
     protected static function handle(ProductionTask $record, array $data): void
     {
-        $workflow = app(TaskWorkflowService::class);
+        $workflow = app(ManufacturingWorkflowService::class);
         $workflow->startProduction($record, $data['started_at'], $data['note'] ?? null);
 
         Notification::make()

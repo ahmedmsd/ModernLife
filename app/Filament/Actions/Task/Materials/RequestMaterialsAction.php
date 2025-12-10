@@ -3,7 +3,7 @@
 namespace App\Filament\Actions\Task\Materials;
 
 use App\Models\ProductionTask;
-use App\Services\Tasks\TaskWorkflowService;
+use App\Services\Tasks\Workflow\MaterialsWorkflowService;
 use App\Support\Tasks\TaskPageHelper;
 use Filament\Actions\Action;
 use Filament\Forms;
@@ -89,7 +89,7 @@ class RequestMaterialsAction
     protected static function handle(ProductionTask $record, array $data): void
     {
         /** @var TaskWorkflowService $workflow */
-        $workflow = app(TaskWorkflowService::class);
+        $workflow = app(MaterialsWorkflowService::class);
         
         $workflow->requestMaterials($record, $data['note'], $data['po_file']);
 

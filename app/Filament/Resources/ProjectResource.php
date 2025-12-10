@@ -145,6 +145,7 @@ class ProjectResource extends Resource
     {
         return $table
             ->columns([
+                TextColumn::make('id')->label('#')->sortable(),
                 TextColumn::make('project_name')->label('اسم المشروع')->searchable(),
                 TextColumn::make('client.client_name')->label('العميل'),
                 TextColumn::make('status')

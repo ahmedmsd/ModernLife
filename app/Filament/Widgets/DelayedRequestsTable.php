@@ -77,6 +77,13 @@ class DelayedRequestsTable extends TableWidget
                 TextColumn::make('status')
                     ->label('الحالة')
                     ->badge()
+                    ->formatStateUsing(fn (string $state) => match ($state) {
+                        'submitted'    => 'تم التقديم',
+                        'under_review' => 'قيد المراجعة',
+                        'approved'     => 'تم الموافقة',
+                        'rejected'     => 'تم الرفض',
+                        default        => $state,
+                    })
                     ->color(fn (string $state) => match ($state) {
                         'approved'     => 'success',
                         'rejected'     => 'danger',
@@ -145,10 +152,10 @@ class DelayedRequestsTable extends TableWidget
                 SelectFilter::make('status')
                     ->label('حالة الطلب')
                     ->options([
-                        'submitted'    => 'مُقدَّم',
+                        'submitted'    => 'تم التقديم',
                         'under_review' => 'قيد المراجعة',
-                        'approved'     => 'مقبول',
-                        'rejected'     => 'مرفوض',
+                        'approved'     => 'تم الموافقة',
+                        'rejected'     => 'تم الرفض',
                     ]),
 
                 Filter::make('waiting_receive')

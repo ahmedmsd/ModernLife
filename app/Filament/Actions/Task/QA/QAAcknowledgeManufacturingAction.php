@@ -3,7 +3,7 @@
 namespace App\Filament\Actions\Task\QA;
 
 use App\Models\ProductionTask;
-use App\Services\Tasks\TaskWorkflowService;
+use App\Services\Tasks\Workflow\ManufacturingWorkflowService;
 use App\Support\Tasks\TaskPageHelper;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
@@ -30,8 +30,8 @@ class QAAcknowledgeManufacturingAction
 
     protected static function handle(ProductionTask $record): void
     {
-        $workflow = app(TaskWorkflowService::class);
-        $workflow->qaAcknowledgeManufacturing($record);
+        $workflow = app(ManufacturingWorkflowService::class);
+        $workflow->qaAcknowledgeManufacturing($record, $data['note'] ?? null);
 
         Notification::make()
             ->success()

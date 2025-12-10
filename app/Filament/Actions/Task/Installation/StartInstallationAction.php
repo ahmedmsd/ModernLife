@@ -3,7 +3,7 @@
 namespace App\Filament\Actions\Task\Installation;
 
 use App\Models\ProductionTask;
-use App\Services\Tasks\TaskWorkflowService;
+use App\Services\Tasks\Workflow\InstallationWorkflowService;
 use App\Support\Tasks\TaskPageHelper;
 use Filament\Actions\Action;
 use Filament\Forms;
@@ -47,7 +47,7 @@ class StartInstallationAction
 
     protected static function handle(ProductionTask $record, array $data): void
     {
-        $workflow = app(TaskWorkflowService::class);
+        $workflow = app(InstallationWorkflowService::class);
         $workflow->startInstallation($record, $data['started_at'], $data['note'] ?? null);
 
         Notification::make()

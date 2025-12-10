@@ -67,7 +67,9 @@ class DepartmentManagerCurrentTasks extends TableWidget
                 Tables\Columns\TextColumn::make('project.project_name')->label('المشروع')->searchable()->wrap(),
                 Tables\Columns\TextColumn::make('project.productionRequest.showroom.name')->label('المعرض')->toggleable(),
                 Tables\Columns\TextColumn::make('department.dept_name')->label('القسم')->sortable(),
-                Tables\Columns\TextColumn::make('status')->label('الحالة')->badge(),
+                Tables\Columns\TextColumn::make('status')->label('الحالة')->badge()
+                    ->formatStateUsing(fn ($state) => app(\App\Support\Tasks\TaskPageHelper::class)->statusAr($state))
+                    ->color(fn (string $state) => app(\App\Support\Tasks\TaskPageHelper::class)->statusColor($state)),
                 Tables\Columns\TextColumn::make('due_date')->label('تاريخ التسليم')->date()->sortable()->placeholder('—'),
                 Tables\Columns\TextColumn::make('created_at')->label('أُنشئت')->since()->sortable(),
             ])

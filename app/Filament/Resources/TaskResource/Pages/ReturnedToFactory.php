@@ -6,7 +6,7 @@ use App\Filament\Resources\TaskResource;
 use App\Models\ProductionTask;
 use App\Models\User;
 use App\Notifications\TaskSentForConfirmation;
-use App\Services\Tasks\TaskWorkflowService;
+use App\Services\Tasks\Workflow\AssignmentWorkflowService;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Tables;
 use Filament\Forms;
@@ -127,59 +127,23 @@ class ReturnedToFactory extends ListRecords
                         'department_id'  => $data['department_id'] ?? $record->department_id,
                     ]))->save();
 
-                    // حاول استخدام خدمة الـ Workflow إن وُجدت
-                    $svc = null;
+                    // Use AssignmentWorkflowService
                     try {
-                        $svc = app(TaskWorkflowService::class);
+                        /** @var AssignmentWorkflowService $workflow */
+                        $workflow = app(AssignmentWorkflowService::class);
+                        $workflow->resubmitToDeptManager($record, 'إعادة إرسال الى مدير القسم بعد تعديل من قبل البائع/المعرض');
                     } catch (\Throwable $e) {
-                        // لا تفشل العملية لو لم توجد الخدمة
-                        Log::debug('TaskWorkflowService not available: ' . $e->getMessage());
-                        $svc = null;
-                    }
-
-                    $deptManagerId = null;
-                    if ($svc && method_exists($svc, 'resolveDeptManagerUserId')) {
-                        try {
-                            $deptManagerId = $svc->resolveDeptManagerUserId($record);
-                        } catch (\Throwable $e) {
-                            Log::debug('resolveDeptManagerUserId failed: ' . $e->getMessage());
-                        }
-                    }
-
-                    if (! $deptManagerId) {
-                        $dept = $record->department()->first();
-                        if ($dept) {
-                            $deptManagerId = $dept->manager_user_id ?? $dept->manager_id ?? null;
-                        }
-                    }
-
-                    if ($svc && method_exists($svc, 'setOwner')) {
-                        try {
-                            $svc->setOwner(
-                                task: $record,
-                                role: 'department_manager',
-                                userId: $deptManagerId,
-                                touchSent: true,
-                                note: 'إعادة إرسال الى مدير القسم بعد تعديل من قبل البائع/المعرض'
-                            );
-                        } catch (\Throwable $e) {
-                            Log::error('TaskWorkflowService::setOwner failed: ' . $e->getMessage());
-                            // fallback يدوي
-                            $record->forceFill([
-                                'current_owner_role'    => 'department_manager',
-                                'current_owner_user_id' => $deptManagerId,
-                                'sent_to_owner_at'      => now(),
-                                'received_by_owner_at'  => null,
-                            ])->save();
-                        }
-                    } else {
-                        // fallback: ضبط الحقول يدوياً
-                        $record->forceFill([
+                         Log::error('AssignmentWorkflowService::resubmitToDeptManager failed: ' . $e->getMessage());
+                         // Manual Fallback if service fails (though unlikely with simple code)
+                         $dept = $record->department()->first();
+                         $deptManagerId = $dept->manager_user_id ?? $dept->manager_id ?? null;
+                         
+                         $record->forceFill([
                             'current_owner_role'    => 'department_manager',
                             'current_owner_user_id' => $deptManagerId,
                             'sent_to_owner_at'      => now(),
-                            'received_by_owner_at'  => null,
-                        ])->save();
+                             'received_by_owner_at'  => null,
+                         ])->save();
                     }
 
                     try {

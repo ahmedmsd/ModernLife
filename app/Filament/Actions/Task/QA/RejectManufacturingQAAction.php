@@ -3,7 +3,7 @@
 namespace App\Filament\Actions\Task\QA;
 
 use App\Models\ProductionTask;
-use App\Services\Tasks\TaskWorkflowService;
+use App\Services\Tasks\Workflow\ManufacturingWorkflowService;
 use App\Support\Tasks\TaskPageHelper;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
@@ -47,8 +47,8 @@ class RejectManufacturingQAAction
 
     protected static function handle(ProductionTask $record, array $data): void
     {
-        $workflow = app(TaskWorkflowService::class);
-        $workflow->rejectManufacturingQA($record, $data['reason']);
+        $workflow = app(ManufacturingWorkflowService::class);
+        $workflow->rejectManufacturingQA($record, $data['note']);
 
         Notification::make()
             ->warning()

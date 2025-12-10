@@ -4,7 +4,7 @@ namespace App\Filament\Actions\Task\Assignment;
 
 use App\Models\ProductionTask;
 use App\Models\User;
-use App\Services\Tasks\TaskWorkflowService;
+use App\Services\Tasks\Workflow\AssignmentWorkflowService;
 use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Notifications\Notification;
@@ -93,8 +93,8 @@ class AssignToDeptManagerAction
      */
     protected static function handle(ProductionTask $record, array $data): void
     {
-        /** @var TaskWorkflowService $workflow */
-        $workflow = app(TaskWorkflowService::class);
+        /** @var AssignmentWorkflowService $workflow */
+        $workflow = app(AssignmentWorkflowService::class);
         
         $workflow->assignToDeptManager(
             $record,
