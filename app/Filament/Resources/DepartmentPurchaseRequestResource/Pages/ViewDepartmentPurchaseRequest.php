@@ -106,7 +106,7 @@ class ViewDepartmentPurchaseRequest extends ViewRecord
                     TextEntry::make('priority')->label('الأولوية')->badge()
                         ->color(fn ($state) => ['low' => 'gray', 'medium' => 'warning', 'high' => 'danger'][$state] ?? 'gray'),
                     TextEntry::make('status')->label('الحالة')->badge()
-                        ->color(fn ($s) => [
+                        ->color(fn ($state) => [
                             'draft' => 'gray',
                             'submitted_to_factory' => 'info',
                             'factory_approved' => 'success',
@@ -114,7 +114,7 @@ class ViewDepartmentPurchaseRequest extends ViewRecord
                             'sent_to_purchasing' => 'info',
                             'purchased' => 'warning',
                             'delivered' => 'success',
-                        ][$s] ?? 'gray'),
+                        ][$state] ?? 'gray'),
                 ]),
                 Grid::make(2)->schema([
                     TextEntry::make('title')->label('العنوان'),
