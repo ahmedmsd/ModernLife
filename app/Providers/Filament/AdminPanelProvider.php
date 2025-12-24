@@ -305,6 +305,9 @@ class AdminPanelProvider extends PanelProvider
                             ->collapsible()
                             ->collapsed()
                             ->items([
+                                 \Filament\Navigation\NavigationItem::make('تقرير المهام الجارية ')
+                                ->url(\App\Filament\Pages\InProgressTasksReport::getUrl())
+                                ->visible(fn () => \App\Filament\Pages\InProgressTasksReport::canAccess()),
                                 \Filament\Navigation\NavigationItem::make('لوحة التقارير')
                                 ->url(\App\Filament\Pages\Reports\PerformanceDashboard::getUrl())
                                 ->visible(fn () => \App\Filament\Pages\Reports\PerformanceDashboard::canAccess()),
@@ -341,7 +344,53 @@ class AdminPanelProvider extends PanelProvider
 
                             ])
                     );
-            });
+            })
+            ->renderHook(
+                \Filament\View\PanelsRenderHook::HEAD_END,
+                fn (): string => '
+                    <style>
+                        /* Base Layout - Remove Gaps */
+                        .fi-sidebar-group,
+                        .fi-sidebar-group-items,
+                        .fi-sidebar-sub-group-items,
+                        .fi-sidebar-item {
+                            gap: 0 !important;
+                        }
+
+                        /* Item Buttons (Regular Links) */
+                        .fi-sidebar-item-button {
+                            padding-block: 5px !important;
+                            min-height: auto !important;
+                        }
+
+                        /* Group Headers (Collapsible Parent Buttons) */
+                        .fi-sidebar-group-button {
+                            padding-block: 5px !important;
+                            min-height: auto !important;
+                            gap: 0.35rem !important;
+                        }
+
+                        /* Text Labels */
+                        .fi-sidebar-item-label,
+                        .fi-sidebar-group-label {
+                            line-height: 1.3 !important;
+                        }
+
+                        /* Icons - Scale down to 20px to allow tighter rows */
+                        .fi-sidebar-item-icon, 
+                        .fi-sidebar-group-icon {
+                            height: 1.35rem !important;
+                            width: 1.35rem !important;
+                        }
+
+                        /* Sub-item specific adjustments */
+                        .fi-sidebar-group-items > li,
+                        .fi-sidebar-sub-group-items > li {
+                             margin-top: 0 !important;
+                        }
+                    </style>
+                ',
+            );
 
 
     }

@@ -42,10 +42,10 @@ class ProductionTaskObserver
             $assignedUser = $task->assignedUser;            // User|null
             $employee     = $assignedUser?->employee;       // Employee|null
 
-            // إشعار البريد (على الموظف)
-            if ($employee && $employee->routeNotificationForMail(null)) {
-                $employee->notify(new TaskAssignedNotification($task, false));
-            }
+            // إشعار البريد (تم التعطيل لتقليل الإزعاج)
+            // if ($employee && $employee->routeNotificationForMail(null)) {
+            //     $employee->notify(new TaskAssignedNotification($task, false));
+            // }
 
             // إشعار داخل النظام (على المستخدم)
             if ($assignedUser) {
@@ -98,9 +98,9 @@ class ProductionTaskObserver
             $assignedUser = $task->assignedUser;      // User|null
             $employee     = $assignedUser?->employee; // Employee|null
 
-            if ($employee && $employee->routeNotificationForMail(null)) {
-                $employee->notify(new TaskAssignedNotification($task, true));
-            }
+            // if ($employee && $employee->routeNotificationForMail(null)) {
+            //    $employee->notify(new TaskAssignedNotification($task, true));
+            // }
 
             if ($assignedUser) {
                 $assignedUser->notify(new TaskAssignedInAppNotification($task, true));

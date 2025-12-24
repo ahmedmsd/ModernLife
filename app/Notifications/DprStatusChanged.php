@@ -22,7 +22,15 @@ class DprStatusChanged extends Notification
 
     public function via($notifiable): array
     {
-        return ['database', 'mail'];
+        $channels = ['database'];
+        
+        // Only send email for rejection or critical changes
+        $criticalActions = ['rejected', 'factory_rejected', 'cancelled'];
+        if (in_array($this->action, $criticalActions)) {
+            $channels[] = 'mail';
+        }
+
+        return $channels;
     }
 
     public function toDatabase($notifiable): array

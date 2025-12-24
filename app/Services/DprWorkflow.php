@@ -54,7 +54,15 @@ class DprWorkflow
             case 'sent_to_purchasing':
             case 'purchased':
             case 'delivered':
-                $recipients = collect([$dpr->requester])->merge($this->usersWithRole('department_manager'));
+                $dpr->loadMissing('department.managerUser');
+                $manager = $dpr->department?->managerUser;
+                $recipients = collect([$dpr->requester]);
+                if ($manager) {
+                    $recipients->push($manager);
+                } else {
+                    // Fallback to all managers if specific one not found
+                    $recipients = $recipients->merge($this->usersWithRole('department_manager'));
+                }
                 break;
         }
 

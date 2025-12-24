@@ -52,7 +52,7 @@ class ProductionTask extends Model
 
     public function employee(): BelongsTo
     {
-        return $this->belongsTo(Employee::class, 'assigned_to_user_id');
+        return $this->belongsTo(Employee::class, 'assigned_to_user_id', 'user_id');
     }
 
     public function assignedUser(): BelongsTo

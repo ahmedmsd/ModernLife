@@ -69,9 +69,9 @@ class AssignToDeptManagerAction
                     return User::query()
                         ->role('department_manager')
                         // Uncomment if you want to filter by department
-                        // ->when($deptId, function ($q) use ($deptId) {
-                        //     $q->whereHas('employee', fn ($q2) => $q2->where('department_id', $deptId));
-                        // })
+                        ->when($deptId, function ($q) use ($deptId) {
+                             $q->whereHas('employee', fn ($q2) => $q2->where('department_id', $deptId));
+                        })
                         ->orderBy('name')
                         ->pluck('name', 'id')
                         ->toArray();

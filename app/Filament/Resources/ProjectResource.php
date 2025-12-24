@@ -133,8 +133,14 @@ class ProjectResource extends Resource
             Forms\Components\Select::make('created_by')
                 ->relationship('creator', 'name')
                 ->default(fn() => Auth::id())
-                ->disabled()
-                ->dehydrated(), // important to save it
+                ->label('أنشأه')
+                ->required()
+                ->hiddenOn(['edit', 'view']),
+
+            Forms\Components\Placeholder::make('creator_name')
+                ->label('أنشأه')
+                ->content(fn ($record) => $record?->creator?->name ?? '—')
+                ->visibleOn(['edit', 'view']),
         ]);
     }
 

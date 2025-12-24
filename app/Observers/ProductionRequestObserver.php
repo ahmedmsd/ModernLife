@@ -44,7 +44,7 @@ class ProductionRequestObserver
         $q = User::query()->role('showroom_manager', $guard);
 
         if ($pr->showroom_id) {
-            $q->whereHas('employee', fn ($sub) => $sub->where('showroom_id', $pr->showroom_id));
+            $q->whereHas('managedShowrooms', fn ($sub) => $sub->where('id', $pr->showroom_id));
         }
 
         return $q;

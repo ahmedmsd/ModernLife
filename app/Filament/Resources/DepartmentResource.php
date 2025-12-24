@@ -55,8 +55,8 @@ class DepartmentResource extends Resource
                     ->preload() // احذفها إن كان عدد الموظفين ضخمًا
                     ->options(fn () => static::departmentManagerOptions())
                     ->getSearchResultsUsing(fn (string $term) => static::departmentManagerOptions($term))
-                    ->getOptionLabelUsing(fn ($value) =>
-                        Employee::query()->where('employee_id', $value)->value('employee_name') ?? '—'
+                    ->getOptionLabelUsing(fn ($value) => 
+                        Employee::query()->where('user_id', $value)->value('employee_name') ?? '—'
                     )
                     ->hint('يظهر فقط الموظفون الحاصلون على دور department_manager'),
 

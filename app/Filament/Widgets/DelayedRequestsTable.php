@@ -53,25 +53,9 @@ class DelayedRequestsTable extends TableWidget
                     ->color('gray')
                     ->toggleable(),
 
-                TextColumn::make('current_owner_user_id')
+                TextColumn::make('currentOwnerUser.name')
                     ->label('المستخدم الحالي')
-                    ->formatStateUsing(function ($state) {
-                        static $cache = [];
-                        if (!$state) {
-                            return '—';
-                        }
-
-                        if (!isset($cache[$state])) {
-                            $u = User::find($state);
-                            $cache[$state] = $u
-                                ? ($u->name
-                                    ?? $u->full_name
-                                    ?? $u->username
-                                    ?? ($u->email ?? ('مستخدم #' . $u->id)))
-                                : '—';
-                        }
-                        return $cache[$state];
-                    })
+                    ->placeholder('—')
                     ->toggleable(),
 
                 TextColumn::make('status')
@@ -310,6 +294,7 @@ class DelayedRequestsTable extends TableWidget
         return $model->newQuery()
             ->with([
                 'client:client_id,client_name',
+                'currentOwnerUser',
             ])
             ->addSelect([
                 "{$table}.*",

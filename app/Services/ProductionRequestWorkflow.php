@@ -344,7 +344,7 @@ class ProductionRequestWorkflow
                     'description'  => $pr->project_description ?? $pr->description,
                     'start_date'   => now(),
                     'status'       => 'in_progress',
-                    'created_by'   => Auth::id() ?? 0,
+                    'created_by'   => Auth::id() ?? $pr->created_by ?? 0,
                 ]
             );
 

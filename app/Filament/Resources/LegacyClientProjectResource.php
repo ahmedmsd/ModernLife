@@ -33,9 +33,12 @@ class LegacyClientProjectResource extends Resource
                 ->searchable()
                 ->required()
                 ->default(fn () => request('client_id'))
-                ->disabled(fn () => filled(request('client_id')))
+                ->hiddenOn(['edit', 'view'])
+                ->label('العميل'),
+            Forms\Components\Placeholder::make('client_name')
                 ->label('العميل')
-                ->dehydrated(),
+                ->content(fn ($record) => $record?->client?->client_name ?? '—')
+                ->visibleOn(['edit', 'view']),
             Forms\Components\TextInput::make('project_name')
                 ->required()
                 ->label('اسم المشروع'),

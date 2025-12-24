@@ -43,6 +43,14 @@ class AppServiceProvider extends ServiceProvider
         SystemSetting::observe(SystemSettingObserver::class);
 
         \Carbon\Carbon::setLocale('ar');
+        
+        // Global Table Configuration
+        \Filament\Tables\Table::configureUsing(function (\Filament\Tables\Table $table): void {
+            $table
+                ->defaultPaginationPageOption(30)
+                ->paginationPageOptions([10, 30, 50, 100]) // Include 30 in options
+                ->striped(); // Optional: good default
+        });
 
         // Optional preload
 //        Permission::get();

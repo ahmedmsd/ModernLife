@@ -24,7 +24,15 @@ class MaintenanceRequestStatusChanged extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        $channels = ['database'];
+
+        // Only send email for new requests or final completion
+        $criticalActions = ['new_request', 'completed'];
+        if (in_array($this->action, $criticalActions)) {
+            $channels[] = 'mail';
+        }
+
+        return $channels;
     }
 
     public function toDatabase(object $notifiable): array

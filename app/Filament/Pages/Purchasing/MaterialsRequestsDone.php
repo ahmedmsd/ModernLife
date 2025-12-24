@@ -69,14 +69,25 @@ class MaterialsRequestsDone extends Page implements HasTable
         return $table
             ->query($query)
             ->columns([
-                TextColumn::make('id')->label('رقم')->sortable()->searchable(),
+                TextColumn::make('id')->label('رقم #')->sortable()->searchable(),
+                
                 TextColumn::make('status')->label('الحالة')->badge()
                     ->color(fn ($state) => $state === 'fulfilled' ? 'success' : 'gray')
                     ->formatStateUsing(fn ($state) => $state === 'fulfilled' ? 'مُنفّذ' : $state),
+                
                 TextColumn::make('department.dept_name')->label('القسم')->toggleable()->searchable(),
-                TextColumn::make('task_id')->label('مهمة #')->sortable()->toggleable(),
-                TextColumn::make('task.project.client.client_name')->label(' العميل')->sortable()->toggleable(),
-                TextColumn::make('requestedBy.name')->label('أنشأه')->searchable(),
+                
+                // Client Only (Wrapped)
+                TextColumn::make('task.project.client.client_name')
+                    ->label('العميل')
+                    ->sortable()
+                    ->searchable()
+                    ->wrap()
+                    ->toggleable(),
+
+                // Requested By (Wrapped)
+                TextColumn::make('requestedBy.name')->label('أنشأه')->searchable()->wrap()->toggleable(),
+                
                 TextColumn::make('po_file')
                     ->label('أمر الشراء')
                     ->formatStateUsing(fn($state) => $state ? 'تحميل' : '—')
@@ -88,11 +99,29 @@ class MaterialsRequestsDone extends Page implements HasTable
                     )
                     ->openUrlInNewTab()
                     ->tooltip('تحميل ملف أمر الشراء إن وُجد'),
-                TextColumn::make('providedBy.name')->label('صرفها')->toggleable(),
-                TextColumn::make('provided_at')->label('تاريخ الصرف')->dateTime()->sortable(),
-                TextColumn::make('actual_cost')->label('التكلفة الفعلية')->money('sar', true)->sortable(),
+
+                // Provided By (Wrapped)
+                TextColumn::make('providedBy.name')->label('صرفها')->wrap()->toggleable(),
+                
+                // Provided At (Condensed)
+                TextColumn::make('provided_at')
+                    ->label('تاريخ الصرف')
+                    ->formatStateUsing(fn ($state) => $state ? '<div class="flex flex-col gap-0 leading-tight"><span>' . \Carbon\Carbon::parse($state)->format('Y-m-d') . '</span><span class="text-xs text-gray-500">' . \Carbon\Carbon::parse($state)->format('H:i') . '</span></div>' : '—')
+                    ->html()
+                    ->sortable(),
+
+                TextColumn::make('actual_cost')->label('التكلفة')->money('sar', true)->sortable(),
+                
                 TextColumn::make('invoice_no')->label('فاتورة #')->toggleable(),
-                TextColumn::make('invoice_date')->label('تاريخ الفاتورة')->date()->toggleable(),
+                
+                TextColumn::make('invoice_date')->label('تاريخ الفاتورة')->date('Y-m-d')->toggleable(),
+            ])
+            ->actions([
+                Tables\Actions\Action::make('view')
+                    ->label('')
+                    ->icon('heroicon-o-eye')
+                    ->url(fn (MaterialRequest $record): string => ViewMaterialRequest::getUrl(['record' => $record]))
+                    ->tooltip('عرض التفاصيل'),
             ])
             ->filters([
                 Tables\Filters\Filter::make('provided_range')

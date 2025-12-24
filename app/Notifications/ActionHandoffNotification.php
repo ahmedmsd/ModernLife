@@ -15,11 +15,17 @@ class ActionHandoffNotification extends Notification implements ShouldQueue
         public string $title,
         public ?string $body = null,
         public ?string $url  = null,
+        public bool $sendMail = true,
+        public string $action = '', // Added 'action' property
     ) {}
 
     public function via($notifiable): array
     {
-        return (config('notify.email', true) && !empty($notifiable->email)) ? ['mail'] : [];
+        $channels = ['database'];
+        if ($this->sendMail && config('notify.email', true) && !empty($notifiable->email)) {
+            $channels[] = 'mail';
+        }
+        return $channels;
     }
 
     public function toMail($notifiable): MailMessage

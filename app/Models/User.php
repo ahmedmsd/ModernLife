@@ -53,6 +53,16 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasOne(\App\Models\Employee::class, 'user_id', 'id');
     }
 
+    public function managedShowrooms(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\Showroom::class, 'manager_id', 'id');
+    }
+
+    public function managedDepartments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\Department::class, 'manager_id', 'id');
+    }
+
     public function directPermissions(): BelongsToMany
     {
         return $this->belongsToMany(
