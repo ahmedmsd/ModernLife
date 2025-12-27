@@ -31,6 +31,15 @@ class TaskResource extends Resource
 
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
+        return static::getPermissionScopedQuery();
+    }
+
+    /**
+     * Centralized query with all permission-based scoping.
+     * Used by list pages and for navigation badges.
+     */
+    public static function getPermissionScopedQuery(): \Illuminate\Database\Eloquent\Builder
+    {
         $q = parent::getEloquentQuery()
             ->with(['project.productionRequest.showroom', 'department', 'employee','project.client'])
             ->latest('id');
@@ -57,9 +66,34 @@ class TaskResource extends Resource
                         ->where('s.manager_id', $employeeId);
                 });
             }
+
+            if ($user?->hasRole('department_manager', 'web') && $user->employee?->department_id) {
+                $q->where('department_id', $user->employee->department_id);
+            }
         }
 
         return $q;
+    }
+
+    public static function getActiveCount(): int
+    {
+        return static::getPermissionScopedQuery()
+            ->whereNotIn('status', ['completed', 'closed', 'cancelled'])
+            ->count();
+    }
+
+    public static function getReturnedCount(): int
+    {
+        return static::getPermissionScopedQuery()
+            ->where('status', 'returned_to_factory')
+            ->count();
+    }
+
+    public static function getCompletedCount(): int
+    {
+        return static::getPermissionScopedQuery()
+            ->whereIn('status', ['completed', 'closed'])
+            ->count();
     }
 
 

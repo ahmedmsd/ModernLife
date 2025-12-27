@@ -32,96 +32,39 @@ class DelayedRequestsTable extends TableWidget
             ->columns([
                 TextColumn::make('id')
                     ->label('ID')
-                    ->sortable()
-                    ->toggleable(),
-
-                TextColumn::make('project_name')
-                    ->label('اسم المشروع')
-                    ->searchable()
-                    ->limit(40)
-                    ->toggleable(),
-
-                TextColumn::make('client.client_name')
-                    ->label('العميل')
-                    ->placeholder('—')
-                    ->searchable()
-                    ->toggleable(),
-
-                TextColumn::make('current_owner_role')
-                    ->label('مالك الطلب')
-                    ->badge()
-                    ->color('gray')
-                    ->toggleable(),
-
-                TextColumn::make('currentOwnerUser.name')
-                    ->label('المستخدم الحالي')
-                    ->placeholder('—')
-                    ->toggleable(),
-
-                TextColumn::make('status')
-                    ->label('الحالة')
-                    ->badge()
-                    ->formatStateUsing(fn (string $state) => match ($state) {
-                        'submitted'    => 'تم التقديم',
-                        'under_review' => 'قيد المراجعة',
-                        'approved'     => 'تم الموافقة',
-                        'rejected'     => 'تم الرفض',
-                        default        => $state,
-                    })
-                    ->color(fn (string $state) => match ($state) {
-                        'approved'     => 'success',
-                        'rejected'     => 'danger',
-                        'under_review' => 'warning',
-                        'submitted'    => 'info',
-                        default        => 'gray',
-                    })
                     ->sortable(),
 
-                TextColumn::make('submitted_at')
-                    ->label('تاريخ التقديم')
-                    ->since()
-                    ->sortable()
-                    ->toggleable(),
-
-                TextColumn::make('sent_to_owner_at')
-                    ->label('أُرسِل للمالك')
-                    ->since()
-                    ->placeholder('—')
-                    ->sortable()
-                    ->toggleable(),
-
-                TextColumn::make('received_by_owner_at')
-                    ->label('تم الاستلام')
-                    ->since()
-                    ->placeholder('—')
-                    ->sortable()
-                    ->toggleable(),
-
-                TextColumn::make('wait_hours')
-                    ->label('زمن انتظار الاستلام/الرد')
-                    ->formatStateUsing(function ($state, ProductionRequest $record) {
-                        if ($record->received_by_owner_at) {
-                            return '0 س';
-                        }
-                        $n = is_numeric($state) ? (int) $state : 0;
-                        return $n . ' س';
+                TextColumn::make('project_client')
+                    ->label('المشروع / العميل')
+                    ->html()
+                    ->state(function (ProductionRequest $r) {
+                        $pName = $r->project_name ?? '—';
+                        $cName = $r->client?->client_name ?? '—';
+                        return "<div>{$pName}</div><div class='text-xs text-gray-500'>{$cName}</div>";
                     })
-                    ->color(function ($state, ProductionRequest $record) {
-                        if ($record->received_by_owner_at) {
-                            return 'gray';
-                        }
-                        $n = is_numeric($state) ? (int) $state : 0;
-                        return $n >= 72 ? 'danger' : ($n >= 24 ? 'warning' : 'gray');
-                    })
-                    ->sortable()
-                    ->toggleable(),
+                    ->searchable(['id', 'project_name', 'client.client_name']),
 
-                TextColumn::make('under_review_days')
-                    ->label('مدة المراجعة')
-                    ->formatStateUsing(fn ($state) => ((int) ($state ?? 0)) . ' ي')
-                    ->color(fn ($state) => ((int) ($state ?? 0)) >= 3 ? 'warning' : 'gray')
-                    ->sortable()
-                    ->toggleable(),
+                TextColumn::make('owner_details')
+                    ->label('المالك')
+                    ->html()
+                    ->state(function (ProductionRequest $r) {
+                        $u = $r->currentOwnerUser;
+                        $uName = $u?->name ?? '—';
+                        $role = $r->current_owner_role ?? '—';
+                        $roleAr = match($role) {
+                            'factory_manager'    => 'مدير المصنع',
+                            'sales'              => 'المبيعات',
+                            'purchasing_manager' => 'مدير المشتريات',
+                            default              => $role,
+                        };
+                        return "<div>{$uName}</div><div class='text-xs text-gray-500'>{$roleAr}</div>";
+                    }),
+
+                TextColumn::make('handoff_delay_days')
+                    ->label('تأخير الاستلام')
+                    ->formatStateUsing(fn ($state) => ((int) $state) . ' يوم')
+                    ->color(fn ($state) => ((int) $state) >= 3 ? 'danger' : 'gray')
+                    ->sortable(),
             ])
             ->defaultSort('submitted_at', 'desc')
             ->filters([
@@ -296,10 +239,8 @@ class DelayedRequestsTable extends TableWidget
                 'client:client_id,client_name',
                 'currentOwnerUser',
             ])
-            ->addSelect([
-                "{$table}.*",
-
-                'wait_hours' => DB::raw("
+            ->select("{$table}.*")
+            ->selectRaw("
                 CASE
                     WHEN {$table}.received_by_owner_at IS NOT NULL THEN 0
                     WHEN COALESCE({$table}.sent_to_owner_at, {$table}.submitted_at) IS NULL THEN 0
@@ -311,10 +252,18 @@ class DelayedRequestsTable extends TableWidget
                             NOW()
                         )
                     )
-                END
-            "),
-
-                'under_review_days' => DB::raw("
+                END AS wait_hours
+            ")
+            ->selectRaw("
+                CASE
+                    WHEN COALESCE({$table}.sent_to_owner_at, {$table}.submitted_at) IS NULL THEN 0
+                    ELSE DATEDIFF(
+                        COALESCE({$table}.received_by_owner_at, NOW()),
+                        COALESCE({$table}.sent_to_owner_at, {$table}.submitted_at)
+                    )
+                END AS handoff_delay_days
+            ")
+            ->selectRaw("
                 CASE
                     WHEN {$table}.status = 'under_review'
                          AND {$table}.submitted_at IS NOT NULL
@@ -327,15 +276,18 @@ class DelayedRequestsTable extends TableWidget
                         )
                     )
                     ELSE 0
-                END
-            "),
-            ])
+                END AS under_review_days
+            ")
+            ->whereNotIn("{$table}.status", ['approved', 'rejected'])
+            ->whereNull("{$table}.received_by_owner_at")
             ->where(function (Builder $q) use ($table) {
-                $q->whereNull("{$table}.received_by_owner_at")
-                    ->orWhere(function (Builder $w) use ($table) {
-                        $w->where("{$table}.status", 'under_review')
-                            ->where("{$table}.submitted_at", '<', now()->subDays(3));
-                    });
+                $cutoff = now()->subDays(3)->startOfDay();
+                // Strictly > 3 days since sent_to_owner or submitted_at
+                $q->where("{$table}.sent_to_owner_at", '<', $cutoff)
+                  ->orWhere(function ($qq) use ($table, $cutoff) {
+                      $qq->whereNull("{$table}.sent_to_owner_at")
+                         ->where("{$table}.submitted_at", '<', $cutoff);
+                  });
             });
     }
 

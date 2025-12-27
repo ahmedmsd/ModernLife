@@ -19,6 +19,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Spatie\Permission\Models\Role;
 
@@ -32,11 +33,56 @@ class MaintenanceRequestResource extends Resource
     protected static ?string $pluralModelLabel = 'طلبات الصيانة';
     protected static ?string $modelLabel       = 'طلب صيانة';
     protected static ?int    $navigationSort   = 50;
-    protected static bool $shouldAuthorizeResource = false;
-    public static function canAccess(): bool
+    public static function getEloquentQuery(): Builder
     {
-        return auth()->check()
-            && auth()->user()->hasAnyRole(['sales','showroom_manager','factory_manager','admin','super-admin']);
+        $q = static::getPermissionScopedQuery();
+
+        if (request()->routeIs('filament.admin.resources.maintenance-requests.completed')) {
+            $q->completed();
+        } elseif (request()->routeIs('filament.admin.resources.maintenance-requests.index')) {
+            $q->active();
+        }
+
+        return $q;
+    }
+
+    public static function getPermissionScopedQuery(): Builder
+    {
+        $q = parent::getEloquentQuery()
+            ->latest('id');
+
+        $user = auth()->user();
+        if (! $user) {
+            return $q->whereRaw('1 = 0');
+        }
+
+        // Admin-like roles see everything
+        if ($user->hasAnyRole(['admin', 'super-admin', 'factory_manager', 'owner'])) {
+            return $q;
+        }
+
+        // Sales see their own
+        if ($user->hasRole('sales')) {
+            return $q->where('maintenance_requests.created_by', $user->id);
+        }
+
+        // Showroom managers see their showrooms
+        if ($user->hasRole('showroom_manager')) {
+            $showroomIds = \App\Models\Showroom::where('manager_id', $user->id)->pluck('id');
+            return $q->whereIn('maintenance_requests.showroom_id', $showroomIds);
+        }
+
+        return $q;
+    }
+
+    public static function getActiveCount(): int
+    {
+        return static::getPermissionScopedQuery()->active()->count();
+    }
+
+    public static function getCompletedCount(): int
+    {
+        return static::getPermissionScopedQuery()->completed()->count();
     }
 
     public static function canCreate(): bool
@@ -132,16 +178,15 @@ class MaintenanceRequestResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('createdByUser.name')
                     ->label('بواسطة')
+                    ->wrap()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('client.client_name')
                     ->label('العميل')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('client.phone')
-                    ->label('رقم الجوال')
+                    ->description(fn (MaintenanceRequest $record) => $record->client?->phone)
                     ->searchable(),
                 Tables\Columns\TextColumn::make('request_date')
                     ->label('تاريخ الطلب')
-                    ->date(),
+                    ->date('Y-m-d'),
 
                 Tables\Columns\TextColumn::make('status')
                     ->label('الحالة')
@@ -149,6 +194,8 @@ class MaintenanceRequestResource extends Resource
                     ->formatStateUsing(fn (?string $state) => match ($state) {
                         'new'         => 'طلب جديد',
                         'in_progress' => 'قيد الصيانة',
+                        'approved'    => 'معتمد',
+                        'rejected'    => 'مرفوض',
                         'completed'   => 'مكتمل',
                         'cancelled'   => 'ملغي',
                         default       => '—',
@@ -156,6 +203,8 @@ class MaintenanceRequestResource extends Resource
                     ->color(fn (?string $state) => match ($state) {
                         'new'         => 'warning',
                         'in_progress' => 'info',
+                        'approved'    => 'success',
+                        'rejected'    => 'danger',
                         'completed'   => 'success',
                         'cancelled'   => 'gray',
                         default       => 'secondary',
@@ -194,10 +243,11 @@ class MaintenanceRequestResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListMaintenanceRequests::route('/'),
-            'create' => CreateMaintenanceRequest::route('/create'),
-            'view'   => ViewMaintenanceRequest::route('/{record}'),
-            'edit'   => EditMaintenanceRequest::route('/{record}/edit'),
+            'index'     => Pages\ListMaintenanceRequests::route('/'),
+            'completed' => Pages\ListMaintenanceRequestsDone::route('/completed'),
+            'create'    => Pages\CreateMaintenanceRequest::route('/create'),
+            'view'      => Pages\ViewMaintenanceRequest::route('/{record}'),
+            'edit'      => Pages\EditMaintenanceRequest::route('/{record}/edit'),
         ];
     }
 

@@ -5,10 +5,18 @@ namespace App\Filament\Resources\ProductionRequestResource\Pages;
 use App\Filament\Resources\ProductionRequestResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
+use Illuminate\Database\Eloquent\Builder;
 
 class ListProductionRequests extends ListRecords
 {
     protected static string $resource = ProductionRequestResource::class;
+
+    protected static ?string $title = 'طلبات التصنيع الجارية';
+
+    public function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery();
+    }
 
     public static function canAccess(array $parameters = []): bool
     {

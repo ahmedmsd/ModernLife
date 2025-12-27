@@ -15,6 +15,25 @@ trait UsesPerformanceFilters
         'status'      => null,
     ];
 
+    public function mount(array $filters = []): void
+    {
+        // If nested under 'filters' key (common in Filament widget data passing)
+        if (isset($filters['filters']) && is_array($filters['filters'])) {
+            $filters = $filters['filters'];
+        }
+
+        // Read from request as fallback (direct load)
+        $reqData = request()->only([
+            'date_from', 'date_to', 'branch_id', 'dept_id', 'employee_id', 'status'
+        ]);
+
+        // Merge: passed $filters > request data > defaults
+        $this->filters = array_merge($this->filters, array_filter($reqData), $filters);
+
+        // Cleanup empty strings
+        $this->filters = array_map(fn($v) => ($v === '' || $v === 'null') ? null : $v, $this->filters);
+    }
+
     #[On('pd.filters.updated')]
     public function onFiltersUpdated(array $filters): void
     {

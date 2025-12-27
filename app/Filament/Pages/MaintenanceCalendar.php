@@ -91,7 +91,7 @@ class MaintenanceCalendar extends Page
             DB::raw('COALESCE(expected_start_at, actual_start_at)'),
             [$startAt, $endAt]
         )
-            ->whereNotIn('status', ['cancelled']);
+            ->active();
 
         return $this->applyRoleScope($q);
     }

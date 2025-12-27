@@ -32,110 +32,43 @@ class DelayedTasksTable extends TableWidget
             ->columns([
                 TextColumn::make('id')
                     ->label('ID')
-                    ->sortable()
-                    ->toggleable(),
-
-                TextColumn::make('project.project_name')
-                    ->label('المشروع')
-                    ->searchable()
-                    ->limit(40)
-                    ->toggleable(),
-
-                TextColumn::make('department_label')
-                    ->label('القسم')
-                    ->state(function (ProductionTask $r) {
-                        $d = $r->department;
-                        if (! $d) {
-                            return '—';
-                        }
-
-                        return $d->name
-                            ?? $d->dept_name
-                            ?? $d->title
-                            ?? $d->label
-                            ?? ('قسم #' . ($d->dept_id ?? $d->id ?? '?'));
-                    })
-                    ->toggleable(),
-
-                TextColumn::make('current_owner_role')
-                    ->label('مالك المهمة')
-                    ->badge()
-                    ->color('gray')
-                    ->toggleable(),
-
-                TextColumn::make('current_owner_user_label')
-                    ->label('المستخدم الحالي')
-                    ->state(function (ProductionTask $r) {
-                        $u = $r->currentOwnerUser;
-                        if (! $u) {
-                            return '—';
-                        }
-
-                        return $u->name
-                            ?? $u->full_name
-                            ?? $u->username
-                            ?? ($u->email ?? ('مستخدم #' . ($u->id ?? '?')));
-                    })
-                    ->toggleable(),
-
-                TextColumn::make('status')
-                    ->label('الحالة')
-                    ->badge()
-                    ->formatStateUsing(fn ($state) => app(\App\Support\Tasks\TaskPageHelper::class)->statusAr($state))
-                    ->color(fn (string $state) => match ($state) {
-                        'completed','closed' => 'success',
-                        'in_progress'        => 'warning',
-                        'assigned'           => 'info',
-                        default              => 'gray',
-                    })
                     ->sortable(),
 
-                TextColumn::make('assigned_at')
-                    ->label('تاريخ الإسناد')
-                    ->since()
-                    ->sortable()
-                    ->toggleable(),
-
-                TextColumn::make('sent_to_owner_at')
-                    ->label('أُرسِلت للمالك')
-                    ->since()
-                    ->placeholder('—')
-                    ->sortable()
-                    ->toggleable(),
-
-                TextColumn::make('received_by_owner_at')
-                    ->label('تم الاستلام')
-                    ->since()
-                    ->placeholder('—')
-                    ->sortable()
-                    ->toggleable(),
-
-                TextColumn::make('due_date')
-                    ->label('تاريخ التسليم')
-                    ->date()
-                    ->sortable()
-                    ->toggleable(),
-                TextColumn::make('wait_days_for_owner')
-                    ->label('أيام الانتظار لدى المالك')
+                TextColumn::make('project_client')
+                    ->label('المشروع / العميل')
+                    ->html()
                     ->state(function (ProductionTask $r) {
-                        $start = $r->sent_to_owner_at ?? $r->assigned_at;
-                        if (! $start) return '—';
-
-                        $startC = $start instanceof Carbon ? $start : Carbon::parse($start);
-                        $endC   = $r->received_by_owner_at
-                            ? ($r->received_by_owner_at instanceof Carbon ? $r->received_by_owner_at : Carbon::parse($r->received_by_owner_at))
-                            : now();
-
-                        $days = $startC->diffInDays($endC);
-                        return intval($days) . ' يوم';
+                        $pName = $r->project?->project_name ?? '—';
+                        $cName = $r->project?->client?->client_name ?? '—';
+                        return "<div>{$pName}</div><div class='text-xs text-gray-500'>{$cName}</div>";
                     })
-                    ->toggleable(isToggledHiddenByDefault: false),
-                TextColumn::make('overdue_days_calc')
-                    ->label('تأخير التسليم')
-                    ->state(fn ($record) => ((int) $record->overdue_days_calc) . ' ي')
-                    ->color(fn ($record) => ((int) $record->overdue_days_calc) > 0 ? 'danger' : 'gray')
-                    ->sortable()
-                    ->toggleable(),
+                    ->searchable(['id', 'project.project_name', 'project.client.client_name']),
+
+                TextColumn::make('department.dept_name')
+                    ->label('القسم'),
+
+                TextColumn::make('owner_details')
+                    ->label('المالك')
+                    ->html()
+                    ->state(function (ProductionTask $r) {
+                        $u = $r->currentOwnerUser;
+                        $uName = $u?->name ?? '—';
+                        $role = $r->current_owner_role ?? '—';
+                        $roleAr = match($role) {
+                            'factory_manager'    => 'مدير المصنع',
+                            'department_manager' => 'مدير القسم',
+                            'employee'           => 'موظف',
+                            'purchasing_manager' => 'مدير المشتريات',
+                            default              => $role,
+                        };
+                        return "<div>{$uName}</div><div class='text-xs text-gray-500'>{$roleAr}</div>";
+                    }),
+
+                TextColumn::make('handoff_delay_days')
+                    ->label('تأخير الاستلام')
+                    ->formatStateUsing(fn ($state) => ((int) $state) . ' يوم')
+                    ->color(fn ($state) => ((int) $state) >= 3 ? 'danger' : 'gray')
+                    ->sortable(),
             ])
             ->defaultSort('due_date', 'asc')
             ->filters([
@@ -345,8 +278,7 @@ class DelayedTasksTable extends TableWidget
                 'department',
                 'currentOwnerUser',
             ])
-            ->addSelect([
-                'overdue_days_calc' => DB::raw("
+            ->selectRaw("
                     CASE
                         WHEN {$table}.due_date IS NULL THEN 0
                         ELSE GREATEST(
@@ -357,29 +289,27 @@ class DelayedTasksTable extends TableWidget
                             ),
                             0
                         )
-                    END
-                "),
-            ])
+                    END AS overdue_days_calc
+                ")
+            ->selectRaw("
+                    CASE 
+                        WHEN COALESCE({$table}.sent_to_owner_at, {$table}.assigned_at) IS NULL THEN 0
+                        ELSE DATEDIFF(
+                            COALESCE({$table}.received_by_owner_at, NOW()),
+                            COALESCE({$table}.sent_to_owner_at, {$table}.assigned_at)
+                        )
+                    END AS handoff_delay_days
+                ")
+            ->whereNotIn("{$table}.status", ['completed', 'closed', 'cancelled', 'rejected'])
+            ->whereNull("{$table}.received_by_owner_at")
             ->where(function (Builder $q) use ($table) {
-                $q
-                    ->where(function (Builder $w) use ($table) {
-                        $w->whereNull("{$table}.received_by_owner_at")
-                            ->where(function (Builder $ww) use ($table) {
-                                $ww->whereNotNull("{$table}.sent_to_owner_at")
-                                    ->orWhereNotNull("{$table}.assigned_at");
-                            });
-                    })
-                    ->orWhereRaw("
-                        {$table}.due_date IS NOT NULL
-                        AND GREATEST(
-                            TIMESTAMPDIFF(
-                                DAY,
-                                {$table}.due_date,
-                                COALESCE({$table}.completed_at, NOW())
-                            ),
-                            0
-                        ) >= 3
-                    ");
+                $cutoff = now()->subDays(3)->startOfDay();
+                // Strictly > 3 days since sent_to_owner or assigned_at
+                $q->where("{$table}.sent_to_owner_at", '<', $cutoff)
+                  ->orWhere(function ($qq) use ($table, $cutoff) {
+                      $qq->whereNull("{$table}.sent_to_owner_at")
+                         ->where("{$table}.assigned_at", '<', $cutoff);
+                  });
             });
     }
 

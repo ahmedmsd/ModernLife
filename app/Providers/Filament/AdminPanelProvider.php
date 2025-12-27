@@ -123,9 +123,14 @@ class AdminPanelProvider extends PanelProvider
                     ->group(
                         NavigationGroup::make()->label('الطلبات')->icon('heroicon-o-rectangle-group')->collapsible()->collapsed()
                             ->items([
-                                NavigationItem::make('إدارة طلبات التصنيع')
-                                    ->url(\App\Filament\Resources\ProductionRequestResource::getUrl())
-                                    ->visible(fn () => \App\Filament\Resources\ProductionRequestResource::canViewAny()),
+                                NavigationItem::make('طلبات التصنيع (الجارية)')
+                                    ->url(\App\Filament\Resources\ProductionRequestResource::getUrl('index'))
+                                    ->visible(fn () => \App\Filament\Resources\ProductionRequestResource::canViewAny())
+                                    ->badge(fn () => \App\Filament\Resources\ProductionRequestResource::getActiveCount()),
+                                NavigationItem::make('طلبات التصنيع (المكتملة)')
+                                    ->url(\App\Filament\Resources\ProductionRequestResource::getUrl('completed'))
+                                    ->visible(fn () => \App\Filament\Resources\ProductionRequestResource::canViewAny())
+                                    ->badge(fn () => \App\Filament\Resources\ProductionRequestResource::getCompletedCount()),
                             ])
                     )
 
@@ -223,13 +228,16 @@ class AdminPanelProvider extends PanelProvider
 
                                 NavigationItem::make('عرض المهام (الجارية)')
                                     ->url(\App\Filament\Resources\TaskResource::getUrl('active'))
-                                    ->visible(fn () => \App\Filament\Resources\TaskResource\Pages\ActiveTasks::canAccess()),
+                                    ->visible(fn () => \App\Filament\Resources\TaskResource\Pages\ActiveTasks::canAccess())
+                                    ->badge(fn () => \App\Filament\Resources\TaskResource::getActiveCount()),
                                 NavigationItem::make('المهام المرفوضة')
                                     ->url(\App\Filament\Resources\TaskResource::getUrl('returned'))
-                                    ->visible(fn () => \App\Filament\Resources\TaskResource\Pages\ReturnedToFactory::canAccess()),
+                                    ->visible(fn () => \App\Filament\Resources\TaskResource\Pages\ReturnedToFactory::canAccess())
+                                    ->badge(fn () => \App\Filament\Resources\TaskResource::getReturnedCount()),
                                 NavigationItem::make('المهام المُنجزة')
                                     ->url(\App\Filament\Resources\TaskResource::getUrl('completed'))
-                                    ->visible(fn () => \App\Filament\Resources\TaskResource\Pages\CompletedTasks::canAccess()),
+                                    ->visible(fn () => \App\Filament\Resources\TaskResource\Pages\CompletedTasks::canAccess())
+                                    ->badge(fn () => \App\Filament\Resources\TaskResource::getCompletedCount()),
                             ])
                     )
 
@@ -241,10 +249,12 @@ class AdminPanelProvider extends PanelProvider
                                     ->visible(fn () => \App\Filament\Resources\DepartmentPurchaseRequestResource::canViewAny()),
                                 NavigationItem::make('طلبات الخامات')
                                     ->url(\App\Filament\Pages\Purchasing\MaterialsRequests::getUrl())
-                                    ->visible(fn () => \App\Filament\Pages\Purchasing\MaterialsRequests::canAccess()),
+                                    ->visible(fn () => \App\Filament\Pages\Purchasing\MaterialsRequests::canAccess())
+                                    ->badge(fn () => \App\Filament\Pages\Purchasing\MaterialsRequests::getNavigationBadge()),
                                 NavigationItem::make('طلبات الخامات المُنجزة')
                                     ->url(\App\Filament\Pages\Purchasing\MaterialsRequestsDone::getUrl())
-                                    ->visible(fn () => \App\Filament\Pages\Purchasing\MaterialsRequestsDone::canAccess()),
+                                    ->visible(fn () => \App\Filament\Pages\Purchasing\MaterialsRequestsDone::canAccess())
+                                    ->badge(fn () => \App\Filament\Pages\Purchasing\MaterialsRequestsDone::getNavigationBadge()),
                             ])
                     )
 
@@ -259,9 +269,14 @@ class AdminPanelProvider extends PanelProvider
                     ->group(
                         NavigationGroup::make()->label('الصيانة')->icon('heroicon-o-wrench-screwdriver')->collapsed()
                             ->items([
-                                NavigationItem::make('طلبات الصيانة ')
-                                    ->url(\App\Filament\Resources\MaintenanceRequestResource::getUrl())
-                                    ->visible(fn () => \App\Filament\Resources\MaintenanceRequestResource::canViewAny()),
+                                NavigationItem::make('طلب صيانة (جاري)')
+                                    ->url(\App\Filament\Resources\MaintenanceRequestResource::getUrl('index'))
+                                    ->visible(fn () => \App\Filament\Resources\MaintenanceRequestResource::canViewAny())
+                                    ->badge(fn () => \App\Filament\Resources\MaintenanceRequestResource::getActiveCount()),
+                                NavigationItem::make('طلب صيانة (مكتمل)')
+                                    ->url(\App\Filament\Resources\MaintenanceRequestResource::getUrl('completed'))
+                                    ->visible(fn () => \App\Filament\Resources\MaintenanceRequestResource::canViewAny())
+                                    ->badge(fn () => \App\Filament\Resources\MaintenanceRequestResource::getCompletedCount()),
                                 NavigationItem::make('تقويم الصيانة ')
                                     ->url(\App\Filament\Pages\MaintenanceCalendar::getUrl())
                                     ->visible(fn () => \App\Filament\Pages\MaintenanceCalendar::canAccess()),

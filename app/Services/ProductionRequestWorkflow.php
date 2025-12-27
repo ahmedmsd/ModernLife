@@ -23,6 +23,13 @@ class ProductionRequestWorkflow
             return $this->move($pr, Phase::FactoryIntake, S::Pending, 'factory_manager', null, true);
         }
 
+        // If Indirect:
+        // If the creator is a showroom_manager, skip ShowroomReview and go directly to FactoryIntake
+        $creator = $pr->creator;
+        if ($creator && $creator->hasRole('showroom_manager')) {
+            return $this->move($pr, Phase::FactoryIntake, S::Pending, 'factory_manager', null, true);
+        }
+
         return $this->move($pr, Phase::ShowroomReview, S::Pending, 'showroom_manager', null, true);
     }
 

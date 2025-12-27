@@ -105,13 +105,16 @@ class ReportFilters
 
     public function __get(string $name)
     {
+        if (array_key_exists($name, $this->data)) {
+            return $this->data[$name];
+        }
+
         $snake = $this->camelToSnake($name);
         return $this->data[$snake] ?? null;
     }
 
     private function camelToSnake(string $name): string
     {
-        $snake = strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $name));
-        return $snake;
+        return strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $name));
     }
 }

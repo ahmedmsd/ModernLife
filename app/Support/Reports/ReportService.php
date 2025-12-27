@@ -4,7 +4,7 @@ namespace App\Support\Reports;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
-use Illuminate\Database\Query\Builder;
+use Illuminate\Database\Eloquent\Builder;
 use App\Enums\TaskStatus;
 
 class ReportService
@@ -15,16 +15,20 @@ class ReportService
 
     protected function baseTasks(): Builder
     {
-        return DB::table('production_tasks as t')
-            ->when($this->f->dateFrom,   fn ($q) => $q->whereDate('t.created_at', '>=', $this->f->dateFrom))
-            ->when($this->f->dateTo,     fn ($q) => $q->whereDate('t.created_at', '<=', $this->f->dateTo))
-            ->when($this->f->deptId,     fn ($q) => $q->where('t.department_id', $this->f->deptId))
-
-            ->when($this->f->userId ?? $this->f->employeeId, function ($q, $userId) {
-                $q->where('t.assigned_to_user_id', $userId);
-            })
-
-            ->when($this->f->status,     fn ($q) => $q->where('t.status', $this->f->status));
+        return \App\Models\ProductionTask::query()
+            ->from('production_tasks as t')
+            ->when($this->f->date_from,   fn ($q, $v) => $q->whereDate('t.created_at', '>=', $v))
+            ->when($this->f->date_to,     fn ($q, $v) => $q->whereDate('t.created_at', '<=', $v))
+            ->when($this->f->dept_id,     fn ($q, $v) => $q->where('t.department_id', $v))
+            ->when($this->f->branch_id,   fn ($q, $v) => $q->whereExists(function($eq) use ($v) {
+                $eq->select(DB::raw(1))
+                   ->from('projects as p')
+                   ->join('showrooms as s', 's.id', '=', 'p.showroom_id')
+                   ->whereColumn('p.id', 't.project_id')
+                   ->where('s.id', $v);
+            }))
+            ->when($this->f->employee_id, fn ($q, $v) => $q->where('t.assigned_to_user_id', $v))
+            ->when($this->f->status,      fn ($q, $v) => $q->where('t.status', $v));
     }
 
     public function kpis(): array
@@ -125,10 +129,33 @@ class ReportService
             ->orderByDesc('c')
             ->get();
 
+        $labels = $rows->pluck('status')->map(fn ($s) => $this->humanizeStatus($s))->all();
+
         return [
-            'labels' => $rows->pluck('status')->map(fn ($s) => $s ?: 'غير محدد')->all(),
+            'labels' => $labels,
             'data'   => $rows->pluck('c')->all(),
         ];
+    }
+
+    protected function humanizeStatus(?string $status): string
+    {
+        return match ($status) {
+            'pending'            => 'قيد الانتظار',
+            'assigned'           => 'مُسندة',
+            'received'           => 'مستلمة',
+            'under_review'       => 'تحت المراجعة',
+            'approved'           => 'معتمدة',
+            'rejected'           => 'مرفوضة',
+            'in_progress'        => 'قيد التنفيذ',
+            'materials_wait'     => 'انتظار خامات',
+            'materials_prep'     => 'تحضير خامات',
+            'materials_done'     => 'خامات مكتملة',
+            'on_hold'            => 'متوقفة',
+            'completed'          => 'مكتملة',
+            'cancelled'          => 'ملغاة',
+            'waiting_production' => 'انتظار تصنيع',
+            default              => $status ?: 'غير محدد',
+        };
     }
 
     public function topEmployeesChart(int $limit = 10): array

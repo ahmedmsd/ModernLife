@@ -54,7 +54,7 @@ class InstallationCalendar extends Page
             ])
             ->whereNotNull('planned_install_at')
             ->whereBetween('planned_install_at', [$startAt, $endAt])
-            ->whereNotIn('status', ['cancelled']);
+            ->whereNotIn('status', ['completed', 'closed', 'cancelled']);
 
         return $this->applyRoleScope($q, 'production_tasks');
     }

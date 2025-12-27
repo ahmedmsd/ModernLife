@@ -6,6 +6,7 @@ use App\Filament\Resources\ProductionRequestResource\Pages;
 use App\Filament\Resources\ProductionRequestResource\Pages\CreateProductionRequest;
 use App\Filament\Resources\ProductionRequestResource\Pages\EditProductionRequest;
 use App\Filament\Resources\ProductionRequestResource\Pages\ListProductionRequests;
+use App\Filament\Resources\ProductionRequestResource\Pages\ListProductionRequestsDone;
 use App\Filament\Resources\ProductionRequestResource\Pages\ReviewProductionRequest;
 use App\Filament\Resources\ProductionRequestResource\Pages\ViewProductionTimeline;
 use App\Models\ProductionRequest;
@@ -39,6 +40,24 @@ class ProductionRequestResource extends Resource
     protected static ?string $modelLabel  = 'طلب تصنيع';
     protected static bool $shouldRegisterNavigation = false;
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        $q = static::getPermissionScopedQuery();
+
+        // Apply route-based filtering for Active/Completed split only on list pages
+        if (request()->routeIs('filament.admin.resources.production-requests.completed')) {
+            $q->completed();
+        } elseif (request()->routeIs('filament.admin.resources.production-requests.index')) {
+            $q->active();
+        }
+
+        return $q;
+    }
+
+    /**
+     * Base query with all permissions, but without route-based status filtering.
+     * Used for badges and as a base for page queries.
+     */
+    public static function getPermissionScopedQuery(): \Illuminate\Database\Eloquent\Builder
     {
         $q = parent::getEloquentQuery()
             ->with(['showroom','project','client'])
@@ -81,6 +100,16 @@ class ProductionRequestResource extends Resource
         return $q;
     }
 
+    public static function getActiveCount(): int
+    {
+        return static::getPermissionScopedQuery()->active()->count();
+    }
+
+    public static function getCompletedCount(): int
+    {
+        return static::getPermissionScopedQuery()->completed()->count();
+    }
+
 
     public static function form(Forms\Form $form): Forms\Form
     {
@@ -120,7 +149,26 @@ class ProductionRequestResource extends Resource
 
             Select::make('showroom_id')
                 ->label('المعرض')
-                ->options(\App\Models\Showroom::pluck('name', 'id'))
+                ->options(function () {
+                    $user = auth()->user();
+                    if (! $user) return [];
+
+                    $query = \App\Models\Showroom::query();
+
+                    // If showroom manager, only show showrooms they manage
+                    if ($user->hasRole('showroom_manager')) {
+                        $query->where('manager_id', $user->id);
+                    }
+
+                    return $query->pluck('name', 'id');
+                })
+                ->default(function () {
+                    $user = auth()->user();
+                    if (! $user || ! $user->hasRole('showroom_manager')) return null;
+
+                    $managed = \App\Models\Showroom::where('manager_id', $user->id)->pluck('id');
+                    return $managed->count() === 1 ? $managed->first() : null;
+                })
                 ->searchable()
                 ->preload()
                 ->required(fn (Get $get): bool => $get('request_type') === 'indirect')
@@ -216,19 +264,19 @@ class ProductionRequestResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('id')->label('#')->sortable(),
-                TextColumn::make('project_name')
-                    ->label('اسم المشروع')
-                    ->searchable(),
-
                 TextColumn::make('client.client_name')
-                    ->label('العميل'),
+                    ->label('العميل / المشروع')
+                    ->description(fn (ProductionRequest $record) => $record->project_name)
+                    ->searchable(['production_requests.project_name', 'client_name']),
 
                 TextColumn::make('showroom.name')
                     ->label('المعرض')
                     ->formatStateUsing(fn ($state) => $state ?: 'غير مرتبط'),
 
                 TextColumn::make('creator.name')
-                    ->label('أنشئ بواسطة'),
+                    ->label('أنشئ بواسطة')
+                    ->wrap()
+                    ->searchable(),
 
                 TextColumn::make('current_phase')
                     ->label('المرحلة')
@@ -321,6 +369,7 @@ class ProductionRequestResource extends Resource
     {
         return [
             'index'  => ListProductionRequests::route('/'),
+            'completed' => ListProductionRequestsDone::route('/completed'),
             'create' => CreateProductionRequest::route('/create'),
             'edit'   => EditProductionRequest::route('/{record}/edit'),
             'timeline'   => ViewProductionTimeline::route('/{record}/timeline'),

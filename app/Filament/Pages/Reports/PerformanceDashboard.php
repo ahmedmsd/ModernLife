@@ -53,6 +53,14 @@ class PerformanceDashboard extends Page implements Forms\Contracts\HasForms
 
     public function mount(): void
     {
+        // Default to current month if no dates provided
+        if (empty($this->date_from)) {
+            $this->date_from = now()->startOfMonth()->format('Y-m-d');
+        }
+        if (empty($this->date_to)) {
+            $this->date_to = now()->format('Y-m-d');
+        }
+
         $this->form->fill([
             'date_from'   => $this->date_from,
             'date_to'     => $this->date_to,
@@ -80,7 +88,7 @@ class PerformanceDashboard extends Page implements Forms\Contracts\HasForms
                         ->columnSpan(2),
                     Select::make('employee_id')->label('الموظف')
                         ->searchable()
-                        ->options(fn() => \App\Models\Employee::orderBy('employee_name')->pluck('employee_name','employee_id'))
+                        ->options(fn() => \App\Models\Employee::whereNotNull('user_id')->orderBy('employee_name')->pluck('employee_name','user_id'))
                         ->columnSpan(2),
                     Select::make('status')->label('الحالة')->options([
                         'pending'            => 'قيد الانتظار',
@@ -128,6 +136,20 @@ class PerformanceDashboard extends Page implements Forms\Contracts\HasForms
                 ])->alignCenter(),
             ])->columnSpanFull(),
         ])->statePath('filters');
+    }
+
+    public function getWidgetData(): array
+    {
+        return [
+            'filters' => [
+                'date_from'   => $this->date_from,
+                'date_to'     => $this->date_to,
+                'branch_id'   => $this->branch_id,
+                'dept_id'     => $this->dept_id,
+                'employee_id' => $this->employee_id,
+                'status'      => $this->status,
+            ],
+        ];
     }
 
     protected function getWidgets(): array

@@ -10,12 +10,11 @@ trait HasStatusScopes
 
     public function scopeCompleted(Builder $query): Builder
     {
-        return $query->whereIn('status', ['completed']);
+        return $query->whereIn('status', ['approved', 'rejected', 'completed', 'cancelled']);
     }
 
     public function scopeActive(Builder $query): Builder
     {
-        return $query->whereNotIn('status', ['completed']);
-
+        return $query->whereNotIn('status', ['approved', 'rejected', 'completed', 'cancelled']);
     }
 }

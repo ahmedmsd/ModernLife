@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Auth;
 
 class MaintenanceRequest extends Model
 {
+    use \App\Models\Concerns\HasStatusScopes;
+
     protected $table = 'maintenance_requests';
     protected $primaryKey = 'id';
     protected $fillable = [

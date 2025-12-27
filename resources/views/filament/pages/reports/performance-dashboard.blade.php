@@ -5,6 +5,7 @@
 
     <x-filament-widgets::widgets
         :widgets="$this->getWidgets()"
+        :data="$this->getWidgetData()"
         :columns="[
             'sm' => 1,
             'md' => 2,
