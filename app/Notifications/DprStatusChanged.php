@@ -65,4 +65,9 @@ class DprStatusChanged extends Notification
             ->when($this->note, fn (MailMessage $m) => $m->line("ملاحظة: {$this->note}"))
             ->action('فتح الطلب', url("/admin/department-purchase-requests/{$this->dpr->id}"));
     }
+
+    public function toArray($notifiable): array
+    {
+        return $this->toDatabase($notifiable);
+    }
 }

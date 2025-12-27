@@ -151,7 +151,7 @@ class MaterialsWorkflowService
         ?string $missingItemsNote = null
     ): void {
         DB::transaction(function () use ($task, $start, $end, $install, $note, $missingItemsNote) {
-            $this->openFollowupMaterialsRequest($task, $missingItemsNote);
+            $this->markMaterialsPartiallyFulfilled($task, $missingItemsNote);
 
             $payload = ['status' => 'waiting_production'];
             if ($start)   $payload['planned_start_at']   = \Illuminate\Support\Carbon::parse($start);
@@ -194,7 +194,7 @@ class MaterialsWorkflowService
         ?string $missingItemsNote = null
     ): void {
         DB::transaction(function () use ($task, $note, $missingItemsNote) {
-            $this->openFollowupMaterialsRequest($task, $missingItemsNote);
+            $this->markMaterialsPartiallyFulfilled($task, $missingItemsNote);
 
             $task->update(['status' => 'on_hold']);
 
@@ -235,24 +235,21 @@ class MaterialsWorkflowService
     }
 
 
-    protected function openFollowupMaterialsRequest(ProductionTask $task, ?string $missingItemsNote): void
+    protected function markMaterialsPartiallyFulfilled(ProductionTask $task, ?string $missingItemsNote): void
     {
-        $prevMr = $task->materialRequests()->latest()->first();
+        $mr = $task->materialRequests()->whereIn('status', ['fulfilled', 'approved', 'supplying'])->latest()->first();
 
-        $mr = \App\Models\MaterialRequest::create([
-            'task_id'       => $task->id,
-            'department_id' => $task->department_id,
-            'requested_by'  => Auth::id(),
-            'requested_at'  => now(),
-            'status'        => 'requested',
-            'note'          => 'طلب تكميلي لبنود ناقصة.' . ($missingItemsNote ? ("\n\nالبنود الناقصة:\n" . trim($missingItemsNote)) : ''),
-            'po_file'       => $prevMr?->po_file,
-            'parent_id'     => $prevMr?->id, // يعتمد على الحقل الذي أضفته يدويًا
-        ]);
+        if ($mr) {
+            $mr->update([
+                'status' => 'partially_fulfilled',
+                'note'   => trim(($mr->note ? $mr->note . "\n\n" : '') . "--- استلام جزئي ---\n" . ($missingItemsNote ?? 'نواقص خامات')),
+            ]);
+        }
 
         $this->log($task, 'materials_followup_opened', [
             'by'    => Auth::id(),
-            'mr_id' => $mr->id,
+            'mr_id' => $mr?->id,
+            'is_partial' => true,
         ]);
     }
 }

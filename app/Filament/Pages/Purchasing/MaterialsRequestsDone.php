@@ -48,7 +48,8 @@ class MaterialsRequestsDone extends Page implements HasTable
             ->where(function ($q) {
                 $q->where('status', 'fulfilled')
                     ->orWhereNotNull('provided_at');
-            });
+            })
+            ->where('status', '!=', 'partially_fulfilled');
     }
 
     public function table(Table $table): Table

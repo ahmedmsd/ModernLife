@@ -7,9 +7,12 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
 
+use App\Notifications\Concerns\AsFilamentDatabaseNotification;
+
 class ActionHandoffNotification extends Notification implements ShouldQueue
 {
     use Queueable;
+    use AsFilamentDatabaseNotification;
 
     public function __construct(
         public string $title,
@@ -40,5 +43,22 @@ class ActionHandoffNotification extends Notification implements ShouldQueue
         }
 
         return $mail->salutation('تحياتنا');
+    }
+
+    public function toDatabase($notifiable): array
+    {
+        return $this->filamentDbMessage(
+            title: $this->title,
+            body: $this->body,
+            extra: [
+                'url' => $this->url,
+                'action' => $this->action,
+            ]
+        );
+    }
+
+    public function toArray($notifiable): array
+    {
+        return $this->toDatabase($notifiable);
     }
 }

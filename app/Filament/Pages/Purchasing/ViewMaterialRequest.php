@@ -142,8 +142,8 @@ class ViewMaterialRequest extends Page implements HasInfolists
                 ->color('success')
                 ->visible(fn () =>
                     auth()->user()?->hasAnyRole(['purchasing_manager','admin','super-admin'])
-                    && $this->record->status === 'approved'
-                    && is_null($this->record->provided_at)
+                    && in_array($this->record->status, ['approved', 'partially_fulfilled'])
+                    && (is_null($this->record->provided_at) || $this->record->status === 'partially_fulfilled')
                 )
                 ->form([
                     Forms\Components\TextInput::make('po_number')->label('رقم الطلب/مرجع'),

@@ -108,4 +108,9 @@ class MaintenanceRequestStatusChanged extends Notification
             default              => 'تم تحديث حالة طلب الصيانة.',
         };
     }
+
+    public function toArray(object $notifiable): array
+    {
+        return $this->toDatabase($notifiable);
+    }
 }

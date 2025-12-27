@@ -45,8 +45,11 @@ class MaterialsRequests extends Page implements HasTable
     protected static function baseQuery(): Builder
     {
         return MaterialRequest::query()
-            ->whereNull('provided_at')
-            ->whereIn('status', ['requested', 'approved']);
+            ->where(function ($q) {
+                $q->whereNull('provided_at')
+                  ->orWhere('status', 'partially_fulfilled');
+            })
+            ->whereIn('status', ['requested', 'approved', 'partially_fulfilled']);
     }
 
     public function table(Table $table): Table
@@ -140,8 +143,9 @@ class MaterialsRequests extends Page implements HasTable
                 Tables\Filters\SelectFilter::make('status')
                     ->label('الحالة')
                     ->options([
-                        'requested' => 'قيد الطلب',
-                        'approved'  => 'معتمد',
+                        'requested'           => 'قيد الطلب',
+                        'approved'            => 'معتمد',
+                        'partially_fulfilled' => 'توريد جزئي',
                     ]),
                 Tables\Filters\Filter::make('date_range')
                     ->form([

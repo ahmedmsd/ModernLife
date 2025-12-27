@@ -9,9 +9,12 @@ use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
 use App\Enums\ProductionRequestPhase as Phase;
 
+use App\Notifications\Concerns\AsFilamentDatabaseNotification;
+
 class ProductionPhaseNotification extends Notification implements ShouldQueue
 {
     use Queueable;
+    use AsFilamentDatabaseNotification;
 
     protected int $prId;
     protected string $event;
@@ -45,16 +48,21 @@ class ProductionPhaseNotification extends Notification implements ShouldQueue
     {
         $pr = $this->pr();
 
-        return [
-            'title'   => $this->title($pr),
-            'body'    => $this->bodyText($pr),
-            'url'     => $this->timelineUrl($pr),
-            'icon'    => 'heroicon-o-clipboard-document-check',
-            'color'   => $this->color(),
-            'event'   => $this->event,
-            'context' => $this->context,
-            'pr_id'   => $this->prId,
-        ];
+        return $this->filamentDbMessage(
+            title: $this->title($pr),
+            body: $this->bodyText($pr),
+            extra: [
+                'url'     => $this->timelineUrl($pr),
+                'event'   => $this->event,
+                'context' => $this->context,
+                'pr_id'   => $this->prId,
+            ]
+        );
+    }
+
+    public function toArray($notifiable): array
+    {
+        return $this->toDatabase($notifiable);
     }
 
     public function toMail($notifiable): MailMessage
