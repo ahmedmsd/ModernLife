@@ -88,7 +88,7 @@ class RequestMaterialsAction
      */
     protected static function handle(ProductionTask $record, array $data): void
     {
-        /** @var TaskWorkflowService $workflow */
+        /** @var MaterialsWorkflowService $workflow */
         $workflow = app(MaterialsWorkflowService::class);
         
         $workflow->requestMaterials($record, $data['note'], $data['po_file']);

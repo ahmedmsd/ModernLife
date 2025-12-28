@@ -49,28 +49,51 @@ class TaskResource extends Resource
         $isSuper = $user && method_exists($user, 'hasAnyRole')
             && $user->hasAnyRole(['admin','super-admin','factory_manager']);
 
-        if (! $isSuper) {
-            $isShowroomManager = $user && method_exists($user, 'hasRole') && $user->hasRole('showroom_manager');
-            $employeeId = $user?->id;
+        if ($isSuper) {
+            return $q;
+        }
 
-            if ($isShowroomManager) {
-                if (! $employeeId) {
-                    return $q->whereRaw('1 = 0');
-                }
+        $userId = $user?->id;
+        $deptId = $user?->employee?->department_id;
 
-                $q->whereExists(function ($sub) use ($employeeId) {
+        $q->where(function (Builder $query) use ($user, $userId, $deptId) {
+            // 1. Showroom Manager Scope
+            if ($user?->hasRole('showroom_manager')) {
+                $query->orWhereExists(function ($sub) use ($userId) {
                     $sub->from('projects as p')
                         ->join('production_requests as pr', 'pr.id', '=', 'p.production_request_id')
                         ->join('showrooms as s', 's.id', '=', 'pr.showroom_id')
                         ->whereColumn('p.id', 'production_tasks.project_id')
-                        ->where('s.manager_id', $employeeId);
+                        ->where('s.manager_id', $userId);
                 });
             }
 
-            if ($user?->hasRole('department_manager', 'web') && $user->employee?->department_id) {
-                $q->where('department_id', $user->employee->department_id);
+            // 2. Department Manager Scope
+            if ($user?->hasRole('department_manager')) {
+                $query->orWhere(function (Builder $sub) use ($deptId, $userId) {
+                    $sub->where(function ($inner) use ($deptId) {
+                        if ($deptId) {
+                            $inner->where('department_id', $deptId);
+                        } else {
+                            $inner->whereRaw('0 = 1');
+                        }
+                    })->orWhere('current_owner_user_id', $userId);
+                });
             }
-        }
+
+            // 3. Other Roles Scope (based on current_owner_role)
+            $otherRoles = ['quality_manager', 'installation_manager', 'purchasing_manager'];
+            foreach ($otherRoles as $role) {
+                if ($user?->hasRole($role)) {
+                    $query->orWhere('current_owner_role', $role);
+                }
+            }
+            
+            // 4. Assigned to user fallback
+            if ($userId) {
+                $query->orWhere('assigned_to_user_id', $userId);
+            }
+        });
 
         return $q;
     }

@@ -6,7 +6,6 @@ use App\Filament\Resources\TaskResource;
 use App\Models\TaskLog;
 use App\Models\User;
 use App\Services\Tasks\TaskTimerService;
-use App\Services\Tasks\TaskWorkflowService;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Toggle;
@@ -68,16 +67,10 @@ class ViewTask extends ViewRecord
     protected static ?string $title = 'عرض مهمة التصنيع ';
 
     protected ?TaskPageHelper $helper = null;
-    protected ?TaskWorkflowService $workflow = null;
 
     private function helper(): TaskPageHelper
     {
         return $this->helper ??= app(TaskPageHelper::class);
-    }
-
-    private function workflow(): TaskWorkflowService
-    {
-        return $this->workflow ??= app(TaskWorkflowService::class);
     }
 
     public function mount($record): void
@@ -85,7 +78,6 @@ class ViewTask extends ViewRecord
         parent::mount($record);
 
         $this->helper();
-        $this->workflow();
 
         $this->record->load([
             'project.productionRequest.showroom',

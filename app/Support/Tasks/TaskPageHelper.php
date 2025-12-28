@@ -144,11 +144,40 @@ class TaskPageHelper
             return false;
         }
 
-        if (blank($task->current_owner_user_id)) {
+        // 1. If user is Super Admin or Factory Manager, they can override ownership for actions
+        if ($this->userHasAnyRole($user, ['admin', 'super-admin', 'factory_manager'])) {
             return true;
         }
 
-        return (int) $task->current_owner_user_id === (int) $user->id;
+        $ownerRole = $task->current_owner_role;
+        $ownerId   = $task->current_owner_user_id;
+
+        // 2. Exact match if owner ID is set (legacy/direct assignment)
+        if ($ownerId && (int) $ownerId === (int) $user->id) {
+            return true;
+        }
+
+        // 3. Role-based match if owner ID is NOT set or mismatching but role matches
+        if ($ownerRole) {
+            if ($this->userHasAnyRole($user, [$ownerRole])) {
+                // For specific roles, we might want additional context checks
+                if ($ownerRole === 'department_manager') {
+                    // Does the user manage the department of the task?
+                    $isManager = $user->managedDepartments()->where('dept_id', $task->department_id)->exists();
+                    $isEmployee = $user->employee?->department_id == $task->department_id;
+                    return $isManager || $isEmployee;
+                }
+
+                return true;
+            }
+        }
+
+        // 4. Default Filament behavior or blank owner logic
+        if (blank($ownerId)) {
+            return true;
+        }
+
+        return false;
     }
 
     /* ========================================================================

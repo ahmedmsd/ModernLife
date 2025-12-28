@@ -80,7 +80,7 @@ class MaterialsProvidedAction
      */
     protected static function handle(ProductionTask $record, array $data): void
     {
-        /** @var TaskWorkflowService $workflow */
+        /** @var MaterialsWorkflowService $workflow */
         $workflow = app(MaterialsWorkflowService::class);
         
         $workflow->materialsProvided(
