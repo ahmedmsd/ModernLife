@@ -206,6 +206,8 @@ class TaskPageHelper
                 'assigned_to_dept_manager',
                 'sent_to_department',
                 'sent_back_to_manufacturing',
+                'qa_rejected_manufacturing', // Added
+                'assign_to_dept_manager', // Added
             ])
             ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
             ->first();
@@ -644,7 +646,7 @@ class TaskPageHelper
 
         $ackReworkAfter = TaskLog::query()
             ->where('task_id', $task->id)
-            ->where('type', 'manufacturing_ack_rework')
+            ->whereIn('type', ['manufacturing_ack_rework', 'dept_acknowledged']) // Added dept_acknowledged as alternative ack
             ->where(function ($q) use ($t, $id) {
                 $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
                     ->orWhere(function ($q2) use ($t, $id) {
@@ -993,7 +995,7 @@ class TaskPageHelper
 
         $lastBack = TaskLog::query()
             ->where('task_id', $task->id)
-            ->where('type', 'sent_back_to_install')
+            ->whereIn('type', ['sent_back_to_install', 'qa_rejected_installation']) // Added qa_rejected_installation
             ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
             ->first();
 

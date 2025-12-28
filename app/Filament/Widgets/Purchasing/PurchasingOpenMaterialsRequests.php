@@ -24,13 +24,17 @@ class PurchasingOpenMaterialsRequests extends TableWidget
         return $table
             ->query(
                 MaterialRequest::query()
-                    ->with(['task.project', 'department', 'requestedBy'])
+                    ->with(['task.project.client', 'department', 'requestedBy'])
                     ->whereNull('provided_at')
                     ->whereIn('status', ['requested', 'approved'])
                     ->latest('id')
             )
             ->columns([
                 Tables\Columns\TextColumn::make('id')->label('#')->sortable(),
+                Tables\Columns\TextColumn::make('task.project.client.client_name')
+                    ->label('العميل / المشروع')
+                    ->description(fn (MaterialRequest $record) => $record->task?->project?->project_name ?? '—')
+                    ->searchable(['production_tasks.project_name', 'client_name']),
                 Tables\Columns\TextColumn::make('task.id')->label('المهمة')->sortable(),
                 Tables\Columns\TextColumn::make('department.dept_name')->label('القسم'),
                 Tables\Columns\TextColumn::make('requestedBy.name')->label('مقدّم الطلب')->placeholder('—'),

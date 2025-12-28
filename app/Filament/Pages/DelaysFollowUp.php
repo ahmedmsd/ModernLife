@@ -15,4 +15,22 @@ class DelaysFollowUp extends Page
     protected static string $view = 'filament.pages.delays-follow-up';
 
     public string $tab = 'tasks';
+
+    public static function canAccess(): bool
+    {
+        $user = auth()->user();
+        if (! $user) {
+            return false;
+        }
+
+        if (method_exists($user, 'hasAnyRole')) {
+            return $user->hasAnyRole([
+                'admin',
+                'super-admin',
+                'factory_manager',
+            ]);
+        }
+
+        return true;
+    }
 }

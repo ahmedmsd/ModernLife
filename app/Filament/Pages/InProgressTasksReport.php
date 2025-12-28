@@ -27,9 +27,6 @@ class InProgressTasksReport extends Page
                 'admin',
                 'super-admin',
                 'factory_manager',
-                'department_manager',
-                'quality_manager',
-                'purchasing_manager',
             ]);
         }
 
