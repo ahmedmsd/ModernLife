@@ -70,10 +70,13 @@ class TaskResource extends Resource
 
             // 2. Department Manager Scope
             if ($user?->hasRole('department_manager')) {
-                $query->orWhere(function (Builder $sub) use ($deptId, $userId) {
-                    $sub->where(function ($inner) use ($deptId) {
-                        if ($deptId) {
-                            $inner->where('department_id', $deptId);
+                $managedDeptIds = $user->managedDepartments()->pluck('dept_id')->toArray();
+                $allDeptIds = array_unique(array_filter(array_merge([$deptId], $managedDeptIds)));
+
+                $query->orWhere(function (Builder $sub) use ($allDeptIds, $userId) {
+                    $sub->where(function ($inner) use ($allDeptIds) {
+                        if (!empty($allDeptIds)) {
+                            $inner->whereIn('department_id', $allDeptIds);
                         } else {
                             $inner->whereRaw('0 = 1');
                         }

@@ -86,9 +86,16 @@ class RoleScope
             return $q->whereRaw('1=0');
         }
 
-        if ($u->hasRole('department_manager') && $emp?->department_id) {
+        if ($u->hasRole('department_manager')) {
+            $managedDeptIds = $u->managedDepartments()->pluck('dept_id')->toArray();
+            $allDeptIds = array_unique(array_filter(array_merge([(int)($emp?->department_id ?? 0)], $managedDeptIds)));
+
             if (in_array($table, ['production_tasks','tasks']) && $hasCol('department_id')) {
-                $q->where($table.'.department_id', $emp->department_id);
+                if (!empty($allDeptIds)) {
+                    $q->whereIn($table.'.department_id', $allDeptIds);
+                } else {
+                    $q->whereRaw('1=0');
+                }
             }
         }
 
