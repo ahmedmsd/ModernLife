@@ -100,7 +100,7 @@ class CompletedTasks extends Page implements HasTable
                     : ($this->isShowroomManager() ? 'مهام المعارض التي أديرها (مكتملة)'
                         : ($this->isDepartmentManager() ? 'مهام قسمي المكتملة' : 'المهام المكتملة')))
             )
-            ->query(function () use ($managedDeptIds, $managedShowroomIds): Builder {
+            ->query(function () use ($managedDeptIds, $managedShowroomIds): \Illuminate\Database\Eloquent\Builder {
                 $q = ProductionTask::query()
                     ->whereIn('status', ['completed', 'closed'])
                     ->with([
@@ -201,7 +201,7 @@ class CompletedTasks extends Page implements HasTable
                             ->options(fn () => Showroom::query()->orderBy('name')->pluck('name', 'id')->all())
                             ->searchable(),
                     ])
-                    ->query(function (Builder $query, array $data): Builder {
+                    ->query(function (Builder $query, array $data): \Illuminate\Database\Eloquent\Builder {
                         $sid = $data['showroom_id'] ?? null;
                         if (! $sid) return $query;
 
@@ -217,7 +217,7 @@ class CompletedTasks extends Page implements HasTable
                         Forms\Components\DatePicker::make('from')->label('من')->native(false),
                         Forms\Components\DatePicker::make('to')->label('إلى')->native(false),
                     ])
-                    ->query(function (Builder $query, array $data): Builder {
+                    ->query(function (Builder $query, array $data): \Illuminate\Database\Eloquent\Builder {
                         $from = $data['from'] ?? null;
                         $to   = $data['to']   ?? null;
 

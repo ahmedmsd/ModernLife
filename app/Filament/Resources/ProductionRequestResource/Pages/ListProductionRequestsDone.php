@@ -12,7 +12,7 @@ class ListProductionRequestsDone extends ListRecords
 
     protected static ?string $title = 'طلبات التصنيع المكتملة';
 
-    public function getEloquentQuery(): Builder
+    public function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
         return parent::getEloquentQuery();
     }

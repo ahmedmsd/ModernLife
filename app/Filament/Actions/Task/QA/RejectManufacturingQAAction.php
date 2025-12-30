@@ -38,7 +38,7 @@ class RejectManufacturingQAAction
     protected static function getForm(): array
     {
         return [
-            Textarea::make('reason')
+            Textarea::make('note')
                 ->label('سبب الرفض')
                 ->rows(3)
                 ->required(),

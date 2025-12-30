@@ -40,7 +40,7 @@ class KPICards extends BaseWidget
             Stat::make('نسبة التأخير', ($kpis['delay_rate'] ?? 0).'%')
                 ->description('مقارنة بالهدف المخطّط')
                 ->descriptionIcon('heroicon-m-exclamation-triangle')
-                ->color(($kpis['delay_rate'] ?? 0) > 15 ? 'danger' : 'warning')
+                ->color((string) (($kpis['delay_rate'] ?? 0) > 15 ? 'danger' : 'warning'))
                 ->icon('heroicon-o-exclamation-triangle'),
 
             Stat::make('المهام الجارية (WIP)', number_format($kpis['wip'] ?? 0))
@@ -52,7 +52,7 @@ class KPICards extends BaseWidget
             Stat::make('الالتزام بالموعد (SLA)', ($kpis['sla_rate'] ?? 0).'%')
                 ->description('نسبة الإغلاق قبل الاستحقاق')
                 ->descriptionIcon('heroicon-m-chart-bar')
-                ->color(($kpis['sla_rate'] ?? 0) > 80 ? 'success' : 'info')
+                ->color((string) (($kpis['sla_rate'] ?? 0) > 80 ? 'success' : 'info'))
                 ->icon('heroicon-o-chart-bar'),
         ];
     }

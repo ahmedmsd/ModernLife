@@ -30,14 +30,17 @@ class PurchasingOpenMaterialsRequests extends TableWidget
                     ->latest('id')
             )
             ->columns([
-                Tables\Columns\TextColumn::make('id')->label('#')->sortable(),
+                Tables\Columns\TextColumn::make('id')->label('#')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('task.project.client.client_name')
                     ->label('العميل / المشروع')
                     ->description(fn (MaterialRequest $record) => $record->task?->project?->project_name ?? '—')
-                    ->searchable(['production_tasks.project_name', 'client_name']),
-                Tables\Columns\TextColumn::make('task.id')->label('المهمة')->sortable(),
-                Tables\Columns\TextColumn::make('department.dept_name')->label('القسم'),
-                Tables\Columns\TextColumn::make('requestedBy.name')->label('مقدّم الطلب')->placeholder('—'),
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('task.project.project_name')
+                    ->searchable()
+                    ->hidden(),
+                Tables\Columns\TextColumn::make('task.id')->label('المهمة')->sortable()->searchable(),
+                Tables\Columns\TextColumn::make('department.dept_name')->label('القسم')->searchable(),
+                Tables\Columns\TextColumn::make('requestedBy.name')->label('مقدّم الطلب')->placeholder('—')->searchable(),
                 Tables\Columns\TextColumn::make('created_at')->label('تاريخ الطلب'),
                 Tables\Columns\TextColumn::make('status')
                     ->label('الحالة')

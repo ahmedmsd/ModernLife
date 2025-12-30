@@ -95,7 +95,7 @@ class ActiveTasks extends Page implements HasTable
                     : ($this->isShowroomManager() ? 'مهام المعرض الجارية'
                         : ($this->isDepartmentManager() ? 'مهام قسمي الجارية' : 'المهام الجارية')))
             )
-            ->query(function () use ($managedDeptIds, $managedShowroomIds): Builder {
+            ->query(function () use ($managedDeptIds, $managedShowroomIds): \Illuminate\Database\Eloquent\Builder {
                 $activeStatuses = [
                     'pending', 'assigned', 'received', 'in_progress',
                     'materials_wait', 'materials_prep', 'materials_done',
@@ -194,7 +194,7 @@ class ActiveTasks extends Page implements HasTable
                             ->options(fn () => Showroom::query()->orderBy('name')->pluck('name', 'id')->all())
                             ->searchable(),
                     ])
-                    ->query(function (Builder $query, array $data): Builder {
+                    ->query(function (Builder $query, array $data): \Illuminate\Database\Eloquent\Builder {
                         $sid = $data['showroom_id'] ?? null;
                         if (! $sid) return $query;
                         return $query->whereHas('project.productionRequest', function (Builder $w) use ($sid) {
@@ -209,7 +209,7 @@ class ActiveTasks extends Page implements HasTable
                         Forms\Components\DatePicker::make('from')->label('من')->native(false),
                         Forms\Components\DatePicker::make('to')->label('إلى')->native(false),
                     ])
-                    ->query(function (Builder $query, array $data): Builder {
+                    ->query(function (Builder $query, array $data): \Illuminate\Database\Eloquent\Builder {
                         $from = $data['from'] ?? null;
                         $to   = $data['to']   ?? null;
                         return $query

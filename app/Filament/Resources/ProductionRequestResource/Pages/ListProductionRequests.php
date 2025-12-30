@@ -13,7 +13,7 @@ class ListProductionRequests extends ListRecords
 
     protected static ?string $title = 'طلبات التصنيع الجارية';
 
-    public function getEloquentQuery(): Builder
+    public function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
         return parent::getEloquentQuery();
     }

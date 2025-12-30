@@ -23,7 +23,10 @@ class ViewDepartmentPurchaseRequest extends ViewRecord
             Action::make('submit_to_factory')
                 ->label('إرسال لاعتماد المصنع')
                 ->color('info')
-                ->visible(fn () => $this->record->status === 'draft')
+                ->visible(fn () => 
+                    $this->record->status === 'draft' && 
+                    (auth()->id() === $this->record->requested_by || auth()->user()->hasRole('department_manager'))
+                )
                 ->action(function () {
                     app(DprWorkflow::class)->setStatus($this->record, 'submitted_to_factory');
                     $this->refreshFormData(['status']);
@@ -32,7 +35,10 @@ class ViewDepartmentPurchaseRequest extends ViewRecord
             Action::make('factory_approve')
                 ->label('اعتماد المصنع')
                 ->color('success')
-                ->visible(fn () => in_array($this->record->status, ['submitted_to_factory'], true))
+                ->visible(fn () => 
+                    in_array($this->record->status, ['submitted_to_factory'], true) && 
+                    auth()->user()->hasRole('factory_manager')
+                )
                 ->action(function () {
                     $this->record->factory_approved_by = auth()->id();
                     $this->record->save();
@@ -42,7 +48,10 @@ class ViewDepartmentPurchaseRequest extends ViewRecord
             Action::make('factory_reject')
                 ->label('رفض المصنع')
                 ->color('danger')
-                ->visible(fn () => in_array($this->record->status, ['submitted_to_factory'], true))
+                ->visible(fn () => 
+                    in_array($this->record->status, ['submitted_to_factory'], true) && 
+                    auth()->user()->hasRole('factory_manager')
+                )
                 ->form([
                     \Filament\Forms\Components\Textarea::make('note')
                         ->label('سبب الرفض')

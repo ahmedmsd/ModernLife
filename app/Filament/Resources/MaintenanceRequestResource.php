@@ -2,10 +2,10 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\MaintenanceRequestResource\Pages;
 use App\Filament\Resources\MaintenanceRequestResource\Pages\CreateMaintenanceRequest;
 use App\Filament\Resources\MaintenanceRequestResource\Pages\EditMaintenanceRequest;
 use App\Filament\Resources\MaintenanceRequestResource\Pages\ListMaintenanceRequests;
+use App\Filament\Resources\MaintenanceRequestResource\Pages\ListMaintenanceRequestsDone;
 use App\Filament\Resources\MaintenanceRequestResource\Pages\ViewMaintenanceRequest;
 use App\Filament\Resources\MaintenanceRequestResource\RelationManagers\CommentsRelationManager;
 use App\Models\Client;
@@ -33,7 +33,7 @@ class MaintenanceRequestResource extends Resource
     protected static ?string $pluralModelLabel = 'طلبات الصيانة';
     protected static ?string $modelLabel       = 'طلب صيانة';
     protected static ?int    $navigationSort   = 50;
-    public static function getEloquentQuery(): Builder
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
         $q = static::getPermissionScopedQuery();
 
@@ -46,7 +46,7 @@ class MaintenanceRequestResource extends Resource
         return $q;
     }
 
-    public static function getPermissionScopedQuery(): Builder
+    public static function getPermissionScopedQuery(): \Illuminate\Database\Eloquent\Builder
     {
         $q = parent::getEloquentQuery()
             ->latest('id');
@@ -243,11 +243,11 @@ class MaintenanceRequestResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'     => Pages\ListMaintenanceRequests::route('/'),
-            'completed' => Pages\ListMaintenanceRequestsDone::route('/completed'),
-            'create'    => Pages\CreateMaintenanceRequest::route('/create'),
-            'view'      => Pages\ViewMaintenanceRequest::route('/{record}'),
-            'edit'      => Pages\EditMaintenanceRequest::route('/{record}/edit'),
+            'index'     => ListMaintenanceRequests::route('/'),
+            'completed' => ListMaintenanceRequestsDone::route('/completed'),
+            'create'    => CreateMaintenanceRequest::route('/create'),
+            'view'      => ViewMaintenanceRequest::route('/{record}'),
+            'edit'      => EditMaintenanceRequest::route('/{record}/edit'),
         ];
     }
 

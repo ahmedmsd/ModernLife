@@ -190,7 +190,7 @@ class ViewProject extends ViewRecord
 
     /* ============================ Data ============================ */
 
-    private function filteredTasksQuery(): Builder
+    private function filteredTasksQuery(): \Illuminate\Database\Eloquent\Builder
     {
         return ProductionTask::query()
             ->where('project_id', $this->record->id)

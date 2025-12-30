@@ -80,6 +80,7 @@ class DepartmentPurchaseRequestResource extends Resource
                 Tables\Columns\TextColumn::make('title')
                     ->label('العنوان')
                     ->limit(40)
+                    ->wrap()
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('department.dept_name')

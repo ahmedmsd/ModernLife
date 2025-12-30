@@ -239,6 +239,127 @@ class ViewTask extends ViewRecord
                 TextEntry::make('sent_to_owner_at')->label('أُرسل للمالك')->dateTime()->placeholder('—')->color('primary'),
                 TextEntry::make('received_by_owner_at')->label('مؤكد الاستلام')->dateTime()->placeholder('—')->color('primary'),
             ])->columns(2),
+
+            
+            Section::make('ملفات المهمة')
+                ->schema([
+                    TextEntry::make('agreement_file')
+                        ->label('ملف الاتفاقية')
+                        ->html()
+                        ->visible(fn () =>
+                            auth()->check() &&
+                            auth()->user()->hasAnyRole([
+                                'admin',
+                                'super-admin',
+                                'super_admin',
+                                'factory_manager',
+                                'purchasing_manager',
+                            ])
+                        )
+                        ->state(function (ProductionTask $record) {
+                            $pr = $record->project?->productionRequest;
+                            if (! $pr || blank($pr->agreement_file)) {
+                                return '<span style="opacity:.7">—</span>';
+                            }
+                            $url  = Storage::disk('public')->url($pr->agreement_file);
+                            $name = e(basename($pr->agreement_file));
+                            return '<a href="'.e($url).'" target="_blank" style="color:#2563eb; text-decoration:underline; font-weight:600;">'.$name.' ▸</a>';
+                        }),
+
+                    TextEntry::make('manufacturing_file')
+                        ->label('ملف التصنيع (للقسم)')
+                        ->html()
+                        ->state(function (ProductionTask $record) {
+                            $path = $record->file_path ?? null;
+                            $disk = $record->file_disk ?? 'public';
+
+                            if (blank($path)) {
+                                $file = $record->project?->productionRequest?->files()
+                                    ->where('department_id', $record->department_id)
+                                    ->latest()
+                                    ->first();
+
+                                if ($file && filled($file->file_path)) {
+                                    $path = $file->file_path;
+                                    $disk = $file->file_disk ?? 'public';
+                                }
+                            }
+
+                            if (blank($path)) {
+                                return '<span style="opacity:.7">—</span>';
+                            }
+
+                            $url = Str::startsWith($path, ['http://', 'https://'])
+                                ? $path
+                                : Storage::disk($disk)->url($path);
+
+                            $basename = parse_url($path, PHP_URL_PATH) ?: $path;
+                            $name = e(basename($basename));
+
+                            return '<a href="'.e($url).'" target="_blank" style="color:#16a34a; text-decoration:underline; font-weight:600;">'.$name.' ▸</a>';
+                        }),
+                    TextEntry::make('additional_work_file_link')
+                        ->label('ملف الأعمال الإضافية')
+                        ->html()
+                        ->visible(fn () =>
+                            auth()->check() &&
+                            auth()->user()->hasAnyRole([
+                                'admin',
+                                'super-admin',
+                                'super_admin',
+                                'factory_manager',
+                                'purchasing_manager',
+                                'installation_manager',
+                                'department_manager',
+                                'sales',
+                                'showroom_manager',
+                            ])
+                        )
+                        ->state(function (ProductionTask $record) {
+                            $pr = $record->project?->productionRequest;
+                            $value = (string) ($pr?->additional_work_file ?? '');
+                            if (blank($value)) {
+                                return '<span style="opacity:.7">—</span>';
+                            }
+
+                            $isUrl = Str::startsWith($value, ['http://', 'https://']);
+                            $url   = $isUrl ? $value : Storage::disk('public')->url($value);
+
+                            $basename = parse_url($value, PHP_URL_PATH) ?: $value;
+                            $name = e(basename($basename));
+
+                            return '<a href="'.e($url).'" target="_blank" style="color:#0ea5e9; text-decoration:underline; font-weight:600;">'.$name.' ▸</a>';
+                        }),
+                    TextEntry::make('client_receipt_link')
+                        ->label('سند استلام العميل')
+                        ->html()
+                        ->visible(fn () =>
+                            auth()->check() &&
+                            auth()->user()->hasAnyRole([
+                                'admin', 'super-admin', 'super_admin',
+                                'factory_manager', 'purchasing_manager',
+                                'installation_manager', 'quality_manager','sales', 'showroom_manager'
+                            ])
+                        )
+                        ->state(function (ProductionTask $record) {
+                            $value = (string) ($record->client_receipt ?? '');
+
+                            if (blank($value)) {
+                                return '<span style="opacity:.7">—</span>';
+                            }
+
+                            $url = Str::startsWith($value, ['http://', 'https://'])
+                                ? $value
+                                : Storage::disk('public')->url($value);
+
+                            $basename = parse_url($value, PHP_URL_PATH) ?: $value;
+                            $name = e(basename($basename));
+
+                            return '<a href="'.e($url).'" target="_blank" style="color:#d97706; text-decoration:underline; font-weight:600;">'.$name.' ▸</a>';
+                        }),
+
+                ])->columns(1),
+
             Section::make('مدد مراحل التصنيع')->schema([
                 TextEntry::make('stage_durations_html')
                     ->label(false)
@@ -653,125 +774,6 @@ class ViewTask extends ViewRecord
                         }),
                 ])
                 ->columnSpanFull(),
-
-            Section::make('ملفات المهمة')
-                ->schema([
-                    TextEntry::make('agreement_file')
-                        ->label('ملف الاتفاقية')
-                        ->html()
-                        ->visible(fn () =>
-                            auth()->check() &&
-                            auth()->user()->hasAnyRole([
-                                'admin',
-                                'super-admin',
-                                'super_admin',
-                                'factory_manager',
-                                'purchasing_manager',
-                            ])
-                        )
-                        ->state(function (ProductionTask $record) {
-                            $pr = $record->project?->productionRequest;
-                            if (! $pr || blank($pr->agreement_file)) {
-                                return '<span style="opacity:.7">—</span>';
-                            }
-                            $url  = Storage::disk('public')->url($pr->agreement_file);
-                            $name = e(basename($pr->agreement_file));
-                            return '<a href="'.e($url).'" target="_blank" style="color:#2563eb; text-decoration:underline; font-weight:600;">'.$name.' ▸</a>';
-                        }),
-
-                    TextEntry::make('manufacturing_file')
-                        ->label('ملف التصنيع (للقسم)')
-                        ->html()
-                        ->state(function (ProductionTask $record) {
-                            $path = $record->file_path ?? null;
-                            $disk = $record->file_disk ?? 'public';
-
-                            if (blank($path)) {
-                                $file = $record->project?->productionRequest?->files()
-                                    ->where('department_id', $record->department_id)
-                                    ->latest()
-                                    ->first();
-
-                                if ($file && filled($file->file_path)) {
-                                    $path = $file->file_path;
-                                    $disk = $file->file_disk ?? 'public';
-                                }
-                            }
-
-                            if (blank($path)) {
-                                return '<span style="opacity:.7">—</span>';
-                            }
-
-                            $url = Str::startsWith($path, ['http://', 'https://'])
-                                ? $path
-                                : Storage::disk($disk)->url($path);
-
-                            $basename = parse_url($path, PHP_URL_PATH) ?: $path;
-                            $name = e(basename($basename));
-
-                            return '<a href="'.e($url).'" target="_blank" style="color:#16a34a; text-decoration:underline; font-weight:600;">'.$name.' ▸</a>';
-                        }),
-                    TextEntry::make('additional_work_file_link')
-                        ->label('ملف الأعمال الإضافية')
-                        ->html()
-                        ->visible(fn () =>
-                            auth()->check() &&
-                            auth()->user()->hasAnyRole([
-                                'admin',
-                                'super-admin',
-                                'super_admin',
-                                'factory_manager',
-                                'purchasing_manager',
-                                'installation_manager',
-                                'department_manager',
-                                'sales',
-                                'showroom_manager',
-                            ])
-                        )
-                        ->state(function (ProductionTask $record) {
-                            $pr = $record->project?->productionRequest;
-                            $value = (string) ($pr?->additional_work_file ?? '');
-                            if (blank($value)) {
-                                return '<span style="opacity:.7">—</span>';
-                            }
-
-                            $isUrl = Str::startsWith($value, ['http://', 'https://']);
-                            $url   = $isUrl ? $value : Storage::disk('public')->url($value);
-
-                            $basename = parse_url($value, PHP_URL_PATH) ?: $value;
-                            $name = e(basename($basename));
-
-                            return '<a href="'.e($url).'" target="_blank" style="color:#0ea5e9; text-decoration:underline; font-weight:600;">'.$name.' ▸</a>';
-                        }),
-                    TextEntry::make('client_receipt_link')
-                        ->label('سند استلام العميل')
-                        ->html()
-                        ->visible(fn () =>
-                            auth()->check() &&
-                            auth()->user()->hasAnyRole([
-                                'admin', 'super-admin', 'super_admin',
-                                'factory_manager', 'purchasing_manager',
-                                'installation_manager', 'quality_manager','sales', 'showroom_manager'
-                            ])
-                        )
-                        ->state(function (ProductionTask $record) {
-                            $value = (string) ($record->client_receipt ?? '');
-
-                            if (blank($value)) {
-                                return '<span style="opacity:.7">—</span>';
-                            }
-
-                            $url = Str::startsWith($value, ['http://', 'https://'])
-                                ? $value
-                                : Storage::disk('public')->url($value);
-
-                            $basename = parse_url($value, PHP_URL_PATH) ?: $value;
-                            $name = e(basename($basename));
-
-                            return '<a href="'.e($url).'" target="_blank" style="color:#d97706; text-decoration:underline; font-weight:600;">'.$name.' ▸</a>';
-                        }),
-
-                ])->columns(1),
 
             Section::make('التعليقات')
                 ->schema([
