@@ -59,6 +59,7 @@ class TaskTimerService
 
     public function startHold(ProductionTask $task, array $data): TaskHold
     {
+        // \Illuminate\Support\Facades\Log::critical('START HOLD EXECUTION START', ['task_id' => $task->id, 'data' => $data]);
         return DB::transaction(function () use ($task, $data) {
             // أغلق أي تعليق مفتوح
             $task->holds()->whereNull('ended_at')->update(['ended_at' => now()]);
@@ -66,14 +67,20 @@ class TaskTimerService
             // غيّر حالة المهمة إلى on_hold
             $task->forceFill(['status' => 'on_hold'])->save();
 
-            $hold = $task->holds()->create([
-                'reason'          => $data['reason'] ?? null,
-                'type'            => $data['type'] ?? 'awaiting_dependency',
-                'related_task_id' => $data['related_task_id'] ?? null,
-                'started_at'      => $data['started_at'] ?? now(),
-                'created_by'      => $data['created_by'],
-                'note'            => $data['note'] ?? null,
-            ]);
+            try {
+                $hold = $task->holds()->create([
+                    'reason'          => $data['reason'] ?? null,
+                    'type'            => $data['type'] ?? 'awaiting_dependency',
+                    'related_task_id' => $data['related_task_id'] ?? null,
+                    'started_at'      => $data['started_at'] ?? now(),
+                    'created_by'      => $data['created_by'],
+                    'note'            => $data['note'] ?? null,
+                ]);
+                \Illuminate\Support\Facades\Log::info('TaskTimerService: Hold created', ['hold_id' => $hold->id, 'task_id' => $task->id]);
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('TaskTimerService: Failed to create hold', ['error' => $e->getMessage()]);
+                throw $e;
+            }
 
             // task_log($task->id, 'hold_started', [...]);
 

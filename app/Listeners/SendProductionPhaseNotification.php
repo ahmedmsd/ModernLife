@@ -43,7 +43,7 @@ class SendProductionPhaseNotification
             $sendMail = in_array($eventType, ['rejected', 'factory_rejected', 'project_bootstrap']);
 
             $notifier->notifyBatch(
-                recipients: $recipients->unique('id')->values(),
+                recipients: $recipients->unique('id')->reject(fn($u) => $u->id === auth()->id())->values(),
                 pr: $pr,
                 title: $phaseNotification->getTitle(),
                 body: $phaseNotification->getBody(),

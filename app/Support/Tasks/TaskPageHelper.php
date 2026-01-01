@@ -245,36 +245,10 @@ class TaskPageHelper
         }
 
         $status = $this->statusVal($task);
-        if (! in_array($status, ['pending', 'rework'], true)) {
-            return false;
-        }
-
-        $lastAck = TaskLog::query()
-            ->where('task_id', $task->id)
-            ->whereIn('type', ['dept_acknowledged'])
-            ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
-            ->first();
-
-        if (! $lastAck) {
-            return false;
-        }
-
-        $t  = $lastAck->happened_at ?? $lastAck->created_at;
-        $id = $lastAck->id;
-
-        $rejectedAfter = TaskLog::query()
-            ->where('task_id', $task->id)
-            ->where('type', 'dept_rejected_to_factory')
-            ->where(function ($q) use ($t, $id) {
-                $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
-                    ->orWhere(function ($q2) use ($t, $id) {
-                        $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$t])
-                            ->where('id', '>', $id);
-                    });
-            })
-            ->exists();
-
-        return ! $rejectedAfter;
+        
+        // Allow rejection if task is pending, rework, received, or waiting for production
+        // This covers "Before Acknowledgment" (pending) and "After Acknowledgment" (received/waiting)
+        return in_array($status, ['pending', 'rework', 'received', 'waiting_production'], true);
     }
 
     public function canRequestMaterials(ProductionTask $task, ?Authenticatable $user): bool
@@ -356,7 +330,7 @@ class TaskPageHelper
         }
 
         $status = $this->statusVal($task);
-        $allowedStatuses = ['materials_wait', 'materials_prep','materials_done', 'waiting_production', 'rework'];
+        $allowedStatuses = ['materials_wait', 'materials_prep','materials_done', 'waiting_production', 'rework', 'in_progress', 'on_hold'];
         if (! in_array($status, $allowedStatuses, true)) {
             return false;
         }

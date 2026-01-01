@@ -14,4 +14,9 @@ class CreateDepartmentPurchaseRequest extends CreateRecord
         $data['requested_by'] = auth()->id();
         return $data;
     }
+
+    public function getHeading(): string
+    {
+        return 'طلب شراء جديد';
+    }
 }

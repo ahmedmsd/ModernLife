@@ -43,14 +43,14 @@ class HoldTaskAction
 
         $isDeptManagerAndOwner =
             $user->hasRole('department_manager')
-            && $record->current_owner_role === 'department_manager'
-            && (int) $record->current_owner_user_id === (int) $user->id;
+            && $record->current_owner_role === 'department_manager';
+            // && (int) $record->current_owner_user_id === (int) $user->id; // Removed strict check
 
         $isPureFactoryManager =
             $user->hasRole('factory_manager')
             && $user->getRoleNames()->count() === 1;
 
-        return !in_array($record->status, ['completed', 'closed'])
+        return !in_array($record->status, ['completed', 'closed', 'on_hold', 'blocked'])
             && ($isDeptManagerAndOwner || $isPureFactoryManager);
     }
 

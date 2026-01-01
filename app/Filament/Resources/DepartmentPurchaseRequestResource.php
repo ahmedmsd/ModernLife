@@ -66,6 +66,36 @@ class DepartmentPurchaseRequestResource extends Resource
                     ->openable()
                     ->downloadable(),
             ])->columns(2),
+            Forms\Components\Section::make('الأصناف')
+                ->schema([
+                    Forms\Components\Repeater::make('items')
+                        ->relationship('items')
+                        ->schema([
+                            Forms\Components\TextInput::make('item_name')
+                                ->label('الصنف')
+                                ->required()
+                                ->columnSpan(3),
+                            Forms\Components\TextInput::make('quantity')
+                                ->label('الكمية')
+                                ->numeric()
+                                ->default(1)
+                                ->required()
+                                ->columnSpan(1),
+                            Forms\Components\TextInput::make('unit_price')
+                                ->label('السعر التقديري')
+                                ->numeric()
+                                ->default(0)
+                                ->columnSpan(2),
+                            Forms\Components\Textarea::make('notes')
+                                ->label('ملاحظات')
+                                ->rows(1)
+                                ->columnSpan(6),
+                        ])
+                        ->columns(6)
+                        ->defaultItems(1)
+                        ->addActionLabel('إضافة صنف')
+                        ->collapsible(),
+                ]),
         ]);
     }
 
@@ -93,7 +123,12 @@ class DepartmentPurchaseRequestResource extends Resource
                         'low' => 'gray',
                         'medium' => 'warning',
                         'high' => 'danger',
-                    ][$state] ?? 'gray'),
+                    ][$state] ?? 'gray')
+                    ->formatStateUsing(fn (string $state) => [
+                        'low' => 'منخفض',
+                        'medium' => 'متوسط',
+                        'high' => 'عالي',
+                    ][$state] ?? $state),
 
                 Tables\Columns\TextColumn::make('status')
                     ->label('الحالة')
@@ -106,7 +141,16 @@ class DepartmentPurchaseRequestResource extends Resource
                         'sent_to_purchasing' => 'info',
                         'purchased' => 'warning',
                         'delivered' => 'success',
-                    ][$state] ?? 'gray'),
+                    ][$state] ?? 'gray')
+                    ->formatStateUsing(fn (string $state) => [
+                        'draft' => 'مسودة',
+                        'submitted_to_factory' => 'بإنتظار اعتماد المصنع',
+                        'factory_approved' => 'معتمد من المصنع',
+                        'factory_rejected' => 'مرفوض من المصنع',
+                        'sent_to_purchasing' => 'للمشتريات',
+                        'purchased' => 'تم الشراء',
+                        'delivered' => 'تم التوريد',
+                    ][$state] ?? $state),
 
                 Tables\Columns\TextColumn::make('total_estimated_cost')
                     ->label('التكلفة التقديرية')
@@ -150,7 +194,7 @@ class DepartmentPurchaseRequestResource extends Resource
     public static function getRelations(): array
     {
         return [
-            ItemsRelationManager::class,
+            // ItemsRelationManager::class, // Removed to avoid duplication with the Repeater form
         ];
     }
 

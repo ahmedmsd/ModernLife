@@ -96,5 +96,7 @@ class AssignmentWorkflowService
             touchSent: true,
             note: $note
         );
+
+        $task->update(['status' => 'pending']);
     }
 }

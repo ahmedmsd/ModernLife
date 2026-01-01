@@ -31,7 +31,8 @@ class StartProductionAction
         if (($record->current_owner_role ?? null) !== 'department_manager') return false;
 
         $status = strtolower((string) ($record->status ?? ''));
-        if (!in_array($status, ['waiting_production', 'rework'], true)) return false;
+        $status = strtolower((string) ($record->status ?? ''));
+        if (!in_array($status, ['waiting_production', 'rework', 'in_progress'], true)) return false;
 
         $anchor = TaskLog::query()
             ->where('task_id', $record->id)

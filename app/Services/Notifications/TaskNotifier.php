@@ -143,11 +143,15 @@ class TaskNotifier
         $url = $url ?? $this->viewUrl($task);
 
         foreach ($r->users as $u) {
+            if ($u->id === auth()->id()) continue;
             $this->sendInApp($u, $title, $body, $url);
         }
 
         if ($sendMail && $r->users->count()) {
-            LaravelNotification::send($r->users, new ActionHandoffNotification($title, $body, $url, true));
+            $recipients = $r->users->reject(fn($u) => $u->id === auth()->id());
+            if ($recipients->isNotEmpty()) {
+                LaravelNotification::send($recipients, new ActionHandoffNotification($title, $body, $url, true));
+            }
         }
     }
 
@@ -181,11 +185,15 @@ class TaskNotifier
         $url = $url ?? $this->viewUrl($task);
 
         foreach ($r->users as $u) {
+            if ($u->id === auth()->id()) continue;
             $this->sendInApp($u, $title, $body, $url);
         }
 
         if ($sendMail && $r->users->count()) {
-            LaravelNotification::send($r->users, new ActionHandoffNotification($title, $body, $url, true));
+            $recipients = $r->users->reject(fn($u) => $u->id === auth()->id());
+            if ($recipients->isNotEmpty()) {
+                LaravelNotification::send($recipients, new ActionHandoffNotification($title, $body, $url, true));
+            }
         }
     }
 

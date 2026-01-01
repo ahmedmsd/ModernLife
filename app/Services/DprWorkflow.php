@@ -67,6 +67,7 @@ class DprWorkflow
         }
 
         if ($recipients->isNotEmpty()) {
+            $recipients = $recipients->reject(fn($u) => $u->id === Auth::id());
             Notification::send($recipients->unique('id')->all(), new DprStatusChanged($dpr, $status, $note));
         }
     }

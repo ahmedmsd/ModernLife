@@ -9,4 +9,9 @@ class EditDepartmentPurchaseRequest extends EditRecord
 {
     protected static string $resource = DepartmentPurchaseRequestResource::class;
     protected function getRedirectUrl(): string { return $this->getResource()::getUrl('view', ['record'=>$this->record]); }
+
+    public function getHeading(): string
+    {
+        return 'تعديل طلب الشراء';
+    }
 }

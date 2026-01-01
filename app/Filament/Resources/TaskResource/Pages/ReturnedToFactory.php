@@ -127,6 +127,13 @@ class ReturnedToFactory extends ListRecords
                         'department_id'  => $data['department_id'] ?? $record->department_id,
                     ]))->save();
 
+                    // Manual Fallback logic to determine Dept Manager ID
+                    $deptManagerId = null;
+                    try {
+                        $dept = $record->department()->first();
+                        $deptManagerId = $dept->manager_user_id ?? $dept->manager_id ?? null;
+                    } catch (\Throwable $e) { /* ignore */ }
+
                     // Use AssignmentWorkflowService
                     try {
                         /** @var AssignmentWorkflowService $workflow */
@@ -134,15 +141,14 @@ class ReturnedToFactory extends ListRecords
                         $workflow->resubmitToDeptManager($record, 'إعادة إرسال الى مدير القسم بعد تعديل من قبل البائع/المعرض');
                     } catch (\Throwable $e) {
                          Log::error('AssignmentWorkflowService::resubmitToDeptManager failed: ' . $e->getMessage());
-                         // Manual Fallback if service fails (though unlikely with simple code)
-                         $dept = $record->department()->first();
-                         $deptManagerId = $dept->manager_user_id ?? $dept->manager_id ?? null;
                          
+                         // Apply manual fallback if service failed
                          $record->forceFill([
-                            'current_owner_role'    => 'department_manager',
+                             'current_owner_role'    => 'department_manager',
                             'current_owner_user_id' => $deptManagerId,
                             'sent_to_owner_at'      => now(),
                              'received_by_owner_at'  => null,
+                             'status'                => 'pending',
                          ])->save();
                     }
 
@@ -158,7 +164,7 @@ class ReturnedToFactory extends ListRecords
                             'happened_at' => now(),
                         ]);
                     } catch (\Throwable $e) {
-                        Log::warning('Failed to create task log: ' . $e->getMessage());
+                         Log::warning('Failed to create task log: ' . $e->getMessage());
                     }
 
                     // إشعار داخلي لمدير القسم (database notification)
@@ -171,6 +177,19 @@ class ReturnedToFactory extends ListRecords
                             } catch (\Throwable $e) {
                                 Log::warning('Failed to notify dept manager: ' . $e->getMessage());
                             }
+                        }
+                    }
+
+                    // Notify Factory Manager(s) - Restored as per request
+                    $factoryManagers = User::role('factory_manager')->get();
+                    foreach ($factoryManagers as $fm) {
+                        if ($fm->id === auth()->id()) continue;
+
+                        try {
+                            $url = TaskResource::getUrl('view', ['record' => $record]);
+                            $fm->notify(new TaskSentForConfirmation($record, $url));
+                        } catch (\Throwable $e) {
+                            Log::warning('Failed to notify factory manager: ' . $e->getMessage());
                         }
                     }
                 }),

@@ -30,7 +30,7 @@ class ItemsRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('unit')->label('الوحدة'),
                 Tables\Columns\TextColumn::make('unit_price')->label('سعر الوحدة')->money('sar'),
                 Tables\Columns\TextColumn::make('subtotal')->label('الإجمالي')
-                    ->state(fn(\App\Models\DepartmentPurchaseRequest $record)=> number_format(($record->quantity ?? 0) * ($record->unit_price ?? 0), 2)),
+                    ->state(fn(\App\Models\DepartmentPurchaseItem $record)=> number_format(($record->quantity ?? 0) * ($record->unit_price ?? 0), 2)),
             ])
             ->headerActions([ Tables\Actions\CreateAction::make() ])
             ->actions([ Tables\Actions\EditAction::make(), Tables\Actions\DeleteAction::make() ]);

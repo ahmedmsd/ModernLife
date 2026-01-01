@@ -17,6 +17,11 @@ class ViewDepartmentPurchaseRequest extends ViewRecord
 {
     protected static string $resource = DepartmentPurchaseRequestResource::class;
 
+    public function getHeading(): string
+    {
+        return 'عرض طلب الشراء';
+    }
+
     protected function getHeaderActions(): array
     {
         return [
@@ -73,7 +78,10 @@ class ViewDepartmentPurchaseRequest extends ViewRecord
             Action::make('mark_purchased')
                 ->label('تم الشراء')
                 ->color('info')
-                ->visible(fn () => $this->record->status === 'sent_to_purchasing')
+                ->visible(fn () => 
+                    $this->record->status === 'sent_to_purchasing' &&
+                    auth()->user()->hasAnyRole(['purchasing_manager', 'admin', 'super-admin'])
+                )
                 ->action(function () {
                     $this->record->purchased_by = auth()->id();
                     $this->record->save();
@@ -83,7 +91,10 @@ class ViewDepartmentPurchaseRequest extends ViewRecord
             Action::make('mark_delivered')
                 ->label('تم التوريد')
                 ->color('success')
-                ->visible(fn () => $this->record->status === 'purchased')
+                ->visible(fn () => 
+                    $this->record->status === 'purchased' &&
+                    auth()->user()->hasAnyRole(['purchasing_manager', 'admin', 'super-admin'])
+                )
                 ->form([
                     \Filament\Forms\Components\Select::make('delivered_to')
                         ->relationship('requester', 'name')
@@ -131,6 +142,28 @@ class ViewDepartmentPurchaseRequest extends ViewRecord
                 ]),
                 TextEntry::make('description')->label('التفاصيل')->prose()->columnSpanFull(),
             ])->columns(1),
+
+            Section::make('المرفقات')->schema([
+                 TextEntry::make('attachment')
+                    ->label('الملف المرفق')
+                    ->url(fn ($record) => $record->attachment ? \Illuminate\Support\Facades\Storage::url($record->attachment) : null)
+                    ->openUrlInNewTab()
+                    ->visible(fn ($record) => filled($record->attachment))
+                    ->formatStateUsing(fn () => 'عرض الملف'),
+            ])->visible(fn ($record) => filled($record->attachment)),
+
+            Section::make('الأصناف')->schema([
+                RepeatableEntry::make('items')
+                    ->label(false)
+                    ->schema([
+                        Grid::make(4)->schema([
+                            TextEntry::make('item_name')->label('الصنف'),
+                            TextEntry::make('quantity')->label('الكمية'),
+                            TextEntry::make('unit_price')->label('السعر التقديري')->money('sar'),
+                            TextEntry::make('notes')->label('ملاحظات'),
+                        ]),
+                    ]),
+            ]),
 
             Section::make('السجل الزمني')->schema([
                 RepeatableEntry::make('timeline')
