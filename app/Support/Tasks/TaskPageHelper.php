@@ -221,7 +221,7 @@ class TaskPageHelper
 
         $ackAfter = TaskLog::query()
             ->where('task_id', $task->id)
-            ->where('type', 'dept_acknowledged')
+            ->whereIn('type', ['dept_acknowledge', 'dept_acknowledged'])
             ->where(function ($q) use ($t, $id) {
                 $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$t])
                     ->orWhere(function ($q2) use ($t, $id) {
@@ -357,14 +357,14 @@ class TaskPageHelper
         }
 
         $status = $this->statusVal($task);
-        if (! in_array($status, ['waiting_production', 'rework'], true)) {
+        if (! in_array($status, ['waiting_production', 'rework', 'received'], true)) {
             return false;
         }
 
         // منطق الـ anchor كما في ViewTask (ack_rework أو materials_received أو planning_hint)
         $anchor = TaskLog::query()
             ->where('task_id', $task->id)
-            ->where('type', 'manufacturing_ack_rework')
+            ->whereIn('type', ['manufacturing_ack_rework', 'dept_acknowledge', 'dept_acknowledged'])
             ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
             ->first();
 

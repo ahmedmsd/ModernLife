@@ -25,6 +25,7 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        \Illuminate\Support\Facades\Schema::defaultStringLength(191);
         // DB logging disabled - was causing circular dependency during boot
         // DB::listen(function (QueryExecuted $query) {
         //     Log::info('SQL Query Executed', [

@@ -1,0 +1,7 @@
+﻿zoho_account_id: YES
+zoho_contact_id: NO
+Tables:
+quotations: YES
+quotation_items: YES
+sales_orders: YES
+sales_order_items: YES

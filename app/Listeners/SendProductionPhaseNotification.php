@@ -25,14 +25,11 @@ class SendProductionPhaseNotification
             context: $context
         );
 
-        $recipients = $this->resolveRecipients($pr, $context, $eventType);
+        $recipients = $this->resolveRecipients($pr, $context, $eventType)
+            ->unique('id')
+            ->reject(fn($u) => $u->id === auth()->id());
 
         if ($recipients->isEmpty()) {
-            Log::warning('SendProductionPhaseNotification: no recipients resolved', [
-                'pr_id' => $pr->id,
-                'context' => $context,
-                'event' => $eventType,
-            ]);
             return;
         }
 
@@ -43,7 +40,7 @@ class SendProductionPhaseNotification
             $sendMail = in_array($eventType, ['rejected', 'factory_rejected', 'project_bootstrap']);
 
             $notifier->notifyBatch(
-                recipients: $recipients->unique('id')->reject(fn($u) => $u->id === auth()->id())->values(),
+                recipients: $recipients->values(),
                 pr: $pr,
                 title: $phaseNotification->getTitle(),
                 body: $phaseNotification->getBody(),

@@ -322,8 +322,8 @@ class ProductionTaskObserver
         }
 
         if ($task->wasChanged('department_id')) {
-            $dept    = $task->department()->with(['managerUser', 'headUser'])->first();
-            $targets = collect([$dept?->managerUser, $dept?->headUser])->filter();
+            $dept    = $task->department()->with(['managerUser'])->first();
+            $targets = collect([$dept?->managerUser])->filter();
 
             foreach ($targets as $user) {
                 FNotification::make()

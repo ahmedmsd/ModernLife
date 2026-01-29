@@ -24,6 +24,10 @@ Route::middleware(['auth'])->group(function () {
         ->name('files.show');
     Route::get('/files/{file}/download', [App\Http\Controllers\ProductionRequestFileController::class, 'download'])
         ->name('files.download');
+    
+    // Print Quotation
+    Route::get('/quotations/{quotation}/print', [App\Http\Controllers\QuotationController::class, 'print'])
+        ->name('quotations.print');
 });
 
 // Admin-only utility routes

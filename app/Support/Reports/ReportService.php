@@ -23,7 +23,8 @@ class ReportService
             ->when($this->f->branch_id,   fn ($q, $v) => $q->whereExists(function($eq) use ($v) {
                 $eq->select(DB::raw(1))
                    ->from('projects as p')
-                   ->join('showrooms as s', 's.id', '=', 'p.showroom_id')
+                   ->join('production_requests as pr', 'pr.id', '=', 'p.production_request_id')
+                   ->join('showrooms as s', 's.id', '=', 'pr.showroom_id')
                    ->whereColumn('p.id', 't.project_id')
                    ->where('s.id', $v);
             }))

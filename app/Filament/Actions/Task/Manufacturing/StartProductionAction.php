@@ -31,12 +31,11 @@ class StartProductionAction
         if (($record->current_owner_role ?? null) !== 'department_manager') return false;
 
         $status = strtolower((string) ($record->status ?? ''));
-        $status = strtolower((string) ($record->status ?? ''));
-        if (!in_array($status, ['waiting_production', 'rework', 'in_progress'], true)) return false;
+        if (!in_array($status, ['waiting_production', 'rework', 'in_progress', 'received'], true)) return false;
 
         $anchor = TaskLog::query()
             ->where('task_id', $record->id)
-            ->where('type', 'manufacturing_ack_rework')
+            ->whereIn('type', ['manufacturing_ack_rework', 'dept_acknowledge', 'dept_acknowledged'])
             ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
             ->first();
 

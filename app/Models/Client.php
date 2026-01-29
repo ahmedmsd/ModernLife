@@ -29,6 +29,8 @@ class Client extends Model
         'payment_terms',
         'created_by',
         'notes',
+        'zoho_account_id',
+        'zoho_contact_id',
     ];
 
     public function contacts()

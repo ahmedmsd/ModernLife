@@ -1,0 +1,254 @@
+[
+    {
+        "name": "Activities",
+        "api": "Activities",
+        "singular": "Activity",
+        "plural": "Activities",
+        "custom": false
+    },
+    {
+        "name": "Home",
+        "api": "Home",
+        "singular": "Home",
+        "plural": "Home",
+        "custom": false
+    },
+    {
+        "name": "CustomModule5001",
+        "api": "CustomModule5001",
+        "singular": "Invoice",
+        "plural": "Invoices",
+        "custom": false
+    },
+    {
+        "name": "Workqueue",
+        "api": "Workqueue__s",
+        "singular": "Workqueue",
+        "plural": "Workqueue",
+        "custom": false
+    },
+    {
+        "name": "Leads",
+        "api": "Leads",
+        "singular": "Lead",
+        "plural": "Leads",
+        "custom": false
+    },
+    {
+        "name": "CustomModule5002",
+        "api": "CustomModule5002",
+        "singular": "Estimate",
+        "plural": "Estimates",
+        "custom": false
+    },
+    {
+        "name": "Accounts",
+        "api": "Accounts",
+        "singular": "Company",
+        "plural": "Companies",
+        "custom": false
+    },
+    {
+        "name": "Contacts",
+        "api": "Contacts",
+        "singular": "Contact",
+        "plural": "Contacts",
+        "custom": false
+    },
+    {
+        "name": "CustomModule5003",
+        "api": "CustomModule5003",
+        "singular": "Purchase Order",
+        "plural": "Purchase Orders",
+        "custom": false
+    },
+    {
+        "name": "CustomModule1",
+        "api": "Quotations",
+        "singular": "Commercial Quotation",
+        "plural": "Commercial Quotations",
+        "custom": false
+    },
+    {
+        "name": "CustomModule7",
+        "api": "Residential_Quotations",
+        "singular": "Residential Quotation",
+        "plural": "Residential Quotations",
+        "custom": false
+    },
+    {
+        "name": "Deals",
+        "api": "Deals",
+        "singular": "Project",
+        "plural": "Projects.",
+        "custom": false
+    },
+    {
+        "name": "CustomModule11",
+        "api": "Residential_Change_Order",
+        "singular": "Residential Change Order",
+        "plural": "Residential Change Order",
+        "custom": false
+    },
+    {
+        "name": "CustomModule13",
+        "api": "Commercial_Change_Orders",
+        "singular": "Commercial Change Order",
+        "plural": "Commercial Change Order",
+        "custom": false
+    },
+    {
+        "name": "CustomModule14",
+        "api": "Construction_Quotation",
+        "singular": "Construction Quotation",
+        "plural": "Construction Quotation",
+        "custom": false
+    },
+    {
+        "name": "CustomModule15",
+        "api": "Project_Management",
+        "singular": "Project Management",
+        "plural": "Project Management",
+        "custom": false
+    },
+    {
+        "name": "CustomModule16",
+        "api": "D_Checklist",
+        "singular": "2D Checklist",
+        "plural": "2D Checklist",
+        "custom": false
+    },
+    {
+        "name": "CustomModule17",
+        "api": "Plan_Drawing",
+        "singular": "Plan Drawing",
+        "plural": "Plan Drawing",
+        "custom": false
+    },
+    {
+        "name": "CustomModule18",
+        "api": "Invoices1",
+        "singular": "Invoices.",
+        "plural": "Invoices.",
+        "custom": false
+    },
+    {
+        "name": "CustomModule19",
+        "api": "Residential_Packages",
+        "singular": "Residential Package",
+        "plural": "Residential Packages",
+        "custom": false
+    },
+    {
+        "name": "CustomModule20",
+        "api": "Woodwork_Quotation",
+        "singular": "Woodwork Quotation",
+        "plural": "Woodwork Quotation",
+        "custom": false
+    },
+    {
+        "name": "CustomModule21",
+        "api": "Offers",
+        "singular": "Offers",
+        "plural": "Offers",
+        "custom": false
+    },
+    {
+        "name": "CustomModule24",
+        "api": "Design_Services",
+        "singular": "Design Services",
+        "plural": "Design Services",
+        "custom": false
+    },
+    {
+        "name": "Notes",
+        "api": "Notes",
+        "singular": "Note",
+        "plural": "Notes",
+        "custom": false
+    },
+    {
+        "name": "CustomModule22",
+        "api": "Design_and_Construction",
+        "singular": "Design and Construction",
+        "plural": "Design and Construction",
+        "custom": false
+    },
+    {
+        "name": "CustomModule25",
+        "api": "Aramco_Offers",
+        "singular": "Aramco Offers",
+        "plural": "Aramco Offers",
+        "custom": false
+    },
+    {
+        "name": "CustomModule23",
+        "api": "Quantities",
+        "singular": "Quantities",
+        "plural": "Quantities",
+        "custom": false
+    },
+    {
+        "name": "CustomModule10",
+        "api": "Submission_Form",
+        "singular": "\u0646\u0645\u0648\u0630\u062c \u0637\u0644\u0628 \u0645\u0628\u062e\u0631\u0629 \u0627\u0648 \u0628\u0648\u0643\u0633",
+        "plural": "\u0646\u0645\u0648\u0630\u062c \u0637\u0644\u0628 \u0645\u0628\u062e\u0631\u0629 \u0627\u0648 \u0628\u0648\u0643\u0633",
+        "custom": false
+    },
+    {
+        "name": "LinkingModule3",
+        "api": "Extra_items",
+        "singular": "Extra Items \/ \u0628\u0646\u0648\u062f \u0625\u0636\u0627\u0641\u064a\u0629",
+        "plural": "Extra Items \/ \u0628\u0646\u0648\u062f \u0625\u0636\u0627\u0641\u064a\u0629",
+        "custom": false
+    },
+    {
+        "name": "LinkingModule2",
+        "api": "Fixed_Items",
+        "singular": "Fixed Items\/ \u0627\u0644\u0628\u0646\u0648\u062f",
+        "plural": "Fixed Items\/ \u0627\u0644\u0628\u0646\u0648\u062f",
+        "custom": false
+    },
+    {
+        "name": "LinkingModule1",
+        "api": "Items",
+        "singular": "Items\/ \u0627\u0644\u0628\u0646\u0648\u062f",
+        "plural": "Items\/ \u0627\u0644\u0628\u0646\u0648\u062f",
+        "custom": false
+    },
+    {
+        "name": "LinkingModule4",
+        "api": "Invoice_Details",
+        "singular": "Invoice Details",
+        "plural": "Invoice Details",
+        "custom": false
+    },
+    {
+        "name": "LinkingModule5",
+        "api": "Construction_Details",
+        "singular": "Construction Details",
+        "plural": "Construction Details",
+        "custom": false
+    },
+    {
+        "name": "LinkingModule6",
+        "api": "Quantity_Items",
+        "singular": "Quantity Items",
+        "plural": "Quantity Items",
+        "custom": false
+    },
+    {
+        "name": "Attachments",
+        "api": "Attachments",
+        "singular": "Attachment",
+        "plural": "Attachments",
+        "custom": false
+    },
+    {
+        "name": "Actions Performed",
+        "api": "Actions_Performed",
+        "singular": "Actions Performed",
+        "plural": "Actions Performed",
+        "custom": false
+    }
+]
