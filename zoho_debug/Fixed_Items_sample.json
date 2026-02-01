@@ -1,0 +1,207 @@
+[
+    {
+        "Cost_Price": null,
+        "Attachments_Link": null,
+        "Description": "شغل يد مع جميع المواد\nيشمل جدران الوحدة الداخلية \nطريقة تنفيذ العمل\nتركيب اساس ومعجنة وصنفرة \nوضع قاطين من الاساس وقاطين من الصبغ\nصبغ جوتن \nلون سادة عادي - غير ديكوري",
+        "$currency_symbol": "SR",
+        "$field_states": null,
+        "Parent_Id": {
+            "name": "Estimate No 823",
+            "id": "2966419000080482019"
+        },
+        "$review_process": null,
+        "$layout_id": {
+            "display_label": "Standard",
+            "name": "Standard",
+            "id": "2966419000004672086"
+        },
+        "$review": null,
+        "$state": "save",
+        "$process_flow": false,
+        "id": "2966419000080505003",
+        "$approved": true,
+        "$approval": {
+            "delegate": false,
+            "takeover": false,
+            "approve": false,
+            "reject": false,
+            "resubmit": false
+        },
+        "Profit_Ratio": null,
+        "Created_Time": "2026-01-31T19:02:04+03:00",
+        "Rate": 45,
+        "Amount": 41040,
+        "Quantity": 912,
+        "$editable": true,
+        "$orchestration": false,
+        "Custom_Areas_Description": null,
+        "$in_merge": false,
+        "Item_Name": "أعمال دهانات الجدران",
+        "Package": null,
+        "$approval_state": "approved"
+    },
+    {
+        "Cost_Price": null,
+        "Attachments_Link": null,
+        "Description": "شغل يد مع جميع المواد\nيشمل اسقف الوحدة الداخلية \nطريقة تنفيذ العمل\nتركيب اساس ومعجنة وصنفرة \nوضع قاطين من الاساس وقاطين من الصبغ\nصبغ جوتن \nلون سادة عادي - غير ديكوري",
+        "$currency_symbol": "SR",
+        "$field_states": null,
+        "Parent_Id": {
+            "name": "Estimate No 823",
+            "id": "2966419000080482019"
+        },
+        "$review_process": null,
+        "$layout_id": {
+            "display_label": "Standard",
+            "name": "Standard",
+            "id": "2966419000004672086"
+        },
+        "$review": null,
+        "$state": "save",
+        "$process_flow": false,
+        "id": "2966419000080505002",
+        "$approved": true,
+        "$approval": {
+            "delegate": false,
+            "takeover": false,
+            "approve": false,
+            "reject": false,
+            "resubmit": false
+        },
+        "Profit_Ratio": null,
+        "Created_Time": "2026-01-31T19:02:04+03:00",
+        "Rate": 45,
+        "Amount": 15435,
+        "Quantity": 343,
+        "$editable": true,
+        "$orchestration": false,
+        "Custom_Areas_Description": null,
+        "$in_merge": false,
+        "Item_Name": "أعمال دهانات الأسقف",
+        "Package": null,
+        "$approval_state": "approved"
+    },
+    {
+        "Cost_Price": null,
+        "Attachments_Link": null,
+        "Description": "أعمال الأسقف المستعارة - جبس مبورد \n---\n شغل يد مع جميع المواد\n شركة جي بورد \nمقاوم للرطوبة في كامل البيت مقاوم للحريق في المطبخ\n كما هو موضح في التصميم الداخلي\nضمان ١٠ سنوات ضد عيوب التصنيع والتركيب\nنظام التركيب: \nفيشر نحاس\nاوميجا ستانلس ستيل\nسيخ ستانلس ستيل مقاس ٠.٥ ملم\nالمسافة بين كل سيخ وكل اوميجا لا تزيد عن ٦٠ سم \nحسب نظام ارامكوا \nGround Area= 133 SQM\nFirst Area = 135 SQM\nRoof Top = 75 SQM",
+        "$currency_symbol": "SR",
+        "$field_states": null,
+        "Parent_Id": {
+            "name": "Estimate No 823",
+            "id": "2966419000080482019"
+        },
+        "$review_process": null,
+        "$layout_id": {
+            "display_label": "Standard",
+            "name": "Standard",
+            "id": "2966419000004672086"
+        },
+        "$review": null,
+        "$state": "save",
+        "$process_flow": false,
+        "id": "2966419000080505001",
+        "$approved": true,
+        "$approval": {
+            "delegate": false,
+            "takeover": false,
+            "approve": false,
+            "reject": false,
+            "resubmit": false
+        },
+        "Profit_Ratio": null,
+        "Created_Time": "2026-01-31T19:02:04+03:00",
+        "Rate": 120,
+        "Amount": 41160,
+        "Quantity": 343,
+        "$editable": true,
+        "$orchestration": false,
+        "Custom_Areas_Description": null,
+        "$in_merge": false,
+        "Item_Name": "أعمال الأسقف المستعارة  - عالي الجودة",
+        "Package": null,
+        "$approval_state": "approved"
+    },
+    {
+        "Cost_Price": 25,
+        "Attachments_Link": null,
+        "Description": "شغل يد مع جميع المواد\nطريقة تنفيذ العمل\nتركيب اساس ومعجنة وصنفرة \nوضع قاطين من الاساس وقاطين من الصبغ\nصبغ جوتن \nلون سادة عادي - غير ديكوري\nالدور الارضي ٣٨٥ متر مربع\nالدور الاول ٥١٠ متر مربع\nالملحق ٢٥٠ متر مربع",
+        "$currency_symbol": "SR",
+        "$field_states": null,
+        "Parent_Id": {
+            "name": "Estimate No 822",
+            "id": "2966419000080256019"
+        },
+        "$review_process": null,
+        "$layout_id": {
+            "display_label": "Standard",
+            "name": "Standard",
+            "id": "2966419000004672086"
+        },
+        "$review": null,
+        "$state": "save",
+        "$process_flow": false,
+        "id": "2966419000080270003",
+        "$approved": true,
+        "$approval": {
+            "delegate": false,
+            "takeover": false,
+            "approve": false,
+            "reject": false,
+            "resubmit": false
+        },
+        "Profit_Ratio": 60,
+        "Created_Time": "2026-01-20T19:06:06+03:00",
+        "Rate": 40,
+        "Amount": 45800,
+        "Quantity": 1145,
+        "$editable": true,
+        "$orchestration": false,
+        "Custom_Areas_Description": null,
+        "$in_merge": false,
+        "Item_Name": "أعمال دهانات الجدران",
+        "Package": null,
+        "$approval_state": "approved"
+    },
+    {
+        "Cost_Price": 25,
+        "Attachments_Link": null,
+        "Description": "شغل يد مع جميع المواد\nطريقة تنفيذ العمل\nتركيب اساس ومعجنة وصنفرة \nوضع قاطين من الاساس وقاطين من الصبغ\nصبغ جوتن \nلون سادة عادي - غير ديكوري\nالدور الارضي ١٥٧ متر مربع\nالدور الاول  ١٨٠ متر مربع\nالملحق ١٠٠ متر مربع",
+        "$currency_symbol": "SR",
+        "$field_states": null,
+        "Parent_Id": {
+            "name": "Estimate No 822",
+            "id": "2966419000080256019"
+        },
+        "$review_process": null,
+        "$layout_id": {
+            "display_label": "Standard",
+            "name": "Standard",
+            "id": "2966419000004672086"
+        },
+        "$review": null,
+        "$state": "save",
+        "$process_flow": false,
+        "id": "2966419000080270002",
+        "$approved": true,
+        "$approval": {
+            "delegate": false,
+            "takeover": false,
+            "approve": false,
+            "reject": false,
+            "resubmit": false
+        },
+        "Profit_Ratio": 60,
+        "Created_Time": "2026-01-20T19:06:06+03:00",
+        "Rate": 40,
+        "Amount": 17480,
+        "Quantity": 437,
+        "$editable": true,
+        "$orchestration": false,
+        "Custom_Areas_Description": null,
+        "$in_merge": false,
+        "Item_Name": "أعمال دهانات الأسقف",
+        "Package": null,
+        "$approval_state": "approved"
+    }
+]

@@ -1,0 +1,240 @@
+[
+    {
+        "type": "Extra",
+        "name": "بند أعمال الخشبيات",
+        "quantity": 1,
+        "rate": 0,
+        "amount": 0
+    },
+    {
+        "type": "Extra",
+        "name": "بند الابواب",
+        "quantity": 1,
+        "rate": 0,
+        "amount": 18650
+    },
+    {
+        "type": "Extra",
+        "name": "بند أعمال الجبس بورد",
+        "quantity": 1,
+        "rate": 0,
+        "amount": 15775
+    },
+    {
+        "type": "Extra",
+        "name": "بند أعمال الصبغ (تأسيس فقط)",
+        "quantity": 1,
+        "rate": 0,
+        "amount": 16200
+    },
+    {
+        "type": "Extra",
+        "name": "بند الارضيات ( السيراميك )",
+        "quantity": 1,
+        "rate": 0,
+        "amount": 11250
+    },
+    {
+        "type": "Extra",
+        "name": "بند أعمال اللياسة",
+        "quantity": 1,
+        "rate": 0,
+        "amount": 9750
+    },
+    {
+        "type": "Extra",
+        "name": "صبة النضافة",
+        "quantity": 1,
+        "rate": 0,
+        "amount": 13200
+    },
+    {
+        "type": "Extra",
+        "name": "أعمال العزل المائي",
+        "quantity": 1,
+        "rate": 0,
+        "amount": 3100
+    },
+    {
+        "type": "Extra",
+        "name": "بند أعمال الكهرباء (تمديد فقط)",
+        "quantity": 1,
+        "rate": 0,
+        "amount": 11450
+    },
+    {
+        "type": "Extra",
+        "name": "بند أعمال السباكة (تأسيس فقط)",
+        "quantity": 1,
+        "rate": 0,
+        "amount": 15560
+    },
+    {
+        "type": "Extra",
+        "name": "أعمال مؤقتة (كهرباء ومياه)",
+        "quantity": 1,
+        "rate": 0,
+        "amount": 10000
+    },
+    {
+        "type": "Extra",
+        "name": "الحواجز المؤقتة (Hoarding)",
+        "quantity": 1,
+        "rate": 0,
+        "amount": 8000
+    },
+    {
+        "type": "Extra",
+        "name": "إزالة وتجهيز الموقع",
+        "quantity": 1,
+        "rate": 0,
+        "amount": 6600
+    },
+    {
+        "type": "Fixed",
+        "name": "أعمال دهانات الجدران",
+        "quantity": 912,
+        "rate": 45,
+        "amount": 41040
+    },
+    {
+        "type": "Fixed",
+        "name": "أعمال دهانات الأسقف",
+        "quantity": 343,
+        "rate": 45,
+        "amount": 15435
+    },
+    {
+        "type": "Fixed",
+        "name": "أعمال الأسقف المستعارة  - عالي الجودة",
+        "quantity": 343,
+        "rate": 120,
+        "amount": 41160
+    },
+    {
+        "type": "Fixed",
+        "name": "أعمال دهانات الجدران",
+        "quantity": 1145,
+        "rate": 40,
+        "amount": 45800
+    },
+    {
+        "type": "Fixed",
+        "name": "أعمال دهانات الأسقف",
+        "quantity": 437,
+        "rate": 40,
+        "amount": 17480
+    },
+    {
+        "type": "Fixed",
+        "name": "أعمال الأسقف المستعارة  - عالي الجودة",
+        "quantity": 437,
+        "rate": 100,
+        "amount": 43700
+    },
+    {
+        "type": "Extra",
+        "name": "توريد وتركيب مطبخ كامل مع جزيرة",
+        "quantity": 1,
+        "rate": 0,
+        "amount": 71000
+    },
+    {
+        "type": "Extra",
+        "name": "Commercial Offer",
+        "quantity": 1,
+        "rate": 0,
+        "amount": 15750000
+    },
+    {
+        "type": "Extra",
+        "name": "Project Duration",
+        "quantity": 1,
+        "rate": 0,
+        "amount": 0
+    },
+    {
+        "type": "Extra",
+        "name": "Testing, Commissioning & Handover",
+        "quantity": 1,
+        "rate": 0,
+        "amount": 0
+    },
+    {
+        "type": "Extra",
+        "name": "Mowaamah (Accessibility) & Signage",
+        "quantity": 1,
+        "rate": 0,
+        "amount": 0
+    },
+    {
+        "type": "Extra",
+        "name": "Furniture Supply & Installation",
+        "quantity": 1,
+        "rate": 0,
+        "amount": 0
+    },
+    {
+        "type": "Extra",
+        "name": "IT & Low Current Systems (Cabling Only)",
+        "quantity": 1,
+        "rate": 0,
+        "amount": 0
+    },
+    {
+        "type": "Extra",
+        "name": "HVAC Works (Maintenance Only)",
+        "quantity": 1,
+        "rate": 0,
+        "amount": 0
+    },
+    {
+        "type": "Extra",
+        "name": "Electrical & Lighting Works (Maintenance & Replacement)",
+        "quantity": 1,
+        "rate": 0,
+        "amount": 0
+    },
+    {
+        "type": "Extra",
+        "name": "Ceiling Works (Partial)",
+        "quantity": 1,
+        "rate": 0,
+        "amount": 0
+    },
+    {
+        "type": "Extra",
+        "name": "Flooring Works (Overlay Refurbishment)",
+        "quantity": 1,
+        "rate": 0,
+        "amount": 0
+    },
+    {
+        "type": "Extra",
+        "name": "Architectural Works & Finishes",
+        "quantity": 1,
+        "rate": 0,
+        "amount": 0
+    },
+    {
+        "type": "Extra",
+        "name": "Demolition & Preparation Works",
+        "quantity": 1,
+        "rate": 0,
+        "amount": 0
+    },
+    {
+        "type": "Extra",
+        "name": "Project Management & HSE",
+        "quantity": 1,
+        "rate": 0,
+        "amount": 0
+    },
+    {
+        "type": "Extra",
+        "name": "Kent_Office_Refurbishment_3Floors",
+        "quantity": 1,
+        "rate": 0,
+        "amount": 0
+    }
+]

@@ -1,0 +1,187 @@
+[
+    {
+        "$approval": {
+            "delegate": false,
+            "takeover": false,
+            "approve": false,
+            "reject": false,
+            "resubmit": false
+        },
+        "Description": "توريد وتنفيذ - ضمان ٥ سنوات من التلف بسبب العوامل الطبيعية، مع المحافظة على درجة الحرارة داخل المبنى",
+        "$currency_symbol": "SR",
+        "$field_states": null,
+        "Created_Time": "2025-09-15T12:30:40+03:00",
+        "Rate": 50,
+        "Parent_Id": {
+            "name": "Quantities MD75",
+            "id": "2966419000075626001"
+        },
+        "$review_process": null,
+        "Quantity": 1770,
+        "$editable": true,
+        "$layout_id": {
+            "display_label": "Standard",
+            "name": "Standard",
+            "id": "2966419000035973081"
+        },
+        "$orchestration": false,
+        "$review": null,
+        "$state": "save",
+        "$process_flow": false,
+        "$in_merge": false,
+        "Item_Name": "أعمال دهانات الجدران",
+        "Contract_No": "Construction Contract (HQ)- عقد تنفيذ جودة عالية\nEstimate No 640",
+        "id": "2966419000075630003",
+        "$approval_state": "approved",
+        "Areas_Link": null,
+        "$approved": true
+    },
+    {
+        "$approval": {
+            "delegate": false,
+            "takeover": false,
+            "approve": false,
+            "reject": false,
+            "resubmit": false
+        },
+        "Description": "توريد وتنفيذ - ضمان ٥ سنوات من التلف بسبب العوامل الطبيعية، مع المحافظة على درجة الحرارة داخل المبنى",
+        "$currency_symbol": "SR",
+        "$field_states": null,
+        "Created_Time": "2025-09-15T12:30:40+03:00",
+        "Rate": 50,
+        "Parent_Id": {
+            "name": "Quantities MD75",
+            "id": "2966419000075626001"
+        },
+        "$review_process": null,
+        "Quantity": 786,
+        "$editable": true,
+        "$layout_id": {
+            "display_label": "Standard",
+            "name": "Standard",
+            "id": "2966419000035973081"
+        },
+        "$orchestration": false,
+        "$review": null,
+        "$state": "save",
+        "$process_flow": false,
+        "$in_merge": false,
+        "Item_Name": "أعمال دهانات الأسقف",
+        "Contract_No": "Construction Contract (HQ)- عقد تنفيذ جودة عالية\nEstimate No 640",
+        "id": "2966419000075630002",
+        "$approval_state": "approved",
+        "Areas_Link": null,
+        "$approved": true
+    },
+    {
+        "$approval": {
+            "delegate": false,
+            "takeover": false,
+            "approve": false,
+            "reject": false,
+            "resubmit": false
+        },
+        "Description": "سادة مع زاوية ظل أو إنارة مخفية - توريد وتنفيذ - نظام التنفيذ عالي الجودة -  شركة GBoard المقاوم للرطوبة - ضمان 10 سنوات على الهيكل الحديدي ضد الصدأ والتفكك",
+        "$currency_symbol": "SR",
+        "$field_states": null,
+        "Created_Time": "2025-09-15T12:30:40+03:00",
+        "Rate": 100,
+        "Parent_Id": {
+            "name": "Quantities MD75",
+            "id": "2966419000075626001"
+        },
+        "$review_process": null,
+        "Quantity": 756,
+        "$editable": true,
+        "$layout_id": {
+            "display_label": "Standard",
+            "name": "Standard",
+            "id": "2966419000035973081"
+        },
+        "$orchestration": false,
+        "$review": null,
+        "$state": "save",
+        "$process_flow": false,
+        "$in_merge": false,
+        "Item_Name": "أعمال الأسقف المستعارة - سادة - عالي الجودة",
+        "Contract_No": "Construction Contract (HQ)- عقد تنفيذ جودة عالية\nEstimate No 640",
+        "id": "2966419000075630001",
+        "$approval_state": "approved",
+        "Areas_Link": null,
+        "$approved": true
+    },
+    {
+        "$approval": {
+            "delegate": false,
+            "takeover": false,
+            "approve": false,
+            "reject": false,
+            "resubmit": false
+        },
+        "Description": "توريد وتنفيذ\n سمنتبورد 12 ملم مقاوم للماء والحرارة والرطوبة\n طبقة واحدة مع الحديد - سادة - سمك 5 سم إلى 20 سم كحد أقصى\n.\n.\nتغطية مواسير التكييف في السطح - عدد 1",
+        "$currency_symbol": "SR",
+        "$field_states": null,
+        "Created_Time": "2025-07-13T08:50:39+03:00",
+        "Rate": 850,
+        "Parent_Id": {
+            "name": "Quantities MD22",
+            "id": "2966419000036201001"
+        },
+        "$review_process": null,
+        "Quantity": 1,
+        "$editable": true,
+        "$layout_id": {
+            "display_label": "Standard",
+            "name": "Standard",
+            "id": "2966419000035973081"
+        },
+        "$orchestration": false,
+        "$review": null,
+        "$state": "save",
+        "$process_flow": false,
+        "$in_merge": false,
+        "Item_Name": "بناء جدران من الاسمنتبورد - طبقة واحدة - سادة",
+        "Contract_No": "Change Order -  أعمال إضافية داخلية\nEstimate No 778",
+        "id": "2966419000073427007",
+        "$approval_state": "approved",
+        "Areas_Link": null,
+        "$approved": true
+    },
+    {
+        "$approval": {
+            "delegate": false,
+            "takeover": false,
+            "approve": false,
+            "reject": false,
+            "resubmit": false
+        },
+        "Description": "توريد وتنفيذ\n سمنتبورد 12 ملم مقاوم للماء والحرارة والرطوبة\n طبقة واحدة مع الحديد - سادة - سمك 5 سم إلى 20 سم كحد أقصى\n.\n.\n دورة مياه المجلس في الطابق الارضي - عدد 1\n دورة مياه الماستر روم في الطابق الاول - عدد 2",
+        "$currency_symbol": "SR",
+        "$field_states": null,
+        "Created_Time": "2025-07-13T08:50:39+03:00",
+        "Rate": 1100,
+        "Parent_Id": {
+            "name": "Quantities MD22",
+            "id": "2966419000036201001"
+        },
+        "$review_process": null,
+        "Quantity": 3,
+        "$editable": true,
+        "$layout_id": {
+            "display_label": "Standard",
+            "name": "Standard",
+            "id": "2966419000035973081"
+        },
+        "$orchestration": false,
+        "$review": null,
+        "$state": "save",
+        "$process_flow": false,
+        "$in_merge": false,
+        "Item_Name": "بناء جدران من الاسمنتبورد - طبقة واحدة - سادة",
+        "Contract_No": "Change Order -  أعمال إضافية داخلية\nEstimate No 778",
+        "id": "2966419000073427006",
+        "$approval_state": "approved",
+        "Areas_Link": null,
+        "$approved": true
+    }
+]

@@ -1,0 +1,436 @@
+{
+    "Extra_items": [
+        {
+            "Cost_Price": null,
+            "Attachments_Link": null,
+            "Description": "تفكيك وإزالة الجدران القائمة، رفع المخلفات، تنظيف الموقع وتجهيزه للأعمال الجديدة.",
+            "Profit_Ratio": null,
+            "$field_states": null,
+            "Created_Time": "2026-02-01T10:59:42+03:00",
+            "Rate": null,
+            "Amount": 6600,
+            "Parent_Id": {
+                "name": "Estimate No 824",
+                "id": "2966419000080510037"
+            },
+            "Quantity": null,
+            "$layout_id": {
+                "display_label": "Standard",
+                "name": "Standard",
+                "id": "2966419000004606748"
+            },
+            "Custom_Areas_description": null,
+            "$in_merge": false,
+            "Item_Name": "إزالة وتجهيز الموقع",
+            "id": "2966419000080501002",
+            "Package": 6600
+        },
+        {
+            "Cost_Price": null,
+            "Attachments_Link": null,
+            "Description": "حاجز مؤقت بارتفاع 5 م مع وصفه اعلانية للموقع من الخارج",
+            "Profit_Ratio": null,
+            "$field_states": null,
+            "Created_Time": "2026-02-01T10:59:42+03:00",
+            "Rate": null,
+            "Amount": 8000,
+            "Parent_Id": {
+                "name": "Estimate No 824",
+                "id": "2966419000080510037"
+            },
+            "Quantity": null,
+            "$layout_id": {
+                "display_label": "Standard",
+                "name": "Standard",
+                "id": "2966419000004606748"
+            },
+            "Custom_Areas_description": null,
+            "$in_merge": false,
+            "Item_Name": "الحواجز المؤقتة (Hoarding)",
+            "id": "2966419000080501003",
+            "Package": 8000
+        },
+        {
+            "Cost_Price": null,
+            "Attachments_Link": null,
+            "Description": "توفير كهرباء ومياه مؤقتة طوال فترة التنفيذ.",
+            "Profit_Ratio": null,
+            "$field_states": null,
+            "Created_Time": "2026-02-01T10:59:42+03:00",
+            "Rate": null,
+            "Amount": 10000,
+            "Parent_Id": {
+                "name": "Estimate No 824",
+                "id": "2966419000080510037"
+            },
+            "Quantity": null,
+            "$layout_id": {
+                "display_label": "Standard",
+                "name": "Standard",
+                "id": "2966419000004606748"
+            },
+            "Custom_Areas_description": null,
+            "$in_merge": false,
+            "Item_Name": "أعمال مؤقتة (كهرباء ومياه)",
+            "id": "2966419000080501004",
+            "Package": 10000
+        },
+        {
+            "Cost_Price": null,
+            "Attachments_Link": null,
+            "Description": "تنفيذ وتمديد وتجهيز أعمال السباكة لعدد (2) حمام، بالإضافة إلى الأعمال التأسيسية داخل المطبخ، طبقًا للمخططات والمواصفات المعتمدة، شامل مواد التأسيس فقط دون أعمال التشطيب النهائي.",
+            "Profit_Ratio": null,
+            "$field_states": null,
+            "Created_Time": "2026-02-01T10:59:42+03:00",
+            "Rate": null,
+            "Amount": 15560,
+            "Parent_Id": {
+                "name": "Estimate No 824",
+                "id": "2966419000080510037"
+            },
+            "Quantity": null,
+            "$layout_id": {
+                "display_label": "Standard",
+                "name": "Standard",
+                "id": "2966419000004606748"
+            },
+            "Custom_Areas_description": null,
+            "$in_merge": false,
+            "Item_Name": "بند أعمال السباكة (تأسيس فقط)",
+            "id": "2966419000080501005",
+            "Package": 15560
+        },
+        {
+            "Cost_Price": null,
+            "Attachments_Link": null,
+            "Description": "تنفيذ أعمال تمديد الكهرباء طبقًا للمخططات والمواصفات المعتمدة، شغل يد فقط دون توريد أي مواد.",
+            "Profit_Ratio": null,
+            "$field_states": null,
+            "Created_Time": "2026-02-01T10:59:42+03:00",
+            "Rate": null,
+            "Amount": 11450,
+            "Parent_Id": {
+                "name": "Estimate No 824",
+                "id": "2966419000080510037"
+            },
+            "Quantity": null,
+            "$layout_id": {
+                "display_label": "Standard",
+                "name": "Standard",
+                "id": "2966419000004606748"
+            },
+            "Custom_Areas_description": null,
+            "$in_merge": false,
+            "Item_Name": "بند أعمال الكهرباء (تمديد فقط)",
+            "id": "2966419000080501006",
+            "Package": 11450
+        },
+        {
+            "Cost_Price": null,
+            "Attachments_Link": null,
+            "Description": "توريد وتنفيذ عزل مائي للمناطق الرطبة باستخدام إيبوكسي وغشاء 4 مم بطبقتين، طبقًا للمخططات والمواصفات المعتمدة.",
+            "Profit_Ratio": null,
+            "$field_states": null,
+            "Created_Time": "2026-02-01T10:59:42+03:00",
+            "Rate": null,
+            "Amount": 3100,
+            "Parent_Id": {
+                "name": "Estimate No 824",
+                "id": "2966419000080510037"
+            },
+            "Quantity": null,
+            "$layout_id": {
+                "display_label": "Standard",
+                "name": "Standard",
+                "id": "2966419000004606748"
+            },
+            "Custom_Areas_description": null,
+            "$in_merge": false,
+            "Item_Name": "أعمال العزل المائي",
+            "id": "2966419000080501007",
+            "Package": 3100
+        },
+        {
+            "Cost_Price": null,
+            "Attachments_Link": null,
+            "Description": "تنفيذ سكريد أسمنتي جاهز لاستقبال الأرضيات، شامل الصب والتسوية.",
+            "Profit_Ratio": null,
+            "$field_states": null,
+            "Created_Time": "2026-02-01T10:59:42+03:00",
+            "Rate": null,
+            "Amount": 13200,
+            "Parent_Id": {
+                "name": "Estimate No 824",
+                "id": "2966419000080510037"
+            },
+            "Quantity": null,
+            "$layout_id": {
+                "display_label": "Standard",
+                "name": "Standard",
+                "id": "2966419000004606748"
+            },
+            "Custom_Areas_description": null,
+            "$in_merge": false,
+            "Item_Name": "صبة النضافة",
+            "id": "2966419000080501008",
+            "Package": 13200
+        },
+        {
+            "Cost_Price": null,
+            "Attachments_Link": null,
+            "Description": "تنفيذ أعمال اللياسة للأسطح طبقًا للمخططات والمواصفات المعتمدة، شاملاً التجهيز والتسوية والتنعيم، شغل يد فقط دون توريد مواد.",
+            "Profit_Ratio": null,
+            "$field_states": null,
+            "Created_Time": "2026-02-01T10:59:42+03:00",
+            "Rate": null,
+            "Amount": 9750,
+            "Parent_Id": {
+                "name": "Estimate No 824",
+                "id": "2966419000080510037"
+            },
+            "Quantity": null,
+            "$layout_id": {
+                "display_label": "Standard",
+                "name": "Standard",
+                "id": "2966419000004606748"
+            },
+            "Custom_Areas_description": null,
+            "$in_merge": false,
+            "Item_Name": "بند أعمال اللياسة",
+            "id": "2966419000080501009",
+            "Package": 9750
+        },
+        {
+            "Cost_Price": null,
+            "Attachments_Link": null,
+            "Description": "تنفيذ أعمال تركيب السيراميك طبقًا للمخططات والمواصفات المعتمدة، ويشمل ذلك أعمال الضبط والتركيب والتشطيب، ولا يشمل توريد المواد (شغل يد فقط).",
+            "Profit_Ratio": null,
+            "$field_states": null,
+            "Created_Time": "2026-02-01T10:59:42+03:00",
+            "Rate": null,
+            "Amount": 11250,
+            "Parent_Id": {
+                "name": "Estimate No 824",
+                "id": "2966419000080510037"
+            },
+            "Quantity": null,
+            "$layout_id": {
+                "display_label": "Standard",
+                "name": "Standard",
+                "id": "2966419000004606748"
+            },
+            "Custom_Areas_description": null,
+            "$in_merge": false,
+            "Item_Name": "بند الارضيات ( السيراميك )",
+            "id": "2966419000080501010",
+            "Package": 11250
+        },
+        {
+            "Cost_Price": null,
+            "Attachments_Link": null,
+            "Description": "تنفيذ أعمال دهان التأسيس للأسطح طبقًا للمخططات والمواصفات المعتمدة، شاملاً مواد التأسيس والتنفيذ، ولا يشمل دهان التشطيب النهائي.",
+            "Profit_Ratio": null,
+            "$field_states": null,
+            "Created_Time": "2026-02-01T10:59:42+03:00",
+            "Rate": null,
+            "Amount": 16200,
+            "Parent_Id": {
+                "name": "Estimate No 824",
+                "id": "2966419000080510037"
+            },
+            "Quantity": null,
+            "$layout_id": {
+                "display_label": "Standard",
+                "name": "Standard",
+                "id": "2966419000004606748"
+            },
+            "Custom_Areas_description": null,
+            "$in_merge": false,
+            "Item_Name": "بند أعمال الصبغ (تأسيس فقط)",
+            "id": "2966419000080501011",
+            "Package": 16200
+        },
+        {
+            "Cost_Price": null,
+            "Attachments_Link": null,
+            "Description": "توريد وتنفيذ وتركيب أعمال الجبس بورد طبقًا للمخططات والمواصفات المعتمدة، شاملاً المواد والهيكل المعدني والتركيب والتشطيب الكامل.",
+            "Profit_Ratio": null,
+            "$field_states": null,
+            "Created_Time": "2026-02-01T10:59:42+03:00",
+            "Rate": null,
+            "Amount": 15775,
+            "Parent_Id": {
+                "name": "Estimate No 824",
+                "id": "2966419000080510037"
+            },
+            "Quantity": null,
+            "$layout_id": {
+                "display_label": "Standard",
+                "name": "Standard",
+                "id": "2966419000004606748"
+            },
+            "Custom_Areas_description": null,
+            "$in_merge": false,
+            "Item_Name": "بند أعمال الجبس بورد",
+            "id": "2966419000080501012",
+            "Package": 15775
+        },
+        {
+            "Cost_Price": null,
+            "Attachments_Link": null,
+            "Description": "توريد وتركيب الأبواب طبقًا للمخططات والمواصفات المعتمدة، ويشمل ما يلي:\n\nعدد (2) باب داخلي للحمامات من نوع WPC مقاوم للمياه والرطوبة، شامل الحلق والإكسسوارات اللازمة.\n\nعدد (1) باب مخفي داخلي لمنطقة الكاونتر.\n\nعدد (1) باب داخلي من الكاونتر إلى المطبخ.\n\nعدد (1) باب خارجي لمنطقة الاستلام الخارجي من نوع PVC مقاوم للعوامل الجوية.\nولا يشمل الباب الرئيسي\nجميع الأبواب شاملة المفصلات والإكسسوارات والتركيب الكامل \nحسب الأصول الفنية",
+            "Profit_Ratio": null,
+            "$field_states": null,
+            "Created_Time": "2026-02-01T10:59:42+03:00",
+            "Rate": null,
+            "Amount": 18650,
+            "Parent_Id": {
+                "name": "Estimate No 824",
+                "id": "2966419000080510037"
+            },
+            "Quantity": null,
+            "$layout_id": {
+                "display_label": "Standard",
+                "name": "Standard",
+                "id": "2966419000004606748"
+            },
+            "Custom_Areas_description": null,
+            "$in_merge": false,
+            "Item_Name": "بند الابواب",
+            "id": "2966419000080501013",
+            "Package": 18650
+        },
+        {
+            "Cost_Price": null,
+            "Attachments_Link": null,
+            "Description": null,
+            "Profit_Ratio": null,
+            "$field_states": null,
+            "Created_Time": "2026-02-01T10:59:42+03:00",
+            "Rate": null,
+            "Amount": 0,
+            "Parent_Id": {
+                "name": "Estimate No 824",
+                "id": "2966419000080510037"
+            },
+            "Quantity": null,
+            "$layout_id": {
+                "display_label": "Standard",
+                "name": "Standard",
+                "id": "2966419000004606748"
+            },
+            "Custom_Areas_description": null,
+            "$in_merge": false,
+            "Item_Name": "بند أعمال الخشبيات",
+            "id": "2966419000080501014",
+            "Package": null
+        }
+    ],
+    "Owner": {
+        "name": "Zainab ALRAMADAN",
+        "id": "2966419000007214001",
+        "email": "itsupport@mdesigns.sa"
+    },
+    "Company": {
+        "name": "KNOCK CAFE",
+        "id": "2966419000080510020"
+    },
+    "Google_Map": null,
+    "$currency_symbol": "SR",
+    "Customer_Name": {
+        "name": "احمد السعد",
+        "id": "2966419000080510003"
+    },
+    "$field_states": null,
+    "firstPaymentValue": 80232.63,
+    "Project_Title": "Construction Contract (HQ)- عقد تنفيذ جودة عالية",
+    "Total_Cost_of_Extra_Items": 0,
+    "VAT": "15",
+    "Discount_Admin1": null,
+    "Profit_Ratio_of_Extra_Items": 0,
+    "FourthPayment": null,
+    "secondPaymentDes": "للبدء بأعمال ..............",
+    "Total_Inc_VAT": 0,
+    "Name": "Estimate No 824",
+    "Last_Activity_Time": "2026-02-01T10:59:42+03:00",
+    "VAT_Amount": 20930.25,
+    "Check_Extra_Items": 1,
+    "$state": "save",
+    "Unsubscribed_Mode": null,
+    "Fixed_item_totals": null,
+    "$process_flow": false,
+    "Exchange_Rate": 1,
+    "Currency": "SAR",
+    "$locked_for_me": false,
+    "Remaining_Discount_percentage": 0,
+    "id": "2966419000080510037",
+    "Estimate_Total": 160465.25,
+    "$approved": true,
+    "Discount_Amount": 0,
+    "Extra_item_totals": 139535,
+    "$approval": {
+        "delegate": false,
+        "takeover": false,
+        "approve": false,
+        "reject": false,
+        "resubmit": false
+    },
+    "Profit_Ratio": 0,
+    "Created_Time": "2026-02-01T10:59:35+03:00",
+    "secondPaymentValue": 64186.1,
+    "Discount_Admin": null,
+    "$editable": true,
+    "All_ITEMS": null,
+    "City": "الدمام",
+    "Fixed_Items": [],
+    "FourthPaymentValue": 0,
+    "Total_Due": 160465.25,
+    "fourthPaymentDes": null,
+    "qrCodeLink": null,
+    "$zia_owner_assignment": "owner_recommendation_unavailable",
+    "District": null,
+    "Estimate_Valid_Until": "2026-03-03",
+    "Estimate_Date": "2026-02-01",
+    "Residential_Quotation": null,
+    "thirdPaymentValue": 16046.53,
+    "Service_Costs": 0,
+    "Quotation_Stage": null,
+    "Estimate_Discount1": null,
+    "$review_process": {
+        "approve": false,
+        "reject": false,
+        "resubmit": false
+    },
+    "$layout_id": {
+        "display_label": "Standard",
+        "name": "Standard",
+        "id": "2966419000004604001"
+    },
+    "Total_Price_After_Discount": 139535,
+    "Additional_Discount_Amount": 0,
+    "firstPayment": 50,
+    "$review": null,
+    "thirdPayment": 10,
+    "Branch": "Khobar",
+    "thirdPaymentDes": "للبدء في ................",
+    "Total_Discount": 0,
+    "Project_Type": "Commercial",
+    "SecondPayment": 40,
+    "Total_of_Additional_Discount": 0,
+    "VAT1": 15,
+    "VAT2": 15,
+    "To_Update": null,
+    "Modified_Time": "2026-02-01T10:59:42+03:00",
+    "firstPaymentDes": "عند توقيع العقد",
+    "Unsubscribed_Time": null,
+    "Cost_Price_Total": 0,
+    "Sub_Total": 139535,
+    "totalPayments": "Success: Total of Payments equals to 100%",
+    "$orchestration": false,
+    "$in_merge": false,
+    "Service_Cost_Amount": 0,
+    "Locked__s": false,
+    "Value_of_Remaining_Discount": "0",
+    "Tag": [],
+    "$approval_state": "approved"
+}

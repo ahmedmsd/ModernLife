@@ -1,0 +1,202 @@
+[
+    {
+        "$currency_symbol": "SR",
+        "$field_states": null,
+        "Parent_Id": {
+            "name": "PM No. 1",
+            "id": "2966419000005821061"
+        },
+        "$review_process": null,
+        "$layout_id": {
+            "display_label": "Standard",
+            "name": "Standard",
+            "id": "2966419000005767141"
+        },
+        "$review": null,
+        "$state": "save",
+        "$process_flow": false,
+        "id": "2966419000006005140",
+        "$approved": true,
+        "$approval": {
+            "delegate": false,
+            "takeover": false,
+            "approve": false,
+            "reject": false,
+            "resubmit": false
+        },
+        "Created_Time": "2021-04-07T12:18:16+03:00",
+        "$editable": true,
+        "$orchestration": false,
+        "field1": "أعمال السباكة والكهرباء - المرحلة النهائية",
+        "field": null,
+        "$in_merge": false,
+        "field7": "1",
+        "field6": null,
+        "field8": "1",
+        "field3": "1",
+        "$approval_state": "approved",
+        "field2": "1",
+        "field5": "الإضاءة - القواطع - الاجهزة - العناصر الصحية ",
+        "field4": 4
+    },
+    {
+        "$currency_symbol": "SR",
+        "$field_states": null,
+        "Parent_Id": {
+            "name": "PM No. 1",
+            "id": "2966419000005821061"
+        },
+        "$review_process": null,
+        "$layout_id": {
+            "display_label": "Standard",
+            "name": "Standard",
+            "id": "2966419000005767141"
+        },
+        "$review": null,
+        "$state": "save",
+        "$process_flow": false,
+        "id": "2966419000006005138",
+        "$approved": true,
+        "$approval": {
+            "delegate": false,
+            "takeover": false,
+            "approve": false,
+            "reject": false,
+            "resubmit": false
+        },
+        "Created_Time": "2021-04-07T12:18:16+03:00",
+        "$editable": true,
+        "$orchestration": false,
+        "field1": "تركيب النوافذ",
+        "field": null,
+        "$in_merge": false,
+        "field7": null,
+        "field6": null,
+        "field8": "1",
+        "field3": "1",
+        "$approval_state": "approved",
+        "field2": "1",
+        "field5": "تركيب النوافذ وحمايتها",
+        "field4": 3
+    },
+    {
+        "$currency_symbol": "SR",
+        "$field_states": null,
+        "Parent_Id": {
+            "name": "PM No. 1",
+            "id": "2966419000005821061"
+        },
+        "$review_process": null,
+        "$layout_id": {
+            "display_label": "Standard",
+            "name": "Standard",
+            "id": "2966419000005767141"
+        },
+        "$review": null,
+        "$state": "save",
+        "$process_flow": false,
+        "id": "2966419000006005136",
+        "$approved": true,
+        "$approval": {
+            "delegate": false,
+            "takeover": false,
+            "approve": false,
+            "reject": false,
+            "resubmit": false
+        },
+        "Created_Time": "2021-04-07T12:18:16+03:00",
+        "$editable": true,
+        "$orchestration": false,
+        "field1": "تأسيس الدهانات",
+        "field": null,
+        "$in_merge": false,
+        "field7": "1",
+        "field6": null,
+        "field8": "1",
+        "field3": "1",
+        "$approval_state": "approved",
+        "field2": "1",
+        "field5": "الاسقف والجدران",
+        "field4": 4
+    },
+    {
+        "$currency_symbol": "SR",
+        "$field_states": null,
+        "Parent_Id": {
+            "name": "PM No. 1",
+            "id": "2966419000005821061"
+        },
+        "$review_process": null,
+        "$layout_id": {
+            "display_label": "Standard",
+            "name": "Standard",
+            "id": "2966419000005767141"
+        },
+        "$review": null,
+        "$state": "save",
+        "$process_flow": false,
+        "id": "2966419000006005134",
+        "$approved": true,
+        "$approval": {
+            "delegate": false,
+            "takeover": false,
+            "approve": false,
+            "reject": false,
+            "resubmit": false
+        },
+        "Created_Time": "2021-04-07T12:18:16+03:00",
+        "$editable": true,
+        "$orchestration": false,
+        "field1": "تنظيف المشروع",
+        "field": null,
+        "$in_merge": false,
+        "field7": null,
+        "field6": null,
+        "field8": null,
+        "field3": "1",
+        "$approval_state": "approved",
+        "field2": null,
+        "field5": "تنظيف وتعقيم كامل المشروع",
+        "field4": 1
+    },
+    {
+        "$currency_symbol": "SR",
+        "$field_states": null,
+        "Parent_Id": {
+            "name": "PM No. 1",
+            "id": "2966419000005821061"
+        },
+        "$review_process": null,
+        "$layout_id": {
+            "display_label": "Standard",
+            "name": "Standard",
+            "id": "2966419000005767141"
+        },
+        "$review": null,
+        "$state": "save",
+        "$process_flow": false,
+        "id": "2966419000006005132",
+        "$approved": true,
+        "$approval": {
+            "delegate": false,
+            "takeover": false,
+            "approve": false,
+            "reject": false,
+            "resubmit": false
+        },
+        "Created_Time": "2021-04-07T12:18:16+03:00",
+        "$editable": true,
+        "$orchestration": false,
+        "field1": "تركيب الأبواب",
+        "field": null,
+        "$in_merge": false,
+        "field7": "1",
+        "field6": null,
+        "field8": "1",
+        "field3": "1",
+        "$approval_state": "approved",
+        "field2": "1",
+        "field5": "الرئيسية والفرعية",
+        "field4": 4
+    }
+]

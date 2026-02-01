@@ -1,0 +1,207 @@
+[
+    {
+        "Cost_Price": null,
+        "Attachments_Link": null,
+        "Description": null,
+        "$currency_symbol": "SR",
+        "$field_states": null,
+        "Parent_Id": {
+            "name": "Estimate No 824",
+            "id": "2966419000080510037"
+        },
+        "$review_process": null,
+        "$layout_id": {
+            "display_label": "Standard",
+            "name": "Standard",
+            "id": "2966419000004606748"
+        },
+        "Custom_Areas_description": null,
+        "$review": null,
+        "$state": "save",
+        "$process_flow": false,
+        "id": "2966419000080501014",
+        "$approved": true,
+        "$approval": {
+            "delegate": false,
+            "takeover": false,
+            "approve": false,
+            "reject": false,
+            "resubmit": false
+        },
+        "Profit_Ratio": null,
+        "Created_Time": "2026-02-01T10:59:42+03:00",
+        "Rate": null,
+        "Amount": 0,
+        "Quantity": null,
+        "$editable": true,
+        "$orchestration": false,
+        "$in_merge": false,
+        "Item_Name": "بند أعمال الخشبيات",
+        "Package": null,
+        "$approval_state": "approved"
+    },
+    {
+        "Cost_Price": null,
+        "Attachments_Link": null,
+        "Description": "توريد وتركيب الأبواب طبقًا للمخططات والمواصفات المعتمدة، ويشمل ما يلي:\n\nعدد (2) باب داخلي للحمامات من نوع WPC مقاوم للمياه والرطوبة، شامل الحلق والإكسسوارات اللازمة.\n\nعدد (1) باب مخفي داخلي لمنطقة الكاونتر.\n\nعدد (1) باب داخلي من الكاونتر إلى المطبخ.\n\nعدد (1) باب خارجي لمنطقة الاستلام الخارجي من نوع PVC مقاوم للعوامل الجوية.\nولا يشمل الباب الرئيسي\nجميع الأبواب شاملة المفصلات والإكسسوارات والتركيب الكامل \nحسب الأصول الفنية",
+        "$currency_symbol": "SR",
+        "$field_states": null,
+        "Parent_Id": {
+            "name": "Estimate No 824",
+            "id": "2966419000080510037"
+        },
+        "$review_process": null,
+        "$layout_id": {
+            "display_label": "Standard",
+            "name": "Standard",
+            "id": "2966419000004606748"
+        },
+        "Custom_Areas_description": null,
+        "$review": null,
+        "$state": "save",
+        "$process_flow": false,
+        "id": "2966419000080501013",
+        "$approved": true,
+        "$approval": {
+            "delegate": false,
+            "takeover": false,
+            "approve": false,
+            "reject": false,
+            "resubmit": false
+        },
+        "Profit_Ratio": null,
+        "Created_Time": "2026-02-01T10:59:42+03:00",
+        "Rate": null,
+        "Amount": 18650,
+        "Quantity": null,
+        "$editable": true,
+        "$orchestration": false,
+        "$in_merge": false,
+        "Item_Name": "بند الابواب",
+        "Package": 18650,
+        "$approval_state": "approved"
+    },
+    {
+        "Cost_Price": null,
+        "Attachments_Link": null,
+        "Description": "توريد وتنفيذ وتركيب أعمال الجبس بورد طبقًا للمخططات والمواصفات المعتمدة، شاملاً المواد والهيكل المعدني والتركيب والتشطيب الكامل.",
+        "$currency_symbol": "SR",
+        "$field_states": null,
+        "Parent_Id": {
+            "name": "Estimate No 824",
+            "id": "2966419000080510037"
+        },
+        "$review_process": null,
+        "$layout_id": {
+            "display_label": "Standard",
+            "name": "Standard",
+            "id": "2966419000004606748"
+        },
+        "Custom_Areas_description": null,
+        "$review": null,
+        "$state": "save",
+        "$process_flow": false,
+        "id": "2966419000080501012",
+        "$approved": true,
+        "$approval": {
+            "delegate": false,
+            "takeover": false,
+            "approve": false,
+            "reject": false,
+            "resubmit": false
+        },
+        "Profit_Ratio": null,
+        "Created_Time": "2026-02-01T10:59:42+03:00",
+        "Rate": null,
+        "Amount": 15775,
+        "Quantity": null,
+        "$editable": true,
+        "$orchestration": false,
+        "$in_merge": false,
+        "Item_Name": "بند أعمال الجبس بورد",
+        "Package": 15775,
+        "$approval_state": "approved"
+    },
+    {
+        "Cost_Price": null,
+        "Attachments_Link": null,
+        "Description": "تنفيذ أعمال دهان التأسيس للأسطح طبقًا للمخططات والمواصفات المعتمدة، شاملاً مواد التأسيس والتنفيذ، ولا يشمل دهان التشطيب النهائي.",
+        "$currency_symbol": "SR",
+        "$field_states": null,
+        "Parent_Id": {
+            "name": "Estimate No 824",
+            "id": "2966419000080510037"
+        },
+        "$review_process": null,
+        "$layout_id": {
+            "display_label": "Standard",
+            "name": "Standard",
+            "id": "2966419000004606748"
+        },
+        "Custom_Areas_description": null,
+        "$review": null,
+        "$state": "save",
+        "$process_flow": false,
+        "id": "2966419000080501011",
+        "$approved": true,
+        "$approval": {
+            "delegate": false,
+            "takeover": false,
+            "approve": false,
+            "reject": false,
+            "resubmit": false
+        },
+        "Profit_Ratio": null,
+        "Created_Time": "2026-02-01T10:59:42+03:00",
+        "Rate": null,
+        "Amount": 16200,
+        "Quantity": null,
+        "$editable": true,
+        "$orchestration": false,
+        "$in_merge": false,
+        "Item_Name": "بند أعمال الصبغ (تأسيس فقط)",
+        "Package": 16200,
+        "$approval_state": "approved"
+    },
+    {
+        "Cost_Price": null,
+        "Attachments_Link": null,
+        "Description": "تنفيذ أعمال تركيب السيراميك طبقًا للمخططات والمواصفات المعتمدة، ويشمل ذلك أعمال الضبط والتركيب والتشطيب، ولا يشمل توريد المواد (شغل يد فقط).",
+        "$currency_symbol": "SR",
+        "$field_states": null,
+        "Parent_Id": {
+            "name": "Estimate No 824",
+            "id": "2966419000080510037"
+        },
+        "$review_process": null,
+        "$layout_id": {
+            "display_label": "Standard",
+            "name": "Standard",
+            "id": "2966419000004606748"
+        },
+        "Custom_Areas_description": null,
+        "$review": null,
+        "$state": "save",
+        "$process_flow": false,
+        "id": "2966419000080501010",
+        "$approved": true,
+        "$approval": {
+            "delegate": false,
+            "takeover": false,
+            "approve": false,
+            "reject": false,
+            "resubmit": false
+        },
+        "Profit_Ratio": null,
+        "Created_Time": "2026-02-01T10:59:42+03:00",
+        "Rate": null,
+        "Amount": 11250,
+        "Quantity": null,
+        "$editable": true,
+        "$orchestration": false,
+        "$in_merge": false,
+        "Item_Name": "بند الارضيات ( السيراميك )",
+        "Package": 11250,
+        "$approval_state": "approved"
+    }
+]
