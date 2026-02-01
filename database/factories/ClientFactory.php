@@ -16,8 +16,8 @@ class ClientFactory extends Factory
     {
         return [
             'client_name' => fake()->company(),
-            'client_email' => fake()->unique()->safeEmail(),
-            'client_phone' => fake()->phoneNumber(),
+            'email' => fake()->unique()->safeEmail(),
+            'phone' => fake()->phoneNumber(),
         ];
     }
 }

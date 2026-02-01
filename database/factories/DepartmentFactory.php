@@ -19,6 +19,7 @@ class DepartmentFactory extends Factory
             'dept_name' => fake()->company(),
             'dept_code' => strtoupper(fake()->unique()->lexify('DEPT-???')),
             'manager_id' => User::factory(),
+            'dept_type' => \App\Models\DepartmentCategories::factory(),
             'is_active' => true,
         ];
     }

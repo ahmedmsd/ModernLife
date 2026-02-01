@@ -10,12 +10,12 @@ use App\Models\ProductionRequest;
 use App\Models\Project;
 use App\Models\User;
 use App\Services\ProductionRequestWorkflow;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class ProductionRequestWorkflowTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected ProductionRequestWorkflow $workflow;
     protected User $user;

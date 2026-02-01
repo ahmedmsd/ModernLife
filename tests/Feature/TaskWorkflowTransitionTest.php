@@ -8,6 +8,7 @@ use App\Models\MaterialRequest;
 use App\Models\ProductionRequest;
 use App\Models\ProductionTask;
 use App\Models\Project;
+use App\Models\TaskLog;
 use App\Models\User;
 use App\Services\Tasks\Workflow\AssignmentWorkflowService;
 use App\Services\Tasks\Workflow\CompletionWorkflowService;
@@ -78,7 +79,7 @@ class TaskWorkflowTransitionTest extends TestCase
         $task = ProductionTask::factory()->create([
             'project_id' => $this->project->id,
             'department_id' => $this->department->dept_id,
-            'status' => 'new',
+            'status' => 'pending',
         ]);
 
         $service = app(AssignmentWorkflowService::class);
@@ -150,7 +151,7 @@ class TaskWorkflowTransitionTest extends TestCase
         $task->refresh();
 
         $this->assertEquals('materials_wait', $task->status);
-        $this->assertDatabaseHas('material_requests', [
+        $this->assertDatabaseHas(MaterialRequest::class, [
             'task_id' => $task->id,
             'status' => 'requested',
         ]);
@@ -390,7 +391,7 @@ class TaskWorkflowTransitionTest extends TestCase
     public function complete_last_task_closes_project()
     {
         // Create a project with a single task
-        $project = Project::factory()->create(['status' => 'active']);
+        $project = Project::factory()->create(['status' => 'in_progress']);
 
         $task = ProductionTask::factory()->create([
             'project_id' => $project->id,
@@ -420,7 +421,7 @@ class TaskWorkflowTransitionTest extends TestCase
         $service = app(ManufacturingWorkflowService::class);
         $service->startProduction($task, null, 'Test log entry');
 
-        $this->assertDatabaseHas('task_logs', [
+        $this->assertDatabaseHas(TaskLog::class, [
             'task_id' => $task->id,
             'type' => 'manufacturing_started',
         ]);

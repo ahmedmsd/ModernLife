@@ -13,7 +13,7 @@ use App\Models\Concerns\HasStatusScopes;
 
 class Project extends Model
 {
-    use HasStatusScopes;
+    use HasStatusScopes, \Illuminate\Database\Eloquent\Factories\HasFactory;
     protected $table = 'projects';
     protected $primaryKey = 'id';
 

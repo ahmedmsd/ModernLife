@@ -21,7 +21,7 @@ class ProjectFactory extends Factory
             'production_request_id' => ProductionRequest::factory(),
             'client_id' => Client::factory(),
             'project_name' => fake()->words(3, true),
-            'status' => 'active',
+            'status' => 'in_progress',
             'created_by' => User::factory(),
             'start_date' => now(),
             'end_date' => now()->addMonths(2),
