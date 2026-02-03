@@ -49,6 +49,7 @@ class MaintenanceRequestResource extends Resource
     public static function getPermissionScopedQuery(): \Illuminate\Database\Eloquent\Builder
     {
         $q = parent::getEloquentQuery()
+            ->with(['showroom', 'client', 'createdByUser'])
             ->latest('id');
 
         $user = auth()->user();
@@ -120,8 +121,7 @@ class MaintenanceRequestResource extends Resource
                         ->label('المعرض')
                         ->options(\App\Models\Showroom::pluck('name', 'id'))
                         ->searchable()
-                        ->required()
-                        ->preload(),
+                        ->required(),
                     Forms\Components\Select::make('client_id')
                         ->label('العميل')
                         ->options(fn () => Client::query()
@@ -133,7 +133,6 @@ class MaintenanceRequestResource extends Resource
                             ->all() // ← array
                         )
                         ->searchable()
-                        ->preload()
                         ->required(),
 
                     Forms\Components\DatePicker::make('request_date')

@@ -35,6 +35,7 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AdminPanelProvider extends PanelProvider
@@ -59,7 +60,7 @@ class AdminPanelProvider extends PanelProvider
             ])
 
             ->databaseNotifications()
-            ->databaseNotificationsPolling('15s')
+            ->databaseNotificationsPolling('5m')
 
 //            ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
@@ -113,45 +114,46 @@ class AdminPanelProvider extends PanelProvider
                                     return null;
                                 }
 
-                                $count = $user->unreadNotifications()->count();
-
-                                return $count > 0 ? (string) $count : null;
+                                return Cache::remember("user_{$user->id}_unread_notifications_count", 60, function () use ($user) {
+                                    $count = $user->unreadNotifications()->count();
+                                    return $count > 0 ? (string) $count : null;
+                                });
                             }),
 
                     ])
-                    ->group(
-                        NavigationGroup::make()->label('ZOHO')->icon('heroicon-o-arrow-path')->collapsible()
-                            ->items([
-                                NavigationItem::make('مزامنة Zoho (Sync)')
-                                    ->url(fn () => \App\Filament\Pages\ZohoSync::getUrl())
-                                    ->visible(fn () => auth()->user()->hasRole(['admin', 'super-admin'])),
-                                NavigationItem::make('العملاء (Clients)')
-                                    ->url(fn () => \App\Filament\Resources\ClientResource::getUrl())
-                                    ->visible(fn () => \App\Filament\Resources\ClientResource::canViewAny()),
-                                NavigationItem::make('عروض الأسعار التجارية (Commercial)')
-                                    ->url(fn () => \App\Filament\Resources\QuotationResource::getUrl())
-                                    ->isActiveWhen(fn () => request()->routeIs('filament.admin.resources.quotations.*'))
-                                    ->visible(fn () => \App\Filament\Resources\QuotationResource::canViewAny()),
-                                NavigationItem::make('عروض الأسعار السكنية (Residential)')
-                                    ->url(fn () => \App\Filament\Resources\ResidentialQuotationResource::getUrl())
-                                    ->isActiveWhen(fn () => request()->routeIs('filament.admin.resources.residential-quotations.*'))
-                                    ->visible(fn () => \App\Filament\Resources\ResidentialQuotationResource::canViewAny()),
-                                NavigationItem::make('أوامر البيع (Sales Orders)')
-                                    ->url(fn () => \App\Filament\Resources\SalesOrderResource::getUrl())
-                                    ->visible(fn () => \App\Filament\Resources\SalesOrderResource::canViewAny()),
-                            ])
-                    )
+                    // ->group(
+                    //     NavigationGroup::make()->label('ZOHO')->icon('heroicon-o-arrow-path')->collapsible()
+                    //         ->items([
+                    //             NavigationItem::make('مزامنة Zoho (Sync)')
+                    //                 ->url(fn () => \App\Filament\Pages\ZohoSync::getUrl())
+                    //                 ->visible(fn () => auth()->user()->hasRole(['admin', 'super-admin'])),
+                    //             NavigationItem::make('العملاء (Clients)')
+                    //                 ->url(fn () => \App\Filament\Resources\ClientResource::getUrl())
+                    //                 ->visible(fn () => \App\Filament\Resources\ClientResource::canViewAny()),
+                    //             NavigationItem::make('عروض الأسعار التجارية (Commercial)')
+                    //                 ->url(fn () => \App\Filament\Resources\QuotationResource::getUrl())
+                    //                 ->isActiveWhen(fn () => request()->routeIs('filament.admin.resources.quotations.*'))
+                    //                 ->visible(fn () => \App\Filament\Resources\QuotationResource::canViewAny()),
+                    //             NavigationItem::make('عروض الأسعار السكنية (Residential)')
+                    //                 ->url(fn () => \App\Filament\Resources\ResidentialQuotationResource::getUrl())
+                    //                 ->isActiveWhen(fn () => request()->routeIs('filament.admin.resources.residential-quotations.*'))
+                    //                 ->visible(fn () => \App\Filament\Resources\ResidentialQuotationResource::canViewAny()),
+                    //             NavigationItem::make('أوامر البيع (Sales Orders)')
+                    //                 ->url(fn () => \App\Filament\Resources\SalesOrderResource::getUrl())
+                    //                 ->visible(fn () => \App\Filament\Resources\SalesOrderResource::canViewAny()),
+                    //         ])
+                    // )
                     ->group(
                         NavigationGroup::make()->label('الطلبات')->icon('heroicon-o-rectangle-group')->collapsible()->collapsed()
                             ->items([
                                 NavigationItem::make('طلبات التصنيع (الجارية)')
                                     ->url(\App\Filament\Resources\ProductionRequestResource::getUrl('index'))
                                     ->visible(fn () => \App\Filament\Resources\ProductionRequestResource::canViewAny())
-                                    ->badge(fn () => \App\Filament\Resources\ProductionRequestResource::getActiveCount()),
+                                    ->badge(fn () => Cache::remember('badge_prod_req_active_' . auth()->id(), 60, fn() => \App\Filament\Resources\ProductionRequestResource::getActiveCount())),
                                 NavigationItem::make('طلبات التصنيع (المكتملة)')
                                     ->url(\App\Filament\Resources\ProductionRequestResource::getUrl('completed'))
                                     ->visible(fn () => \App\Filament\Resources\ProductionRequestResource::canViewAny())
-                                    ->badge(fn () => \App\Filament\Resources\ProductionRequestResource::getCompletedCount()),
+                                    ->badge(fn () => Cache::remember('badge_prod_req_completed_' . auth()->id(), 60, fn() => \App\Filament\Resources\ProductionRequestResource::getCompletedCount())),
                             ])
                     )
 
@@ -164,81 +166,81 @@ class AdminPanelProvider extends PanelProvider
                                 NavigationItem::make('المشروعات الحالية')
                                     ->url(\App\Filament\Resources\ProjectResource::getUrl('index') . '?tableFilters[is_completed][value]=false')
                                     ->visible(fn () => \App\Filament\Resources\ProjectResource::canViewAny())
-                                    ->badge(function () {
-                                        if (! \App\Filament\Resources\ProjectResource::canViewAny()) {
-                                            return null;
-                                        }
-
-                                        $u = auth()->user();
-                                        if (! $u) return null;
-
-                                        $base = \App\Models\Project::query();
-
-                                        if ($u->hasRole('department_manager', 'web') && $u->employee?->department_id) {
-                                            $deptId = $u->employee->department_id;
-                                            $base->whereHas('tasks', fn ($q) => $q->where('department_id', $deptId));
-                                        }
-                                        elseif ($u->hasRole('showroom_manager', 'web')) {
-                                            $employeeId = $u->employee?->getKey();
-                                            if (! $employeeId) {
-                                                return 0;
-                                            }
-                                            $showroomIds = \App\Models\Showroom::query()
-                                                ->where('manager_id', $employeeId)
-                                                ->pluck('id');
-
-                                            if ($showroomIds->isEmpty()) {
-                                                return 0;
+                                    ->badge(fn () => Cache::remember('badge_projects_active_' . auth()->id(), 60, function () {
+                                            if (! \App\Filament\Resources\ProjectResource::canViewAny()) {
+                                                return null;
                                             }
 
-                                            $base->whereHas('productionRequest', function ($qq) use ($showroomIds) {
-                                                $qq->whereIn('showroom_id', $showroomIds);
-                                            });
-                                        }
+                                            $u = auth()->user();
+                                            if (! $u) return null;
 
-                                        return (clone $base)
-                                            ->where('status', '!=', 'completed')
-                                            ->count();
-                                    }),
+                                            $base = \App\Models\Project::query();
+
+                                            if ($u->hasRole('department_manager', 'web') && $u->employee?->department_id) {
+                                                $deptId = $u->employee->department_id;
+                                                $base->whereHas('tasks', fn ($q) => $q->where('department_id', $deptId));
+                                            }
+                                            elseif ($u->hasRole('showroom_manager', 'web')) {
+                                                $employeeId = $u->employee?->getKey();
+                                                if (! $employeeId) {
+                                                    return 0;
+                                                }
+                                                $showroomIds = \App\Models\Showroom::query()
+                                                    ->where('manager_id', $employeeId)
+                                                    ->pluck('id');
+
+                                                if ($showroomIds->isEmpty()) {
+                                                    return 0;
+                                                }
+
+                                                $base->whereHas('productionRequest', function ($qq) use ($showroomIds) {
+                                                    $qq->whereIn('showroom_id', $showroomIds);
+                                                });
+                                            }
+
+                                            return (clone $base)
+                                                ->where('status', '!=', 'completed')
+                                                ->count();
+                                        })),
 
                                 NavigationItem::make('المشروعات المكتملة')
                                     ->url(\App\Filament\Resources\ProjectResource::getUrl('index') . '?tableFilters[is_completed][value]=true')
                                     ->visible(fn () => \App\Filament\Resources\ProjectResource::canViewAny())
-                                    ->badge(function () {
-                                        if (! \App\Filament\Resources\ProjectResource::canViewAny()) {
-                                            return null;
-                                        }
-
-                                        $u = auth()->user();
-                                        if (! $u) return null;
-
-                                        $base = \App\Models\Project::query();
-
-                                        if ($u->hasRole('department_manager', 'web') && $u->employee?->department_id) {
-                                            $deptId = $u->employee->department_id;
-                                            $base->whereHas('tasks', fn ($q) => $q->where('department_id', $deptId));
-                                        } elseif ($u->hasRole('showroom_manager', 'web')) {
-                                            $employeeId = $u->employee?->getKey();
-                                            if (! $employeeId) {
-                                                return 0;
-                                            }
-                                            $showroomIds = \App\Models\Showroom::query()
-                                                ->where('manager_id', $employeeId)
-                                                ->pluck('id');
-
-                                            if ($showroomIds->isEmpty()) {
-                                                return 0;
+                                    ->badge(fn () => Cache::remember('badge_projects_completed_' . auth()->id(), 60, function () {
+                                            if (! \App\Filament\Resources\ProjectResource::canViewAny()) {
+                                                return null;
                                             }
 
-                                            $base->whereHas('productionRequest', function ($qq) use ($showroomIds) {
-                                                $qq->whereIn('showroom_id', $showroomIds);
-                                            });
-                                        }
+                                            $u = auth()->user();
+                                            if (! $u) return null;
 
-                                        return (clone $base)
-                                            ->where('status', 'completed')
-                                            ->count();
-                                    }),
+                                            $base = \App\Models\Project::query();
+
+                                            if ($u->hasRole('department_manager', 'web') && $u->employee?->department_id) {
+                                                $deptId = $u->employee->department_id;
+                                                $base->whereHas('tasks', fn ($q) => $q->where('department_id', $deptId));
+                                            } elseif ($u->hasRole('showroom_manager', 'web')) {
+                                                $employeeId = $u->employee?->getKey();
+                                                if (! $employeeId) {
+                                                    return 0;
+                                                }
+                                                $showroomIds = \App\Models\Showroom::query()
+                                                    ->where('manager_id', $employeeId)
+                                                    ->pluck('id');
+
+                                                if ($showroomIds->isEmpty()) {
+                                                    return 0;
+                                                }
+
+                                                $base->whereHas('productionRequest', function ($qq) use ($showroomIds) {
+                                                    $qq->whereIn('showroom_id', $showroomIds);
+                                                });
+                                            }
+
+                                            return (clone $base)
+                                                ->where('status', 'completed')
+                                                ->count();
+                                        })),
                             ])
                     )
 
@@ -250,15 +252,15 @@ class AdminPanelProvider extends PanelProvider
                                 NavigationItem::make('عرض المهام (الجارية)')
                                     ->url(\App\Filament\Resources\TaskResource::getUrl('active'))
                                     ->visible(fn () => \App\Filament\Resources\TaskResource\Pages\ActiveTasks::canAccess())
-                                    ->badge(fn () => \App\Filament\Resources\TaskResource::getActiveCount()),
+                                    ->badge(fn () => Cache::remember('badge_tasks_active_' . auth()->id(), 60, fn() => \App\Filament\Resources\TaskResource::getActiveCount())),
                                 NavigationItem::make('المهام المرفوضة')
                                     ->url(\App\Filament\Resources\TaskResource::getUrl('returned'))
                                     ->visible(fn () => \App\Filament\Resources\TaskResource\Pages\ReturnedToFactory::canAccess())
-                                    ->badge(fn () => \App\Filament\Resources\TaskResource::getReturnedCount()),
+                                    ->badge(fn () => Cache::remember('badge_tasks_returned_' . auth()->id(), 60, fn() => \App\Filament\Resources\TaskResource::getReturnedCount())),
                                 NavigationItem::make('المهام المُنجزة')
                                     ->url(\App\Filament\Resources\TaskResource::getUrl('completed'))
                                     ->visible(fn () => \App\Filament\Resources\TaskResource\Pages\CompletedTasks::canAccess())
-                                    ->badge(fn () => \App\Filament\Resources\TaskResource::getCompletedCount()),
+                                    ->badge(fn () => Cache::remember('badge_tasks_completed_' . auth()->id(), 60, fn() => \App\Filament\Resources\TaskResource::getCompletedCount())),
                             ])
                     )
 
@@ -271,11 +273,11 @@ class AdminPanelProvider extends PanelProvider
                                 NavigationItem::make('طلبات الخامات')
                                     ->url(\App\Filament\Pages\Purchasing\MaterialsRequests::getUrl())
                                     ->visible(fn () => \App\Filament\Pages\Purchasing\MaterialsRequests::canAccess())
-                                    ->badge(fn () => \App\Filament\Pages\Purchasing\MaterialsRequests::getNavigationBadge()),
+                                    ->badge(fn () => Cache::remember('badge_mat_req_' . auth()->id(), 60, fn() => \App\Filament\Pages\Purchasing\MaterialsRequests::getNavigationBadge())),
                                 NavigationItem::make('طلبات الخامات المُنجزة')
                                     ->url(\App\Filament\Pages\Purchasing\MaterialsRequestsDone::getUrl())
                                     ->visible(fn () => \App\Filament\Pages\Purchasing\MaterialsRequestsDone::canAccess())
-                                    ->badge(fn () => \App\Filament\Pages\Purchasing\MaterialsRequestsDone::getNavigationBadge()),
+                                    ->badge(fn () => Cache::remember('badge_mat_req_done_' . auth()->id(), 60, fn() => \App\Filament\Pages\Purchasing\MaterialsRequestsDone::getNavigationBadge())),
                             ])
                     )
 
@@ -293,11 +295,11 @@ class AdminPanelProvider extends PanelProvider
                                 NavigationItem::make('طلب صيانة (جاري)')
                                     ->url(\App\Filament\Resources\MaintenanceRequestResource::getUrl('index'))
                                     ->visible(fn () => \App\Filament\Resources\MaintenanceRequestResource::canViewAny())
-                                    ->badge(fn () => \App\Filament\Resources\MaintenanceRequestResource::getActiveCount()),
+                                    ->badge(fn () => Cache::remember('badge_maint_active_' . auth()->id(), 60, fn() => \App\Filament\Resources\MaintenanceRequestResource::getActiveCount())),
                                 NavigationItem::make('طلب صيانة (مكتمل)')
                                     ->url(\App\Filament\Resources\MaintenanceRequestResource::getUrl('completed'))
                                     ->visible(fn () => \App\Filament\Resources\MaintenanceRequestResource::canViewAny())
-                                    ->badge(fn () => \App\Filament\Resources\MaintenanceRequestResource::getCompletedCount()),
+                                    ->badge(fn () => Cache::remember('badge_maint_completed_' . auth()->id(), 60, fn() => \App\Filament\Resources\MaintenanceRequestResource::getCompletedCount())),
                                 NavigationItem::make('تقويم الصيانة ')
                                     ->url(\App\Filament\Pages\MaintenanceCalendar::getUrl())
                                     ->visible(fn () => \App\Filament\Pages\MaintenanceCalendar::canAccess()),
@@ -317,7 +319,14 @@ class AdminPanelProvider extends PanelProvider
                     )
 
 
-
+                    ->group(
+                        NavigationGroup::make()->label('العملاء')->icon('heroicon-o-user-group')->collapsible()->collapsed()
+                            ->items([
+                                NavigationItem::make('إدارة العملاء')
+                                    ->url(\App\Filament\Resources\ClientResource::getUrl())
+                                    ->visible(fn () => \App\Filament\Resources\ClientResource::canViewAny()),
+                            ])
+                    )
                     ->group(
                         NavigationGroup::make()->label('الموظفين')->icon('heroicon-o-user-group')->collapsible()->collapsed()
                             ->items([

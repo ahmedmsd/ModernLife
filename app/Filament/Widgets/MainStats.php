@@ -111,16 +111,20 @@ class MainStats extends BaseWidget
         if (!$u) return [];
         $uid = $u->id;
         
-        $myTasks = ProductionTask::where(function($q) use ($uid) {
+        $myTasks = cache()->remember("stats:my_tasks_{$uid}", 60, function() use ($uid) {
+            return ProductionTask::where(function($q) use ($uid) {
                 $q->where('current_owner_user_id', $uid)
                   ->orWhere('assigned_to_user_id', $uid);
             })
             ->whereNotIn('status', ['completed', 'closed', 'cancelled'])
             ->count();
+        });
 
-        $myDone  = ProductionTask::where('assigned_to_user_id', $uid)
+        $myDone = cache()->remember("stats:my_tasks_done_{$uid}", 60, function() use ($uid) {
+            return ProductionTask::where('assigned_to_user_id', $uid)
             ->whereIn('status', ['completed', 'closed'])
             ->count();
+        });
 
         return [
             Stat::make('مهامي الجارية', $this->nf($myTasks))

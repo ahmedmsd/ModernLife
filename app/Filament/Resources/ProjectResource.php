@@ -61,6 +61,9 @@ class ProjectResource extends Resource
                 'productionRequest.showroom' => function($q) {
                     $q->select('id', 'name', 'manager_id');
                 },
+                'creator' => function($q) {
+                    $q->select('id', 'name');
+                },
             ])
             ->latest('projects.id');
 

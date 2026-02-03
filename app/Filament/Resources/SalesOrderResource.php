@@ -25,6 +25,11 @@ class SalesOrderResource extends Resource
     protected static ?int $navigationSort = 3;
     protected static ?string $label = 'أمر بيع (Sales Order)';
     protected static ?string $pluralLabel = 'أوامر البيع (Sales Orders)';
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->with(['client']);
+    }
 
     public static function form(Forms\Form $form): Forms\Form
     {

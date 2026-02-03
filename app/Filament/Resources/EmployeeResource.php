@@ -36,6 +36,11 @@ class EmployeeResource extends Resource
     protected static ?string $pluralModelLabel = 'الموظفين';
     protected static ?string $recordTitleAttribute = 'employee_name';
     protected static bool $shouldRegisterNavigation = false;
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->with(['user', 'department', 'user.roles']);
+    }
 
     public static function form(Form $form): Form
     {

@@ -60,7 +60,7 @@ class ProductionRequestResource extends Resource
     public static function getPermissionScopedQuery(): \Illuminate\Database\Eloquent\Builder
     {
         $q = parent::getEloquentQuery()
-            ->with(['showroom','project','client'])
+            ->with(['showroom','project','client', 'creator'])
             ->latest('id');
 
         $user = auth()->user();
@@ -119,7 +119,6 @@ class ProductionRequestResource extends Resource
                 ->label('العميل')
                 ->options(\App\Models\Client::pluck('client_name', 'client_id'))
                 ->searchable()
-                ->preload()
                 ->required(),
 
             // اسم المشروع
