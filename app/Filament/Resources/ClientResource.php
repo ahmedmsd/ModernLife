@@ -18,7 +18,7 @@ class ClientResource extends Resource
     protected static ?string $model = Client::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
-    protected static ?string $navigationGroup = 'العملاء';
+    protected static ?string $navigationGroup = 'ZOHO';
     protected static ?int $navigationSort = 1;
     protected static ?string $navigationLabel = 'العملاء (Clients)';
     protected static ?string $recordTitleAttribute = 'client_name';

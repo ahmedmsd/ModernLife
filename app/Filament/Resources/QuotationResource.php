@@ -23,8 +23,8 @@ class QuotationResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-building-office';
     protected static ?string $navigationGroup = 'ZOHO';
     protected static ?int $navigationSort = 2;
-    protected static ?string $label = 'عرض سعر تجاري (Commercial)';
-    protected static ?string $pluralLabel = 'عروض السعر التجاري (Commercial)';
+    protected static ?string $label = 'عرض تجاري (Commercial)';
+    protected static ?string $pluralLabel = 'عروض تجارية (Commercial)';
 
     public static function form(Forms\Form $form): Forms\Form
     {
@@ -180,11 +180,20 @@ class QuotationResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\Action::make('print')
-                    ->label('طباعة العرض (Commercial)')
+                Tables\Actions\Action::make('print_zoho_quote')
+                    ->label('استعراض التسعيرة (Zoho)')
                     ->icon('heroicon-o-printer')
-                    ->url(fn (Quotation $record): string => route('quotations.print', ['quotation' => $record, 'type' => 'quotation']))
-                    ->openUrlInNewTab(),
+                    ->color('success')
+                    ->url(fn (Quotation $record) => $record->quotation_pdf_url)
+                    ->openUrlInNewTab()
+                    ->visible(fn (Quotation $record) => !empty($record->quotation_pdf_url)),
+                Tables\Actions\Action::make('print_zoho_contract')
+                    ->label('استعراض العقد (Zoho)')
+                    ->icon('heroicon-o-document-text')
+                    ->color('info')
+                    ->url(fn (Quotation $record) => $record->contract_pdf_url)
+                    ->openUrlInNewTab()
+                    ->visible(fn (Quotation $record) => !empty($record->contract_pdf_url)),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -196,10 +205,8 @@ class QuotationResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->where(function ($query) {
-                $query->whereIn('contract_type', ['Commercial', 'Commercial House'])
-                      ->orWhere('zoho_module', 'Quotations');
-            });
+            ->where('zoho_module', 'ZohoCreator_ModernLife')
+            ->where('contract_type', '!=', 'Residential');
     }
 
     public static function getRelations(): array

@@ -19,7 +19,7 @@ class ZohoCrmService
     /**
      * General method to fetch records from a module.
      */
-    public function getRecords(string $module, int $page = 1, int $perPage = 200, string $modifiedSince = null): array
+    public function getRecords(string $module, int $page = 1, int $perPage = 200, string $modifiedSince = null, string $sortBy = null, string $sortOrder = 'desc'): ?array
     {
         $token = $this->authService->getAccessToken();
 
@@ -39,6 +39,11 @@ class ZohoCrmService
             $params['headers'] = ['If-Modified-Since' => $modifiedSince];
         }
 
+        if ($sortBy) {
+            $params['sort_by'] = $sortBy;
+            $params['sort_order'] = $sortOrder;
+        }
+
         // Using withoutVerifying() for local dev environment SSL issues
         $response = Http::withoutVerifying()
             ->withToken($token)
@@ -49,7 +54,7 @@ class ZohoCrmService
                 'status' => $response->status(),
                 'body'   => $response->json(),
             ]);
-            return [];
+            return null;
         }
 
         return $response->json()['data'] ?? [];

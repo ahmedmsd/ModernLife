@@ -22,7 +22,7 @@ class SalesOrderResource extends Resource
     
     protected static ?string $navigationIcon = 'heroicon-o-shopping-bag';
     protected static ?string $navigationGroup = 'ZOHO';
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 4;
     protected static ?string $label = 'أمر بيع (Sales Order)';
     protected static ?string $pluralLabel = 'أوامر البيع (Sales Orders)';
     public static function getEloquentQuery(): Builder

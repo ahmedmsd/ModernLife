@@ -57,7 +57,7 @@ class SyncZohoData extends Command
         } else {
             $this->syncModule('accounts');
             $this->syncModule('contacts');
-            $this->syncModule('quotes');
+            // $this->syncModule('quotes'); // Removed as per user request to use Creator only
             $this->syncModule('sales_orders');
         }
 
@@ -78,11 +78,8 @@ class SyncZohoData extends Command
                 $this->syncContacts();
                 break;
             case 'quotes':
-                $this->syncQuotes('Quotations'); // Commercial
+                $this->syncQuotes('Quotations');             // Commercial
                 $this->syncQuotes('Residential_Quotations'); // Residential
-                $this->syncQuotes('Construction_Quotation'); 
-                $this->syncQuotes('Woodwork_Quotation');
-                $this->syncQuotes('Residential_Packages');
                 break;
             case 'sales_orders':
                 // We sync contacts map first to handle deals linked to contacts
@@ -173,14 +170,28 @@ class SyncZohoData extends Command
     {
         $this->info("Syncing modules from Zoho: {$module}");
         $page = 1;
+        $totalSynced = 0;
         do {
             $records = $this->zohoService->getRecords($module, $page);
-            foreach ($records as $record) {
-                $this->processQuote($record, $module);
+            
+            if ($records === null) {
+                $this->error("  API Error: Failed to fetch {$module}. Check laravel.log for details (likely OAUTH_SCOPE_MISMATCH).");
+                break;
+            }
+
+            $count = count($records);
+            if ($count > 0) {
+                foreach ($records as $record) {
+                    $this->processQuote($record, $module);
+                    $totalSynced++;
+                }
+                $this->line("  Page {$page}: Synced {$count} records...");
             }
             $page++;
             gc_collect_cycles();
         } while (count($records) > 0);
+        
+        $this->info("Completed {$module} sync. Total: {$totalSynced}");
     }
 
     protected function processQuote($data, $moduleType)
@@ -211,23 +222,41 @@ class SyncZohoData extends Command
             $quoteNumber = $data['Quotation_No'] ?? $data['Quote_Number'] ?? $data['Estimate_No'] ?? ($data['Name'] ?? null);
             $subject = $data['Subject'] ?? $data['Deal_Name'] ?? $data['Quotation_Name'] ?? $data['Name'] ?? ($moduleType . ' - ' . $quoteNumber);
 
+            // Document Links Logic (Zoho Creator)
+            $creatorId = $data['Creator_Record_id'] ?? null;
+            $quoteUrl = null;
+            $contractUrl = null;
+
+            if ($creatorId) {
+                $quoteUrl = "https://crmsystem.zohocreatorportal.com/zoho_ali979/object-system/record-print/Modern_Life_Quotations/{$creatorId}";
+                $contractUrl = "https://crmsystem.zohocreatorportal.com/zoho_ali979/object-system/record-print/Modern_Life_Contracts/{$creatorId}";
+            }
+
+            $quoteData = [
+                'subject'       => $subject,
+                'quote_number'  => $quoteNumber,
+                'quote_stage'   => $data['Quotation_Stage'] ?? $data['Stage'] ?? $data['Quote_Stage'] ?? $data['Status'] ?? $data['$approval_state'] ?? null,
+                'zoho_module'   => $moduleType,
+                'contract_type' => $data['Contract_Type'] ?? $data['Quote_Type'] ?? $data['Project_Type'] ?? ($moduleType === 'Residential_Quotations' || $moduleType === 'Residential_Packages' ? 'Residential' : null),
+                'valid_till'    => isset($data['Valid_Till']) ? Carbon::parse($data['Valid_Till']) : (isset($data['Quotation_Valid_Until']) ? Carbon::parse($data['Quotation_Valid_Until']) : null),
+                'total_amount'  => $data['Total_Inc_VAT'] ?? $data['Total_Inc_VAT1'] ?? $data['Net_Amount'] ?? $data['Grand_Total'] ?? $data['Amount'] ?? $data['Total'] ?? 0,
+                'sub_total'    => $data['Total_Price_After_Discount'] ?? $data['Sub_Total'] ?? $data['Total_Exc_VAT'] ?? $data['Total_Exc_VAT1'] ?? $data['Total'] ?? 0,
+                'tax'          => $data['VAT_Amount'] ?? $data['VAT_Amount1'] ?? $data['Tax'] ?? $data['VAT_Amount'] ?? 0,
+                'adjustment'   => $data['Adjustment'] ?? 0,
+                'discount'     => $data['Total_Discount'] ?? $data['Discount'] ?? $data['Discount_Amount'] ?? 0,
+                'client_id'    => $client ? $client->client_id : null,
+                'raw_data'     => $data,
+            ];
+
+            // Only add these columns if they exist in the DB to avoid crashes
+            if (\Illuminate\Support\Facades\Schema::hasColumn('quotations', 'quotation_pdf_url')) {
+                $quoteData['quotation_pdf_url'] = $quoteUrl;
+                $quoteData['contract_pdf_url'] = $contractUrl;
+            }
+
             $quote = Quotation::updateOrCreate(
                 ['zoho_quote_id' => $data['id']],
-                [
-                    'subject'       => $subject,
-                    'quote_number'  => $quoteNumber,
-                    'quote_stage'   => $data['Quotation_Stage'] ?? $data['Stage'] ?? $data['Quote_Stage'] ?? $data['Status'] ?? $data['$approval_state'] ?? null,
-                    'zoho_module'   => $moduleType,
-                    'contract_type' => $data['Contract_Type'] ?? $data['Quote_Type'] ?? $data['Project_Type'] ?? ($moduleType === 'Residential_Quotations' || $moduleType === 'Residential_Packages' ? 'Residential' : null),
-                    'valid_till'    => isset($data['Valid_Till']) ? Carbon::parse($data['Valid_Till']) : (isset($data['Quotation_Valid_Until']) ? Carbon::parse($data['Quotation_Valid_Until']) : null),
-                    'total_amount'  => $data['Total_Inc_VAT'] ?? $data['Total_Inc_VAT1'] ?? $data['Net_Amount'] ?? $data['Grand_Total'] ?? $data['Amount'] ?? $data['Total'] ?? 0,
-                    'sub_total'    => $data['Total_Price_After_Discount'] ?? $data['Sub_Total'] ?? $data['Total_Exc_VAT'] ?? $data['Total_Exc_VAT1'] ?? $data['Total'] ?? 0,
-                    'tax'          => $data['VAT_Amount'] ?? $data['VAT_Amount1'] ?? $data['Tax'] ?? $data['VAT_Amount'] ?? 0,
-                    'adjustment'   => $data['Adjustment'] ?? 0,
-                    'discount'     => $data['Total_Discount'] ?? $data['Discount'] ?? $data['Discount_Amount'] ?? 0,
-                    'client_id'    => $client ? $client->client_id : null,
-                    'raw_data'     => $data,
-                ]
+                $quoteData
             );
 
             // Sync Items: Handle both standard subforms and custom "Service" fields

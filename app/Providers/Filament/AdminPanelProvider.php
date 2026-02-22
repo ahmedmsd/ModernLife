@@ -121,28 +121,28 @@ class AdminPanelProvider extends PanelProvider
                             }),
 
                     ])
-                    // ->group(
-                    //     NavigationGroup::make()->label('ZOHO')->icon('heroicon-o-arrow-path')->collapsible()
-                    //         ->items([
-                    //             NavigationItem::make('مزامنة Zoho (Sync)')
-                    //                 ->url(fn () => \App\Filament\Pages\ZohoSync::getUrl())
-                    //                 ->visible(fn () => auth()->user()->hasRole(['admin', 'super-admin'])),
-                    //             NavigationItem::make('العملاء (Clients)')
-                    //                 ->url(fn () => \App\Filament\Resources\ClientResource::getUrl())
-                    //                 ->visible(fn () => \App\Filament\Resources\ClientResource::canViewAny()),
-                    //             NavigationItem::make('عروض الأسعار التجارية (Commercial)')
-                    //                 ->url(fn () => \App\Filament\Resources\QuotationResource::getUrl())
-                    //                 ->isActiveWhen(fn () => request()->routeIs('filament.admin.resources.quotations.*'))
-                    //                 ->visible(fn () => \App\Filament\Resources\QuotationResource::canViewAny()),
-                    //             NavigationItem::make('عروض الأسعار السكنية (Residential)')
-                    //                 ->url(fn () => \App\Filament\Resources\ResidentialQuotationResource::getUrl())
-                    //                 ->isActiveWhen(fn () => request()->routeIs('filament.admin.resources.residential-quotations.*'))
-                    //                 ->visible(fn () => \App\Filament\Resources\ResidentialQuotationResource::canViewAny()),
-                    //             NavigationItem::make('أوامر البيع (Sales Orders)')
-                    //                 ->url(fn () => \App\Filament\Resources\SalesOrderResource::getUrl())
-                    //                 ->visible(fn () => \App\Filament\Resources\SalesOrderResource::canViewAny()),
-                    //         ])
-                    // )
+                    ->group(
+                        NavigationGroup::make()->label('ZOHO')->icon('heroicon-o-arrow-path')->collapsible()
+                            ->items([
+                                NavigationItem::make('مزامنة Zoho (Sync)')
+                                    ->url(fn () => \App\Filament\Pages\ZohoSync::getUrl())
+                                    ->visible(fn () => auth()->user()->hasRole(['admin', 'super-admin'])),
+                                NavigationItem::make('العملاء (Clients)')
+                                    ->url(fn () => \App\Filament\Resources\ClientResource::getUrl())
+                                    ->visible(fn () => \App\Filament\Resources\ClientResource::canViewAny()),
+                                NavigationItem::make('عروض الأسعار التجارية (Commercial)')
+                                    ->url(fn () => \App\Filament\Resources\QuotationResource::getUrl())
+                                    ->isActiveWhen(fn () => request()->routeIs('filament.admin.resources.quotations.*'))
+                                    ->visible(fn () => \App\Filament\Resources\QuotationResource::canViewAny()),
+                                NavigationItem::make('عروض الأسعار السكنية (Residential)')
+                                    ->url(fn () => \App\Filament\Resources\ResidentialQuotationResource::getUrl())
+                                    ->isActiveWhen(fn () => request()->routeIs('filament.admin.resources.residential-quotations.*'))
+                                    ->visible(fn () => \App\Filament\Resources\ResidentialQuotationResource::canViewAny()),
+                                NavigationItem::make('أوامر البيع (Sales Orders)')
+                                    ->url(fn () => \App\Filament\Resources\SalesOrderResource::getUrl())
+                                    ->visible(fn () => \App\Filament\Resources\SalesOrderResource::canViewAny()),
+                            ])
+                    )
                     ->group(
                         NavigationGroup::make()->label('الطلبات')->icon('heroicon-o-rectangle-group')->collapsible()->collapsed()
                             ->items([

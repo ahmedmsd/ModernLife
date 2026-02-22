@@ -12,10 +12,10 @@ use Illuminate\Support\Facades\Log;
 class ZohoSync extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-arrow-path';
-    protected static ?string $navigationGroup = 'Zoho CRM';
+    protected static ?string $navigationGroup = 'ZOHO';
     protected static ?int $navigationSort = 0;
     protected static ?string $navigationLabel = 'مزامنة Zoho (Sync)';
-    protected static ?string $title = 'مزامنة بيانات Zoho CRM';
+    protected static ?string $title = 'مزامنة بيانات Zoho';
 
     protected static string $view = 'filament.pages.zoho-sync';
 
@@ -51,16 +51,17 @@ class ZohoSync extends Page
                 ->action(fn () => $this->runSync('accounts')),
 
             Action::make('sync_quotes')
-                ->label('عروض الأسعار')
-                ->icon('heroicon-o-document-text')
-                ->color('gray')
-                ->action(fn () => $this->runSync('quotes')),
+                ->label('عروض الأسعار (Creator)')
+                ->icon('heroicon-o-sparkles')
+                ->color('success')
+                ->action(fn () => $this->runSync('creator')),
 
             Action::make('sync_orders')
-                ->label('أوامر البيع')
+                ->label('أوامر البيع (Projects)')
                 ->icon('heroicon-o-shopping-bag')
                 ->color('gray')
                 ->action(fn () => $this->runSync('sales_orders')),
+
         ];
     }
 
@@ -68,7 +69,11 @@ class ZohoSync extends Page
     {
         try {
             if ($module === 'all') {
+                Log::info("ZohoSync Page: Starting full sync (CRM + Creator)");
                 Artisan::call('zoho:sync');
+                Artisan::call('zoho:sync-creator');
+            } elseif ($module === 'creator' || $module === 'quotes') {
+                Artisan::call('zoho:sync-creator');
             } else {
                 Artisan::call('zoho:sync', ['module' => $module]);
             }

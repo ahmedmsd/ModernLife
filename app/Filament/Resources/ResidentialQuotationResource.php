@@ -20,8 +20,8 @@ class ResidentialQuotationResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-home';
     protected static ?string $navigationGroup = 'ZOHO';
     protected static ?int $navigationSort = 3;
-    protected static ?string $label = 'عرض سعر سكني (Residential)';
-    protected static ?string $pluralLabel = 'عروض السعر السكني (Residential)';
+    protected static ?string $label = 'عرض سكني (Residential)';
+    protected static ?string $pluralLabel = 'عروض سكنية (Residential)';
 
     public static function form(Forms\Form $form): Forms\Form
     {
@@ -177,16 +177,20 @@ class ResidentialQuotationResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\Action::make('print_quotation')
-                    ->label('طباعة العرض (Quotation)')
+                Tables\Actions\Action::make('print_zoho_quote')
+                    ->label('استعراض التسعيرة (Zoho)')
                     ->icon('heroicon-o-printer')
-                    ->url(fn (Quotation $record): string => route('quotations.print', ['quotation' => $record, 'type' => 'quotation']))
-                    ->openUrlInNewTab(),
-                Tables\Actions\Action::make('print_contract')
-                    ->label('طباعة العقد (Contract)')
+                    ->color('success')
+                    ->url(fn (Quotation $record) => $record->quotation_pdf_url)
+                    ->openUrlInNewTab()
+                    ->visible(fn (Quotation $record) => !empty($record->quotation_pdf_url)),
+                Tables\Actions\Action::make('print_zoho_contract')
+                    ->label('استعراض العقد (Zoho)')
                     ->icon('heroicon-o-document-text')
-                    ->url(fn (Quotation $record): string => route('quotations.print', ['quotation' => $record, 'type' => 'contract']))
-                    ->openUrlInNewTab(),
+                    ->color('info')
+                    ->url(fn (Quotation $record) => $record->contract_pdf_url)
+                    ->openUrlInNewTab()
+                    ->visible(fn (Quotation $record) => !empty($record->contract_pdf_url)),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -198,11 +202,8 @@ class ResidentialQuotationResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->where(function ($query) {
-                $query->where('contract_type', 'Residential')
-                      ->orWhere('zoho_module', 'Residential_Quotations')
-                      ->orWhere('zoho_module', 'Residential_Packages');
-            });
+            ->where('zoho_module', 'ZohoCreator_ModernLife')
+            ->where('contract_type', 'Residential');
     }
 
     public static function getRelations(): array

@@ -21,7 +21,10 @@ class Quotation extends Model
         'discount',
         'client_id',
         'zoho_module',
+        'contract_type',
         'raw_data',
+        'quotation_pdf_url',
+        'contract_pdf_url',
     ];
 
     protected $casts = [
