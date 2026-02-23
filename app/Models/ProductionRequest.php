@@ -22,6 +22,7 @@ class ProductionRequest extends Model
         'created_by',
         'submitted_at',
         'request_type',
+        'quotation_id',
         'current_phase',
         'phase_status',
         'current_owner_role',
@@ -53,6 +54,11 @@ class ProductionRequest extends Model
     public function showroom(): BelongsTo
     {
         return $this->belongsTo(Showroom::class, 'showroom_id', 'id');
+    }
+
+    public function quotation(): BelongsTo
+    {
+        return $this->belongsTo(Quotation::class);
     }
 
     public function project(): HasOne

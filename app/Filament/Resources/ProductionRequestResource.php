@@ -119,12 +119,16 @@ class ProductionRequestResource extends Resource
                 ->label('العميل')
                 ->options(\App\Models\Client::pluck('client_name', 'client_id'))
                 ->searchable()
+                ->default(fn () => request('client_id'))
                 ->required(),
 
-            // اسم المشروع
             TextInput::make('project_name')
                 ->label('اسم المشروع')
+                ->default(fn () => request('project_name'))
                 ->required(),
+
+            Forms\Components\Hidden::make('quotation_id')
+                ->default(fn () => request('quotation_id')),
 
             // نوع الطلب
             Select::make('request_type')
@@ -145,6 +149,13 @@ class ProductionRequestResource extends Resource
                 ->default(fn () => request('request_type', 'direct'))
                 ->required()
                 ->live(),
+
+            Forms\Components\Select::make('quotation_id')
+                ->label('العرض المرتبط')
+                ->relationship('quotation', 'quote_number')
+                ->placeholder('غير مرتبط بعرض سعر')
+                ->disabled()
+                ->hidden(fn ($state) => empty($state) && empty(request('quotation_id'))),
 
             Select::make('showroom_id')
                 ->label('المعرض')

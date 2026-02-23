@@ -86,4 +86,68 @@ class ZohoCreatorService
 
         return null;
     }
+
+    public function getRecordPdf(string $reportLinkName, string $id): ?string
+    {
+        $token = $this->authService->getAccessToken();
+
+        if (!$token) {
+            Log::error("ZohoCreatorService: No valid access token available for PDF fetch.");
+            return null;
+        }
+
+        // Try standard V2 PDF export format with criteria
+        // PDF exports often require the app domain instead of the API domain
+        $portalBase = config('zoho.creator_portal_base', 'https://creatorapp.zoho.com');
+        $url = "{$portalBase}/api/v2/{$this->ownerName}/{$this->appLinkName}/report/{$reportLinkName}/pdf";
+        $params = ['criteria' => "(ID == {$id})"];
+
+        Log::info("ZohoCreatorService: Fetching PDF for record {$id} in report {$reportLinkName}. URL: {$url}");
+
+        $response = Http::withoutVerifying()
+            ->withToken($token)
+            ->get($url, $params);
+
+        if ($response->failed()) {
+            Log::error("ZohoCreatorService: Failed to fetch PDF via standard V2 URL.", [
+                'status' => $response->status(),
+                'body'   => $response->body(),
+                'url'    => $url,
+                'params' => $params
+            ]);
+            
+            // Fallback 1: Try path-based ID if criteria fails
+            $fallbackUrl = "{$this->apiBase}/{$this->ownerName}/{$this->appLinkName}/report/{$reportLinkName}/{$id}/pdf";
+            Log::info("ZohoCreatorService: Retrying with path-based ID: {$fallbackUrl}");
+            
+            $response = Http::withoutVerifying()
+                ->withToken($token)
+                ->get($fallbackUrl);
+        }
+
+        if ($response->successful()) {
+            return $response->body();
+        }
+
+        return null;
+    }
+
+    /**
+     * Highly flexible PDF fetch for debugging
+     */
+    public function getRecordPdfGeneric(string $customPath, array $params = []): ?string
+    {
+        $token = $this->authService->getAccessToken();
+        if (!$token) return null;
+
+        $url = "{$this->apiBase}/{$this->ownerName}/{$this->appLinkName}/{$customPath}";
+        
+        Log::info("ZohoCreatorService: Generic PDF Fetch: {$url}", ['params' => $params]);
+
+        $response = Http::withoutVerifying()
+            ->withToken($token)
+            ->get($url, $params);
+
+        return $response->successful() ? $response->body() : null;
+    }
 }

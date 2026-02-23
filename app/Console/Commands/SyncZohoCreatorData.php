@@ -48,32 +48,40 @@ class SyncZohoCreatorData extends Command
 
         $this->info("Syncing Quotations from Zoho Creator...");
         
-        $report = 'Modern_Life_Quotations';
-        $from = 0;
-        $limit = 200;
+        $reports = [
+            config('zoho.creator_quotes_report', 'Modern_Life_Quotations'),
+            config('zoho.creator_change_orders_report', 'Modern_Life_Change_Orders'),
+        ];
+
         $totalSynced = 0;
 
-        do {
-            $result = $this->creatorService->getRecords($report, $from, $limit);
+        foreach ($reports as $reportName) {
+            $this->info("Fetching from report: {$reportName}");
+            $from = 0;
+            $limit = 200;
 
-            if ($result === null) {
-                $this->error("  API Error: Failed to fetch records from Creator. Check laravel.log.");
-                break;
-            }
+            do {
+                $result = $this->creatorService->getRecords($reportName, $from, $limit);
 
-            $records = $result['data'] ?? [];
-            $count = count($records);
-
-            if ($count > 0) {
-                foreach ($records as $record) {
-                    $this->processRecord($record);
-                    $totalSynced++;
+                if ($result === null) {
+                    $this->error("  API Error: Failed to fetch records from report {$reportName}.");
+                    break;
                 }
-                $this->line("  Offset {$from}: Synced {$count} records...");
-            }
 
-            $from += $count;
-        } while ($count >= $limit);
+                $records = $result['data'] ?? [];
+                $count = count($records);
+
+                if ($count > 0) {
+                    foreach ($records as $record) {
+                        $this->processRecord($record);
+                        $totalSynced++;
+                    }
+                    $this->line("  Offset {$from}: Synced {$count} records...");
+                }
+
+                $from += $count;
+            } while ($count >= $limit);
+        }
 
         $this->info("Sync complete. Total records: {$totalSynced}");
 
@@ -93,27 +101,6 @@ class SyncZohoCreatorData extends Command
                 $client = Client::where('client_name', trim($contactName))->first();
             }
 
-            // PDF URLs Logic
-            $quotesHash = config('zoho.creator_quotes_hash');
-            $contractsHash = config('zoho.creator_contracts_hash');
-            $owner = config('zoho.creator_owner_name');
-            $appName = config('zoho.creator_app_link_name');
-
-            if ($quotesHash) {
-                // Public/Published URL format
-                $quoteUrl = "https://creatorapp.zoho.com/publish/{$owner}/{$appName}/record-print/Modern_Life_Quotations/{$creatorId}/{$quotesHash}";
-            } else {
-                // Standard Portal URL (Requires login)
-                $quoteUrl = "https://crmsystem.zohocreatorportal.com/{$owner}/{$appName}/record-print/Modern_Life_Quotations/{$creatorId}";
-            }
-
-            if ($contractsHash) {
-                // Public/Published URL format
-                $contractUrl = "https://creatorapp.zoho.com/publish/{$owner}/{$appName}/record-print/Modern_Life_Contracts/{$creatorId}/{$contractsHash}";
-            } else {
-                // Standard Portal URL (Requires login)
-                $contractUrl = "https://crmsystem.zohocreatorportal.com/{$owner}/{$appName}/record-print/Modern_Life_Contracts/{$creatorId}";
-            }
 
             $quoteData = [
                 'subject'       => ($data['Contract_Type'] ?? 'Quotation') . ' - ' . $quoteNumber,
@@ -123,9 +110,11 @@ class SyncZohoCreatorData extends Command
                 'contract_type' => $data['Contract_Type'] ?? null,
                 'total_amount'  => $data['Total_inc_VAT'] ?? 0,
                 'client_id'    => $client ? $client->client_id : null,
+                'customer_name' => $contactName,
+                'sales_person' => $data['Owner']['name'] ?? null,
                 'raw_data'     => $data,
-                'quotation_pdf_url' => $quoteUrl,
-                'contract_pdf_url' => $contractUrl,
+                'quotation_pdf_url' => null, // Will be set below
+                'contract_pdf_url' => null, // Will be set below
             ];
 
             // Date parsing (Format: 21-Feb-2026)
@@ -133,14 +122,55 @@ class SyncZohoCreatorData extends Command
                 try {
                     $quoteData['created_at'] = Carbon::createFromFormat('d-M-Y', $data['Quotation_date']);
                 } catch (\Exception $e) {
-                    Log::warning("Failed to parse date: " . $data['Quotation_date']);
+                    Log::warning("SyncZohoCreatorData: Failed to parse Quotation_date: " . $data['Quotation_date']);
                 }
             }
 
-            Quotation::updateOrCreate(
+            if (!empty($data['Quotation_Valid_Until'])) {
+                try {
+                    $quoteData['valid_till'] = Carbon::createFromFormat('d-M-Y', $data['Quotation_Valid_Until']);
+                } catch (\Exception $e) {
+                    Log::warning("SyncZohoCreatorData: Failed to parse valid_till: " . $data['Quotation_Valid_Until']);
+                }
+            }
+
+            $quotation = Quotation::updateOrCreate(
                 ['zoho_quote_id' => $creatorId],
                 $quoteData
             );
+
+            // PDF URLs Logic
+            $quotesHash = config('zoho.creator_quotes_hash');
+            $contractsHash = config('zoho.creator_contracts_hash');
+            $owner = config('zoho.creator_owner_name');
+            $appName = config('zoho.creator_app_link_name');
+
+            // If Hashes are available, generate public "Published" URLs.
+            // These bypass Zoho login entirely.
+            if ($quotesHash && $contractsHash) {
+                $quoteReport = config('zoho.creator_quotes_report', 'Modern_Life_Quotations');
+                $contractReport = config('zoho.creator_contracts_report', 'Modern_Life_Contracts');
+                $changeOrderReport = config('zoho.creator_change_orders_report', 'Modern_Life_Change_Orders');
+                $portalBase = config('zoho.creator_portal_base', 'https://creatorapp.zoho.com');
+                
+                $quoteUrl = "{$portalBase}/publish/{$owner}/{$appName}/record-print/{$quoteReport}/{$creatorId}/{$quotesHash}";
+                
+                // If it's Additional Work, use Change Orders report for the contract URL
+                $cReport = (str_contains($data['Contract_Type'] ?? '', 'Additional') || str_contains($data['Contract_Type'] ?? '', 'إضافية')) 
+                    ? $changeOrderReport 
+                    : $contractReport;
+
+                $contractUrl = "{$portalBase}/publish/{$owner}/{$appName}/record-print/{$cReport}/{$creatorId}/{$contractsHash}";
+            } else {
+                // Fallback to internal proxy routes (Requires Zoho API access)
+                $quoteUrl = route('quotations.print', ['quotation' => $quotation->id, 'type' => 'quotation']);
+                $contractUrl = route('quotations.print', ['quotation' => $quotation->id, 'type' => 'contract']);
+            }
+
+            $quotation->update([
+                'quotation_pdf_url' => $quoteUrl,
+                'contract_pdf_url'  => $contractUrl,
+            ]);
         });
     }
 }

@@ -16,6 +16,11 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// Redirect default login to Filament login
+Route::get('/login', function () {
+    return redirect()->route('filament.admin.auth.login');
+})->name('login');
+
 
 
 // Secure file access routes - require authentication and authorization

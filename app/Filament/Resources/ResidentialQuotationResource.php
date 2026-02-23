@@ -20,8 +20,8 @@ class ResidentialQuotationResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-home';
     protected static ?string $navigationGroup = 'ZOHO';
     protected static ?int $navigationSort = 3;
-    protected static ?string $label = 'عرض سكني (Residential)';
-    protected static ?string $pluralLabel = 'عروض سكنية (Residential)';
+    protected static ?string $label = 'عرض فردي (Residential)';
+    protected static ?string $pluralLabel = 'عروض فردية (Residential)';
 
     public static function form(Forms\Form $form): Forms\Form
     {
@@ -32,8 +32,11 @@ class ResidentialQuotationResource extends Resource
                         Forms\Components\TextInput::make('quote_number')
                             ->label('رقم العرض')
                             ->disabled(),
-                        Forms\Components\TextInput::make('subject')
-                            ->label('الموضوع')
+                        Forms\Components\TextInput::make('customer_name')
+                            ->label('اسم العميل (Zoho)')
+                            ->disabled(),
+                        Forms\Components\TextInput::make('contract_type')
+                            ->label('نوع العقد (Contract Type)')
                             ->disabled(),
                         Forms\Components\Select::make('client_id')
                             ->label('العميل')
@@ -58,10 +61,12 @@ class ResidentialQuotationResource extends Resource
                         Infolists\Components\TextEntry::make('quote_number')
                             ->label('رقم العرض')
                             ->weight(FontWeight::Bold),
-                        Infolists\Components\TextEntry::make('subject')
-                            ->label('الموضوع'),
-                        Infolists\Components\TextEntry::make('client.client_name')
-                            ->label('العميل'),
+                        Infolists\Components\TextEntry::make('customer_name')
+                            ->label('اسم العميل (Zoho)'),
+                        Infolists\Components\TextEntry::make('contract_type')
+                            ->label('نوع العقد (Contract Type)')
+                            ->badge()
+                            ->color('warning'),
                         Infolists\Components\TextEntry::make('quote_stage')
                             ->label('المرحلة')
                             ->badge()
@@ -137,21 +142,18 @@ class ResidentialQuotationResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('quote_number')
-                    ->label('رقم العرض')
-                    ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('subject')
-                    ->label('الموضوع')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('client.client_name')
-                    ->label('العميل')
-                    ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('total_amount')
-                    ->label('المبلغ الإجمالي')
-                    ->money('SAR'),
+                    ->label('Quotation / Client')
+                    ->description(fn (Quotation $record): string => $record->customer_name ?? '—')
+                    ->searchable(['quote_number', 'customer_name'])
+                    ->sortable()
+                    ->weight(FontWeight::Bold),
+                Tables\Columns\TextColumn::make('contract_date_combined')
+                    ->label('Contract / Type / Date')
+                    ->getStateUsing(fn (Quotation $record) => ($record->contract_type === 'New Contract' ? 'عقد جديد' : 'أعمال إضافية') . ' (' . $record->contract_type . ')')
+                    ->description(fn (Quotation $record): string => $record->created_at ? $record->created_at->format('d-M-Y') : '—')
+                    ->wrap(),
                 Tables\Columns\TextColumn::make('quote_stage')
-                    ->label('المرحلة')
+                    ->label('Status / Sales')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'Draft' => 'gray',
@@ -161,15 +163,12 @@ class ResidentialQuotationResource extends Resource
                         'Confirmed', 'Closed Won' => 'success',
                         'Closed Lost' => 'danger',
                         default => 'primary',
-                    }),
-                 Tables\Columns\TextColumn::make('zoho_module')
-                    ->label('النوع (Type)')
-                    ->badge()
-                    ->color('info')
+                    })
+                    ->description(fn (Quotation $record): string => $record->sales_person ?? '—'),
+                Tables\Columns\TextColumn::make('total_amount')
+                    ->label('Total (inc VAT)')
+                    ->money('SAR')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('valid_till')
-                    ->label('صالح حتى')
-                    ->date(),
             ])
             ->filters([
                 //
@@ -178,19 +177,31 @@ class ResidentialQuotationResource extends Resource
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\Action::make('print_zoho_quote')
-                    ->label('استعراض التسعيرة (Zoho)')
-                    ->icon('heroicon-o-printer')
-                    ->color('success')
+                    ->label('Quotation')
+                    ->button()
+                    ->color('gray')
                     ->url(fn (Quotation $record) => $record->quotation_pdf_url)
                     ->openUrlInNewTab()
                     ->visible(fn (Quotation $record) => !empty($record->quotation_pdf_url)),
                 Tables\Actions\Action::make('print_zoho_contract')
-                    ->label('استعراض العقد (Zoho)')
-                    ->icon('heroicon-o-document-text')
-                    ->color('info')
+                    ->label('Contract')
+                    ->button()
+                    ->color('gray')
                     ->url(fn (Quotation $record) => $record->contract_pdf_url)
                     ->openUrlInNewTab()
                     ->visible(fn (Quotation $record) => !empty($record->contract_pdf_url)),
+                Tables\Actions\Action::make('create_production_request')
+                    ->label('إنشاء طلب تصنيع')
+                    ->icon('heroicon-o-plus-circle')
+                    ->color('primary')
+                    ->action(function (Quotation $record) {
+                        return redirect()->route('filament.admin.resources.production-requests.create', [
+                            'quotation_id' => $record->id,
+                            'client_id' => $record->client_id,
+                            'project_name' => str_replace(['Commercial - ', 'Residential - '], '', $record->quote_number . ' - ' . $record->customer_name),
+                        ]);
+                    })
+                    ->visible(fn (Quotation $record) => $record->productionRequest === null),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

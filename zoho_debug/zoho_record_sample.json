@@ -1,0 +1,60 @@
+{
+    "code": 3000,
+    "data": {
+        "Contract_Type": "Residential",
+        "Cladding_Price": "42504.00",
+        "Discount": "0",
+        "Total_Exc_Vat": "42504.00",
+        "Quotation_Stage": "Draft",
+        "Image": "https:\/\/api.qrserver.com\/v1\/create-qr-code\/?size=50x50&data=MF+-6851%0ASukainah++AL+SAHWAN%0ASR+48%2C879.60",
+        "Admin_Discount_Amount": "0.00",
+        "TV_Unit_Price": "0.00",
+        "Vat_Percentage": "15",
+        "Extra_Items_Price": "0.00",
+        "ID": "3801005000011319065",
+        "Discount_Amount": "0.00",
+        "Vat_Amount": "6375.60",
+        "Quotation_No": "MF -6851",
+        "Wood_Work_Price": "42504.00",
+        "Total_inc_VAT": "48879.60",
+        "Closet": [],
+        "Offices_Price": "0.00",
+        "TV_Units": [],
+        "Cladding": [
+            {
+                "display_value": "1",
+                "ID": "3801005000011319053"
+            }
+        ],
+        "Auto_Number": "6879",
+        "Contacts1": {
+            "display_value": " \u062d\u0633\u064a\u0646  \u0627\u0644\u062f\u0628\u064a\u0633\u064a ",
+            "ID": "3801005000011319037"
+        },
+        "Areas_to_be_added": [
+            "General Items\/\u0628\u0646\u0648\u062f \u0639\u0627\u0645\u0629 \u0648\u062e\u0632\u0627\u0626\u0646"
+        ],
+        "Closet_Price": "0.00",
+        "Quotation_Valid_Until": "03-Mar-2026",
+        "Price_After_Discount": "42504.00",
+        "Admin_Discount": "0.00",
+        "Quotation_date": "21-Feb-2026",
+        "Extra_Items": [],
+        "Vanities": [],
+        "Hidden_RTF": "<table style='page-break-inside: avoid; direction:rtl;width:100%;text-align:center;border-collapse:collapse;'><thead><tr style='background-color: rgb(68, 68, 68); font-weight:bold; color:white;'height='40'><td colspan='7' style='font-weight: bold; direction:ltr;'>General Items\/\u0628\u0646\u0648\u062f \u0639\u0627\u0645\u0629<\/td><\/tr><tr style='background-color:#EDEDED;' height='40'><td>.No<\/td><td>\u0627\u0633\u0645 \u0627\u0644\u0628\u0646\u062f<\/td><td>\u0627\u0644\u0643\u0645\u064a\u0629<\/td><td>\u0627\u0644\u0639\u062f\u062f\/\u0627\u0644\u0623\u0645\u062a\u0627\u0631<\/td><td>\u0627\u0644\u0645\u062c\u0645\u0648\u0639<\/td><td>\u0645\u0644\u0627\u062d\u0638\u0627\u062a<\/td><\/tr><\/thead><tr height='30'  style='border-bottom: 1px solid #EDEDED'><td>1<\/td><td style='direction: ltr;'>\u062e\u0632\u0627\u0646\u0629 \u0645\u0639 \u0638\u0647\u0631 \u0648\u0628\u0627\u0628 \u0645\u0641\u0635\u0644\u064a<\/td><td>1<\/td><td>33.60<\/td><td>SR 42,504.00<\/td><td>-<\/td><\/tr><tr height='30' style='border-bottom: 1px solid #EDEDED'><td style='font-weight: bold;'>\u0645\u0644\u0627\u062d\u0638\u0627\u062a<\/td><td colspan='6' style=direction:rtl;>\u0645\u0633\u062a\u062d\u0642 \u0643\u0627\u0634 \u0628\u0627\u0643 40% \u0645\u0646 \u0642\u064a\u0645\u0629 \u0627\u0644\u0639\u0642\u062f \u0628\u0642\u064a\u0645\u0629 19,551.84 \u0631\u064a\u0627\u0644 \u0634\u0627\u0645\u0644 \u0627\u0644\u0636\u0631\u064a\u0628\u0629 <\/td><\/tr><tr height='30' style='border-bottom: 1px solid #EDEDED'><td style='font-weight: bold;'>\u0627\u0644\u0645\u062c\u0645\u0648\u0639<\/td><td colspan='6' style=direction:rtl;>SR 42,504.00<\/td><\/tr><\/table><br>",
+        "Vanity_Price": "0.00",
+        "Payments_Detail": [
+            {
+                "display_value": "\u0627\u0644\u062f\u0641\u0639\u0629 \u0627\u0644\u0623\u0648\u0644\u0649",
+                "ID": "3801005000011321018"
+            },
+            {
+                "display_value": "\u0627\u0644\u062f\u0641\u0639\u0629 \u0627\u0644\u062b\u0627\u0646\u064a\u0629",
+                "ID": "3801005000011321020"
+            }
+        ],
+        "Offices": [],
+        "Location": "",
+        "Kitchen_Price": "0.00"
+    }
+}

@@ -35,8 +35,11 @@ class QuotationResource extends Resource
                         Forms\Components\TextInput::make('quote_number')
                             ->label('رقم العرض')
                             ->disabled(),
-                        Forms\Components\TextInput::make('subject')
-                            ->label('الموضوع')
+                        Forms\Components\TextInput::make('customer_name')
+                            ->label('اسم العميل (Zoho)')
+                            ->disabled(),
+                        Forms\Components\TextInput::make('contract_type')
+                            ->label('نوع العقد (Contract Type)')
                             ->disabled(),
                         Forms\Components\Select::make('client_id')
                             ->label('العميل')
@@ -61,10 +64,12 @@ class QuotationResource extends Resource
                         Infolists\Components\TextEntry::make('quote_number')
                             ->label('رقم العرض')
                             ->weight(FontWeight::Bold),
-                        Infolists\Components\TextEntry::make('subject')
-                            ->label('الموضوع'),
-                        Infolists\Components\TextEntry::make('client.client_name')
-                            ->label('العميل'),
+                        Infolists\Components\TextEntry::make('customer_name')
+                            ->label('اسم العميل (Zoho)'),
+                        Infolists\Components\TextEntry::make('contract_type')
+                            ->label('نوع العقد (Contract Type)')
+                            ->badge()
+                            ->color('warning'),
                         Infolists\Components\TextEntry::make('quote_stage')
                             ->label('المرحلة')
                             ->badge()
@@ -143,9 +148,19 @@ class QuotationResource extends Resource
                     ->label('رقم العرض')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('subject')
-                    ->label('الموضوع')
-                    ->searchable(),
+                Tables\Columns\TextColumn::make('customer_name')
+                    ->label('العميل')
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('contract_type')
+                    ->label('نوع العمل')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'New Contract' => 'success',
+                        'Additional Work' => 'warning',
+                        default => 'info',
+                    })
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('client.client_name')
                     ->label('العميل')
                     ->searchable()
@@ -194,6 +209,18 @@ class QuotationResource extends Resource
                     ->url(fn (Quotation $record) => $record->contract_pdf_url)
                     ->openUrlInNewTab()
                     ->visible(fn (Quotation $record) => !empty($record->contract_pdf_url)),
+                Tables\Actions\Action::make('create_production_request')
+                    ->label('إنشاء طلب تصنيع')
+                    ->icon('heroicon-o-plus-circle')
+                    ->color('primary')
+                    ->action(function (Quotation $record) {
+                        return redirect()->route('filament.admin.resources.production-requests.create', [
+                            'quotation_id' => $record->id,
+                            'client_id' => $record->client_id,
+                            'project_name' => str_replace(['Commercial - ', 'Residential - '], '', $record->quote_number . ' - ' . $record->customer_name),
+                        ]);
+                    })
+                    ->visible(fn (Quotation $record) => $record->productionRequest === null),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
