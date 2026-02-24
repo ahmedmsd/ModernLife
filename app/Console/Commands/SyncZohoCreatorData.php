@@ -73,7 +73,7 @@ class SyncZohoCreatorData extends Command
 
                 if ($count > 0) {
                     foreach ($records as $record) {
-                        $this->processRecord($record);
+                        $this->processRecord($record, $reportName);
                         $totalSynced++;
                     }
                     $this->line("  Offset {$from}: Synced {$count} records...");
@@ -88,11 +88,12 @@ class SyncZohoCreatorData extends Command
         return 0;
     }
 
-    protected function processRecord(array $data)
+    protected function processRecord(array $data, string $reportName = 'Modern_Life_Quotations')
     {
-        DB::transaction(function () use ($data) {
+        DB::transaction(function () use ($data, $reportName) {
             $creatorId = $data['ID'];
             $quoteNumber = $data['Quotation_No'] ?? 'N/A';
+            $data['source_report_name'] = $reportName;
             
             // Client Mapping (Fallback to name if no ID match)
             $contactName = $data['Contacts1']['display_value'] ?? null;

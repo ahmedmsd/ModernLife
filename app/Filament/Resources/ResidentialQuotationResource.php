@@ -149,12 +149,22 @@ class ResidentialQuotationResource extends Resource
                     ->weight(FontWeight::Bold),
                 Tables\Columns\TextColumn::make('contract_date_combined')
                     ->label('Contract / Type / Date')
-                    ->getStateUsing(fn (Quotation $record) => ($record->contract_type === 'New Contract' ? 'عقد جديد' : 'أعمال إضافية') . ' (' . $record->contract_type . ')')
-                    ->description(fn (Quotation $record): string => $record->created_at ? $record->created_at->format('d-M-Y') : '—')
+                    ->getStateUsing(fn (Quotation $record) => match($record->raw_data['source_report_name'] ?? null) {
+                        'Modern_Life_Quotations' => 'عقد جديد',
+                        'Modern_Life_Change_Orders' => 'أعمال إضافية',
+                        default => 'تسعيرة',
+                    })
+                    ->description(function (Quotation $record): string {
+                        $rawDate = $record->raw_data['Quotation_date'] ?? $record->raw_data['Date'] ?? clone $record->created_at;
+                        try {
+                            return \Carbon\Carbon::parse($rawDate)->format('d-M-Y');
+                        } catch (\Exception $e) {
+                            return (string) $rawDate;
+                        }
+                    })
                     ->wrap(),
                 Tables\Columns\TextColumn::make('quote_stage')
                     ->label('Status / Sales')
-                    ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'Draft' => 'gray',
                         'Negotiation' => 'warning',
@@ -164,7 +174,8 @@ class ResidentialQuotationResource extends Resource
                         'Closed Lost' => 'danger',
                         default => 'primary',
                     })
-                    ->description(fn (Quotation $record): string => $record->sales_person ?? '—'),
+                    ->description(fn (Quotation $record): string => $record->sales_person ?? '—')
+                    ->weight(FontWeight::Bold),
                 Tables\Columns\TextColumn::make('total_amount')
                     ->label('Total (inc VAT)')
                     ->money('SAR')
@@ -195,9 +206,20 @@ class ResidentialQuotationResource extends Resource
                     ->icon('heroicon-o-plus-circle')
                     ->color('primary')
                     ->action(function (Quotation $record) {
+                        $clientId = $record->client_id;
+                        
+                        if (!$clientId && $record->customer_name) {
+                            $client = \App\Models\Client::firstOrCreate(
+                                ['client_name' => trim($record->customer_name)],
+                                ['phone' => '0000000000', 'client_type' => 'individual']
+                            );
+                            $clientId = $client->client_id;
+                            $record->update(['client_id' => $clientId]);
+                        }
+
                         return redirect()->route('filament.admin.resources.production-requests.create', [
                             'quotation_id' => $record->id,
-                            'client_id' => $record->client_id,
+                            'client_id' => $clientId,
                             'project_name' => str_replace(['Commercial - ', 'Residential - '], '', $record->quote_number . ' - ' . $record->customer_name),
                         ]);
                     })

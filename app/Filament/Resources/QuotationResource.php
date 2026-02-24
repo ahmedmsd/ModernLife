@@ -145,32 +145,29 @@ class QuotationResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('quote_number')
-                    ->label('رقم العرض')
-                    ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('customer_name')
-                    ->label('العميل')
-                    ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('contract_type')
-                    ->label('نوع العمل')
-                    ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'New Contract' => 'success',
-                        'Additional Work' => 'warning',
-                        default => 'info',
+                    ->label('رقم العرض / العميل')
+                    ->description(fn (Quotation $record): string => $record->customer_name ?? '—')
+                    ->searchable(['quote_number', 'customer_name'])
+                    ->sortable()
+                    ->weight(FontWeight::Bold),
+                Tables\Columns\TextColumn::make('contract_date_combined')
+                    ->label('نوع العقد / التاريخ')
+                    ->getStateUsing(fn (Quotation $record) => match($record->raw_data['source_report_name'] ?? null) {
+                        'Modern_Life_Quotations' => 'عقد جديد',
+                        'Modern_Life_Change_Orders' => 'أعمال إضافية',
+                        default => 'تسعيرة',
                     })
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('client.client_name')
-                    ->label('العميل')
-                    ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('total_amount')
-                    ->label('المبلغ الإجمالي')
-                    ->money('SAR'),
+                    ->description(function (Quotation $record): string {
+                        $rawDate = $record->raw_data['Quotation_date'] ?? $record->raw_data['Date'] ?? clone $record->created_at;
+                        try {
+                            return \Carbon\Carbon::parse($rawDate)->format('d-M-Y');
+                        } catch (\Exception $e) {
+                            return (string) $rawDate;
+                        }
+                    })
+                    ->wrap(),
                 Tables\Columns\TextColumn::make('quote_stage')
-                    ->label('المرحلة')
-                    ->badge()
+                    ->label('الحالة / المبيعات')
                     ->color(fn (string $state): string => match ($state) {
                         'Draft' => 'gray',
                         'Negotiation' => 'warning',
@@ -179,15 +176,13 @@ class QuotationResource extends Resource
                         'Confirmed', 'Closed Won' => 'success',
                         'Closed Lost' => 'danger',
                         default => 'primary',
-                    }),
-                 Tables\Columns\TextColumn::make('zoho_module')
-                    ->label('النوع (Type)')
-                    ->badge()
-                    ->color('info')
+                    })
+                    ->description(fn (Quotation $record): string => $record->sales_person ?? '—')
+                    ->weight(FontWeight::Bold),
+                Tables\Columns\TextColumn::make('total_amount')
+                    ->label('الإجمالي (شامل VAT)')
+                    ->money('SAR')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('valid_till')
-                    ->label('صالح حتى')
-                    ->date(),
             ])
             ->filters([
                 //
@@ -214,9 +209,20 @@ class QuotationResource extends Resource
                     ->icon('heroicon-o-plus-circle')
                     ->color('primary')
                     ->action(function (Quotation $record) {
+                        $clientId = $record->client_id;
+                        
+                        if (!$clientId && $record->customer_name) {
+                            $client = \App\Models\Client::firstOrCreate(
+                                ['client_name' => trim($record->customer_name)],
+                                ['phone' => '0000000000', 'client_type' => 'individual']
+                            );
+                            $clientId = $client->client_id;
+                            $record->update(['client_id' => $clientId]);
+                        }
+
                         return redirect()->route('filament.admin.resources.production-requests.create', [
                             'quotation_id' => $record->id,
-                            'client_id' => $record->client_id,
+                            'client_id' => $clientId,
                             'project_name' => str_replace(['Commercial - ', 'Residential - '], '', $record->quote_number . ' - ' . $record->customer_name),
                         ]);
                     })
