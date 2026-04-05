@@ -263,7 +263,7 @@ class TaskPageHelper
         // Define valid statuses
         // We add 'materials_wait', 'materials_prep', 'materials_done' to allow supplementary requests
         $validStatuses = [
-            'waiting_production', 'rework', 'received',
+            'waiting_production', 'rework', 'received', 'in_progress',
             'materials_wait', 'materials_prep', 'materials_done'
         ];
 
