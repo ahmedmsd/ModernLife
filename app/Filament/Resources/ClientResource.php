@@ -37,8 +37,20 @@ class ClientResource extends Resource
             return $q->whereRaw('1=0');
         }
 
-        if (method_exists($user, 'hasAnyRole') && $user->hasAnyRole(['admin','super-admin','owner'])) {
+        if (method_exists($user, 'hasAnyRole') && $user->hasAnyRole(['admin','super-admin','owner', 'sales'])) {
             return $q;
+        }
+
+        if (method_exists($user, 'hasRole') && $user->hasRole('showroom_manager')) {
+            $cityIds = \App\Models\Showroom::where('manager_id', $user->id)->pluck('city_id')->toArray();
+            
+            return $q->where(function ($query) use ($user, $cityIds) {
+                // $query->where('clients.created_by', $user->id);
+                
+                if (!empty($cityIds)) {
+                    $query->orWhereIn('clients.city_id', $cityIds);
+                }
+            });
         }
 
         return $q->where('clients.created_by', $user->id);

@@ -251,16 +251,12 @@ class ProductionRequestResource extends Resource
                                     ->moveFiles()
                                     ->columnSpan(5),
 
-                                // يظهر فقط في الطلب المباشر
+                                // تظهر لجميع أنواع الطلبات والأدوار
                                 TextInput::make('estimated_cost')
                                     ->label('التكلفة التقديرية')
                                     ->numeric()
                                     ->minValue(0)
                                     ->prefix('SAR')
-                                    ->visible(fn (Get $get) => $get('../../request_type') === 'direct')
-                                    ->required(fn (Get $get) => $get('../../request_type') === 'direct')
-                                    ->dehydrated(fn (Get $get) => $get('../../request_type') === 'direct')
-                                    ->default(null)
                                     ->columnSpan(3),
                             ]),
                     ]),

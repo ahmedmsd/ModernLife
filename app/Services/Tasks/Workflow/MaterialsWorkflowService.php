@@ -97,6 +97,18 @@ class MaterialsWorkflowService
                 'note'        => $note ? trim($note) : null,
             ]);
 
+            $estimatedCost = $mr->estimated_cost > 0 ? $mr->estimated_cost : $task->estimated_cost;
+            if ($estimatedCost > 0 && $actualCost > ($estimatedCost * 1.5)) {
+                $managers = \App\Models\User::role(['super-admin', 'admin'])->get();
+                foreach ($managers as $manager) {
+                    \Filament\Notifications\Notification::make()
+                        ->danger()
+                        ->title('تنبيه: تجاوز التكلفة التقديرية')
+                        ->body("التكلفة الفعلية للمواد ({$actualCost}) في المهمة رقم #{$task->id} تخطت التكلفة التقديرية ($estimatedCost) بنسبة تزيد عن 50%.")
+                        ->sendToDatabase($manager);
+                }
+            }
+
         });
     }
 
