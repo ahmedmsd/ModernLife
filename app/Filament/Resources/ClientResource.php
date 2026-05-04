@@ -45,7 +45,7 @@ class ClientResource extends Resource
             $cityIds = \App\Models\Showroom::where('manager_id', $user->id)->pluck('city_id')->toArray();
             
             return $q->where(function ($query) use ($user, $cityIds) {
-                // $query->where('clients.created_by', $user->id);
+                $query->where('clients.created_by', $user->id);
                 
                 if (!empty($cityIds)) {
                     $query->orWhereIn('clients.city_id', $cityIds);

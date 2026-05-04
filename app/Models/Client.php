@@ -22,8 +22,8 @@ class Client extends Model
         'phone',
         'secondary_phone',
         'address',
-        'city',
-        'country',
+        'city_id',
+        'country_id',
         'is_active',
         'credit_limit',
         'payment_terms',
@@ -39,7 +39,12 @@ class Client extends Model
     }
     public function city()
     {
-        return $this->belongsTo(\App\Models\City::class);
+        return $this->belongsTo(\App\Models\City::class, 'city_id');
+    }
+
+    public function country()
+    {
+        return $this->belongsTo(\App\Models\Country::class, 'country_id');
     }
 
     public function legacyProjects(): HasMany
