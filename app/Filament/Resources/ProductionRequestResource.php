@@ -150,12 +150,6 @@ class ProductionRequestResource extends Resource
                 ->required()
                 ->live(),
 
-            Forms\Components\Select::make('quotation_id')
-                ->label('العرض المرتبط')
-                ->relationship('quotation', 'quote_number')
-                ->placeholder('غير مرتبط بعرض سعر')
-                ->disabled()
-                ->hidden(fn ($state) => empty($state) && empty(request('quotation_id'))),
 
             Select::make('showroom_id')
                 ->label('المعرض')
