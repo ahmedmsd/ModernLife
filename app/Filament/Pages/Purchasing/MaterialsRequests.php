@@ -78,22 +78,29 @@ class MaterialsRequests extends Page implements HasTable
                     ->color(fn (string $state) => match ($state) {
                         'requested' => 'warning',
                         'approved'  => 'success',
+                        'partially_fulfilled' => 'info',
                         default     => 'gray',
                     })
                     ->formatStateUsing(fn ($state) => match ($state) {
                         'requested' => 'قيد الطلب',
                         'approved'  => 'معتمد',
+                        'partially_fulfilled' => 'توريد جزئي',
                         default     => $state,
-                    }),
+                    })
+                    ->searchable(),
                 
                 // Department
                 TextColumn::make('department.dept_name')->label('القسم')->toggleable()->searchable(),
                 
-                // Client Only
+                // Client + Task ID
                 TextColumn::make('task.project.client.client_name')
                     ->label('العميل')
+                    ->description(fn (MaterialRequest $record) => "المهمة #" . ($record->task_id ?? '—'))
                     ->sortable()
-                    ->searchable()
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->where('task_id', 'like', "%{$search}%")
+                            ->orWhereHas('task.project.client', fn ($q) => $q->where('client_name', 'like', "%{$search}%"));
+                    })
                     ->wrap()
                     ->toggleable(),
 
@@ -111,26 +118,29 @@ class MaterialsRequests extends Page implements HasTable
                         : null
                     )
                     ->openUrlInNewTab()
-                    ->tooltip('تحميل ملف أمر الشراء إن وُجد'),
+                    ->tooltip('تحميل ملف أمر الشراء إن وُجد')
+                    ->searchable(),
 
                 // Dates with condensed line height
                 TextColumn::make('requested_at')
                     ->label('تاريخ الطلب')
                     ->formatStateUsing(fn ($state) => $state ? '<div class="flex flex-col gap-0 leading-tight"><span>' . \Carbon\Carbon::parse($state)->format('Y-m-d') . '</span><span class="text-xs text-gray-500">' . \Carbon\Carbon::parse($state)->format('H:i') . '</span></div>' : '—')
                     ->html()
-                    ->sortable(),
+                    ->sortable()
+                    ->searchable(),
 
                 TextColumn::make('expected_delivery_at')
                     ->label('تسليم متوقع')
                     ->formatStateUsing(fn ($state) => $state ? '<div class="flex flex-col gap-0 leading-tight"><span>' . \Carbon\Carbon::parse($state)->format('Y-m-d') . '</span><span class="text-xs text-gray-500">' . \Carbon\Carbon::parse($state)->format('H:i') . '</span></div>' : '—')
                     ->html()
-                    ->sortable(),
+                    ->sortable()
+                    ->searchable(),
 
                 // Cost
-                TextColumn::make('estimated_cost')->label('التكلفة')->money('sar', true)->sortable()->toggleable(),
+                TextColumn::make('estimated_cost')->label('التكلفة')->money('sar', true)->sortable()->toggleable()->searchable(),
                 
                 // Note (Wrapped)
-                TextColumn::make('note')->label('ملاحظة')->limit(50)->wrap()->toggleable(),
+                TextColumn::make('note')->label('ملاحظة')->limit(50)->wrap()->toggleable()->searchable(),
             ])
             ->actions([
                 Tables\Actions\Action::make('view')

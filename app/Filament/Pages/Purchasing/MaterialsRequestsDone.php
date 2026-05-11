@@ -74,15 +74,20 @@ class MaterialsRequestsDone extends Page implements HasTable
                 
                 TextColumn::make('status')->label('الحالة')->badge()
                     ->color(fn ($state) => $state === 'fulfilled' ? 'success' : 'gray')
-                    ->formatStateUsing(fn ($state) => $state === 'fulfilled' ? 'مُنفّذ' : $state),
+                    ->formatStateUsing(fn ($state) => $state === 'fulfilled' ? 'مُنفّذ' : $state)
+                    ->searchable(),
                 
                 TextColumn::make('department.dept_name')->label('القسم')->toggleable()->searchable(),
                 
-                // Client Only (Wrapped)
+                // Client + Task ID
                 TextColumn::make('task.project.client.client_name')
                     ->label('العميل')
+                    ->description(fn (MaterialRequest $record) => "المهمة #" . ($record->task_id ?? '—'))
                     ->sortable()
-                    ->searchable()
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->where('task_id', 'like', "%{$search}%")
+                            ->orWhereHas('task.project.client', fn ($q) => $q->where('client_name', 'like', "%{$search}%"));
+                    })
                     ->wrap()
                     ->toggleable(),
 
@@ -99,23 +104,25 @@ class MaterialsRequestsDone extends Page implements HasTable
                         : null
                     )
                     ->openUrlInNewTab()
-                    ->tooltip('تحميل ملف أمر الشراء إن وُجد'),
+                    ->tooltip('تحميل ملف أمر الشراء إن وُجد')
+                    ->searchable(),
 
                 // Provided By (Wrapped)
-                TextColumn::make('providedBy.name')->label('صرفها')->wrap()->toggleable(),
+                TextColumn::make('providedBy.name')->label('صرفها')->wrap()->toggleable()->searchable(),
                 
                 // Provided At (Condensed)
                 TextColumn::make('provided_at')
                     ->label('تاريخ الصرف')
                     ->formatStateUsing(fn ($state) => $state ? '<div class="flex flex-col gap-0 leading-tight"><span>' . \Carbon\Carbon::parse($state)->format('Y-m-d') . '</span><span class="text-xs text-gray-500">' . \Carbon\Carbon::parse($state)->format('H:i') . '</span></div>' : '—')
                     ->html()
-                    ->sortable(),
+                    ->sortable()
+                    ->searchable(),
 
-                TextColumn::make('actual_cost')->label('التكلفة')->money('sar', true)->sortable(),
+                TextColumn::make('actual_cost')->label('التكلفة')->money('sar', true)->sortable()->searchable(),
                 
-                TextColumn::make('invoice_no')->label('فاتورة #')->toggleable(),
+                TextColumn::make('invoice_no')->label('فاتورة #')->toggleable()->searchable(),
                 
-                TextColumn::make('invoice_date')->label('تاريخ الفاتورة')->date('Y-m-d')->toggleable(),
+                TextColumn::make('invoice_date')->label('تاريخ الفاتورة')->date('Y-m-d')->toggleable()->searchable(),
             ])
             ->actions([
                 Tables\Actions\Action::make('view')
