@@ -109,6 +109,22 @@ class MaterialsWorkflowService
                 }
             }
 
+            // Return ownership to department manager
+            $deptManagerId = $task->department?->manager_user_id
+                ?? $task->department?->head_user_id
+                ?? $task->assigned_to_employee?->user_id
+                ?? null;
+
+            if ($deptManagerId) {
+                $this->setOwner(
+                    $task,
+                    'department_manager',
+                    userId: $deptManagerId,
+                    touchSent: true,
+                    note: 'تم توفير الخامات — بانتظار استلام القسم وتأكيد الجاهزية لبدء التنفيذ'
+                );
+            }
+
         });
     }
 

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\TaskResource\Pages;
 
 use App\Filament\Resources\TaskResource;
+use App\Filament\Pages\Purchasing\ViewMaterialRequest;
 use App\Models\TaskLog;
 use App\Models\User;
 use App\Services\Tasks\TaskTimerService;
@@ -19,6 +20,8 @@ use Filament\Infolists\Infolist;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ViewEntry;
+use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\IconEntry;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
@@ -41,6 +44,7 @@ use App\Filament\Actions\Task\DepartmentManager\RejectToFactoryAction;
 use App\Filament\Actions\Task\Materials\RequestMaterialsAction;
 use App\Filament\Actions\Task\Materials\PurchasingReceiveAction;
 use App\Filament\Actions\Task\Materials\MaterialsProvidedAction;
+use App\Filament\Actions\Task\Materials\TakeMaterialsControlAction;
 use App\Filament\Actions\Task\Materials\MaterialsReceiptAction;
 use App\Filament\Actions\Task\Manufacturing\StartProductionAction;
 use App\Filament\Actions\Task\Manufacturing\FinishManufacturingAction;
@@ -123,6 +127,7 @@ class ViewTask extends ViewRecord
             PurchasingReceiveAction::make($record, $redirectCallback),
             MaterialsProvidedAction::make($record, $redirectCallback),
             MaterialsReceiptAction::make($record, $redirectCallback),
+            TakeMaterialsControlAction::make($record, $redirectCallback),
 
             // Manufacturing
             StartProductionAction::make($record),
@@ -359,6 +364,64 @@ class ViewTask extends ViewRecord
                         }),
 
                 ])->columns(1),
+
+            RepeatableEntry::make('materialRequests')
+                ->label('سلسلة طلبات الخامات المرتبطة بالمهمة')
+                ->schema([
+                    TextEntry::make('id')
+                        ->label('رقم الطلب')
+                        ->icon('heroicon-o-document-text')
+                        ->color('primary')
+                        ->url(fn ($record) => ViewMaterialRequest::getUrl(['record' => $record->id]))
+                        ->openUrlInNewTab(),
+                    
+                    TextEntry::make('status')
+                        ->label('الحالة')
+                        ->badge()
+                        ->color(fn (string $state): string => match ($state) {
+                            'requested' => 'warning',
+                            'approved' => 'info',
+                            'partially_fulfilled' => 'warning',
+                            'fulfilled' => 'success',
+                            'cancelled' => 'danger',
+                            default => 'gray',
+                        })
+                        ->formatStateUsing(fn (string $state): string => match ($state) {
+                            'requested' => 'بانتظار المشتريات',
+                            'approved' => 'معتمد - بانتظار التوريد',
+                            'partially_fulfilled' => 'استلام جزئي',
+                            'fulfilled' => 'تم التوريد بالكامل',
+                            'cancelled' => 'ملغى',
+                            default => $state,
+                        }),
+
+                    TextEntry::make('requested_at')
+                        ->label('تاريخ الطلب')
+                        ->dateTime('Y-m-d H:i'),
+
+                    TextEntry::make('expected_delivery_at')
+                        ->label('الموعد المتوقع')
+                        ->dateTime('Y-m-d')
+                        ->placeholder('—'),
+
+                    TextEntry::make('provided_at')
+                        ->label('تاريخ التوريد')
+                        ->dateTime('Y-m-d H:i')
+                        ->placeholder('—'),
+                    
+                    TextEntry::make('estimated_cost')
+                        ->label('التكلفة التقديرية')
+                        ->money('sar'),
+
+                    TextEntry::make('note')
+                        ->label('ملاحظات المشتريات/الطلب')
+                        ->columnSpanFull()
+                        ->limit(100),
+                ])
+                ->columns(3)
+                ->grid(1)
+                ->columnSpanFull()
+                ->visible(fn (ProductionTask $record) => $record->materialRequests()->exists()),
 
             Section::make('مدد مراحل التصنيع')->schema([
                 TextEntry::make('stage_durations_html')
@@ -786,36 +849,6 @@ class ViewTask extends ViewRecord
                 ->columnSpanFull()
                 ->visible(fn (ProductionTask $record) => $record->comments()->exists()),
 
-            Section::make('سلسلة طلبات الخامات')
-                ->columns(3)
-                ->schema([
-                    TextEntry::make('kind')
-                        ->label('نوع الطلب')
-                        ->state(fn(\App\Models\MaterialRequest $r) => $r->parent_id ? 'تكميلي' : 'أساسي')
-                        ->badge()
-                        ->color(fn($state) => $state === 'تكميلي' ? 'warning' : 'success'),
-
-                    TextEntry::make('parent_link')
-                        ->label('الطلب الأصلي')
-                        ->html()
-                        ->state(function (\App\Models\MaterialRequest $r) {
-                            if (! $r->parent) return '<span style="opacity:.6">—</span>';
-                            $url = route('filament.admin.pages.purchasing.materials-requests.view', ['record' => $r->parent->id]);
-                            return '<a href="'.e($url).'" target="_blank" style="color:#2563eb;text-decoration:underline;">طلب #'.$r->parent->id.' ▸</a>';
-                        }),
-
-                    TextEntry::make('children_links')
-                        ->label('طلبات تكميلية')
-                        ->html()
-                        ->state(function (\App\Models\MaterialRequest $r) {
-                            if ($r->children->isEmpty()) return '<span style="opacity:.6">—</span>';
-                            $links = $r->children->map(function ($c) {
-                                $url = route('filament.admin.pages.purchasing.materials-requests.view', ['record' => $c->id]);
-                                return '<a href="'.e($url).'" target="_blank" style="color:#16a34a;text-decoration:underline;">#'.$c->id.'</a>';
-                            })->implode(' , ');
-                            return $links;
-                        }),
-                ]),
 
             Section::make('المشتريات')->schema([
                 TextEntry::make('po_file_link')
