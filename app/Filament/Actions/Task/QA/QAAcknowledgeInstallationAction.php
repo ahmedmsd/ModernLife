@@ -31,7 +31,7 @@ class QAAcknowledgeInstallationAction
     protected static function handle(ProductionTask $record): void
     {
         $workflow = app(InstallationWorkflowService::class);
-        $workflow->qaAcknowledgeInstallation($record, $data['note'] ?? null);
+        $workflow->qaAcknowledgeInstallation($record, null);
 
         Notification::make()
             ->success()

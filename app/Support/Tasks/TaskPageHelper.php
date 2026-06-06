@@ -204,10 +204,14 @@ class TaskPageHelper
             ->whereIn('type', [
                 'assigned_to_dept',
                 'assigned_to_dept_manager',
+                'assigned_to_department_manager',
                 'sent_to_department',
                 'sent_back_to_manufacturing',
                 'qa_rejected_manufacturing', // Added
                 'assign_to_dept_manager', // Added
+                'assign_to_dept_manager_noop', // Added for cases where owner didn't change but was re-assigned
+                'created', // Fallback for when the task is first created and assigned
+                'ownership_changed',
             ])
             ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
             ->first();

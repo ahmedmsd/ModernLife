@@ -99,7 +99,8 @@ class AssignToDeptManagerAction
         $workflow->assignToDeptManager(
             $record,
             (int) $data['user_id'],
-            $data['due_date']
+            $data['due_date'],
+            null
         );
 
         Notification::make()

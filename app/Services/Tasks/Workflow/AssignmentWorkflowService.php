@@ -10,13 +10,11 @@ class AssignmentWorkflowService
 {
     use HasTaskWorkflowHelpers;
 
-    public function assignToDeptManager(ProductionTask $task, ?string $note = null, string $dueDate): void
+    public function assignToDeptManager(ProductionTask $task, int $userId, string $dueDate, ?string $note = null): void
     {
-        DB::transaction(function () use ($task, $dueDate , $note) {
-            $deptManagerId = $this->resolveDeptManagerUserId($task);
-
+        DB::transaction(function () use ($task, $userId, $dueDate , $note) {
             $task->forceFill([
-                'assigned_to_user_id' => $deptManagerId,
+                'assigned_to_user_id' => $userId,
                 'status'                  => 'pending',
                 'assigned_at'             => now(),
                 'due_date'                => $dueDate,
@@ -25,7 +23,7 @@ class AssignmentWorkflowService
             $changed = $this->setOwner(
                 task: $task,
                 role: 'department_manager',
-                userId: $deptManagerId,
+                userId: $userId,
                 touchSent: true,
                 note: 'إسناد المهمة لمدير القسم' . ($note ? ' - ' . $note : '')
             );
@@ -33,10 +31,12 @@ class AssignmentWorkflowService
             if ($changed) {
                 $this->log($task, 'assign_to_dept_manager', [
                     'note' => $note,
+                    'user_id' => $userId,
                 ]);
             } else {
                 $this->log($task, 'assign_to_dept_manager_noop', [
                     'note' => $note,
+                    'user_id' => $userId,
                 ]);
             }
         });

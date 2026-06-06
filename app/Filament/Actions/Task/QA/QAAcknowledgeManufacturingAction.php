@@ -31,7 +31,7 @@ class QAAcknowledgeManufacturingAction
     protected static function handle(ProductionTask $record): void
     {
         $workflow = app(ManufacturingWorkflowService::class);
-        $workflow->qaAcknowledgeManufacturing($record, $data['note'] ?? null);
+        $workflow->qaAcknowledgeManufacturing($record, null);
 
         Notification::make()
             ->success()
