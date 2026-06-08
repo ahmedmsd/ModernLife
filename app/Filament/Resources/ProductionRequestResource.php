@@ -41,16 +41,7 @@ class ProductionRequestResource extends Resource
     protected static bool $shouldRegisterNavigation = false;
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        $q = static::getPermissionScopedQuery();
-
-        // Apply route-based filtering for Active/Completed split only on list pages
-        if (request()->routeIs('filament.admin.resources.production-requests.completed')) {
-            $q->completed();
-        } elseif (request()->routeIs('filament.admin.resources.production-requests.index')) {
-            $q->active();
-        }
-
-        return $q;
+        return static::getPermissionScopedQuery();
     }
 
     /**

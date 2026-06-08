@@ -18,6 +18,11 @@ class ListProductionRequests extends ListRecords
         return parent::getEloquentQuery();
     }
 
+    public function table(\Filament\Tables\Table $table): \Filament\Tables\Table
+    {
+        return parent::table($table)->modifyQueryUsing(fn (Builder $query) => $query->active());
+    }
+
     public static function canAccess(array $parameters = []): bool
     {
         return auth()->user()?->hasAnyRole([

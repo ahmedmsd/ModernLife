@@ -12,6 +12,23 @@ class ProductionRequest extends Model
     use HasFactory;
     use SoftDeletes;
     use HasStatusScopes;
+
+    public function scopeCompleted(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    {
+        return $query->where(function ($q) {
+            $q->whereIn('phase_status', ['rejected', 'completed', 'cancelled'])
+              ->orWhere('current_phase', 'closed');
+        });
+    }
+
+    public function scopeActive(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    {
+        return $query->whereNotIn('phase_status', ['rejected', 'completed', 'cancelled'])
+                     ->where(function ($q) {
+                         $q->where('current_phase', '!=', 'closed')
+                           ->orWhereNull('current_phase');
+                     });
+    }
     protected $fillable = [
         'project_name',
         'client_id',
