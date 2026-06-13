@@ -677,7 +677,7 @@ class TaskPageHelper
 
     public function canStartInstallation(ProductionTask $task, ?Authenticatable $user): bool
     {
-        if (! $user || ! $this->userHasAnyRole($user, ['installation_manager'])) {
+        if (! $user || ! $this->userHasAnyRole($user, ['installation_manager', 'department_manager'])) {
             return false;
         }
 
@@ -715,7 +715,7 @@ class TaskPageHelper
 
     public function canFinishInstallationToQA(ProductionTask $task, ?Authenticatable $user): bool
     {
-        if (! $user || ! $this->userHasAnyRole($user, ['installation_manager'])) {
+        if (! $user || ! $this->userHasAnyRole($user, ['installation_manager', 'department_manager'])) {
             return false;
         }
 
