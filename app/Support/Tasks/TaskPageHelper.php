@@ -1134,4 +1134,60 @@ HTML;
     {
         return in_array($this->statusVal($task), ['approved', 'rejected', 'closed'], true);
     }
+
+    /* ========================================================================
+     |  View Task specific visibility helpers
+     |=========================================================================*/
+
+    public function canViewAgreementFile(?Authenticatable $user): bool
+    {
+        return $this->userHasAnyRole($user, [
+            'admin',
+            'super-admin',
+            'super_admin',
+            'factory_manager',
+            'purchasing_manager',
+        ]);
+    }
+
+    public function canViewAdditionalWorkFile(?Authenticatable $user): bool
+    {
+        return $this->userHasAnyRole($user, [
+            'admin',
+            'super-admin',
+            'super_admin',
+            'factory_manager',
+            'purchasing_manager',
+            'installation_manager',
+            'department_manager',
+            'sales',
+            'showroom_manager',
+        ]);
+    }
+
+    public function canViewClientReceipt(?Authenticatable $user): bool
+    {
+        return $this->userHasAnyRole($user, [
+            'admin',
+            'super-admin',
+            'super_admin',
+            'factory_manager',
+            'purchasing_manager',
+            'installation_manager',
+            'quality_manager',
+            'sales',
+            'showroom_manager',
+        ]);
+    }
+
+    public function canViewPurchasingSection(?Authenticatable $user): bool
+    {
+        return $this->userHasAnyRole($user, [
+            'admin',
+            'super-admin',
+            'super_admin',
+            'factory_manager',
+            'purchasing_manager',
+        ]);
+    }
 }
