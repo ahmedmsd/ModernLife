@@ -25,53 +25,9 @@ class StartProductionAction
 
     protected static function isVisible(ProductionTask $record): bool
     {
-        $u = auth()->user();
-        if (!$u || !$u->hasRole('department_manager', 'web')) return false;
-
-        if (($record->current_owner_role ?? null) !== 'department_manager') return false;
-
-        $status = strtolower((string) ($record->status ?? ''));
-        if (!in_array($status, ['waiting_production', 'rework', 'in_progress', 'received'], true)) return false;
-
-        $anchor = TaskLog::query()
-            ->where('task_id', $record->id)
-            ->whereIn('type', ['manufacturing_ack_rework', 'dept_acknowledge', 'dept_acknowledged'])
-            ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
-            ->first();
-
-        if (!$anchor) {
-            $anchor = TaskLog::query()
-                ->where('task_id', $record->id)
-                ->where(function ($q) {
-                    $q->where('type', 'materials_received_ok')
-                        ->orWhere(function ($q2) {
-                            $q2->where('type', 'materials_received_partial')
-                                ->where('data->allow_start', true);
-                        })
-                        ->orWhere('type', 'planning_hint_set');
-                })
-                ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
-                ->first();
-        }
-
-        if (!$anchor) return false;
-
-        $anchorTime = $anchor->happened_at ?? $anchor->created_at;
-        $anchorId   = $anchor->id;
-
-        $startedAfter = TaskLog::query()
-            ->where('task_id', $record->id)
-            ->where('type', 'manufacturing_started')
-            ->where(function ($q) use ($anchorTime, $anchorId) {
-                $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$anchorTime])
-                    ->orWhere(function ($q2) use ($anchorTime, $anchorId) {
-                        $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$anchorTime])
-                            ->where('id', '>', $anchorId);
-                    });
-            })
-            ->exists();
-
-        return !$startedAfter;
+        /** @var \App\Support\Tasks\TaskPageHelper $helper */
+        $helper = app(\App\Support\Tasks\TaskPageHelper::class);
+        return $helper->canStartProduction($record, auth()->user());
     }
 
     protected static function getForm(): array

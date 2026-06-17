@@ -346,6 +346,33 @@ class TaskPageHelper
             return false;
         }
 
+        $lastReceived = TaskLog::query()
+            ->where('task_id', $task->id)
+            ->whereIn('type', ['materials_received_ok', 'materials_received_partial'])
+            ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
+            ->first();
+
+        if ($lastReceived) {
+            $rAt = $lastReceived->happened_at ?? $lastReceived->created_at;
+            $rId = $lastReceived->id;
+
+            $providedAfter = TaskLog::query()
+                ->where('task_id', $task->id)
+                ->whereIn('type', ['materials_provided', 'materials_provided_note'])
+                ->where(function ($q) use ($rAt, $rId) {
+                    $q->whereRaw('COALESCE(happened_at, created_at) > ?', [$rAt])
+                        ->orWhere(function ($q2) use ($rAt, $rId) {
+                            $q2->whereRaw('COALESCE(happened_at, created_at) = ?', [$rAt])
+                                ->where('id', '>', $rId);
+                        });
+                })
+                ->exists();
+
+            if (! $providedAfter) {
+                return false;
+            }
+        }
+
         return true;
     }
 
@@ -365,27 +392,24 @@ class TaskPageHelper
             return false;
         }
 
-        // منطق الـ anchor كما في ViewTask (ack_rework أو materials_received أو planning_hint)
+        // منطق الـ anchor: أحدث حركة تسمح ببدء التصنيع
         $anchor = TaskLog::query()
             ->where('task_id', $task->id)
-            ->whereIn('type', ['manufacturing_ack_rework', 'dept_acknowledge', 'dept_acknowledged'])
+            ->where(function ($q) {
+                $q->whereIn('type', [
+                    'manufacturing_ack_rework',
+                    'dept_acknowledge',
+                    'dept_acknowledged',
+                    'materials_received_ok',
+                    'planning_hint_set'
+                ])
+                ->orWhere(function ($q2) {
+                    $q2->where('type', 'materials_received_partial')
+                       ->where('data->allow_start', true);
+                });
+            })
             ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
             ->first();
-
-        if (! $anchor) {
-            $anchor = TaskLog::query()
-                ->where('task_id', $task->id)
-                ->where(function ($q) {
-                    $q->where('type', 'materials_received_ok')
-                        ->orWhere(function ($q2) {
-                            $q2->where('type', 'materials_received_partial')
-                                ->where('data->allow_start', true);
-                        })
-                        ->orWhere('type', 'planning_hint_set');
-                })
-                ->orderByRaw('COALESCE(happened_at, created_at) DESC, id DESC')
-                ->first();
-        }
 
         if (! $anchor) {
             return false;

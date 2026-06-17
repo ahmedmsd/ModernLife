@@ -29,7 +29,7 @@ class AssignToDeptManagerAction
             ->requiresConfirmation()
             ->action(function (array $data) use ($record, $redirectCallback) {
                 static::handle($record, $data);
-                
+
                 if ($redirectCallback) {
                     return $redirectCallback();
                 }
@@ -45,7 +45,7 @@ class AssignToDeptManagerAction
     protected static function isVisible(ProductionTask $record): bool
     {
         $user = Auth::user();
-        
+
         return $user?->hasAnyRole(['factory_manager', 'admin', 'super-admin'])
             && blank($record->assigned_to_user_id);
     }
@@ -69,15 +69,15 @@ class AssignToDeptManagerAction
                     return User::query()
                         ->role('department_manager')
                         // Uncomment if you want to filter by department
-                        // ->when($deptId, function ($q) use ($deptId) {
-                        //      $q->whereHas('employee', fn ($q2) => $q2->where('department_id', $deptId));
-                        // })
+                        ->when($deptId, function ($q) use ($deptId) {
+                            $q->whereHas('employee', fn($q2) => $q2->where('department_id', $deptId));
+                        })
                         ->orderBy('name')
                         ->pluck('name', 'id')
                         ->toArray();
                 })
                 ->required(),
-            
+
             Forms\Components\DatePicker::make('due_date')
                 ->label('تاريخ التسليم المتوقع')
                 ->required(),
@@ -95,7 +95,7 @@ class AssignToDeptManagerAction
     {
         /** @var AssignmentWorkflowService $workflow */
         $workflow = app(AssignmentWorkflowService::class);
-        
+
         $workflow->assignToDeptManager(
             $record,
             (int) $data['user_id'],
