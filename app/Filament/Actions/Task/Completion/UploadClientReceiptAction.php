@@ -51,8 +51,7 @@ class UploadClientReceiptAction
         
         return Auth::user()?->hasRole('quality_manager')
             && !$helper->isClosedOrCompleted($record)
-            && $helper->hasLog($record, 'qa_approved_installation')
-            && empty($record->client_receipt);
+            && $helper->hasLog($record, 'qa_approved_installation');
     }
 
     /**
